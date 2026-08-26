@@ -140,7 +140,54 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     c->inventory[c->item_count].item_id = item_id;
     c->inventory[c->item_count].quantity = qty;
     c->inventory[c->item_count].equipped = equipped;
+    c->inventory[c->item_count].is_magic = 0;
+    c->inventory[c->item_count].attuned = 0;
     c->item_count++;
+}
+
+void add_magic_item(Character *c, int magic_id, int qty, int attuned)
+{
+    int i;
+    if (magic_id < 0 || magic_id >= MAGIC_ITEM_COUNT || qty <= 0) return;
+
+    for (i = 0; i < c->item_count; i++) {
+        if (c->inventory[i].is_magic && c->inventory[i].item_id == magic_id
+            && c->inventory[i].attuned == attuned) {
+            c->inventory[i].quantity += qty;
+            return;
+        }
+    }
+    if (c->item_count >= MAX_ITEMS) return;
+    c->inventory[c->item_count].item_id = magic_id;
+    c->inventory[c->item_count].quantity = qty;
+    c->inventory[c->item_count].equipped = 0;
+    c->inventory[c->item_count].is_magic = 1;
+    c->inventory[c->item_count].attuned = attuned;
+    c->item_count++;
+}
+
+/* Drops qty of one entry, closing the gap when nothing is left. */
+void remove_inventory_entry(Character *c, int index, int qty)
+{
+    int i;
+    if (index < 0 || index >= c->item_count || qty <= 0) return;
+
+    c->inventory[index].quantity -= qty;
+    if (c->inventory[index].quantity > 0) return;
+
+    for (i = index; i < c->item_count - 1; i++) {
+        c->inventory[i] = c->inventory[i + 1];
+    }
+    c->item_count--;
+}
+
+int attuned_count(const Character *c)
+{
+    int i, n = 0;
+    for (i = 0; i < c->item_count; i++) {
+        if (c->inventory[i].is_magic && c->inventory[i].attuned) n++;
+    }
+    return n;
 }
 
 void add_item_by_name(Character *c, const char *name, int qty, int equipped)

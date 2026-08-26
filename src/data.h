@@ -338,6 +338,31 @@ extern const Deity DEITIES[];
 extern const int DEITY_COUNT;
 int find_deity(const char *name);
 
+/* Tasha's sidekicks: a creature of challenge 1/2 or lower given levels in
+ * one of three simple classes. */
+typedef enum { SK_EXPERT, SK_SPELLCASTER, SK_WARRIOR, SK_CLASS_COUNT }
+    SidekickClass;
+typedef enum { SK_MAGE, SK_HEALER, SK_PRODIGY, SK_ROLE_COUNT }
+    SpellcasterRole;
+
+extern const char *const SIDEKICK_CLASS_NAME[SK_CLASS_COUNT];
+extern const char *const SIDEKICK_CLASS_BLURB[SK_CLASS_COUNT];
+extern const char *const SPELLCASTER_ROLE_NAME[SK_ROLE_COUNT];
+extern const char *const SPELLCASTER_ROLE_DESC[SK_ROLE_COUNT];
+
+typedef struct {
+    SidekickClass cls;
+    int level;
+    const char *name;
+    const char *summary;
+} SidekickFeature;
+
+extern const SidekickFeature SIDEKICK_FEATURES[];
+extern const int SIDEKICK_FEATURE_COUNT;
+
+extern const unsigned char SPELLCASTER_CANTRIPS[MAX_LEVEL + 1];
+extern const unsigned char SPELLCASTER_SPELLS_KNOWN[MAX_LEVEL + 1];
+
 /* Beasts, from the Monster Manual: what Wild Shape, a Beast Master
  * companion and find familiar draw on. Challenge is stored in eighths, so
  * 1/8 is 1, 1/4 is 2, 1/2 is 4 and 1 is 8; the druid's limits are then

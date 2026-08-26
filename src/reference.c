@@ -417,12 +417,21 @@ void inventory_reference(const Character *c)
         int map[REF_MAX], n = 0, i, pick;
 
         for (i = 0; i < c->item_count && n < REF_MAX; i++) {
-            const ItemData *it = &ITEMS[c->inventory[i].item_id];
-            snprintf(lines[n], REF_LINE, "%2d x %-26s%s",
-                     c->inventory[i].quantity, it->name,
-                     c->inventory[i].equipped ? "  (worn)" : "");
+            if (c->inventory[i].is_magic) {
+                const MagicItem *m = &MAGIC_ITEMS[c->inventory[i].item_id];
+                snprintf(lines[n], REF_LINE, "%2d x %-26s%s",
+                         c->inventory[i].quantity, m->name,
+                         c->inventory[i].attuned ? "  (attuned)" : "");
+            } else {
+                const ItemData *it = &ITEMS[c->inventory[i].item_id];
+                snprintf(lines[n], REF_LINE, "%2d x %-26s%s",
+                         c->inventory[i].quantity, it->name,
+                         c->inventory[i].equipped ? "  (worn)" : "");
+            }
             opts[n] = lines[n];
-            map[n] = c->inventory[i].item_id;
+            /* Remember the inventory slot, not the table index, so the
+               detail view knows which table to read. */
+            map[n] = i;
             n++;
         }
         if (n == 0) {
@@ -432,6 +441,10 @@ void inventory_reference(const Character *c)
         opts[n] = "Done";
         pick = ui_menu("  Which item?", opts, NULL, n + 1);
         if (pick == n) return;
-        show_item_detail(map[pick]);
+        if (c->inventory[map[pick]].is_magic) {
+            show_magic_item_detail(c->inventory[map[pick]].item_id);
+        } else {
+            show_item_detail(c->inventory[map[pick]].item_id);
+        }
     }
 }

@@ -155,6 +155,7 @@ static const InventoryEntry *equipped_of(const Character *c, ItemCategory cat)
     int i;
     for (i = 0; i < c->item_count; i++) {
         if (!c->inventory[i].equipped) continue;
+        if (c->inventory[i].is_magic) continue;
         if (ITEMS[c->inventory[i].item_id].category == cat) {
             return &c->inventory[i];
         }
@@ -251,6 +252,9 @@ int current_weight_tenths(const Character *c)
 {
     int i, w = 0;
     for (i = 0; i < c->item_count; i++) {
+        /* Magic items index a different table and carry no listed weight;
+           their bulk is the DM's call. */
+        if (c->inventory[i].is_magic) continue;
         w += ITEMS[c->inventory[i].item_id].weight_tenths
              * c->inventory[i].quantity;
     }

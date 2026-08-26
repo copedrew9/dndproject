@@ -63,11 +63,22 @@ typedef struct {
     int subclass_option;/* totem animal, land terrain, ...; -1 when N/A */
 } ClassLevel;
 
+/* A carried thing: either a line from the equipment catalogue or one of the
+   Dungeon Master's Guide magic items. Which table item_id indexes depends on
+   is_magic, so the two can sit in one list and be counted, weighed and
+   printed together. */
 typedef struct {
-    int item_id;        /* index into ITEMS */
+    int item_id;        /* index into ITEMS, or MAGIC_ITEMS when is_magic */
     int quantity;
     int equipped;       /* armour/shield actually worn */
+    int is_magic;
+    int attuned;        /* magic items only; at most three at a time */
 } InventoryEntry;
+
+#define MAX_ATTUNED 3
+#define MAX_SIDEKICKS 4
+#define MAX_SK_CHOICES 12
+
 
 /* Free-form in-class choices: fighting styles, pact boons, metamagic,
    eldritch invocations, battle master maneuvers, expertise notes. */
@@ -75,6 +86,27 @@ typedef struct {
     char label[MAX_NAME];
     char value[MAX_TEXT];
 } ChoiceEntry;
+
+/* A sidekick: a creature from the beast tables (or one typed in by hand)
+   with levels in Expert, Spellcaster or Warrior. The creature supplies the
+   ability scores, hit die, speed and attacks; the class supplies the
+   proficiency bonus, features and any spellcasting. */
+typedef struct {
+    char name[MAX_NAME];
+    char creature[MAX_NAME];    /* the stat block it is built on */
+    int  beast_id;              /* index into BEASTS, or -1 when typed in */
+    int  cls;                   /* SidekickClass */
+    int  level;
+    int  role;                  /* SpellcasterRole, -1 when not a caster */
+    int  abilities[6];          /* after any ability score improvements */
+    int  hp;
+    int  ac;
+    char speed[MAX_NAME];
+    ChoiceEntry choices[MAX_SK_CHOICES];
+    int  choice_count;
+    int  spells[MAX_SPELLS / 4];
+    int  spell_count;
+} Sidekick;
 
 typedef struct {
     int spell_id;       /* index into SPELLS */
@@ -133,6 +165,11 @@ typedef struct {
 
     ChoiceEntry choices[MAX_CHOICES];
     int choice_count;
+
+    /* Sidekicks (Tasha's chapter 4). A character may have more than one,
+       though the book warns the table slows down past one each. */
+    Sidekick sidekicks[MAX_SIDEKICKS];
+    int sidekick_count;
 
     /* Personality (PHB chapter 4). */
     char trait[MAX_TEXT];

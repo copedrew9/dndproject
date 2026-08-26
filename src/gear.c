@@ -35,8 +35,11 @@ static void auto_equip(Character *c)
     int i, best = -1, best_ac = -1;
 
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
         int ac;
+
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         if (it->category > ITEM_HEAVY_ARMOR) continue;
 
         ac = it->base_ac
@@ -47,7 +50,9 @@ static void auto_equip(Character *c)
         if (ac > best_ac) { best_ac = ac; best = i; }
     }
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         if (it->category <= ITEM_HEAVY_ARMOR) {
             c->inventory[i].equipped = (i == best);
         } else if (it->category == ITEM_SHIELD) {

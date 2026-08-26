@@ -5,6 +5,7 @@
  */
 #include "dnd.h"
 #include "data.h"
+#include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
 
@@ -838,6 +839,85 @@ static void test_beasts(void)
     check(find_beast("No Such Beast") < 0, "unknown beast is not found", 1, 1);
 }
 
+static void test_sidekicks(void)
+{
+    int i, expert = 0, caster = 0, warrior = 0;
+
+    printf("sidekicks\n");
+
+    for (i = 0; i < SIDEKICK_FEATURE_COUNT; i++) {
+        const SidekickFeature *f = &SIDEKICK_FEATURES[i];
+        if (f->level < 1 || f->level > MAX_LEVEL) {
+            printf("  FAIL %s sits at level %d\n", f->name, f->level);
+            failures++;
+        }
+        if (!f->name[0] || !f->summary[0]) {
+            printf("  FAIL a sidekick feature is incomplete\n");
+            failures++;
+        }
+        if (f->cls == SK_EXPERT) expert++;
+        else if (f->cls == SK_SPELLCASTER) caster++;
+        else warrior++;
+    }
+    check(expert > 0 && caster > 0 && warrior > 0,
+          "all three sidekick classes have features", 1, 1);
+
+    /* The Expert's table survived the dump intact, so it is checked exactly:
+       six ability score improvements, expertise twice, and the 20th-level
+       upgrade to Inspiring Help. */
+    {
+        int asi = 0, expertise = 0;
+        for (i = 0; i < SIDEKICK_FEATURE_COUNT; i++) {
+            if (SIDEKICK_FEATURES[i].cls != SK_EXPERT) continue;
+            if (!strcmp(SIDEKICK_FEATURES[i].name,
+                        "Ability Score Improvement")) asi++;
+            if (!strcmp(SIDEKICK_FEATURES[i].name, "Expertise")) expertise++;
+        }
+        EQ(asi, 6, "Expert ability score improvements");
+        EQ(expertise, 2, "Expert gains Expertise twice");
+    }
+
+    /* Proficiency follows class level exactly as a character's does. */
+    {
+        Sidekick sk;
+        memset(&sk, 0, sizeof sk);
+        for (i = 1; i <= MAX_LEVEL; i++) {
+            sk.level = i;
+            if (sidekick_proficiency(&sk) != 2 + (i - 1) / 4) {
+                printf("  FAIL sidekick proficiency at level %d\n", i);
+                failures++;
+            }
+        }
+        sk.abilities[ABL_STR] = 18;
+        EQ(sidekick_ability_mod(&sk, ABL_STR), 4, "sidekick ability modifier");
+    }
+
+    /* Cantrips known is the one Spellcaster column that could be read. */
+    EQ(SPELLCASTER_CANTRIPS[1], 2, "Spellcaster cantrips at 1st level");
+    EQ(SPELLCASTER_CANTRIPS[4], 3, "Spellcaster cantrips at 4th level");
+    EQ(SPELLCASTER_CANTRIPS[10], 4, "Spellcaster cantrips at 10th level");
+    EQ(SPELLCASTER_SPELLS_KNOWN[1], 1, "Spellcaster knows one spell at 1st");
+
+    /* Whatever the reconstruction says, it must never go backwards. */
+    for (i = 2; i <= MAX_LEVEL; i++) {
+        if (SPELLCASTER_SPELLS_KNOWN[i] < SPELLCASTER_SPELLS_KNOWN[i - 1]
+            || SPELLCASTER_CANTRIPS[i] < SPELLCASTER_CANTRIPS[i - 1]) {
+            printf("  FAIL Spellcaster forgets something at level %d\n", i);
+            failures++;
+        }
+    }
+
+    /* A sidekick must be buildable: there have to be creatures that qualify. */
+    {
+        int eligible = 0;
+        for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+            if (BEASTS[i].cr_eighths <= 4) eligible++;
+        }
+        check(eligible > 30, "beasts of CR 1/2 or lower for a sidekick",
+              eligible, 31);
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -876,6 +956,7 @@ int main(void)
     test_option_lists();
     test_option_spells();
     test_beasts();
+    test_sidekicks();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

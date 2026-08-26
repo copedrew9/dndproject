@@ -7,6 +7,7 @@
  */
 #include "saveload.h"
 #include "data.h"
+#include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
 
@@ -93,6 +94,38 @@ static void section(FILE *f, const char *title)
     fprintf(f, "\n----------------------------------------------------------------\n");
     fprintf(f, " %s\n", title);
     fprintf(f, "----------------------------------------------------------------\n");
+}
+
+/* Wraps a long line of prose to the sheet's width at a given indent. The
+   sheet is compared against itself by tools/roundtrip.py, so this has to be
+   deterministic -- it breaks only at spaces and never rewrites the text. */
+static void wrap_to(FILE *f, const char *text, int indent)
+{
+    const int width = 76;
+    int col = 0;
+    const char *p = text;
+
+    while (*p) {
+        const char *word = p;
+        int len = 0;
+
+        while (*p && *p != ' ') { p++; len++; }
+        while (*p == ' ') p++;
+
+        if (col == 0) {
+            fprintf(f, "%*s", indent, "");
+            col = indent;
+        } else if (col + 1 + len > width) {
+            fprintf(f, "\n%*s", indent, "");
+            col = indent;
+        } else {
+            fputc(' ', f);
+            col++;
+        }
+        fprintf(f, "%.*s", len, word);
+        col += len;
+    }
+    if (col) fputc('\n', f);
 }
 
 static void class_line(const Character *c, char *out, size_t n)
@@ -391,7 +424,9 @@ static void write_sheet(FILE *f, const Character *c)
 
     section(f, "EQUIPMENT");
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         fprintf(f, "  %3d x %-26s%s", c->inventory[i].quantity, it->name,
                 c->inventory[i].equipped ? " (equipped)" : "");
         if (it->damage[0] && strcmp(it->damage, "-")) {
@@ -405,6 +440,44 @@ static void write_sheet(FILE *f, const Character *c)
     fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
             current_weight_tenths(c) / 10, current_weight_tenths(c) % 10,
             carrying_capacity(c));
+
+    /* Magic items get their own section with what each one does, since the
+       whole point of carrying one is the rule it brings. */
+    {
+        int magic = 0;
+        for (i = 0; i < c->item_count; i++) {
+            if (c->inventory[i].is_magic) magic++;
+        }
+        if (magic) {
+            section(f, "MAGIC ITEMS");
+            fprintf(f, "  Attuned to %d of %d\n", attuned_count(c),
+                    MAX_ATTUNED);
+            fprintf(f, "  What these items grant is not folded into the "
+                       "numbers above: most of it is\n"
+                       "  conditional on being worn, attuned, charged or "
+                       "in the right situation.\n"
+                       "  Apply them at the table.\n");
+            for (i = 0; i < c->item_count; i++) {
+                const MagicItem *m;
+                if (!c->inventory[i].is_magic) continue;
+                m = &MAGIC_ITEMS[c->inventory[i].item_id];
+                fprintf(f, "\n  %d x %s%s\n", c->inventory[i].quantity,
+                        m->name, c->inventory[i].attuned ? " (attuned)" : "");
+                fprintf(f, "    %s, %s%s%s\n", m->type, m->rarity,
+                        m->attunement ? " -- " : "",
+                        m->attunement ? m->attunement : "");
+                wrap_to(f, m->text, 4);
+            }
+        }
+    }
+
+    if (c->sidekick_count) {
+        section(f, "SIDEKICKS");
+        for (i = 0; i < c->sidekick_count; i++) {
+            if (i) fprintf(f, "\n");
+            print_sidekick(f, &c->sidekicks[i], 2);
+        }
+    }
 
     section(f, "PERSONALITY");
     fprintf(f, "  Age %d, %d ft %d in, %d lb, %s eyes, %s skin, %s hair\n",
@@ -493,11 +566,36 @@ static void write_data(FILE *f, const Character *c)
         fprintf(f, "CHOICE|%s|%s\n", c->choices[i].label, c->choices[i].value);
     }
     for (i = 0; i < c->item_count; i++) {
-        fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
-                c->inventory[i].equipped, ITEMS[c->inventory[i].item_id].name);
+        if (c->inventory[i].is_magic) {
+            fprintf(f, "MAGICITEM|%d|%d|%s\n", c->inventory[i].quantity,
+                    c->inventory[i].attuned,
+                    MAGIC_ITEMS[c->inventory[i].item_id].name);
+        } else {
+            fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
+                    c->inventory[i].equipped,
+                    ITEMS[c->inventory[i].item_id].name);
+        }
     }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
             c->gold, c->platinum);
+    for (i = 0; i < c->sidekick_count; i++) {
+        const Sidekick *sk = &c->sidekicks[i];
+        int k;
+        fprintf(f, "SIDEKICK|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s\n",
+                sk->name, sk->creature, SIDEKICK_CLASS_NAME[sk->cls],
+                sk->level, sk->role, sk->abilities[0], sk->abilities[1],
+                sk->abilities[2], sk->abilities[3], sk->abilities[4],
+                sk->abilities[5], sk->hp, sk->speed);
+        fprintf(f, "SKAC|%s|%d\n", sk->name, sk->ac);
+        for (k = 0; k < sk->choice_count; k++) {
+            fprintf(f, "SKCHOICE|%s|%s|%s\n", sk->name,
+                    sk->choices[k].label, sk->choices[k].value);
+        }
+        for (k = 0; k < sk->spell_count; k++) {
+            fprintf(f, "SKSPELL|%s|%s\n", sk->name,
+                    SPELLS[sk->spells[k]].name);
+        }
+    }
     for (i = 0; i < c->spell_count; i++) {
         fprintf(f, "SPELL|%d|%d|%s|%s\n", c->spells[i].prepared,
                 c->spells[i].always_prepared,
@@ -684,6 +782,57 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
             if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+        } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
+            if (c->sidekick_count < MAX_SIDEKICKS) {
+                Sidekick *sk = &c->sidekicks[c->sidekick_count++];
+                int k;
+                memset(sk, 0, sizeof *sk);
+                snprintf(sk->name, sizeof sk->name, "%s", fields[1]);
+                snprintf(sk->creature, sizeof sk->creature, "%s", fields[2]);
+                sk->beast_id = find_beast(fields[2]);
+                sk->cls = SK_EXPERT;
+                for (k = 0; k < SK_CLASS_COUNT; k++) {
+                    if (!strcmp(SIDEKICK_CLASS_NAME[k], fields[3])) sk->cls = k;
+                }
+                sk->level = atoi(fields[4]);
+                sk->role  = atoi(fields[5]);
+                for (k = 0; k < 6; k++) sk->abilities[k] = atoi(fields[6 + k]);
+                sk->hp = atoi(fields[12]);
+                snprintf(sk->speed, sizeof sk->speed, "%s", fields[13]);
+            }
+        } else if (!strcmp(fields[0], "SKAC") && n >= 3) {
+            int k;
+            for (k = 0; k < c->sidekick_count; k++) {
+                if (!strcmp(c->sidekicks[k].name, fields[1])) {
+                    c->sidekicks[k].ac = atoi(fields[2]);
+                }
+            }
+        } else if (!strcmp(fields[0], "SKCHOICE") && n >= 4) {
+            int k;
+            for (k = 0; k < c->sidekick_count; k++) {
+                Sidekick *sk = &c->sidekicks[k];
+                if (strcmp(sk->name, fields[1])) continue;
+                if (sk->choice_count >= MAX_SK_CHOICES) break;
+                snprintf(sk->choices[sk->choice_count].label,
+                         sizeof sk->choices[0].label, "%s", fields[2]);
+                snprintf(sk->choices[sk->choice_count].value,
+                         sizeof sk->choices[0].value, "%s", fields[3]);
+                sk->choice_count++;
+            }
+        } else if (!strcmp(fields[0], "SKSPELL") && n >= 3) {
+            int k, id = index_of_spell(fields[2]);
+            for (k = 0; k < c->sidekick_count && id >= 0; k++) {
+                Sidekick *sk = &c->sidekicks[k];
+                if (strcmp(sk->name, fields[1])) continue;
+                if (sk->spell_count >=
+                    (int)(sizeof sk->spells / sizeof sk->spells[0])) break;
+                sk->spells[sk->spell_count++] = id;
+            }
+        } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
+            int id = find_magic_item(fields[3]);
+            if (id >= 0) {
+                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            }
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
             c->copper   = atoi(fields[1]);
             c->silver   = atoi(fields[2]);
