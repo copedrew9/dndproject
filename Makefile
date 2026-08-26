@@ -34,6 +34,10 @@ beasts:
 life:
 	python3 tools/extract_life.py
 
+# Checks the hand-encoded tables against the book dumps.
+audit:
+	python3 tools/audit.py
+
 # Assertions on the rules engine.
 TESTBIN  = selftest
 TESTOBJS = $(filter-out $(OBJDIR)/main.o,$(OBJECTS))
@@ -55,4 +59,4 @@ check: test $(BIN)
 clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d
 
-.PHONY: all clean spells check test beasts life
+.PHONY: all clean spells check test beasts life audit

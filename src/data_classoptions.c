@@ -157,8 +157,8 @@ static const ClassOption INVOCATIONS[] = {
   "short rest." },
 { "Trickster's Escape", BOOK_XGE, 7, "",
   "Cast freedom of movement on yourself once per long rest, without a slot." },
-{ "Undying Servitude", BOOK_XGE, 5, "",
-  "Cast animate dead once per long rest without a slot or components." },
+{ "Undying Servitude", BOOK_TCE, 5, "",
+  "Cast animate dead once per long rest without a slot." },
 };
 
 /* A warlock knows two invocations at 2nd level, and more as they advance. */
