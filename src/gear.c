@@ -1,4 +1,5 @@
 /* gear.c -- starting equipment, the shop, and personality (PHB chapters 4-5). */
+#include "backstory.h"
 #include "build.h"
 #include "reference.h"
 #include "ui.h"
@@ -692,6 +693,16 @@ void choose_personality(Character *c)
 
     ui_line("  Appearance (one line, optional)", c->appearance,
             sizeof c->appearance);
-    ui_line("  Backstory (one line, optional)", c->backstory,
-            sizeof c->backstory);
+
+    /* Xanathar's tables, for a player who would rather build a past than
+       write one. Either way the answer lands in the same line. */
+    if (book_enabled(BOOK_XGE)
+        && ui_yesno("\n  Work out where you came from, from Xanathar's "
+                    "tables?", 0)) {
+        build_backstory(c);
+    }
+    if (!c->backstory[0]) {
+        ui_line("  Backstory (one line, optional)", c->backstory,
+                sizeof c->backstory);
+    }
 }

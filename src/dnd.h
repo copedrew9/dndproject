@@ -74,6 +74,9 @@ typedef struct {
     int is_magic;
     int attuned;        /* magic items only; at most three at a time */
     int plus;           /* for a +1/+2/+3 item, which one this copy is */
+    /* For an item whose effect names something -- the damage a ring of
+       resistance resists, the giant a belt draws its Strength from. */
+    char variant[24];
 } InventoryEntry;
 
 #define MAX_ATTUNED 3
@@ -192,6 +195,12 @@ int  ability_mod(const Character *c, Ability a);
 int  proficiency_bonus(const Character *c);
 int  skill_bonus(const Character *c, Skill s);
 int  save_bonus(const Character *c, Ability a);
+
+/* Movement and defences a character's worn magic items grant. */
+int  magic_fly_speed(const Character *c);
+int  magic_swim_speed(const Character *c);
+int  magic_climb_speed(const Character *c);
+int  magic_defences(const Character *c, char *out, size_t n);
 int  passive_perception(const Character *c);
 int  hit_points_max(const Character *c);
 int  caster_level(const Character *c);

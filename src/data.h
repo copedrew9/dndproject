@@ -270,6 +270,10 @@ typedef struct {
     int asi_choice_count;       /* half-feats that raise a chosen score */
     const char *asi_choices;    /* "STR,DEX"; "" means any ability */
     const char *summary;
+    /* Race the feat is limited to, matched against the character's race and
+       subrace names. "" means anyone may take it. Several of Xanathar's
+       racial feats accept more than one, separated by '|'. */
+    const char *req_race;
 } FeatData;
 
 extern const FeatData FEATS[];
@@ -328,6 +332,24 @@ enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
        CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
        CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
        CLS_ARTIFICER = 12 };
+
+/* Xanathar's "This Is Your Life" tables. Each row carries the range of
+ * results that produce it, so a table can be rolled on or read down and
+ * picked from. */
+typedef struct {
+    int lo, hi;
+    const char *text;
+} LifeEntry;
+
+typedef struct {
+    const char *name;
+    const char *die;
+    const LifeEntry *rows;
+    int count;
+} LifeTable;
+
+extern const LifeTable LIFE_TABLES[];
+extern const int LIFE_TABLE_COUNT;
 
 /* The gods of appendix B. A cleric or paladin names one, and the suggested
  * domains connect that choice to the Divine Domain menu. */
@@ -495,6 +517,22 @@ typedef struct {
     int only_unarmored;         /* applies only with no armour or shield */
     int unarmored_base;         /* sets the unarmoured base AC instead */
     int variable;               /* the bonus is the copy's own +N */
+
+    /* Scores an item sets outright, rather than adding to. sets_ability is
+       the ability plus one, so zero means none; sets_to of 0 means the copy
+       carries the score, as a belt of giant strength does. */
+    int sets_ability;
+    int sets_to;
+
+    int sets_speed;             /* walking speed becomes this, if higher */
+    int fly_speed;              /* -1 means "equal to your walking speed" */
+    int swim_speed;
+    int climb_speed;
+
+    /* Damage the wearer resists or ignores. "*" means the copy carries the
+       type, as armour and a ring of resistance do. */
+    const char *resist;
+    const char *immune;
 } MagicRule;
 
 extern const MagicRule MAGIC_RULES[];

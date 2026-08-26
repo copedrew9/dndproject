@@ -177,6 +177,16 @@ static void add_magic(Character *c)
                 plus = ui_menu("  Which bonus is this one?", which, NULL, 3)
                      + 1;
             }
+            /* A belt of giant strength depends on its giant. */
+            if (r && r->sets_ability && r->sets_to == 0) {
+                static const char *const giants[] = {
+                    "Hill giant (Strength 21)", "Stone giant (Strength 23)",
+                    "Frost giant (Strength 23)", "Fire giant (Strength 25)",
+                    "Cloud giant (Strength 27)", "Storm giant (Strength 29)"
+                };
+                static const int scores[] = { 21, 23, 23, 25, 27, 29 };
+                plus = scores[ui_menu("  Which giant?", giants, NULL, 6)];
+            }
             if (m->attunement) {
                 if (attuned_count(c) >= MAX_ATTUNED) {
                     printf("  You are already attuned to %d items, so this "
@@ -186,6 +196,20 @@ static void add_magic(Character *c)
                 }
             }
             add_magic_item(c, map[pick], qty, attune, plus);
+
+            /* Armour and rings of resistance are made against one kind of
+               damage; which one is a property of the copy. */
+            if (r && ((r->resist && !strcmp(r->resist, "*"))
+                      || (r->immune && !strcmp(r->immune, "*")))) {
+                static const char *const types[] = {
+                    "acid", "cold", "fire", "force", "lightning", "necrotic",
+                    "poison", "psychic", "radiant", "thunder"
+                };
+                snprintf(c->inventory[c->item_count - 1].variant,
+                         sizeof c->inventory[0].variant, "%s",
+                         types[ui_menu("  Made against which damage?", types,
+                                       NULL, 10)]);
+            }
             printf("  Added %d x %s.\n", qty, m->name);
             if (r && (r->armor_base || r->shield)) {
                 printf("  It only counts towards Armor Class once you wear "

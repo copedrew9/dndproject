@@ -1,6 +1,7 @@
 /* character.c -- derived statistics (PHB chapters 1, 5 and 7). */
 #include "dnd.h"
 #include "data.h"
+#include <stdio.h>
 #include <string.h>
 
 const char *const ABILITY_NAME[ABL_COUNT] = {
@@ -95,44 +96,6 @@ static int has_named_feat(const Character *c, const char *name)
     return id >= 0 && has_feat(c, id);
 }
 
-int ability_score(const Character *c, Ability a)
-{
-    return c->base_score[a] + c->racial_bonus[a] + c->asi_bonus[a];
-}
-
-int ability_mod_of(int score)
-{
-    /* Floor division: the modifier for a score below 10 rounds down. */
-    int d = score - 10;
-    return (d >= 0) ? d / 2 : -(((-d) + 1) / 2);
-}
-
-int ability_mod(const Character *c, Ability a)
-{
-    return ability_mod_of(ability_score(c, a));
-}
-
-int proficiency_bonus(const Character *c)
-{
-    int lvl = total_level(c);
-    if (lvl < 1) lvl = 1;
-    return 2 + (lvl - 1) / 4;
-}
-
-int skill_bonus(const Character *c, Skill s)
-{
-    int pb = proficiency_bonus(c);
-    int bonus = ability_mod(c, SKILL_ABILITY[s]);
-
-    if (c->skill_prof[s]) {
-        bonus += pb;
-        if (c->skill_expertise[s]) bonus += pb;
-    } else if (class_level_of(c, CLS_BARD) >= 2) {
-        bonus += pb / 2;            /* Jack of All Trades */
-    }
-    return bonus;
-}
-
 /* The rule a carried magic item brings, if it brings one and it is actually
  * in effect: an item needing attunement does nothing until attuned, and
  * armour or a shield does nothing until worn. */
@@ -171,6 +134,57 @@ static const InventoryEntry *worn_magic_shield(const Character *c)
         if (r && r->shield) return &c->inventory[i];
     }
     return NULL;
+}
+
+int ability_score(const Character *c, Ability a)
+{
+    int score = c->base_score[a] + c->racial_bonus[a] + c->asi_bonus[a];
+    int i;
+
+    /* An amulet of health or gauntlets of ogre power set a score outright,
+       and only help if the score is not already higher. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int set;
+        if (!r || r->sets_ability != (int)a + 1) continue;
+        /* A belt of giant strength carries its own score. */
+        set = r->sets_to ? r->sets_to : c->inventory[i].plus;
+        if (set > score) score = set;
+    }
+    return score;
+}
+
+int ability_mod_of(int score)
+{
+    /* Floor division: the modifier for a score below 10 rounds down. */
+    int d = score - 10;
+    return (d >= 0) ? d / 2 : -(((-d) + 1) / 2);
+}
+
+int ability_mod(const Character *c, Ability a)
+{
+    return ability_mod_of(ability_score(c, a));
+}
+
+int proficiency_bonus(const Character *c)
+{
+    int lvl = total_level(c);
+    if (lvl < 1) lvl = 1;
+    return 2 + (lvl - 1) / 4;
+}
+
+int skill_bonus(const Character *c, Skill s)
+{
+    int pb = proficiency_bonus(c);
+    int bonus = ability_mod(c, SKILL_ABILITY[s]);
+
+    if (c->skill_prof[s]) {
+        bonus += pb;
+        if (c->skill_expertise[s]) bonus += pb;
+    } else if (class_level_of(c, CLS_BARD) >= 2) {
+        bonus += pb / 2;            /* Jack of All Trades */
+    }
+    return bonus;
 }
 
 int save_bonus(const Character *c, Ability a)
@@ -327,7 +341,93 @@ int speed_of(const Character *c)
     if (barb >= 5) speed += 10;         /* Fast Movement, unarmoured or light */
 
     if (has_named_feat(c, "Mobile")) speed += 10;
+
+    /* Boots of striding and springing set a floor rather than adding. */
+    {
+        int i;
+        for (i = 0; i < c->item_count; i++) {
+            const MagicRule *r = rule_in_effect(c, i);
+            if (r && r->sets_speed > speed) speed = r->sets_speed;
+        }
+    }
     return speed;
+}
+
+/* Movement a magic item grants that the character would not otherwise have.
+ * A speed of -1 in the table means "the same as your walking speed". Returns
+ * 0 when the character has none of that kind. */
+int magic_fly_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->fly_speed) continue;
+        v = (r->fly_speed < 0) ? speed_of(c) : r->fly_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+int magic_swim_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->swim_speed) continue;
+        v = (r->swim_speed < 0) ? speed_of(c) : r->swim_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+int magic_climb_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->climb_speed) continue;
+        v = (r->climb_speed < 0) ? speed_of(c) : r->climb_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+/* Collects what the character's worn magic items make them resist or ignore
+ * into one line, so the sheet can state it rather than leaving it buried in
+ * each item's description. Returns the number of entries written. */
+int magic_defences(const Character *c, char *out, size_t n)
+{
+    int i, found = 0;
+    size_t used = 0;
+
+    out[0] = '\0';
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int k;
+
+        if (!r) continue;
+        for (k = 0; k < 2; k++) {
+            const char *what = k ? r->immune : r->resist;
+            const char *how = k ? "immune to" : "resistant to";
+            int w;
+
+            if (!what) continue;
+            /* A "*" means the copy carries the type it was made against. */
+            if (!strcmp(what, "*")) {
+                what = c->inventory[i].variant[0]
+                     ? c->inventory[i].variant : "a chosen damage type";
+            }
+            w = snprintf(out + used, n - used, "%s%s %s", used ? "; " : "",
+                         how, what);
+            if (w < 0 || (size_t)w >= n - used) return found;
+            used += (size_t)w;
+            found++;
+        }
+    }
+    return found;
 }
 
 int carrying_capacity(const Character *c)

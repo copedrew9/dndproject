@@ -433,9 +433,38 @@ static void test_data_integrity(void)
             if (FEATS[k].book == BOOK_PHB) phb++;
             if (FEATS[k].book == BOOK_TCE) tce++;
         }
+        int xge = 0;
+        for (k = 0; k < FEAT_COUNT; k++) {
+            if (FEATS[k].book == BOOK_XGE) xge++;
+        }
         EQ(phb, 42, "PHB feats");
         EQ(tce, 15, "Tasha's feats");
-        EQ(FEAT_COUNT, phb + tce, "every feat is from the PHB or Tasha's");
+        EQ(xge, 15, "Xanathar's racial feats");
+        EQ(FEAT_COUNT, phb + tce + xge, "every feat comes from a book");
+
+        /* Every racial feat must name races that exist, or it could never
+           be offered to anyone. */
+        for (k = 0; k < FEAT_COUNT; k++) {
+            char buf[128];
+            const char *parts[8];
+            int np, q;
+            if (!FEATS[k].req_race[0]) continue;
+            np = split_pipe(FEATS[k].req_race, buf, sizeof buf, parts, 8);
+            for (q = 0; q < np; q++) {
+                int found = 0, r;
+                for (r = 0; r < RACE_COUNT; r++) {
+                    if (!strcmp(RACES[r].name, parts[q])) found = 1;
+                }
+                for (r = 0; r < SUBRACE_COUNT; r++) {
+                    if (!strcmp(SUBRACES[r].name, parts[q])) found = 1;
+                }
+                if (!found) {
+                    printf("  FAIL feat \"%s\" needs race \"%s\", which "
+                           "does not exist\n", FEATS[k].name, parts[q]);
+                    failures++;
+                }
+            }
+        }
     }
 
     /* Every class must offer at least one subclass, and every subclass must
@@ -1068,6 +1097,148 @@ static void test_magic_armour_class(void)
     EQ(armour_class(&c), 17, "robe of the archmagi is 15 + Dexterity");
 }
 
+static void test_magic_scores_and_speeds(void)
+{
+    Character c;
+    char buf[256];
+
+    printf("magic items in scores, speeds and defences\n");
+
+    /* An amulet of health sets Constitution to 19, and only helps if the
+       score is not already higher. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_CON] = 12;
+    EQ(ability_score(&c, ABL_CON), 12, "constitution before the amulet");
+    give_magic(&c, "Amulet of Health", 1, 0, 0);
+    EQ(ability_score(&c, ABL_CON), 19, "amulet of health sets it to 19");
+    c.base_score[ABL_CON] = 20;
+    EQ(ability_score(&c, ABL_CON), 20, "a higher score is left alone");
+
+    /* Unattuned, it does nothing at all. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_INT] = 8;
+    give_magic(&c, "Headband of Intellect", 0, 0, 0);
+    EQ(ability_score(&c, ABL_INT), 8, "unattuned headband does nothing");
+
+    /* A belt of giant strength carries the score of its own giant. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 10;
+    give_magic(&c, "Belt of Giant Strength", 1, 27, 0);
+    EQ(ability_score(&c, ABL_STR), 27, "cloud giant belt");
+    EQ(carrying_capacity(&c), 27 * 15, "and it changes what you can carry");
+
+    /* Boots of striding and springing set a floor under the walking speed. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.race_id = 0;
+    {
+        int bare = speed_of(&c);
+        give_magic(&c, "Boots of Striding and Springing", 1, 0, 0);
+        check(speed_of(&c) >= 30 && speed_of(&c) >= bare,
+              "boots set a floor of 30 feet", speed_of(&c), 30);
+    }
+
+    /* Movement a magic item grants shows up separately. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    EQ(magic_fly_speed(&c), 0, "no flying without an item");
+    give_magic(&c, "Wings of Flying", 1, 0, 0);
+    EQ(magic_fly_speed(&c), 60, "wings of flying");
+    give_magic(&c, "Ring of Swimming", 0, 0, 0);
+    EQ(magic_swim_speed(&c), 40, "ring of swimming needs no attunement");
+
+    /* Winged boots grant a flying speed equal to the walking speed. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Winged Boots", 1, 0, 0);
+    EQ(magic_fly_speed(&c), speed_of(&c), "winged boots match your speed");
+
+    /* Resistances are collected, including the one the copy names. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    EQ(magic_defences(&c, buf, sizeof buf), 0, "nothing granted yet");
+    give_magic(&c, "Brooch of Shielding", 1, 0, 0);
+    EQ(magic_defences(&c, buf, sizeof buf), 1, "brooch grants one");
+    check(strstr(buf, "force") != NULL, "and it is force damage", 1, 1);
+
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Ring of Resistance", 1, 0, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "lightning");
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "lightning") != NULL,
+          "a ring of resistance names its own damage", 1, 1);
+
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Periapt of Proof against Poison", 0, 0, 0);
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "immune to poison") != NULL, "immunity reads as one",
+          1, 1);
+}
+
+static void test_life_tables(void)
+{
+    int i, j;
+
+    printf("backstory tables\n");
+    check(LIFE_TABLE_COUNT >= 10, "tables read from Xanathar's",
+          LIFE_TABLE_COUNT, 10);
+
+    for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+        const LifeTable *t = &LIFE_TABLES[i];
+        int n = 1, sides = 20, lo, hi, v;
+        const char *d = strchr(t->die, 'd');
+
+        if (!t->name[0] || !t->die[0] || t->count <= 0) {
+            printf("  FAIL a backstory table is incomplete\n");
+            failures++;
+            continue;
+        }
+        if (d && d != t->die) n = t->die[0] - '0';
+        if (d) sides = atoi(d + 1);
+        lo = n;
+        hi = n * sides;
+
+        /* Every result the die can give must land on exactly one row --
+           a gap would leave a roll with no answer, an overlap would make
+           the table ambiguous. */
+        for (v = lo; v <= hi; v++) {
+            int hits = 0;
+            for (j = 0; j < t->count; j++) {
+                if (v >= t->rows[j].lo && v <= t->rows[j].hi) hits++;
+            }
+            if (hits != 1) {
+                printf("  FAIL %s: rolling %d hits %d rows\n", t->name, v,
+                       hits);
+                failures++;
+                break;
+            }
+        }
+
+        /* Rows should read as text, not as leftover OCR marks. */
+        for (j = 0; j < t->count; j++) {
+            const char *txt = t->rows[j].text;
+            size_t len = strlen(txt);
+            if (len < 2 || len > 200) {
+                printf("  FAIL %s has a row of %d characters\n", t->name,
+                       (int)len);
+                failures++;
+                break;
+            }
+            if (strstr(txt, "  ") || txt[len - 1] == '-') {
+                printf("  FAIL %s row reads badly: \"%s\"\n", t->name, txt);
+                failures++;
+                break;
+            }
+        }
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -1109,6 +1280,8 @@ int main(void)
     test_sidekicks();
     test_homebrew_banks();
     test_magic_armour_class();
+    test_magic_scores_and_speeds();
+    test_life_tables();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

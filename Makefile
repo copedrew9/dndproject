@@ -31,6 +31,9 @@ spells:
 beasts:
 	python3 tools/extract_beasts.py
 
+life:
+	python3 tools/extract_life.py
+
 # Assertions on the rules engine.
 TESTBIN  = selftest
 TESTOBJS = $(filter-out $(OBJDIR)/main.o,$(OBJECTS))
@@ -52,4 +55,4 @@ check: test $(BIN)
 clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d
 
-.PHONY: all clean spells check test beasts
+.PHONY: all clean spells check test beasts life

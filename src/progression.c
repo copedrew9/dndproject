@@ -182,6 +182,23 @@ static int feat_available(const Character *c, int f)
         if (!ok) return 0;
     }
     if (fd->req_prof[0] && !has_prof(c, fd->req_prof)) return 0;
+
+    /* Xanathar's racial feats are limited to a race, sometimes a subrace.
+       The requirement lists every race that qualifies, separated by '|'. */
+    if (fd->req_race[0]) {
+        char buf[128];
+        const char *parts[8];
+        int n, k, ok = 0;
+        const char *race = (c->race_id >= 0) ? RACES[c->race_id].name : "";
+        const char *sub = (c->subrace_id >= 0) ? SUBRACES[c->subrace_id].name
+                                               : "";
+
+        n = split_pipe(fd->req_race, buf, sizeof buf, parts, 8);
+        for (k = 0; k < n; k++) {
+            if (!strcmp(parts[k], race) || !strcmp(parts[k], sub)) ok = 1;
+        }
+        if (!ok) return 0;
+    }
     if (fd->req_spellcasting) {
         int casts = 0;
         for (i = 0; i < c->class_count; i++) {

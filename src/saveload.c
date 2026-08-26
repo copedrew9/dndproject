@@ -294,7 +294,22 @@ static void write_sheet(FILE *f, const Character *c)
     section(f, "COMBAT");
     fprintf(f, "  Armor Class      %d\n", armour_class(c));
     fprintf(f, "  Initiative       %+d\n", initiative_bonus(c));
-    fprintf(f, "  Speed            %d ft.\n", speed_of(c));
+    fprintf(f, "  Speed            %d ft.", speed_of(c));
+    {
+        /* Movement a magic item grants, alongside the walking speed. */
+        int fly = magic_fly_speed(c), swim = magic_swim_speed(c);
+        int climb = magic_climb_speed(c);
+        if (fly)   fprintf(f, ", fly %d ft.", fly);
+        if (swim)  fprintf(f, ", swim %d ft.", swim);
+        if (climb) fprintf(f, ", climb %d ft.", climb);
+    }
+    fprintf(f, "\n");
+    {
+        char defences[256];
+        if (magic_defences(c, defences, sizeof defences)) {
+            fprintf(f, "  From your gear:  %s\n", defences);
+        }
+    }
     fprintf(f, "  Hit Points       %d\n", hit_points_max(c));
     fprintf(f, "  Hit Dice         ");
     for (i = 0; i < c->class_count; i++) {
@@ -598,10 +613,11 @@ static void write_data(FILE *f, const Character *c)
     }
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic) {
-            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d\n",
+            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d|%s\n",
                     c->inventory[i].quantity, c->inventory[i].attuned,
                     MAGIC_ITEMS[c->inventory[i].item_id].name,
-                    c->inventory[i].plus, c->inventory[i].equipped);
+                    c->inventory[i].plus, c->inventory[i].equipped,
+                    c->inventory[i].variant);
         } else {
             fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
                     c->inventory[i].equipped,
@@ -870,6 +886,10 @@ int load_character(const char *path, Character *c)
                                n >= 5 ? atoi(fields[4]) : 0);
                 if (n >= 6 && atoi(fields[5])) {
                     c->inventory[c->item_count - 1].equipped = 1;
+                }
+                if (n >= 7) {
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s", fields[6]);
                 }
             } else {
                 warn_unknown("magic item", fields[3]);
