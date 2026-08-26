@@ -99,6 +99,16 @@ static void section(FILE *f, const char *title)
 /* Wraps a long line of prose to the sheet's width at a given indent. The
    sheet is compared against itself by tools/roundtrip.py, so this has to be
    deterministic -- it breaks only at spaces and never rewrites the text. */
+/* A saved character stores names, not table indices, which is what lets the
+   game data grow without invalidating files. The cost is that a name the
+   banks no longer hold -- homebrew the DM has since removed, or a book
+   switched off -- would otherwise vanish from the sheet without a word. */
+static void warn_unknown(const char *kind, const char *name)
+{
+    fprintf(stderr, "  note: this character's %s \"%s\" is not in the "
+                    "current data; it was left out.\n", kind, name);
+}
+
 static void wrap_to(FILE *f, const char *text, int indent)
 {
     const int width = 76;
@@ -782,6 +792,7 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
             if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            else warn_unknown("item", fields[3]);
         } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
             if (c->sidekick_count < MAX_SIDEKICKS) {
                 Sidekick *sk = &c->sidekicks[c->sidekick_count++];
@@ -821,6 +832,7 @@ int load_character(const char *path, Character *c)
             }
         } else if (!strcmp(fields[0], "SKSPELL") && n >= 3) {
             int k, id = index_of_spell(fields[2]);
+            if (id < 0) warn_unknown("sidekick spell", fields[2]);
             for (k = 0; k < c->sidekick_count && id >= 0; k++) {
                 Sidekick *sk = &c->sidekicks[k];
                 if (strcmp(sk->name, fields[1])) continue;
@@ -832,6 +844,8 @@ int load_character(const char *path, Character *c)
             int id = find_magic_item(fields[3]);
             if (id >= 0) {
                 add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            } else {
+                warn_unknown("magic item", fields[3]);
             }
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
             c->copper   = atoi(fields[1]);
@@ -842,6 +856,7 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
             int owner = index_of_class(fields[3]);
+            if (id < 0) warn_unknown("spell", fields[4]);
             if (id >= 0 && c->spell_count < MAX_SPELLS) {
                 c->spells[c->spell_count].spell_id = id;
                 c->spells[c->spell_count].class_id = owner < 0 ? 0 : owner;

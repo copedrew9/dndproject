@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-const MagicItem MAGIC_ITEMS[] = {
+const MagicItem BOOK_MAGIC_ITEMS[] = {
 
 { "Adamantine Armor", BOOK_DMG, "Armor (medium or heavy, not hide)",
   "uncommon", NULL,
@@ -1749,8 +1749,13 @@ const MagicItem MAGIC_ITEMS[] = {
 
 };
 
-const int MAGIC_ITEM_COUNT =
-    (int)(sizeof(MAGIC_ITEMS) / sizeof(MAGIC_ITEMS[0]));
+const int BOOK_MAGIC_ITEM_COUNT =
+    (int)(sizeof(BOOK_MAGIC_ITEMS) / sizeof(BOOK_MAGIC_ITEMS[0]));
+
+/* Until homebrew.c says otherwise, the bank is just the book. */
+const MagicItem *MAGIC_ITEMS = BOOK_MAGIC_ITEMS;
+int MAGIC_ITEM_COUNT =
+    (int)(sizeof(BOOK_MAGIC_ITEMS) / sizeof(BOOK_MAGIC_ITEMS[0]));
 
 int find_magic_item(const char *name)
 {

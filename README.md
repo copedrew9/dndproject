@@ -37,6 +37,8 @@ The main menu offers:
    change what is worn, attune to magic items.
 7. **Manage a character's sidekicks** — add one, level it up, or write it
    out as a sheet of its own.
+8. **Homebrew** — add your own items, magic items and spells to the banks,
+   or take them out again.
 
 ## What it covers
 
@@ -125,6 +127,15 @@ The main menu offers:
   and its spells, and every ability score improvement. A sidekick is saved
   inside its owner's file and can also be written out as its own sheet for
   whoever is running it at the table.
+- **Homebrew** — a DM can add items, magic items and spells of their own.
+  Anything added appears wherever a printed entry would — in the shop, the
+  spell picker, the item reference, on the sheet — and is marked as
+  homebrew. A custom weapon's properties get explained like any other; a
+  custom spell asks which class lists it belongs to, because a spell on no
+  list can never be learned. Entries live in `homebrew.txt` beside the
+  character files, in the same `|`-separated format, so they can be written
+  by hand or shared. Homebrew is a source book like any other in the
+  settings menu, so switching it off hides everything without deleting it.
 - **Backgrounds** — all 13, with their skills, tools, languages, feature, and
   suggested traits, ideals, bonds and flaws.
 
@@ -148,6 +159,12 @@ the loader parses to rebuild the character exactly, which is what makes
 levelling up a saved character possible. It stores *names* rather than table
 indices, so a file stays valid if the game data is extended, and it can be
 edited by hand as long as the field names and separators survive.
+
+Storing names is also what lets homebrew work at all, since a custom entry's
+position in a bank is not stable between runs. The cost is that a name the
+banks no longer hold — homebrew the DM has since removed, or a book switched
+off — cannot be restored. The loader says so on stderr rather than dropping
+it silently.
 
 ## Where the data comes from
 
@@ -288,6 +305,7 @@ src/settings.c         which books and optional rules are in play
 src/reference.c        the item lookup browser
 src/inventory.c        adding, dropping, wearing and attuning
 src/sidekick.c         creating and levelling sidekicks
+src/homebrew.c         the DM's own items and spells, and the banks
 src/build.c            creation wizard, steps 1-4
 src/progression.c      levels, subclasses, ASIs, feats, spells, level-up
 src/gear.c             equipment and personality
@@ -301,9 +319,14 @@ src/main.c             menu and entry point
 Six books: the *Player's Handbook*, *Xanathar's Guide to Everything*,
 *Tasha's Cauldron of Everything*, the *Dungeon Master's Guide* (magic items),
 *Mordenkainen Presents: Monsters of the Multiverse* (races) and the *Monster
-Manual* (beasts). Any of them except the PHB can be switched off in the
-settings menu, which hides their races, classes, subclasses, spells, feats
-and items everywhere in the wizard.
+Manual* (beasts), plus whatever the DM adds as homebrew. Any of them except
+the PHB can be switched off in the settings menu, which hides their races,
+classes, subclasses, spells, feats and items everywhere in the wizard.
+
+The item, magic item and spell banks are pointers rather than fixed arrays,
+so `src/homebrew.c` can replace each with the book's entries followed by the
+DM's. `ITEMS[i]` reads the same either way, which is why adding homebrew
+touched none of the eighty-odd places that read those tables.
 
 Tasha's sidekicks come from that book's chapter 4.
 

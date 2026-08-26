@@ -918,6 +918,51 @@ static void test_sidekicks(void)
     }
 }
 
+static void test_homebrew_banks(void)
+{
+    printf("homebrew banks\n");
+
+    /* With no homebrew loaded, each bank must be exactly what the books
+       give. If these ever drift, something has repointed a bank without
+       going through homebrew.c. */
+    check(ITEMS == BOOK_ITEMS, "item bank starts as the book's", 1, 1);
+    check(SPELLS == BOOK_SPELLS, "spell bank starts as the book's", 1, 1);
+    check(MAGIC_ITEMS == BOOK_MAGIC_ITEMS,
+          "magic item bank starts as the book's", 1, 1);
+    EQ(ITEM_COUNT, BOOK_ITEM_COUNT, "item count");
+    EQ(SPELL_COUNT, BOOK_SPELL_COUNT, "spell count");
+    EQ(MAGIC_ITEM_COUNT, BOOK_MAGIC_ITEM_COUNT, "magic item count");
+
+    /* Homebrew is a source book like any other, so it can be switched off. */
+    EQ(BOOK_HOMEBREW, BOOK_COUNT - 1, "homebrew is the last source");
+    check(book_enabled(BOOK_HOMEBREW), "homebrew is on by default", 1, 1);
+    {
+        Settings s;
+        settings_defaults(&s);
+        EQ(s.book[BOOK_HOMEBREW], 1, "homebrew defaults on");
+    }
+    check(BOOK_NAME[BOOK_HOMEBREW] != NULL && BOOK_NAME[BOOK_HOMEBREW][0],
+          "homebrew has a name", 1, 1);
+    check(BOOK_ABBREV[BOOK_HOMEBREW] != NULL
+          && BOOK_ABBREV[BOOK_HOMEBREW][0], "homebrew has an abbreviation",
+          1, 1);
+
+    /* Nothing in the books should claim to be homebrew. */
+    {
+        int i, stray = 0;
+        for (i = 0; i < BOOK_ITEM_COUNT; i++) {
+            if (BOOK_ITEMS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        for (i = 0; i < BOOK_MAGIC_ITEM_COUNT; i++) {
+            if (BOOK_MAGIC_ITEMS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        for (i = 0; i < BOOK_SPELL_COUNT; i++) {
+            if (BOOK_SPELLS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        EQ(stray, 0, "no printed entry is tagged homebrew");
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -957,6 +1002,7 @@ int main(void)
     test_option_spells();
     test_beasts();
     test_sidekicks();
+    test_homebrew_banks();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

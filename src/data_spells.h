@@ -41,8 +41,14 @@ typedef struct {
     unsigned short classes;     /* SpellClassBit mask */
 } SpellData;
 
-extern const SpellData SPELLS[];
-extern const int SPELL_COUNT;
+/* The bank is a pointer, not an array, so homebrew.c can
+   replace it with a larger one holding the book spells plus
+   whatever the DM has added. SPELLS[i] reads the same either
+   way, and BOOK_SPELLS is what the book itself provides. */
+extern const SpellData *SPELLS;
+extern int SPELL_COUNT;
+extern const SpellData BOOK_SPELLS[];
+extern const int BOOK_SPELL_COUNT;
 extern const char *const SCHOOL_NAMES[SCHOOL_COUNT];
 
 #endif

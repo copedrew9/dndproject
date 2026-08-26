@@ -20,10 +20,11 @@ const char *const BOOK_NAME[BOOK_COUNT] = {
     "Dungeon Master's Guide",
     "Mordenkainen Presents: Monsters of the Multiverse",
     "Monster Manual",
+    "Homebrew (your own items and spells)",
 };
 
 const char *const BOOK_ABBREV[BOOK_COUNT] = {
-    "PHB", "XGE", "TCE", "DMG", "MPMM", "MM",
+    "PHB", "XGE", "TCE", "DMG", "MPMM", "MM", "Homebrew",
 };
 
 void settings_defaults(Settings *s)

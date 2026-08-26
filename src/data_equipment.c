@@ -15,7 +15,7 @@
 /* base_ac / dex_cap / str_req / stealth are meaningful for armour only;
  * dex_cap -1 means the full Dexterity modifier applies, 0 means none. */
 
-const ItemData ITEMS[] = {
+const ItemData BOOK_ITEMS[] = {
 /* ------------------------------- light armour ------------------------------ */
 { "Padded armor", BOOK_PHB,        ITEM_LIGHT_ARMOR,  GP(5),   LB(8),  11, -1, 0, 1, "","","","" },
 { "Leather armor", BOOK_PHB,       ITEM_LIGHT_ARMOR,  GP(10),  LB(10), 11, -1, 0, 0, "","","","" },
@@ -272,7 +272,11 @@ const ItemData ITEMS[] = {
 { "Warship", BOOK_PHB,             ITEM_MOUNT, GP(25000),0, 0,0,0,0,"","","","" },
 { "Galley", BOOK_PHB,              ITEM_MOUNT, GP(30000),0, 0,0,0,0,"","","","" },
 };
-const int ITEM_COUNT = (int)(sizeof(ITEMS) / sizeof(ITEMS[0]));
+const int BOOK_ITEM_COUNT = (int)(sizeof(BOOK_ITEMS) / sizeof(BOOK_ITEMS[0]));
+
+/* Until homebrew.c says otherwise, the bank is just the book. */
+const ItemData *ITEMS = BOOK_ITEMS;
+int ITEM_COUNT = (int)(sizeof(BOOK_ITEMS) / sizeof(BOOK_ITEMS[0]));
 
 int find_item(const char *name)
 {

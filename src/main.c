@@ -7,6 +7,7 @@
 #include "dnd.h"
 #include "data.h"
 #include "build.h"
+#include "homebrew.h"
 #include "inventory.h"
 #include "sidekick.h"
 #include "reference.h"
@@ -176,6 +177,7 @@ int main(int argc, char **argv)
         "Item reference (equipment, magic items, prices)",
         "Manage a character's inventory",
         "Manage a character's sidekicks",
+        "Homebrew (your own items and spells)",
         "Quit"
     };
     unsigned int seed = (unsigned int)time(NULL);
@@ -196,6 +198,16 @@ int main(int argc, char **argv)
     rng_seed(seed);
     settings_defaults(&SETTINGS);
 
+    /* Fold the DM's own items and spells into the banks before anything
+       reads them, so homebrew appears wherever a printed entry would. */
+    {
+        int added = homebrew_load();
+        if (added) {
+            printf("  Loaded %d homebrew entr%s.\n", added,
+                   added == 1 ? "y" : "ies");
+        }
+    }
+
     for (;;) {
         int pick;
 
@@ -204,7 +216,7 @@ int main(int argc, char **argv)
         printf("  D&D 5th Edition Character Creator\n");
         ui_rule();
 
-        pick = ui_menu("  What would you like to do?", menu, NULL, 8);
+        pick = ui_menu("  What would you like to do?", menu, NULL, 9);
         switch (pick) {
         case 0: do_create(); break;
         case 1: do_level_up(); break;
@@ -213,6 +225,7 @@ int main(int argc, char **argv)
         case 4: reference_menu(); break;
         case 5: do_inventory(); break;
         case 6: do_sidekicks(); break;
+        case 7: homebrew_menu(); break;
         default: return 0;
         }
     }

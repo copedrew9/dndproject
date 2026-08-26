@@ -12,7 +12,7 @@ const char *const SCHOOL_NAMES[SCHOOL_COUNT] = {
     "Transmutation",
 };
 
-const SpellData SPELLS[] = {
+const SpellData BOOK_SPELLS[] = {
     { "Abi-dalzim's Horrid Wilting", 1, 8, SCHOOL_NECROMANCY, 0, 0,
       "1 action", "150 feet",
       "V, S, M (a bit of sponge)",
@@ -1923,5 +1923,11 @@ const SpellData SPELLS[] = {
       "10 minutes", SPL_BARD | SPL_CLERIC | SPL_PALADIN },
 };
 
-const int SPELL_COUNT = (int)(sizeof(SPELLS) / sizeof(SPELLS[0]));
+const int BOOK_SPELL_COUNT =
+    (int)(sizeof(BOOK_SPELLS) / sizeof(BOOK_SPELLS[0]));
+
+/* Until homebrew.c says otherwise, the bank is just the book. */
+const SpellData *SPELLS = BOOK_SPELLS;
+int SPELL_COUNT =
+    (int)(sizeof(BOOK_SPELLS) / sizeof(BOOK_SPELLS[0]));
 

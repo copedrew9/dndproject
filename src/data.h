@@ -11,8 +11,9 @@ typedef enum {
     BOOK_XGE,       /* Xanathar's Guide to Everything */
     BOOK_TCE,       /* Tasha's Cauldron of Everything */
     BOOK_DMG,       /* Dungeon Master's Guide */
-    BOOK_MPMM,       /* Mordenkainen's Tome of Foes */
+    BOOK_MPMM,      /* Mordenkainen Presents: Monsters of the Multiverse */
     BOOK_MM,        /* Monster Manual */
+    BOOK_HOMEBREW,  /* whatever the DM has added */
     BOOK_COUNT
 } SourceBook;
 
@@ -300,8 +301,13 @@ typedef struct {
     const char *contents;       /* for packs */
 } ItemData;
 
-extern const ItemData ITEMS[];
-extern const int ITEM_COUNT;
+/* The banks are pointers, not arrays, so homebrew.c can replace them with
+   larger ones holding the book's entries plus whatever the DM has added.
+   ITEMS[i] reads the same either way; BOOK_ITEMS is what the books give. */
+extern const ItemData *ITEMS;
+extern int ITEM_COUNT;
+extern const ItemData BOOK_ITEMS[];
+extern const int BOOK_ITEM_COUNT;
 
 int find_item(const char *name);
 
@@ -467,8 +473,10 @@ typedef struct {
     const char *text;
 } MagicItem;
 
-extern const MagicItem MAGIC_ITEMS[];
-extern const int MAGIC_ITEM_COUNT;
+extern const MagicItem *MAGIC_ITEMS;
+extern int MAGIC_ITEM_COUNT;
+extern const MagicItem BOOK_MAGIC_ITEMS[];
+extern const int BOOK_MAGIC_ITEM_COUNT;
 int find_magic_item(const char *name);
 
 extern const ItemNote WEAPON_PROPERTIES[];

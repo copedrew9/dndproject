@@ -447,8 +447,14 @@ def emit(ordered):
             '    const char *duration;',
             '    unsigned short classes;     /* SpellClassBit mask */',
             '} SpellData;', '',
-            'extern const SpellData SPELLS[];',
-            'extern const int SPELL_COUNT;',
+            '/* The bank is a pointer, not an array, so homebrew.c can',
+            '   replace it with a larger one holding the book spells plus',
+            '   whatever the DM has added. SPELLS[i] reads the same either',
+            '   way, and BOOK_SPELLS is what the book itself provides. */',
+            'extern const SpellData *SPELLS;',
+            'extern int SPELL_COUNT;',
+            'extern const SpellData BOOK_SPELLS[];',
+            'extern const int BOOK_SPELL_COUNT;',
             'extern const char *const SCHOOL_NAMES[SCHOOL_COUNT];', '',
             '#endif']
 
@@ -457,7 +463,7 @@ def emit(ordered):
            'const char *const SCHOOL_NAMES[SCHOOL_COUNT] = {']
     for s in SCHOOLS:
         src.append('    "%s",' % s.capitalize())
-    src += ['};', '', 'const SpellData SPELLS[] = {']
+    src += ['};', '', 'const SpellData BOOK_SPELLS[] = {']
     for sp in ordered:
         bits = " | ".join("SPL_" + c.upper() for c in sorted(sp["classes"]))
         book = {"phb": 0, "xge": 1, "tce": 2}[sp.get("book", "phb")]
@@ -468,7 +474,13 @@ def emit(ordered):
         src.append('      %s,' % cstr(sp["components"]))
         src.append('      %s, %s },' % (cstr(sp["duration"]), bits or "0"))
     src += ['};', '',
-            'const int SPELL_COUNT = (int)(sizeof(SPELLS) / sizeof(SPELLS[0]));',
+            'const int BOOK_SPELL_COUNT =',
+            '    (int)(sizeof(BOOK_SPELLS) / sizeof(BOOK_SPELLS[0]));',
+            '',
+            '/* Until homebrew.c says otherwise, the bank is just the book. */',
+            'const SpellData *SPELLS = BOOK_SPELLS;',
+            'int SPELL_COUNT =',
+            '    (int)(sizeof(BOOK_SPELLS) / sizeof(BOOK_SPELLS[0]));',
             '']
 
     out = os.path.join(ROOT, "src")
