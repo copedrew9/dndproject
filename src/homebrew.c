@@ -235,6 +235,126 @@ static int ask_name(const char *prompt, char *out, size_t n)
     }
 }
 
+/* Prices are held in copper, but nobody thinks in copper: ask for a coin
+ * and an amount. */
+static int ask_price(void)
+{
+    static const char *const coins[] = {
+        "gold pieces", "silver pieces", "copper pieces", "It costs nothing"
+    };
+    static const int per[] = { 100, 10, 1 };
+    int coin = ui_menu("  Priced in:", coins, NULL, 4);
+
+    if (coin == 3) return 0;
+    return ui_int("  How many", 0, 100000) * per[coin];
+}
+
+/* Weight is held in tenths of a pound, which is likewise not how anyone
+ * describes a thing. */
+static int ask_weight(void)
+{
+    int lb, tenths;
+
+    lb = ui_int("  Weight in whole pounds", 0, 10000);
+    tenths = ui_int("  ...and tenths of a pound", 0, 9);
+    return lb * 10 + tenths;
+}
+
+static const char *const DAMAGE_TYPES[] = {
+    "acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic",
+    "piercing", "poison", "psychic", "radiant", "slashing", "thunder"
+};
+static const char *const DAMAGE_DICE[] = {
+    "1d4", "1d6", "1d8", "1d10", "1d12", "2d6", "2d8", "2d10", "1"
+};
+
+/* Armour AC reads three different ways depending on how heavy it is, and
+ * "-1 means add your whole modifier" is not a question anyone can answer.
+ * Ask what it does instead, and translate. */
+static int ask_dex_handling(ItemCategory cat)
+{
+    static const char *const rules[] = {
+        "Add the wearer's full Dexterity modifier (light armor)",
+        "Add Dexterity, but no more than +2 (medium armor)",
+        "Add no Dexterity at all (heavy armor)",
+        "Add Dexterity up to some other cap"
+    };
+    int pick;
+
+    if (cat == ITEM_SHIELD) return 0;   /* a shield is a flat bonus */
+
+    pick = ui_menu("  How does Dexterity apply?", rules, NULL, 4);
+    if (pick == 0) return -1;
+    if (pick == 1) return 2;
+    if (pick == 2) return 0;
+    return ui_int("  Dexterity cap", 1, 10);
+}
+
+static int ask_strength_requirement(void)
+{
+    static const char *const reqs[] = {
+        "None", "Strength 13", "Strength 15", "Some other score"
+    };
+    int pick = ui_menu("  Strength needed to wear it without being slowed:",
+                       reqs, NULL, 4);
+
+    if (pick == 0) return 0;
+    if (pick == 1) return 13;
+    if (pick == 2) return 15;
+    return ui_int("  Strength required", 1, 30);
+}
+
+/* Weapon properties are a fixed list, and three of them carry a number, so
+ * the ones that do are asked for rather than left to be typed in. */
+static void ask_weapon_properties(char *out, size_t n)
+{
+    const char *names[16];
+    int flags[16];
+    int i, count = WEAPON_PROPERTY_COUNT;
+    size_t used = 0;
+
+    if (count > 16) count = 16;
+    for (i = 0; i < count; i++) {
+        names[i] = WEAPON_PROPERTIES[i].item;
+        flags[i] = 0;
+    }
+
+    ui_toggle_list("  Properties:", names, count, flags);
+    out[0] = '\0';
+
+    /* Three of the properties print a number alongside them, so those are
+       asked for once the list is settled. */
+    for (i = 0; i < count; i++) {
+        char detail[64];
+        int w;
+
+        if (!flags[i]) continue;
+        detail[0] = '\0';
+
+        /* Ammunition and thrown weapons print a range; a versatile weapon
+           prints the die it deals in two hands. */
+        if (!strcmp(names[i], "Ammunition") || !strcmp(names[i], "Thrown")
+            || !strcmp(names[i], "Range")) {
+            char range[32], prompt[64];
+            snprintf(prompt, sizeof prompt, "    %s -- range, as normal/long",
+                     names[i]);
+            ui_line_default(prompt, "20/60", range, sizeof range);
+            snprintf(detail, sizeof detail, " (range %s)", range);
+        } else if (!strcmp(names[i], "Versatile")) {
+            char die[16], prompt[64];
+            snprintf(prompt, sizeof prompt,
+                     "    %s -- damage held in two hands", names[i]);
+            ui_line_default(prompt, "1d10", die, sizeof die);
+            snprintf(detail, sizeof detail, " (%s)", die);
+        }
+
+        w = snprintf(out + used, n - used, "%s%s%s", used ? ", " : "",
+                     names[i], detail);
+        if (w < 0 || (size_t)w >= n - used) break;
+        used += (size_t)w;
+    }
+}
+
 static void add_custom_item(void)
 {
     ItemData *it;
@@ -259,40 +379,127 @@ static void add_custom_item(void)
                                              cats, NULL, 12);
     }
 
-    it->cost_cp = ui_int("  Cost in copper pieces (1 gp is 100)", 0, 10000000);
-    it->weight_tenths = ui_int("  Weight in tenths of a pound (1 lb is 10)",
-                               0, 100000);
+    it->cost_cp = ask_price();
+    it->weight_tenths = ask_weight();
 
     if (it->category <= ITEM_SHIELD) {
-        it->base_ac = ui_int("  Base Armor Class", 0, 25);
-        printf("  Dexterity: -1 adds the full modifier, 0 adds none, or "
-               "give a cap.\n");
-        it->dex_cap = ui_int("  Dexterity handling", -1, 10);
-        it->str_req = ui_int("  Strength required (0 for none)", 0, 20);
+        it->base_ac = ui_int(it->category == ITEM_SHIELD
+                             ? "  Armor Class it adds"
+                             : "  Base Armor Class", 0, 25);
+        it->dex_cap = ask_dex_handling(it->category);
+        it->str_req = (it->category == ITEM_SHIELD)
+                    ? 0 : ask_strength_requirement();
         it->stealth_disadvantage =
-            ui_yesno("  Disadvantage on Stealth checks?", 0);
+            ui_yesno("  Disadvantage on Dexterity (Stealth) checks?", 0);
         it->damage = keep(""); it->damage_type = keep("");
         it->properties = keep(""); it->contents = keep("");
     } else if (it->category <= ITEM_MARTIAL_RANGED) {
-        ui_line_default("  Damage dice", "1d6", buf, sizeof buf);
+        ui_pick_or_type("  Damage dice:", DAMAGE_DICE,
+                        (int)(sizeof DAMAGE_DICE / sizeof DAMAGE_DICE[0]),
+                        buf, sizeof buf);
         it->damage = keep(buf);
-        ui_line_default("  Damage type", "slashing", buf, sizeof buf);
+
+        ui_pick_or_type("  Damage type:", DAMAGE_TYPES,
+                        (int)(sizeof DAMAGE_TYPES / sizeof DAMAGE_TYPES[0]),
+                        buf, sizeof buf);
         it->damage_type = keep(buf);
-        ui_line("  Properties (as they would be printed, blank for none)",
-                buf, sizeof buf);
+
+        ask_weapon_properties(buf, sizeof buf);
         it->properties = keep(buf);
         it->contents = keep("");
     } else {
         it->damage = keep(""); it->damage_type = keep("");
         it->properties = keep("");
-        ui_line("  Contents, if it is a pack or kit (blank for none)", buf,
-                sizeof buf);
-        it->contents = keep(buf);
+        if (it->category == ITEM_PACK
+            || ui_yesno("  Does it hold or contain anything?", 0)) {
+            ui_line("  What is in it", buf, sizeof buf);
+            it->contents = keep(buf);
+        } else {
+            it->contents = keep("");
+        }
     }
 
     n_items++;
     rebuild_banks();
     printf("  Added %s to the item bank.\n", it->name);
+}
+
+/* A magic item's stat line opens with its kind, often narrowed in brackets:
+ * "Weapon (any sword)", "Armor (plate)". Ask for the kind, then the
+ * narrowing where one makes sense. */
+static const char *const MAGIC_KINDS[] = {
+    "Wondrous item", "Armor", "Weapon", "Potion", "Ring", "Rod", "Scroll",
+    "Staff", "Wand"
+};
+
+static void ask_magic_type(char *out, size_t n)
+{
+    char kind[MAX_NAME], narrowing[MAX_NAME];
+
+    ui_pick_or_type("  What kind of magic item is it?", MAGIC_KINDS,
+                    (int)(sizeof MAGIC_KINDS / sizeof MAGIC_KINDS[0]),
+                    kind, sizeof kind);
+
+    /* Only some kinds are ever narrowed; a potion or a ring never is. */
+    if (!strcmp(kind, "Armor") || !strcmp(kind, "Weapon")) {
+        printf("  Which sort, if it is limited to one -- \"plate\", "
+               "\"any sword\", \"any axe\".\n");
+        ui_line("  Leave blank for any", narrowing, sizeof narrowing);
+        if (narrowing[0]) {
+            snprintf(out, n, "%s (%s)", kind, narrowing);
+            return;
+        }
+        snprintf(out, n, "%s (any)", kind);
+        return;
+    }
+    snprintf(out, n, "%s", kind);
+}
+
+/* Attunement clauses read as a fixed set of shapes, two of which name a
+ * class or an alignment. */
+static const char *ask_attunement(void)
+{
+    static const char *const shapes[] = {
+        "Anyone can attune to it",
+        "requires attunement",
+        "requires attunement by a spellcaster",
+        "requires attunement by a class",
+        "requires attunement by a creature of a given alignment"
+    };
+    char buf[MAX_TEXT];
+    int pick = ui_menu("  Attunement:", shapes, NULL, 5);
+
+    if (pick == 0) return NULL;
+    if (pick == 1 || pick == 2) return keep(shapes[pick]);
+
+    if (pick == 3) {
+        const char *names[16];
+        int i, n = CLASS_COUNT > 16 ? 16 : CLASS_COUNT;
+        char lower[MAX_NAME];
+        const char *chosen;
+
+        for (i = 0; i < n; i++) names[i] = CLASSES[i].name;
+        chosen = names[ui_menu("  Which class?", names, NULL, n)];
+
+        /* The books write "by a paladin", not "by a Paladin". */
+        for (i = 0; chosen[i] && i < (int)sizeof lower - 1; i++) {
+            lower[i] = (chosen[i] >= 'A' && chosen[i] <= 'Z')
+                     ? (char)(chosen[i] + 32) : chosen[i];
+        }
+        lower[i] = '\0';
+        snprintf(buf, sizeof buf, "requires attunement by a %s", lower);
+        return keep(buf);
+    }
+    {
+        const char *aligns[ALIGN_COUNT];
+        int i;
+        for (i = 0; i < ALIGN_COUNT; i++) aligns[i] = ALIGNMENT_NAME[i];
+        snprintf(buf, sizeof buf,
+                 "requires attunement by a creature of %s alignment",
+                 aligns[ui_menu("  Which alignment?", aligns, NULL,
+                                ALIGN_COUNT)]);
+        return keep(buf);
+    }
 }
 
 static void add_custom_magic_item(void)
@@ -311,25 +518,18 @@ static void add_custom_magic_item(void)
     m->name = keep(buf);
     m->book = BOOK_HOMEBREW;
 
-    ui_line_default("  Type (as a stat line would read it)", "Wondrous item",
-                    buf, sizeof buf);
+    ask_magic_type(buf, sizeof buf);
     m->type = keep(buf);
 
     {
         static const char *const rarities[] = {
             "common", "uncommon", "rare", "very rare", "legendary",
-            "artifact"
+            "artifact", "rarity varies"
         };
-        m->rarity = keep(rarities[ui_menu("  Rarity:", rarities, NULL, 6)]);
+        m->rarity = keep(rarities[ui_menu("  Rarity:", rarities, NULL, 7)]);
     }
 
-    if (ui_yesno("  Does it need attunement?", 0)) {
-        ui_line_default("  Attunement requirement", "requires attunement",
-                        buf, sizeof buf);
-        m->attunement = keep(buf);
-    } else {
-        m->attunement = NULL;
-    }
+    m->attunement = ask_attunement();
 
     ui_line("  What does it do", buf, sizeof buf);
     m->text = keep(buf[0] ? buf : "No description was given.");
@@ -337,6 +537,85 @@ static void add_custom_magic_item(void)
     n_magic++;
     rebuild_banks();
     printf("  Added %s to the magic item bank.\n", m->name);
+}
+
+/* The values the books actually use. Each is offered as a menu with a way
+ * out, so the usual answer is one keypress and an unusual one is still
+ * possible. */
+static const char *const CASTING_TIMES[] = {
+    "1 action", "1 bonus action", "1 reaction", "1 minute", "10 minutes",
+    "1 hour", "8 hours", "12 hours", "24 hours"
+};
+static const char *const SPELL_RANGES[] = {
+    "Self", "Touch", "5 feet", "10 feet", "30 feet", "60 feet", "90 feet",
+    "120 feet", "150 feet", "300 feet", "500 feet", "1 mile", "Sight",
+    "Unlimited"
+};
+static const char *const SPELL_DURATIONS[] = {
+    "Instantaneous", "1 round", "1 minute", "10 minutes", "1 hour",
+    "8 hours", "24 hours", "7 days", "Until dispelled",
+    "Until dispelled or triggered", "Special"
+};
+static const char *const SPELL_LEVELS[] = {
+    "Cantrip", "1st level", "2nd level", "3rd level", "4th level",
+    "5th level", "6th level", "7th level", "8th level", "9th level"
+};
+
+/* Components read as "V, S, M (a pinch of soot)", so they are built from
+ * three toggles and, if there is a material, its description. */
+static void ask_components(char *out, size_t n)
+{
+    static const char *const parts[] = {
+        "Verbal", "Somatic", "Material"
+    };
+    int flags[3] = { 1, 1, 0 };
+    char material[MAX_TEXT / 2];
+    size_t used = 0;
+
+    ui_toggle_list("  Components:", parts, 3, flags);
+
+    out[0] = '\0';
+    if (flags[0]) used += (size_t)snprintf(out + used, n - used, "V");
+    if (flags[1]) used += (size_t)snprintf(out + used, n - used, "%sS",
+                                           used ? ", " : "");
+    if (flags[2]) {
+        used += (size_t)snprintf(out + used, n - used, "%sM",
+                                 used ? ", " : "");
+        ui_line("  What material does it need", material,
+                sizeof material < n - used ? sizeof material : n - used);
+        if (material[0]) {
+            snprintf(out + used, n - used, " (%s)", material);
+        }
+    }
+    if (!out[0]) snprintf(out, n, "None");
+}
+
+/* Which class lists a spell appears on decides who can ever learn it, so it
+ * is a checklist rather than a run of yes-or-no questions. */
+static int ask_spell_classes(unsigned short *classes)
+{
+    static const char *const names[9] = {
+        "Bard", "Cleric", "Druid", "Paladin", "Ranger", "Sorcerer",
+        "Warlock", "Wizard", "Artificer"
+    };
+    static const unsigned short bits[9] = {
+        SPL_BARD, SPL_CLERIC, SPL_DRUID, SPL_PALADIN, SPL_RANGER,
+        SPL_SORCERER, SPL_WARLOCK, SPL_WIZARD, SPL_ARTIFICER
+    };
+    int flags[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int i, set;
+
+    printf("\n  A spell has to be on at least one class list, or nobody "
+           "could ever learn it.\n");
+    set = ui_toggle_list("  Which class spell lists is it on?", names, 9,
+                         flags);
+    if (set == 0) return 0;
+
+    *classes = 0;
+    for (i = 0; i < 9; i++) {
+        if (flags[i]) *classes |= bits[i];
+    }
+    return 1;
 }
 
 static void add_custom_spell(void)
@@ -355,7 +634,8 @@ static void add_custom_spell(void)
     sp->name = keep(buf);
     sp->book = BOOK_HOMEBREW;
 
-    sp->level = (unsigned char)ui_int("  Spell level (0 for a cantrip)", 0, 9);
+    sp->level = (unsigned char)ui_menu("  What level is it?", SPELL_LEVELS,
+                                       NULL, 10);
 
     {
         const char *schools[SCHOOL_COUNT];
@@ -369,39 +649,28 @@ static void add_custom_spell(void)
     sp->concentration =
         (unsigned char)ui_yesno("  Does it need concentration?", 0);
 
-    ui_line_default("  Casting time", "1 action", buf, sizeof buf);
+    ui_pick_or_type("  Casting time:", CASTING_TIMES,
+                    (int)(sizeof CASTING_TIMES / sizeof CASTING_TIMES[0]),
+                    buf, sizeof buf);
     sp->casting_time = keep(buf);
-    ui_line_default("  Range", "60 feet", buf, sizeof buf);
+
+    ui_pick_or_type("  Range:", SPELL_RANGES,
+                    (int)(sizeof SPELL_RANGES / sizeof SPELL_RANGES[0]),
+                    buf, sizeof buf);
     sp->range = keep(buf);
-    ui_line_default("  Components", "V, S", buf, sizeof buf);
+
+    ask_components(buf, sizeof buf);
     sp->components = keep(buf);
-    ui_line_default("  Duration", "Instantaneous", buf, sizeof buf);
+
+    ui_pick_or_type("  Duration:", SPELL_DURATIONS,
+                    (int)(sizeof SPELL_DURATIONS / sizeof SPELL_DURATIONS[0]),
+                    buf, sizeof buf);
     sp->duration = keep(buf);
 
-    /* Which lists it appears on decides who can ever learn it. */
-    {
-        static const char *const names[9] = {
-            "Bard", "Cleric", "Druid", "Paladin", "Ranger", "Sorcerer",
-            "Warlock", "Wizard", "Artificer"
-        };
-        static const unsigned short bits[9] = {
-            SPL_BARD, SPL_CLERIC, SPL_DRUID, SPL_PALADIN, SPL_RANGER,
-            SPL_SORCERER, SPL_WARLOCK, SPL_WIZARD, SPL_ARTIFICER
-        };
-        int i;
-        printf("\n  Which class spell lists is it on? A spell on no list "
-               "can never be learned.\n");
-        sp->classes = 0;
-        for (i = 0; i < 9; i++) {
-            char prompt[64];
-            snprintf(prompt, sizeof prompt, "    %s", names[i]);
-            if (ui_yesno(prompt, 0)) sp->classes |= bits[i];
-        }
-        if (sp->classes == 0) {
-            printf("  No list chosen, so nobody could learn it. Not "
-                   "added.\n");
-            return;
-        }
+    if (!ask_spell_classes(&sp->classes)) {
+        printf("  No class list chosen, so nobody could learn it. Not "
+               "added.\n");
+        return;
     }
 
     n_spells++;

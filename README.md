@@ -130,12 +130,28 @@ The main menu offers:
 - **Homebrew** — a DM can add items, magic items and spells of their own.
   Anything added appears wherever a printed entry would — in the shop, the
   spell picker, the item reference, on the sheet — and is marked as
-  homebrew. A custom weapon's properties get explained like any other; a
-  custom spell asks which class lists it belongs to, because a spell on no
-  list can never be learned. Entries live in `homebrew.txt` beside the
-  character files, in the same `|`-separated format, so they can be written
-  by hand or shared. Homebrew is a source book like any other in the
-  settings menu, so switching it off hides everything without deleting it.
+  homebrew.
+
+  Every field with a known set of answers is a menu rather than something to
+  type: a spell's level, school, casting time, range and duration; its
+  components, as checkboxes that assemble `V, S, M (a pinch of soot)`; and
+  the class lists it belongs to, as a checklist, because a spell on no list
+  can never be learned. An item's price is asked in gold, silver or copper
+  rather than in the copper it is stored as, and its weight in pounds rather
+  than tenths. Armour asks how Dexterity applies — full modifier, capped at
+  +2, or none — instead of asking for the `-1` the table actually holds. A
+  weapon's properties are ticked off the real list of eleven, and the three
+  that carry a number (ammunition, thrown, versatile) ask for it. A magic
+  item's kind, rarity and attunement clause are all menus, and the two
+  attunement shapes that name a class or an alignment offer those too.
+
+  What is left to type is only what is genuinely free: names, descriptions,
+  a material component, what is inside a pack.
+
+  Entries live in `homebrew.txt` beside the character files, in the same
+  `|`-separated format, so they can be written by hand or shared. Homebrew
+  is a source book like any other in the settings menu, so switching it off
+  hides everything without deleting it.
 - **Backgrounds** — all 13, with their skills, tools, languages, feature, and
   suggested traits, ideals, bonds and flaws.
 

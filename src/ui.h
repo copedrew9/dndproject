@@ -41,6 +41,15 @@ int  roll_die(int sides);
 int  roll_dice(int count, int sides);
 int  roll_4d6_drop_lowest(void);
 
+/* A menu whose last entry lets the answer be typed instead. */
+void ui_pick_or_type(const char *prompt, const char *const *options,
+                     int count, char *out, size_t n);
+
+/* Checkboxes: toggle entries on and off until done. flags[] is both the
+   starting state and the answer; returns how many ended up set. */
+int  ui_toggle_list(const char *prompt, const char *const *options,
+                    int count, int *flags);
+
 /* Case-insensitive substring test; returns 1 when needle is empty. */
 int  contains_ci(const char *haystack, const char *needle);
 

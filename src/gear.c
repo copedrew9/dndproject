@@ -554,29 +554,17 @@ void choose_equipment(Character *c)
 
 /* ------------------------------------------------------------- personality */
 
+/* The background's suggestions are a NULL-terminated array; the shared
+   helper wants a count, so this counts and hands over. */
 static void pick_or_type(const char *label, const char *const *suggestions,
                          char *out, size_t n)
 {
-    const char *opts[10];
-    int count = 0, pick;
+    char prompt[128];
+    int count = 0;
 
-    while (count < 9 && suggestions[count]) {
-        opts[count] = suggestions[count];
-        count++;
-    }
-    opts[count] = "Write my own";
-
-    {
-        char prompt[128];
-        snprintf(prompt, sizeof prompt, "  %s:", label);
-        pick = ui_menu(prompt, opts, NULL, count + 1);
-    }
-    if (pick == count) {
-        ui_line("  Enter your own", out, n);
-    } else {
-        strncpy(out, opts[pick], n - 1);
-        out[n - 1] = '\0';
-    }
+    while (count < 9 && suggestions[count]) count++;
+    snprintf(prompt, sizeof prompt, "  %s:", label);
+    ui_pick_or_type(prompt, suggestions, count, out, n);
 }
 
 /* ------------------------------------------------------------------ faith */

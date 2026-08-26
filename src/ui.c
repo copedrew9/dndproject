@@ -283,6 +283,57 @@ int contains_ci(const char *haystack, const char *needle)
     return 0;
 }
 
+/* A menu with a way out: the last entry lets the answer be typed instead.
+   Used wherever the books have a usual set of answers but not a closed one --
+   a spell's range, a magic item's type -- so the common case is one keypress
+   and the unusual case is still possible. */
+void ui_pick_or_type(const char *prompt, const char *const *options,
+                     int count, char *out, size_t n)
+{
+    const char *opts[64];
+    int i, pick;
+
+    if (count > 63) count = 63;
+    for (i = 0; i < count; i++) opts[i] = options[i];
+    opts[count] = "Something else";
+
+    pick = ui_menu(prompt, opts, NULL, count + 1);
+    if (pick == count) {
+        ui_line("  Type it", out, n);
+    } else {
+        snprintf(out, n, "%s", options[pick]);
+    }
+}
+
+/* A list of things that can each be on or off, shown with checkboxes and
+   toggled until the reader is done. flags[] is both the starting state and
+   the answer. Returns how many ended up set. */
+int ui_toggle_list(const char *prompt, const char *const *options,
+                   int count, int *flags)
+{
+    if (count > 63) count = 63;
+
+    for (;;) {
+        const char *opts[65];
+        static char labels[65][96];
+        int i, pick, set = 0;
+
+        for (i = 0; i < count; i++) {
+            snprintf(labels[i], sizeof labels[i], "[%c] %s",
+                     flags[i] ? 'x' : ' ', options[i]);
+            opts[i] = labels[i];
+            if (flags[i]) set++;
+        }
+        snprintf(labels[count], sizeof labels[count],
+                 "Done (%d chosen)", set);
+        opts[count] = labels[count];
+
+        pick = ui_menu(prompt, opts, NULL, count + 1);
+        if (pick == count) return set;
+        flags[pick] = !flags[pick];
+    }
+}
+
 int split_pipe(const char *src, char *buf, size_t bufsz,
                const char **out, int max)
 {
