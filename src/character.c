@@ -133,12 +133,59 @@ int skill_bonus(const Character *c, Skill s)
     return bonus;
 }
 
+/* The rule a carried magic item brings, if it brings one and it is actually
+ * in effect: an item needing attunement does nothing until attuned, and
+ * armour or a shield does nothing until worn. */
+static const MagicRule *rule_in_effect(const Character *c, int i)
+{
+    const InventoryEntry *e = &c->inventory[i];
+    const MagicItem *m;
+    const MagicRule *r;
+
+    if (!e->is_magic) return NULL;
+    m = &MAGIC_ITEMS[e->item_id];
+    r = magic_rule_for(m->name);
+    if (!r) return NULL;
+
+    if (m->attunement && !e->attuned) return NULL;
+    if ((r->armor_base || r->shield) && !e->equipped) return NULL;
+    return r;
+}
+
+/* The magic armour a character is wearing, if any. */
+static const InventoryEntry *worn_magic_armour(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r && r->armor_base) return &c->inventory[i];
+    }
+    return NULL;
+}
+
+static const InventoryEntry *worn_magic_shield(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r && r->shield) return &c->inventory[i];
+    }
+    return NULL;
+}
+
 int save_bonus(const Character *c, Ability a)
 {
     int bonus = ability_mod(c, a);
+    int i;
+
     /* A monk of 14th level is proficient in every saving throw. */
     if (c->save_prof[a] || class_level_of(c, CLS_MONK) >= 14) {
         bonus += proficiency_bonus(c);
+    }
+    /* A ring or cloak of protection raises every save, not just one. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r) bonus += r->save_bonus;
     }
     return bonus;
 }
@@ -167,14 +214,27 @@ int armour_class(const Character *c)
 {
     const InventoryEntry *armour = NULL;
     const InventoryEntry *shield = equipped_of(c, ITEM_SHIELD);
+    const InventoryEntry *magic_armour = worn_magic_armour(c);
+    const InventoryEntry *magic_shield = worn_magic_shield(c);
     int dex = ability_mod(c, ABL_DEX);
-    int best, cat;
+    int best, cat, i;
+    int wearing_armour, using_shield;
 
     for (cat = ITEM_LIGHT_ARMOR; cat <= ITEM_HEAVY_ARMOR && !armour; cat++) {
         armour = equipped_of(c, (ItemCategory)cat);
     }
 
-    if (armour) {
+    wearing_armour = (armour != NULL) || (magic_armour != NULL);
+    using_shield = (shield != NULL) || (magic_shield != NULL);
+
+    if (magic_armour) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[magic_armour->item_id].name);
+        int add = (r->armor_dex < 0) ? dex
+                : (r->armor_dex == 0) ? 0
+                : (dex < r->armor_dex ? dex : r->armor_dex);
+        best = r->armor_base + add;
+    } else if (armour) {
         const ItemData *it = &ITEMS[armour->item_id];
         int add = (it->dex_cap < 0) ? dex
                 : (it->dex_cap == 0) ? 0
@@ -186,7 +246,7 @@ int armour_class(const Character *c)
 
     /* Unarmored Defense and Draconic Resilience apply only without armour;
        the monk's version also forbids a shield. */
-    if (!armour) {
+    if (!wearing_armour) {
         int alt;
         if (class_level_of(c, CLS_BARBARIAN) >= 1) {
             alt = 10 + dex + ability_mod(c, ABL_CON);
@@ -196,14 +256,41 @@ int armour_class(const Character *c)
             alt = 13 + dex;
             if (alt > best) best = alt;
         }
-        if (class_level_of(c, CLS_MONK) >= 1 && !shield) {
+        if (class_level_of(c, CLS_MONK) >= 1 && !using_shield) {
             alt = 10 + dex + ability_mod(c, ABL_WIS);
             if (alt > best) best = alt;
         }
+
+        /* A robe that sets the base outright, rather than adding to it. */
+        for (i = 0; i < c->item_count; i++) {
+            const MagicRule *r = rule_in_effect(c, i);
+            if (r && r->unarmored_base) {
+                alt = r->unarmored_base + dex;
+                if (alt > best) best = alt;
+            }
+        }
     }
 
-    if (shield) best += ITEMS[shield->item_id].base_ac;
-    if (has_named_feat(c, "Dual Wielder") && !shield) {
+    if (magic_shield) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[magic_shield->item_id].name);
+        best += r->shield + (r->variable ? magic_shield->plus : 0);
+    } else if (shield) {
+        best += ITEMS[shield->item_id].base_ac;
+    }
+
+    /* Everything else worn or attuned that adds flatly. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (!r) continue;
+        if (r->armor_base || r->shield) continue;      /* already counted */
+        if (r->only_unarmored && (wearing_armour || using_shield)) continue;
+        if (r->unarmored_base) continue;               /* handled above */
+        best += r->ac_bonus;
+        if (r->variable) best += c->inventory[i].plus;
+    }
+
+    if (has_named_feat(c, "Dual Wielder") && !using_shield) {
         /* +1 only while wielding two weapons; recorded here as the best case. */
         best += 1;
     }

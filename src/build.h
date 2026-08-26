@@ -21,7 +21,8 @@ void add_item(Character *c, int item_id, int qty, int equipped);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 
 /* Magic items live in the same list, flagged so they index MAGIC_ITEMS. */
-void add_magic_item(Character *c, int magic_id, int qty, int attuned);
+void add_magic_item(Character *c, int magic_id, int qty, int attuned,
+                    int plus);
 void remove_inventory_entry(Character *c, int index, int qty);
 int  attuned_count(const Character *c);
 int  has_prof(const Character *c, const char *prof);

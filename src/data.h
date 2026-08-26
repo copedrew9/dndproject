@@ -479,6 +479,28 @@ extern const MagicItem BOOK_MAGIC_ITEMS[];
 extern const int BOOK_MAGIC_ITEM_COUNT;
 int find_magic_item(const char *name);
 
+/* The handful of magic items that change a number the sheet computes.
+ * Kept beside MAGIC_ITEMS rather than inside it, because it describes about
+ * twenty of the two hundred and seventy entries. Only unconditional effects
+ * live here; anything situational stays prose. */
+typedef struct {
+    const char *item;           /* names a MAGIC_ITEMS entry */
+    int ac_bonus;               /* flat, added to Armor Class */
+    int save_bonus;             /* flat, added to every saving throw */
+    int armor_base;             /* >0 when the item is itself armour */
+    int armor_dex;              /* -1 full modifier, 0 none, N a cap */
+    int armor_str;              /* Strength needed to avoid being slowed */
+    int armor_stealth;          /* disadvantage on Stealth */
+    int shield;                 /* the whole shield bonus, its own +2 too */
+    int only_unarmored;         /* applies only with no armour or shield */
+    int unarmored_base;         /* sets the unarmoured base AC instead */
+    int variable;               /* the bonus is the copy's own +N */
+} MagicRule;
+
+extern const MagicRule MAGIC_RULES[];
+extern const int MAGIC_RULE_COUNT;
+const MagicRule *magic_rule_for(const char *name);
+
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;
 

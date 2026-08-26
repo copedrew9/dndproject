@@ -73,6 +73,7 @@ typedef struct {
     int equipped;       /* armour/shield actually worn */
     int is_magic;
     int attuned;        /* magic items only; at most three at a time */
+    int plus;           /* for a +1/+2/+3 item, which one this copy is */
 } InventoryEntry;
 
 #define MAX_ATTUNED 3

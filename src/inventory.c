@@ -24,8 +24,15 @@ static void entry_line(const Character *c, int i, char *out, size_t n)
 
     if (e->is_magic) {
         const MagicItem *m = &MAGIC_ITEMS[e->item_id];
-        snprintf(out, n, "%2d x %-30s %-14s%s", e->quantity, m->name,
-                 m->rarity, e->attuned ? " (attuned)" : "");
+        char name[64];
+        if (e->plus) {
+            snprintf(name, sizeof name, "%s [+%d]", m->name, e->plus);
+        } else {
+            snprintf(name, sizeof name, "%s", m->name);
+        }
+        snprintf(out, n, "%2d x %-30s %-14s%s%s", e->quantity, name,
+                 m->rarity, e->attuned ? " (attuned)" : "",
+                 e->equipped ? " (worn)" : "");
     } else {
         const ItemData *it = &ITEMS[e->item_id];
         snprintf(out, n, "%2d x %-30s %-14s%s", e->quantity, it->name,
@@ -159,9 +166,17 @@ static void add_magic(Character *c)
 
         {
             int qty = ui_int("  How many", 1, 99);
-            int attune = 0;
+            int attune = 0, plus = 0;
             const MagicItem *m = &MAGIC_ITEMS[map[pick]];
+            const MagicRule *r = magic_rule_for(m->name);
 
+            /* An entry covering +1, +2 and +3 has to say which this copy is
+               before the sheet can count it. */
+            if (r && r->variable) {
+                static const char *const which[] = { "+1", "+2", "+3" };
+                plus = ui_menu("  Which bonus is this one?", which, NULL, 3)
+                     + 1;
+            }
             if (m->attunement) {
                 if (attuned_count(c) >= MAX_ATTUNED) {
                     printf("  You are already attuned to %d items, so this "
@@ -170,8 +185,12 @@ static void add_magic(Character *c)
                     attune = ui_yesno("  Attune to it now?", 1);
                 }
             }
-            add_magic_item(c, map[pick], qty, attune);
+            add_magic_item(c, map[pick], qty, attune, plus);
             printf("  Added %d x %s.\n", qty, m->name);
+            if (r && (r->armor_base || r->shield)) {
+                printf("  It only counts towards Armor Class once you wear "
+                       "it.\n");
+            }
             if (!ui_yesno("  Pick up another magic item?", 0)) return;
         }
     }
@@ -205,6 +224,25 @@ static void remove_gear(Character *c)
 
 /* ------------------------------------------------------ wearing and wielding */
 
+/* Armour and shields come from two tables now, so these answer the two
+   questions the equip screen needs without caring which. */
+static int entry_is_shield(const Character *c, int i)
+{
+    if (c->inventory[i].is_magic) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+        return r && r->shield;
+    }
+    return ITEMS[c->inventory[i].item_id].category == ITEM_SHIELD;
+}
+
+static const char *entry_name(const Character *c, int i)
+{
+    return c->inventory[i].is_magic
+         ? MAGIC_ITEMS[c->inventory[i].item_id].name
+         : ITEMS[c->inventory[i].item_id].name;
+}
+
 /* Only one suit of armour and one shield can be worn at a time, so equipping
  * one takes the other off rather than silently stacking two armour bonuses. */
 static void equip_gear(Character *c)
@@ -215,10 +253,15 @@ static void equip_gear(Character *c)
         int map[MAX_ITEMS], n = 0, i, pick;
 
         for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
-            ItemCategory cat;
-            if (c->inventory[i].is_magic) continue;
-            cat = ITEMS[c->inventory[i].item_id].category;
-            if (cat > ITEM_SHIELD) continue;      /* armour and shields only */
+            if (c->inventory[i].is_magic) {
+                /* Magic armour and shields are worn like any other. */
+                const MagicRule *r =
+                    magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+                if (!r || (!r->armor_base && !r->shield)) continue;
+            } else {
+                ItemCategory cat = ITEMS[c->inventory[i].item_id].category;
+                if (cat > ITEM_SHIELD) continue;  /* armour and shields only */
+            }
             entry_line(c, i, lines[n], sizeof lines[n]);
             opts[n] = lines[n];
             map[n] = i;
@@ -236,26 +279,25 @@ static void equip_gear(Character *c)
 
         {
             int idx = map[pick];
-            ItemCategory cat = ITEMS[c->inventory[idx].item_id].category;
+            int is_shield = entry_is_shield(c, idx);
             int wearing = c->inventory[idx].equipped;
+            const char *what = entry_name(c, idx);
 
             if (wearing) {
                 c->inventory[idx].equipped = 0;
-                printf("  Took off %s.\n", ITEMS[c->inventory[idx].item_id].name);
+                printf("  Took off %s.\n", what);
             } else {
-                /* Take off anything of the same kind first. */
+                /* One suit of armour and one shield at a time, whether
+                   either of them is magical or not. */
                 for (i = 0; i < c->item_count; i++) {
-                    if (c->inventory[i].is_magic) continue;
                     if (i == idx) continue;
-                    if (ITEMS[c->inventory[i].item_id].category == cat
-                        || (cat != ITEM_SHIELD
-                            && ITEMS[c->inventory[i].item_id].category
-                               <= ITEM_HEAVY_ARMOR)) {
+                    if (!c->inventory[i].equipped) continue;
+                    if (entry_is_shield(c, i) == is_shield) {
                         c->inventory[i].equipped = 0;
                     }
                 }
                 c->inventory[idx].equipped = 1;
-                printf("  Wearing %s.\n", ITEMS[c->inventory[idx].item_id].name);
+                printf("  Wearing %s.\n", what);
             }
             printf("  Armor Class is now %d.\n", armour_class(c));
         }

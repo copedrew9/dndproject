@@ -963,6 +963,111 @@ static void test_homebrew_banks(void)
     }
 }
 
+/* Adds a magic item by name and returns whether it landed. */
+static int give_magic(Character *c, const char *name, int attuned, int plus,
+                      int equipped)
+{
+    int id = find_magic_item(name);
+    if (id < 0) return 0;
+    add_magic_item(c, id, 1, attuned, plus);
+    c->inventory[c->item_count - 1].equipped = equipped;
+    return 1;
+}
+
+static void test_magic_armour_class(void)
+{
+    Character c;
+
+    printf("magic items in Armor Class\n");
+
+    /* Every rule must name a magic item that exists, or it silently never
+       fires. */
+    {
+        int i;
+        for (i = 0; i < MAGIC_RULE_COUNT; i++) {
+            if (find_magic_item(MAGIC_RULES[i].item) < 0) {
+                printf("  FAIL magic rule names no item: \"%s\"\n",
+                       MAGIC_RULES[i].item);
+                failures++;
+            }
+        }
+    }
+
+    /* A ring of protection is +1 AC and +1 to every save -- but only once
+       attuned. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    c.base_score[ABL_CON] = 10;
+    c.base_score[ABL_STR] = 10;
+    EQ(armour_class(&c), 10, "unarmoured, no magic");
+    check(give_magic(&c, "Ring of Protection", 0, 0, 0),
+          "ring of protection exists", 1, 1);
+    EQ(armour_class(&c), 10, "unattuned ring does nothing");
+    c.inventory[c.item_count - 1].attuned = 1;
+    EQ(armour_class(&c), 11, "attuned ring is +1 AC");
+    EQ(save_bonus(&c, ABL_STR), 1, "attuned ring is +1 to saves");
+
+    /* Bracers of Defense are +2, but only with no armour and no shield. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Bracers of Defense", 1, 0, 0);
+    EQ(armour_class(&c), 12, "bracers of defense unarmoured");
+    add_item_by_name(&c, "Chain mail", 1, 1);
+    EQ(armour_class(&c), 16, "bracers do nothing in armour");
+
+    /* Magic armour replaces the base, and only counts once worn. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Dwarven Plate", 0, 0, 0);
+    EQ(armour_class(&c), 10, "dwarven plate carried, not worn");
+    c.inventory[c.item_count - 1].equipped = 1;
+    EQ(armour_class(&c), 20, "dwarven plate worn is AC 20");
+
+    /* Elven chain caps Dexterity at +2 like the chain shirt it is. */
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_DEX] = 20;                   /* +5, capped to +2 */
+    give_magic(&c, "Elven Chain", 0, 0, 1);
+    EQ(armour_class(&c), 16, "elven chain with high Dexterity");
+
+    /* A +2 shield is the shield's own +2 plus the enchantment. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Shield, +1, +2, or +3", 0, 2, 1);
+    EQ(armour_class(&c), 14, "a +2 shield is +4 in total");
+
+    /* Bonuses stack: magic armour, a magic shield and a worn ring. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Dwarven Plate", 0, 0, 1);
+    give_magic(&c, "Shield, +1, +2, or +3", 0, 1, 1);
+    give_magic(&c, "Cloak of Protection", 1, 0, 0);
+    c.base_score[ABL_WIS] = 10;
+    EQ(armour_class(&c), 24, "plate 20, shield +3, cloak +1");
+    EQ(save_bonus(&c, ABL_WIS), 1, "cloak raises saves too");
+
+    /* Magic armour still switches off a barbarian's Unarmored Defense. */
+    reset(&c);
+    add_class(&c, CLS_BARBARIAN, 1, -1);
+    c.base_score[ABL_DEX] = 16;                   /* +3 */
+    c.base_score[ABL_CON] = 16;                   /* +3 */
+    EQ(armour_class(&c), 16, "barbarian unarmoured");
+    give_magic(&c, "Dwarven Plate", 0, 0, 1);
+    EQ(armour_class(&c), 20, "plate replaces Unarmored Defense");
+
+    /* The robe sets the unarmoured base rather than adding to it. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 1, -1);
+    c.base_score[ABL_DEX] = 14;                   /* +2 */
+    give_magic(&c, "Robe of the Archmagi", 1, 0, 0);
+    EQ(armour_class(&c), 17, "robe of the archmagi is 15 + Dexterity");
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -1003,6 +1108,7 @@ int main(void)
     test_beasts();
     test_sidekicks();
     test_homebrew_banks();
+    test_magic_armour_class();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

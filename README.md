@@ -321,6 +321,7 @@ src/settings.c         which books and optional rules are in play
 src/reference.c        the item lookup browser
 src/inventory.c        adding, dropping, wearing and attuning
 src/sidekick.c         creating and levelling sidekicks
+src/data_magicrules.c  the magic items that change a computed number
 src/homebrew.c         the DM's own items and spells, and the banks
 src/build.c            creation wizard, steps 1-4
 src/progression.c      levels, subclasses, ASIs, feats, spells, level-up
@@ -351,8 +352,16 @@ because the books do not give one: the specific artisan's tools a background
 grants, and which magic item an artificer's Replicate Magic Item infusion
 copies.
 
-Magic items are recorded and described but their effects are not folded into
-the derived numbers — most of what they grant is conditional on being worn,
-attuned, charged or in the right situation, and half-applying that would
-produce a sheet you could not trust. The sheet says as much where the magic
-items are listed.
+Magic items that change Armor Class or saving throws flatly and
+unconditionally are computed: a ring or cloak of protection, bracers of
+defense, a staff of power, magic armour and shields, and the +1/+2/+3
+entries once you say which one a copy is. `src/data_magicrules.c` holds
+those, keyed by name, and the sheet lists exactly which items the numbers
+above already account for so nothing is counted twice. An item does nothing
+until it is attuned if it needs attunement, and armour and shields do
+nothing until worn.
+
+Anything situational stays prose and is applied at the table: the Defender's
+bonus is re-split between attack and AC every turn, an arrow-catching
+shield's extra +2 applies only against ranged attacks, a robe of
+scintillating colors imposes disadvantage rather than changing a number.

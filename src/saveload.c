@@ -462,11 +462,32 @@ static void write_sheet(FILE *f, const Character *c)
             section(f, "MAGIC ITEMS");
             fprintf(f, "  Attuned to %d of %d\n", attuned_count(c),
                     MAX_ATTUNED);
-            fprintf(f, "  What these items grant is not folded into the "
-                       "numbers above: most of it is\n"
-                       "  conditional on being worn, attuned, charged or "
-                       "in the right situation.\n"
-                       "  Apply them at the table.\n");
+            {
+                /* Say which ones the numbers above already account for, so
+                   nobody counts a ring of protection twice. */
+                int counted = 0, k;
+                for (k = 0; k < c->item_count; k++) {
+                    const MagicItem *mm;
+                    const MagicRule *rr;
+                    if (!c->inventory[k].is_magic) continue;
+                    mm = &MAGIC_ITEMS[c->inventory[k].item_id];
+                    rr = magic_rule_for(mm->name);
+                    if (!rr) continue;
+                    if (mm->attunement && !c->inventory[k].attuned) continue;
+                    if ((rr->armor_base || rr->shield)
+                        && !c->inventory[k].equipped) continue;
+                    if (!counted) {
+                        fprintf(f, "\n  Already counted in the Armor Class "
+                                   "and saving throws above:\n");
+                        counted = 1;
+                    }
+                    fprintf(f, "    %s\n", mm->name);
+                }
+            }
+            fprintf(f, "\n  Anything not listed as counted is applied at the "
+                       "table: most of what a magic\n"
+                       "  item grants depends on being worn, charged, or in "
+                       "the right situation.\n");
             for (i = 0; i < c->item_count; i++) {
                 const MagicItem *m;
                 if (!c->inventory[i].is_magic) continue;
@@ -577,9 +598,10 @@ static void write_data(FILE *f, const Character *c)
     }
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic) {
-            fprintf(f, "MAGICITEM|%d|%d|%s\n", c->inventory[i].quantity,
-                    c->inventory[i].attuned,
-                    MAGIC_ITEMS[c->inventory[i].item_id].name);
+            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d\n",
+                    c->inventory[i].quantity, c->inventory[i].attuned,
+                    MAGIC_ITEMS[c->inventory[i].item_id].name,
+                    c->inventory[i].plus, c->inventory[i].equipped);
         } else {
             fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
                     c->inventory[i].equipped,
@@ -843,7 +865,12 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
             int id = find_magic_item(fields[3]);
             if (id >= 0) {
-                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]));
+                /* Older files have no plus or worn column; both read as 0. */
+                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]),
+                               n >= 5 ? atoi(fields[4]) : 0);
+                if (n >= 6 && atoi(fields[5])) {
+                    c->inventory[c->item_count - 1].equipped = 1;
+                }
             } else {
                 warn_unknown("magic item", fields[3]);
             }

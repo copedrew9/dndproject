@@ -142,17 +142,19 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     c->inventory[c->item_count].equipped = equipped;
     c->inventory[c->item_count].is_magic = 0;
     c->inventory[c->item_count].attuned = 0;
+    c->inventory[c->item_count].plus = 0;
     c->item_count++;
 }
 
-void add_magic_item(Character *c, int magic_id, int qty, int attuned)
+void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
 {
     int i;
     if (magic_id < 0 || magic_id >= MAGIC_ITEM_COUNT || qty <= 0) return;
 
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic && c->inventory[i].item_id == magic_id
-            && c->inventory[i].attuned == attuned) {
+            && c->inventory[i].attuned == attuned
+            && c->inventory[i].plus == plus) {
             c->inventory[i].quantity += qty;
             return;
         }
@@ -163,6 +165,7 @@ void add_magic_item(Character *c, int magic_id, int qty, int attuned)
     c->inventory[c->item_count].equipped = 0;
     c->inventory[c->item_count].is_magic = 1;
     c->inventory[c->item_count].attuned = attuned;
+    c->inventory[c->item_count].plus = plus;
     c->item_count++;
 }
 
