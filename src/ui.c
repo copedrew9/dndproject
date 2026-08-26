@@ -1,0 +1,265 @@
+/* ui.c -- console prompts, menus and dice. */
+#include "ui.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define LINE_WIDTH 76
+
+/* Reading input ------------------------------------------------------------ */
+
+/* Reads a line into buf. Returns 0 on end of input, which the callers treat
+   as an abort so the program never spins on a closed stdin. */
+static int read_line(char *buf, size_t n)
+{
+    if (!fgets(buf, (int)n, stdin)) return 0;
+    buf[strcspn(buf, "\r\n")] = '\0';
+    return 1;
+}
+
+static void input_closed(void)
+{
+    fprintf(stderr, "\nInput ended unexpectedly; exiting without saving.\n");
+    exit(1);
+}
+
+/* Output ------------------------------------------------------------------- */
+
+void ui_rule(void)
+{
+    int i;
+    for (i = 0; i < LINE_WIDTH; i++) putchar('-');
+    putchar('\n');
+}
+
+void ui_header(const char *title)
+{
+    printf("\n");
+    ui_rule();
+    printf("  %s\n", title);
+    ui_rule();
+}
+
+/* Word-wraps text to LINE_WIDTH, honouring an indent on every line. */
+void ui_wrap(const char *text, int indent)
+{
+    int col = 0;
+    const char *p = text;
+
+    while (*p) {
+        const char *word = p;
+        int len = 0;
+        while (*p && !isspace((unsigned char)*p)) { p++; len++; }
+
+        if (col == 0) {
+            printf("%*s", indent, "");
+            col = indent;
+        } else if (col + 1 + len > LINE_WIDTH) {
+            printf("\n%*s", indent, "");
+            col = indent;
+        } else {
+            putchar(' ');
+            col++;
+        }
+        fwrite(word, 1, (size_t)len, stdout);
+        col += len;
+
+        while (*p && isspace((unsigned char)*p)) {
+            if (*p == '\n') {
+                putchar('\n');
+                col = 0;
+            }
+            p++;
+        }
+    }
+    if (col) putchar('\n');
+}
+
+void ui_para(const char *text)
+{
+    ui_wrap(text, 2);
+}
+
+/* Prompts ------------------------------------------------------------------ */
+
+int ui_int(const char *prompt, int lo, int hi)
+{
+    char buf[128];
+
+    for (;;) {
+        char *end;
+        long v;
+
+        printf("%s [%d-%d]: ", prompt, lo, hi);
+        fflush(stdout);
+        if (!read_line(buf, sizeof buf)) input_closed();
+
+        v = strtol(buf, &end, 10);
+        while (*end && isspace((unsigned char)*end)) end++;
+        if (end != buf && *end == '\0' && v >= lo && v <= hi) return (int)v;
+
+        printf("  Please enter a whole number between %d and %d.\n", lo, hi);
+    }
+}
+
+int ui_line(const char *prompt, char *out, size_t n)
+{
+    printf("%s: ", prompt);
+    fflush(stdout);
+    if (!read_line(out, n)) input_closed();
+    return (int)strlen(out);
+}
+
+void ui_line_default(const char *prompt, const char *def, char *out, size_t n)
+{
+    char buf[512];
+
+    printf("%s [%s]: ", prompt, def);
+    fflush(stdout);
+    if (!read_line(buf, sizeof buf)) input_closed();
+
+    if (buf[0] == '\0') {
+        strncpy(out, def, n - 1);
+        out[n - 1] = '\0';
+    } else {
+        strncpy(out, buf, n - 1);
+        out[n - 1] = '\0';
+    }
+}
+
+int ui_yesno(const char *prompt, int def_yes)
+{
+    char buf[64];
+
+    for (;;) {
+        printf("%s [%s]: ", prompt, def_yes ? "Y/n" : "y/N");
+        fflush(stdout);
+        if (!read_line(buf, sizeof buf)) input_closed();
+
+        if (buf[0] == '\0') return def_yes;
+        if (buf[0] == 'y' || buf[0] == 'Y') return 1;
+        if (buf[0] == 'n' || buf[0] == 'N') return 0;
+        printf("  Please answer y or n.\n");
+    }
+}
+
+int ui_menu(const char *prompt, const char *const *options,
+            const char *const *details, int count)
+{
+    int i;
+
+    printf("\n%s\n", prompt);
+    for (i = 0; i < count; i++) {
+        printf("  %2d) %s\n", i + 1, options[i]);
+        if (details && details[i] && details[i][0]) ui_wrap(details[i], 6);
+    }
+    return ui_int("  Choose", 1, count) - 1;
+}
+
+void ui_multi(const char *prompt, const char *const *options,
+              const int *available, int count, int n, int *picks)
+{
+    int chosen = 0;
+    int taken[256];
+    int i;
+
+    memset(taken, 0, sizeof taken);
+
+    printf("\n%s (choose %d)\n", prompt, n);
+    while (chosen < n) {
+        int pick;
+
+        for (i = 0; i < count; i++) {
+            int usable = (!available || available[i]) && !taken[i];
+            if (usable) {
+                printf("  %2d) %s\n", i + 1, options[i]);
+            } else {
+                printf("   -  %s%s\n", options[i],
+                       taken[i] ? " (already chosen)" : " (already proficient)");
+            }
+        }
+
+        printf("  Selection %d of %d\n", chosen + 1, n);
+        pick = ui_int("  Choose", 1, count) - 1;
+
+        if (taken[pick]) {
+            printf("  You have already chosen that. Pick another.\n");
+            continue;
+        }
+        if (available && !available[pick]) {
+            printf("  That one is not available to you. Pick another.\n");
+            continue;
+        }
+        taken[pick] = 1;
+        picks[chosen++] = pick;
+    }
+}
+
+/* Dice --------------------------------------------------------------------- */
+
+static unsigned long rng_state = 1;
+
+void rng_seed(unsigned int seed)
+{
+    rng_state = seed ? seed : 1;
+}
+
+/* xorshift: small, deterministic when seeded, and adequate for dice. */
+static unsigned long rng_next(void)
+{
+    rng_state ^= rng_state << 13;
+    rng_state ^= rng_state >> 7;
+    rng_state ^= rng_state << 17;
+    return rng_state;
+}
+
+int roll_die(int sides)
+{
+    if (sides < 1) return 0;
+    return (int)(rng_next() % (unsigned long)sides) + 1;
+}
+
+int roll_dice(int count, int sides)
+{
+    int i, total = 0;
+    for (i = 0; i < count; i++) total += roll_die(sides);
+    return total;
+}
+
+int roll_4d6_drop_lowest(void)
+{
+    int r[4], i, total = 0, lowest = 0;
+
+    for (i = 0; i < 4; i++) {
+        r[i] = roll_die(6);
+        if (r[i] < r[lowest]) lowest = i;
+    }
+    for (i = 0; i < 4; i++) {
+        if (i != lowest) total += r[i];
+    }
+    return total;
+}
+
+/* Utility ------------------------------------------------------------------ */
+
+int split_pipe(const char *src, char *buf, size_t bufsz,
+               const char **out, int max)
+{
+    int n = 0;
+    char *p;
+
+    if (!src || !*src) return 0;
+    strncpy(buf, src, bufsz - 1);
+    buf[bufsz - 1] = '\0';
+
+    p = buf;
+    out[n++] = p;
+    while ((p = strchr(p, '|')) != NULL) {
+        *p++ = '\0';
+        if (n >= max) break;
+        out[n++] = p;
+    }
+    return n;
+}

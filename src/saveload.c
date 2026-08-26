@@ -1,0 +1,677 @@
+/* saveload.c -- the character file: a readable sheet plus a data block.
+ *
+ * The sheet at the top is for the table. Everything below the marker is a
+ * key/value block the loader parses to rebuild the character exactly, so a
+ * saved file can be levelled up later. Names rather than table indices are
+ * stored so the file stays valid if the game data is extended.
+ */
+#include "saveload.h"
+#include "data.h"
+#include "build.h"
+#include "data_spells.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#define DATA_BEGIN "#BEGIN-DNDDATA v1"
+#define DATA_END   "#END-DNDDATA"
+
+/* ------------------------------------------------------------- name lookups */
+
+static int index_of_race(const char *n)
+{
+    int i;
+    for (i = 0; i < RACE_COUNT; i++) if (!strcmp(RACES[i].name, n)) return i;
+    return -1;
+}
+static int index_of_subrace(const char *n)
+{
+    int i;
+    for (i = 0; i < SUBRACE_COUNT; i++) if (!strcmp(SUBRACES[i].name, n)) return i;
+    return -1;
+}
+static int index_of_background(const char *n)
+{
+    int i;
+    for (i = 0; i < BACKGROUND_COUNT; i++) {
+        if (!strcmp(BACKGROUNDS[i].name, n)) return i;
+    }
+    return -1;
+}
+static int index_of_class(const char *n)
+{
+    int i;
+    for (i = 0; i < CLASS_COUNT; i++) if (!strcmp(CLASSES[i].name, n)) return i;
+    return -1;
+}
+static int index_of_subclass(const char *n)
+{
+    int i;
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        if (!strcmp(SUBCLASSES[i].name, n)) return i;
+    }
+    return -1;
+}
+static int index_of_feat(const char *n)
+{
+    int i;
+    for (i = 0; i < FEAT_COUNT; i++) if (!strcmp(FEATS[i].name, n)) return i;
+    return -1;
+}
+static int index_of_spell(const char *n)
+{
+    int i;
+    for (i = 0; i < SPELL_COUNT; i++) if (!strcmp(SPELLS[i].name, n)) return i;
+    return -1;
+}
+static int index_of_skill(const char *n)
+{
+    int i;
+    for (i = 0; i < SKL_COUNT; i++) if (!strcmp(SKILL_NAME[i], n)) return i;
+    return -1;
+}
+static int index_of_alignment(const char *n)
+{
+    int i;
+    for (i = 0; i < ALIGN_COUNT; i++) {
+        if (!strcmp(ALIGNMENT_NAME[i], n)) return i;
+    }
+    return ALIGN_TN;
+}
+
+/* ------------------------------------------------------------ sheet writing */
+
+static void hr(FILE *f)
+{
+    fprintf(f, "================================================================\n");
+}
+
+static void section(FILE *f, const char *title)
+{
+    fprintf(f, "\n----------------------------------------------------------------\n");
+    fprintf(f, " %s\n", title);
+    fprintf(f, "----------------------------------------------------------------\n");
+}
+
+static void class_line(const Character *c, char *out, size_t n)
+{
+    int i;
+    size_t used = 0;
+
+    out[0] = '\0';
+    for (i = 0; i < c->class_count; i++) {
+        const char *sub = (c->classes[i].subclass_id >= 0)
+                        ? SUBCLASSES[c->classes[i].subclass_id].name : NULL;
+        int w = snprintf(out + used, n - used, "%s%s %d%s%s%s",
+                         i ? " / " : "",
+                         CLASSES[c->classes[i].class_id].name,
+                         c->classes[i].level,
+                         sub ? " (" : "", sub ? sub : "", sub ? ")" : "");
+        if (w < 0 || (size_t)w >= n - used) break;
+        used += (size_t)w;
+    }
+}
+
+/* Prints every feature the character has earned, in class then level order. */
+static void write_features(FILE *f, const Character *c)
+{
+    int i, k;
+
+    for (i = 0; i < c->class_count; i++) {
+        int id = c->classes[i].class_id;
+        int lvl = c->classes[i].level;
+        int sub = c->classes[i].subclass_id;
+
+        fprintf(f, "\n  %s %d\n", CLASSES[id].name, lvl);
+        for (k = 0; k < FEATURE_COUNT; k++) {
+            const FeatureData *fd = &FEATURES[k];
+            if (fd->class_id != id) continue;
+            if (fd->level > lvl) continue;
+            if (fd->subclass_id != -1 && fd->subclass_id != sub) continue;
+            fprintf(f, "    %2d  %-32s %s\n", fd->level, fd->name, fd->summary);
+        }
+    }
+}
+
+static void write_spells(FILE *f, const Character *c)
+{
+    int slots[10];
+    int i, lvl, eff, pact_n, pact_l;
+
+    if (c->spell_count == 0) {
+        int any = 0;
+        for (i = 0; i < c->class_count; i++) {
+            if (CLASSES[c->classes[i].class_id].caster != CAST_NONE) any = 1;
+        }
+        if (!any) return;
+    }
+
+    section(f, "SPELLCASTING");
+
+    for (i = 0; i < c->class_count; i++) {
+        int id = c->classes[i].class_id;
+        if (CLASSES[id].caster == CAST_NONE
+            && c->classes[i].subclass_id != 15
+            && c->classes[i].subclass_id != 26) continue;
+        fprintf(f, "  %-10s ability %-13s save DC %2d   attack +%d\n",
+                CLASSES[id].name, ABILITY_NAME[CLASSES[id].spell_ability],
+                spell_save_dc(c, id), spell_attack_bonus(c, id));
+    }
+
+    eff = spell_slots_for(c, slots);
+    if (eff > 0) {
+        fprintf(f, "\n  Spell slots (caster level %d):\n   ", eff);
+        for (lvl = 1; lvl <= 9; lvl++) {
+            if (slots[lvl]) fprintf(f, "  %d%s: %d", lvl,
+                                    lvl == 1 ? "st" : lvl == 2 ? "nd"
+                                    : lvl == 3 ? "rd" : "th", slots[lvl]);
+        }
+        fprintf(f, "\n");
+    }
+    if (pact_slots_for(c, &pact_n, &pact_l)) {
+        fprintf(f, "  Pact Magic: %d slot%s of level %d "
+                   "(recharges on a short rest)\n",
+                pact_n, pact_n == 1 ? "" : "s", pact_l);
+    }
+
+    if (c->spell_count == 0) return;
+
+    for (lvl = 0; lvl <= 9; lvl++) {
+        int printed = 0;
+        for (i = 0; i < c->spell_count; i++) {
+            const SpellData *s = &SPELLS[c->spells[i].spell_id];
+            if (s->level != lvl) continue;
+
+            if (!printed) {
+                if (lvl == 0) fprintf(f, "\n  Cantrips\n");
+                else fprintf(f, "\n  Level %d\n", lvl);
+                printed = 1;
+            }
+            fprintf(f, "    %-26s %s%s%s%s%s\n", s->name,
+                    SCHOOL_NAMES[s->school],
+                    s->ritual ? ", ritual" : "",
+                    c->spells[i].always_prepared ? ", always prepared" : "",
+                    c->class_count > 1 ? " -- " : "",
+                    c->class_count > 1
+                        ? CLASSES[c->spells[i].class_id].name : "");
+            fprintf(f, "        Casting Time: %-18s Range: %s\n",
+                    s->casting_time, s->range);
+            fprintf(f, "        Components:   %s\n", s->components);
+            fprintf(f, "        Duration:     %s%s\n", s->duration,
+                    s->concentration ? "" : "");
+        }
+    }
+}
+
+static void write_sheet(FILE *f, const Character *c)
+{
+    char buf[512];
+    int i, w;
+
+    hr(f);
+    fprintf(f, " %s\n", c->name);
+    class_line(c, buf, sizeof buf);
+    fprintf(f, " %s\n", buf);
+    hr(f);
+
+    fprintf(f, " Player: %-24s Race: %s%s%s\n",
+            c->player[0] ? c->player : "-",
+            c->race_id >= 0 ? RACES[c->race_id].name : "-",
+            c->subrace_id >= 0 ? " / " : "",
+            c->subrace_id >= 0 ? SUBRACES[c->subrace_id].name : "");
+    fprintf(f, " Background: %-20s Alignment: %s\n",
+            c->background_id >= 0 ? BACKGROUNDS[c->background_id].name : "-",
+            ALIGNMENT_NAME[c->alignment]);
+    fprintf(f, " Level: %-25d Proficiency Bonus: +%d\n",
+            total_level(c), proficiency_bonus(c));
+    if (c->ancestry_id >= 0) {
+        fprintf(f, " Draconic Ancestry: %s (%s, %s)\n",
+                ANCESTRIES[c->ancestry_id].dragon,
+                ANCESTRIES[c->ancestry_id].damage,
+                ANCESTRIES[c->ancestry_id].breath);
+    }
+
+    section(f, "ABILITY SCORES");
+    for (i = 0; i < ABL_COUNT; i++) {
+        int score = ability_score(c, (Ability)i);
+        int mod = ability_mod(c, (Ability)i);
+        fprintf(f, "  %-14s %2d  (%+d)     Saving throw %+d%s\n",
+                ABILITY_NAME[i], score, mod, save_bonus(c, (Ability)i),
+                c->save_prof[i] ? "  (proficient)" : "");
+    }
+
+    section(f, "COMBAT");
+    fprintf(f, "  Armor Class      %d\n", armour_class(c));
+    fprintf(f, "  Initiative       %+d\n", initiative_bonus(c));
+    fprintf(f, "  Speed            %d ft.\n", speed_of(c));
+    fprintf(f, "  Hit Points       %d\n", hit_points_max(c));
+    fprintf(f, "  Hit Dice         ");
+    for (i = 0; i < c->class_count; i++) {
+        fprintf(f, "%s%dd%d", i ? " + " : "", c->classes[i].level,
+                CLASSES[c->classes[i].class_id].hit_die);
+    }
+    fprintf(f, "\n");
+    fprintf(f, "  Passive Perception %d\n", passive_perception(c));
+
+    section(f, "SKILLS");
+    for (i = 0; i < SKL_COUNT; i++) {
+        fprintf(f, "  %c%c %-18s %+d  (%s)\n",
+                c->skill_prof[i] ? '*' : ' ',
+                c->skill_expertise[i] ? 'E' : ' ',
+                SKILL_NAME[i], skill_bonus(c, (Skill)i),
+                ABILITY_ABBREV[SKILL_ABILITY[i]]);
+    }
+    fprintf(f, "  (* proficient, E expertise)\n");
+
+    section(f, "PROFICIENCIES AND LANGUAGES");
+    fprintf(f, "  Armor and weapons:\n");
+    for (i = 0, w = 0; i < c->other_prof_count; i++) {
+        fprintf(f, "%s%s", w ? ", " : "    ", c->other_profs[i]);
+        w = 1;
+    }
+    fprintf(f, "%s\n", c->other_prof_count ? "" : "    none");
+    fprintf(f, "  Tools:\n");
+    for (i = 0, w = 0; i < c->tool_prof_count; i++) {
+        fprintf(f, "%s%s", w ? ", " : "    ", c->tool_profs[i]);
+        w = 1;
+    }
+    fprintf(f, "%s\n", c->tool_prof_count ? "" : "    none");
+    fprintf(f, "  Languages:\n");
+    for (i = 0, w = 0; i < c->language_count; i++) {
+        fprintf(f, "%s%s", w ? ", " : "    ", c->languages[i]);
+        w = 1;
+    }
+    fprintf(f, "\n");
+
+    if (c->race_id >= 0) {
+        section(f, "RACIAL TRAITS");
+        {
+            char tbuf[2048];
+            const char *parts[16];
+            int n = 0, k;
+            n = 0;
+            strncpy(tbuf, RACES[c->race_id].traits, sizeof tbuf - 1);
+            tbuf[sizeof tbuf - 1] = '\0';
+            {
+                char *p = tbuf;
+                parts[n++] = p;
+                while ((p = strchr(p, '|')) != NULL && n < 16) {
+                    *p++ = '\0';
+                    parts[n++] = p;
+                }
+            }
+            for (k = 0; k < n; k++) fprintf(f, "  - %s\n", parts[k]);
+        }
+        if (c->subrace_id >= 0 && SUBRACES[c->subrace_id].traits[0]) {
+            char tbuf[1024];
+            char *p;
+            strncpy(tbuf, SUBRACES[c->subrace_id].traits, sizeof tbuf - 1);
+            tbuf[sizeof tbuf - 1] = '\0';
+            p = tbuf;
+            fprintf(f, "  - %s\n", p);
+            while ((p = strchr(p, '|')) != NULL) {
+                *p++ = '\0';
+                fprintf(f, "  - %s\n", p);
+            }
+        }
+    }
+
+    if (c->background_id >= 0) {
+        section(f, "BACKGROUND FEATURE");
+        fprintf(f, "  %s: %s\n", BACKGROUNDS[c->background_id].feature_name,
+                BACKGROUNDS[c->background_id].feature_summary);
+    }
+
+    section(f, "CLASS FEATURES");
+    write_features(f, c);
+
+    if (c->feat_count) {
+        section(f, "FEATS");
+        for (i = 0; i < c->feat_count; i++) {
+            fprintf(f, "  %s\n      %s\n", FEATS[c->feats[i]].name,
+                    FEATS[c->feats[i]].summary);
+        }
+    }
+
+    if (c->choice_count) {
+        section(f, "CHOICES");
+        for (i = 0; i < c->choice_count; i++) {
+            fprintf(f, "  %-22s %s\n", c->choices[i].label,
+                    c->choices[i].value);
+        }
+    }
+
+    write_spells(f, c);
+
+    section(f, "EQUIPMENT");
+    for (i = 0; i < c->item_count; i++) {
+        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        fprintf(f, "  %3d x %-26s%s", c->inventory[i].quantity, it->name,
+                c->inventory[i].equipped ? " (equipped)" : "");
+        if (it->damage[0] && strcmp(it->damage, "-")) {
+            fprintf(f, "  %s %s", it->damage, it->damage_type);
+        }
+        fprintf(f, "\n");
+        if (it->contents[0]) fprintf(f, "        contains: %s\n", it->contents);
+    }
+    fprintf(f, "\n  Coins: %d pp, %d gp, %d ep, %d sp, %d cp\n",
+            c->platinum, c->gold, c->electrum, c->silver, c->copper);
+    fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
+            current_weight_tenths(c) / 10, current_weight_tenths(c) % 10,
+            carrying_capacity(c));
+
+    section(f, "PERSONALITY");
+    fprintf(f, "  Age %d, %d ft %d in, %d lb, %s eyes, %s skin, %s hair\n",
+            c->age, c->height_in / 12, c->height_in % 12, c->weight_lb,
+            c->eyes, c->skin, c->hair);
+    if (c->trait[0])      fprintf(f, "\n  Trait:  %s\n", c->trait);
+    if (c->ideal[0])      fprintf(f, "  Ideal:  %s\n", c->ideal);
+    if (c->bond[0])       fprintf(f, "  Bond:   %s\n", c->bond);
+    if (c->flaw[0])       fprintf(f, "  Flaw:   %s\n", c->flaw);
+    if (c->appearance[0]) fprintf(f, "\n  Appearance: %s\n", c->appearance);
+    if (c->backstory[0])  fprintf(f, "  Backstory:  %s\n", c->backstory);
+}
+
+/* -------------------------------------------------------- the data block */
+
+static void write_data(FILE *f, const Character *c)
+{
+    int i;
+
+    fprintf(f, "\n\n");
+    hr(f);
+    fprintf(f, " MACHINE-READABLE DATA -- the creator reads this to reload\n");
+    fprintf(f, " the character for levelling up. Editing it by hand is fine,\n"
+               " but keep the field names and the '|' separators intact.\n");
+    hr(f);
+    fprintf(f, "%s\n", DATA_BEGIN);
+
+    fprintf(f, "NAME|%s\n", c->name);
+    fprintf(f, "PLAYER|%s\n", c->player);
+    if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
+    if (c->subrace_id >= 0) {
+        fprintf(f, "SUBRACE|%s\n", SUBRACES[c->subrace_id].name);
+    }
+    if (c->background_id >= 0) {
+        fprintf(f, "BACKGROUND|%s\n", BACKGROUNDS[c->background_id].name);
+    }
+    fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
+    if (c->ancestry_id >= 0) {
+        fprintf(f, "ANCESTRY|%s\n", ANCESTRIES[c->ancestry_id].dragon);
+    }
+
+    for (i = 0; i < c->class_count; i++) {
+        fprintf(f, "CLASS|%s|%d|%s|%d\n",
+                CLASSES[c->classes[i].class_id].name,
+                c->classes[i].level,
+                c->classes[i].subclass_id >= 0
+                    ? SUBCLASSES[c->classes[i].subclass_id].name : "-",
+                c->classes[i].subclass_option);
+    }
+
+    fprintf(f, "BASE");
+    for (i = 0; i < ABL_COUNT; i++) fprintf(f, "|%d", c->base_score[i]);
+    fprintf(f, "\nRACIALBONUS");
+    for (i = 0; i < ABL_COUNT; i++) fprintf(f, "|%d", c->racial_bonus[i]);
+    fprintf(f, "\nASIBONUS");
+    for (i = 0; i < ABL_COUNT; i++) fprintf(f, "|%d", c->asi_bonus[i]);
+    fprintf(f, "\nSAVEPROF");
+    for (i = 0; i < ABL_COUNT; i++) fprintf(f, "|%d", c->save_prof[i]);
+    fprintf(f, "\n");
+
+    for (i = 0; i < SKL_COUNT; i++) {
+        if (c->skill_prof[i] || c->skill_expertise[i]) {
+            fprintf(f, "SKILL|%s|%d|%d\n", SKILL_NAME[i],
+                    c->skill_prof[i], c->skill_expertise[i]);
+        }
+    }
+
+    for (i = 0; i < c->language_count; i++) {
+        fprintf(f, "LANG|%s\n", c->languages[i]);
+    }
+    for (i = 0; i < c->tool_prof_count; i++) {
+        fprintf(f, "TOOL|%s\n", c->tool_profs[i]);
+    }
+    for (i = 0; i < c->other_prof_count; i++) {
+        fprintf(f, "PROF|%s\n", c->other_profs[i]);
+    }
+    for (i = 0; i < c->feat_count; i++) {
+        fprintf(f, "FEAT|%s\n", FEATS[c->feats[i]].name);
+    }
+    for (i = 0; i < c->choice_count; i++) {
+        fprintf(f, "CHOICE|%s|%s\n", c->choices[i].label, c->choices[i].value);
+    }
+    for (i = 0; i < c->item_count; i++) {
+        fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
+                c->inventory[i].equipped, ITEMS[c->inventory[i].item_id].name);
+    }
+    fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
+            c->gold, c->platinum);
+    for (i = 0; i < c->spell_count; i++) {
+        fprintf(f, "SPELL|%d|%d|%s|%s\n", c->spells[i].prepared,
+                c->spells[i].always_prepared,
+                CLASSES[c->spells[i].class_id].name,
+                SPELLS[c->spells[i].spell_id].name);
+    }
+
+    fprintf(f, "HPROLLS|%d", c->hp_roll_count);
+    for (i = 0; i < c->hp_roll_count; i++) fprintf(f, "|%d", c->hp_rolls[i]);
+    fprintf(f, "\n");
+
+    fprintf(f, "BODY|%d|%d|%d|%s|%s|%s\n", c->age, c->height_in, c->weight_lb,
+            c->eyes, c->skin, c->hair);
+    fprintf(f, "TRAIT|%s\n", c->trait);
+    fprintf(f, "IDEAL|%s\n", c->ideal);
+    fprintf(f, "BOND|%s\n", c->bond);
+    fprintf(f, "FLAW|%s\n", c->flaw);
+    fprintf(f, "APPEARANCE|%s\n", c->appearance);
+    fprintf(f, "BACKSTORY|%s\n", c->backstory);
+
+    fprintf(f, "%s\n", DATA_END);
+}
+
+/* ------------------------------------------------------------------ saving */
+
+static void sanitise_filename(const char *name, char *out, size_t n)
+{
+    size_t i, k = 0;
+    for (i = 0; name[i] && k + 1 < n; i++) {
+        unsigned char ch = (unsigned char)name[i];
+        if (ch == '/' || ch == '\\' || ch == ':' || ch == '*' || ch == '?'
+            || ch == '"' || ch == '<' || ch == '>' || ch == '|' || ch < 32) {
+            continue;
+        }
+        out[k++] = (char)ch;
+    }
+    out[k] = '\0';
+    if (k == 0) {
+        strncpy(out, "Unnamed", n - 1);
+        out[n - 1] = '\0';
+    }
+}
+
+int save_character(const Character *c, char *path, size_t pathsz)
+{
+    char safe[MAX_NAME];
+    FILE *f;
+
+    sanitise_filename(c->name, safe, sizeof safe);
+    snprintf(path, pathsz, "%s.txt", safe);
+
+    f = fopen(path, "w");
+    if (!f) return -1;
+
+    write_sheet(f, c);
+    write_data(f, c);
+    fclose(f);
+    return 0;
+}
+
+void print_sheet(const Character *c)
+{
+    write_sheet(stdout, c);
+}
+
+/* ----------------------------------------------------------------- loading */
+
+/* Splits a '|' separated record in place. Returns the field count. */
+static int split_fields(char *line, char **out, int max)
+{
+    int n = 0;
+    char *p = line;
+
+    out[n++] = p;
+    while ((p = strchr(p, '|')) != NULL && n < max) {
+        *p++ = '\0';
+        out[n++] = p;
+    }
+    return n;
+}
+
+static void copy_field(char *dst, size_t n, const char *src)
+{
+    strncpy(dst, src ? src : "", n - 1);
+    dst[n - 1] = '\0';
+}
+
+int load_character(const char *path, Character *c)
+{
+    FILE *f = fopen(path, "r");
+    char line[1024];
+    int in_data = 0;
+
+    if (!f) return -1;
+
+    memset(c, 0, sizeof *c);
+    c->race_id = c->subrace_id = c->background_id = c->ancestry_id = -1;
+
+    while (fgets(line, sizeof line, f)) {
+        char *fields[32];
+        int n;
+
+        line[strcspn(line, "\r\n")] = '\0';
+
+        if (!in_data) {
+            if (!strcmp(line, DATA_BEGIN)) in_data = 1;
+            continue;
+        }
+        if (!strcmp(line, DATA_END)) break;
+        if (line[0] == '\0') continue;
+
+        n = split_fields(line, fields, 32);
+        if (n < 1) continue;
+
+        if (!strcmp(fields[0], "NAME") && n >= 2) {
+            copy_field(c->name, sizeof c->name, fields[1]);
+        } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {
+            copy_field(c->player, sizeof c->player, fields[1]);
+        } else if (!strcmp(fields[0], "RACE") && n >= 2) {
+            c->race_id = index_of_race(fields[1]);
+        } else if (!strcmp(fields[0], "SUBRACE") && n >= 2) {
+            c->subrace_id = index_of_subrace(fields[1]);
+        } else if (!strcmp(fields[0], "BACKGROUND") && n >= 2) {
+            c->background_id = index_of_background(fields[1]);
+        } else if (!strcmp(fields[0], "ALIGNMENT") && n >= 2) {
+            c->alignment = (Alignment)index_of_alignment(fields[1]);
+        } else if (!strcmp(fields[0], "ANCESTRY") && n >= 2) {
+            int i;
+            for (i = 0; i < ANCESTRY_COUNT; i++) {
+                if (!strcmp(ANCESTRIES[i].dragon, fields[1])) c->ancestry_id = i;
+            }
+        } else if (!strcmp(fields[0], "CLASS") && n >= 5) {
+            if (c->class_count < MAX_CLASSES) {
+                int id = index_of_class(fields[1]);
+                if (id >= 0) {
+                    int k = c->class_count++;
+                    c->classes[k].class_id = id;
+                    c->classes[k].level = atoi(fields[2]);
+                    c->classes[k].subclass_id =
+                        strcmp(fields[3], "-") ? index_of_subclass(fields[3]) : -1;
+                    c->classes[k].subclass_option = atoi(fields[4]);
+                }
+            }
+        } else if (!strcmp(fields[0], "BASE") && n >= 7) {
+            int i;
+            for (i = 0; i < ABL_COUNT; i++) c->base_score[i] = atoi(fields[i + 1]);
+        } else if (!strcmp(fields[0], "RACIALBONUS") && n >= 7) {
+            int i;
+            for (i = 0; i < ABL_COUNT; i++) c->racial_bonus[i] = atoi(fields[i + 1]);
+        } else if (!strcmp(fields[0], "ASIBONUS") && n >= 7) {
+            int i;
+            for (i = 0; i < ABL_COUNT; i++) c->asi_bonus[i] = atoi(fields[i + 1]);
+        } else if (!strcmp(fields[0], "SAVEPROF") && n >= 7) {
+            int i;
+            for (i = 0; i < ABL_COUNT; i++) c->save_prof[i] = atoi(fields[i + 1]);
+        } else if (!strcmp(fields[0], "SKILL") && n >= 4) {
+            int s = index_of_skill(fields[1]);
+            if (s >= 0) {
+                c->skill_prof[s] = atoi(fields[2]);
+                c->skill_expertise[s] = atoi(fields[3]);
+            }
+        } else if (!strcmp(fields[0], "LANG") && n >= 2) {
+            add_language(c, fields[1]);
+        } else if (!strcmp(fields[0], "TOOL") && n >= 2) {
+            add_tool(c, fields[1]);
+        } else if (!strcmp(fields[0], "PROF") && n >= 2) {
+            add_prof(c, fields[1]);
+        } else if (!strcmp(fields[0], "FEAT") && n >= 2) {
+            int id = index_of_feat(fields[1]);
+            if (id >= 0 && c->feat_count < MAX_FEATS) {
+                c->feats[c->feat_count++] = id;
+            }
+        } else if (!strcmp(fields[0], "CHOICE") && n >= 3) {
+            add_choice(c, fields[1], fields[2]);
+        } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
+            int id = find_item(fields[3]);
+            if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+        } else if (!strcmp(fields[0], "COINS") && n >= 6) {
+            c->copper   = atoi(fields[1]);
+            c->silver   = atoi(fields[2]);
+            c->electrum = atoi(fields[3]);
+            c->gold     = atoi(fields[4]);
+            c->platinum = atoi(fields[5]);
+        } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
+            int id = index_of_spell(fields[4]);
+            int owner = index_of_class(fields[3]);
+            if (id >= 0 && c->spell_count < MAX_SPELLS) {
+                c->spells[c->spell_count].spell_id = id;
+                c->spells[c->spell_count].class_id = owner < 0 ? 0 : owner;
+                c->spells[c->spell_count].prepared = atoi(fields[1]);
+                c->spells[c->spell_count].always_prepared = atoi(fields[2]);
+                c->spell_count++;
+            }
+        } else if (!strcmp(fields[0], "HPROLLS") && n >= 2) {
+            int count = atoi(fields[1]), i;
+            for (i = 0; i < count && i < MAX_LEVEL && i + 2 < n; i++) {
+                c->hp_rolls[i] = atoi(fields[i + 2]);
+            }
+            c->hp_roll_count = (count > MAX_LEVEL) ? MAX_LEVEL : count;
+        } else if (!strcmp(fields[0], "BODY") && n >= 7) {
+            c->age = atoi(fields[1]);
+            c->height_in = atoi(fields[2]);
+            c->weight_lb = atoi(fields[3]);
+            copy_field(c->eyes, sizeof c->eyes, fields[4]);
+            copy_field(c->skin, sizeof c->skin, fields[5]);
+            copy_field(c->hair, sizeof c->hair, fields[6]);
+        } else if (!strcmp(fields[0], "TRAIT") && n >= 2) {
+            copy_field(c->trait, sizeof c->trait, fields[1]);
+        } else if (!strcmp(fields[0], "IDEAL") && n >= 2) {
+            copy_field(c->ideal, sizeof c->ideal, fields[1]);
+        } else if (!strcmp(fields[0], "BOND") && n >= 2) {
+            copy_field(c->bond, sizeof c->bond, fields[1]);
+        } else if (!strcmp(fields[0], "FLAW") && n >= 2) {
+            copy_field(c->flaw, sizeof c->flaw, fields[1]);
+        } else if (!strcmp(fields[0], "APPEARANCE") && n >= 2) {
+            copy_field(c->appearance, sizeof c->appearance, fields[1]);
+        } else if (!strcmp(fields[0], "BACKSTORY") && n >= 2) {
+            copy_field(c->backstory, sizeof c->backstory, fields[1]);
+        }
+    }
+
+    fclose(f);
+    if (!in_data) return -2;        /* no data block: not one of our files */
+    if (c->class_count == 0) return -3;
+    return 0;
+}
