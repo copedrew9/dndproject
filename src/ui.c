@@ -263,6 +263,26 @@ int roll_4d6_drop_lowest(void)
 
 /* Utility ------------------------------------------------------------------ */
 
+/* Case-insensitive substring test. */
+int contains_ci(const char *haystack, const char *needle)
+{
+    size_t nl = strlen(needle);
+    const char *h;
+
+    if (!nl) return 1;
+    for (h = haystack; *h; h++) {
+        size_t k;
+        for (k = 0; k < nl; k++) {
+            int a = (unsigned char)h[k], b = (unsigned char)needle[k];
+            if (a >= 'A' && a <= 'Z') a += 32;
+            if (b >= 'A' && b <= 'Z') b += 32;
+            if (!h[k] || a != b) break;
+        }
+        if (k == nl) return 1;
+    }
+    return 0;
+}
+
 int split_pipe(const char *src, char *buf, size_t bufsz,
                const char **out, int max)
 {

@@ -52,20 +52,6 @@ static int eq_nocase(const char *a, const char *b)
     return *a == '\0' && *b == '\0';
 }
 
-/* Case-insensitive substring test, used by every search box here. */
-static int contains_nocase(const char *hay, const char *needle)
-{
-    size_t nl = strlen(needle);
-    if (nl == 0) return 1;
-    for (; *hay; hay++) {
-        size_t k = 0;
-        while (k < nl && hay[k] &&
-               tolower((unsigned char)hay[k]) ==
-               tolower((unsigned char)needle[k])) k++;
-        if (k == nl) return 1;
-    }
-    return 0;
-}
 
 /* --------------------------------------------------- ordinary item detail */
 
@@ -216,7 +202,7 @@ static int collect_items(int category, const char *filter, int *map,
         char price[32], weight[32];
         if (category >= 0 && (int)ITEMS[i].category != category) continue;
         if (!book_enabled(ITEMS[i].book)) continue;
-        if (filter && !contains_nocase(ITEMS[i].name, filter)) continue;
+        if (filter && !contains_ci(ITEMS[i].name, filter)) continue;
 
         format_price(ITEMS[i].cost_cp, price, sizeof price);
         format_weight(ITEMS[i].weight_tenths, weight, sizeof weight);
@@ -297,10 +283,10 @@ static void browse_magic_items(void)
                     strncmp(m->type, kinds[want_kind],
                             strlen(kinds[want_kind])) != 0) continue;
                 if (want_rarity >= 0 &&
-                    !contains_nocase(m->rarity, rarities[want_rarity]))
+                    !contains_ci(m->rarity, rarities[want_rarity]))
                     continue;
                 if (want_attune && !m->attunement) continue;
-                if (term[0] && !contains_nocase(m->name, term)) continue;
+                if (term[0] && !contains_ci(m->name, term)) continue;
 
                 snprintf(lines[n], REF_LINE, "%-34s %-22s %s", m->name,
                          m->rarity, m->attunement ? "attunement" : "");

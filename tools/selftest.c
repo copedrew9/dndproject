@@ -11,11 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
-
 
 
 static int failures;
@@ -401,10 +396,46 @@ static void test_data_integrity(void)
     int i;
 
     printf("data table integrity\n");
-    EQ(RACE_COUNT, 9, "PHB races");
+    {
+        int phb = 0, mtf = 0, k;
+        for (k = 0; k < RACE_COUNT; k++) {
+            if (RACES[k].book == BOOK_PHB) phb++;
+            if (RACES[k].book == BOOK_MPMM) mtf++;
+        }
+        EQ(phb, 9, "PHB races");
+        EQ(mtf, 33, "Monsters of the Multiverse races");
+        EQ(RACE_COUNT, phb + mtf, "every race is from the PHB or Multiverse");
+
+        /* The Multiverse races have no fixed increases at all; the spread
+           is always chosen, so each must say so. */
+        for (k = 0; k < RACE_COUNT; k++) {
+            int a, total = 0;
+            for (a = 0; a < ABL_COUNT; a++) total += RACES[k].ability[a];
+            if (RACES[k].book == BOOK_MPMM) {
+                if (total != 0 || !RACES[k].origin_choice) {
+                    printf("  FAIL %s should have no fixed increases\n",
+                           RACES[k].name);
+                    failures++;
+                }
+            } else if (RACES[k].origin_choice) {
+                printf("  FAIL %s should not choose its own spread\n",
+                       RACES[k].name);
+                failures++;
+            }
+        }
+    }
     EQ(CLASS_COUNT, 13, "classes (12 PHB + the artificer)");
     EQ(BACKGROUND_COUNT, 13, "PHB backgrounds");
-    EQ(FEAT_COUNT, 42, "PHB feats");
+    {
+        int phb = 0, tce = 0, k;
+        for (k = 0; k < FEAT_COUNT; k++) {
+            if (FEATS[k].book == BOOK_PHB) phb++;
+            if (FEATS[k].book == BOOK_TCE) tce++;
+        }
+        EQ(phb, 42, "PHB feats");
+        EQ(tce, 15, "Tasha's feats");
+        EQ(FEAT_COUNT, phb + tce, "every feat is from the PHB or Tasha's");
+    }
 
     /* Every class must offer at least one subclass, and every subclass must
      * point back at a real class. */
@@ -738,6 +769,75 @@ static void test_option_spells(void)
     }
 }
 
+static void test_beasts(void)
+{
+    int i, cr_quarter = 0, moon_cr1 = 0;
+
+    printf("beast stat blocks\n");
+    check(BEAST_COUNT_ACTUAL >= 85, "beasts from the Monster Manual",
+          BEAST_COUNT_ACTUAL, 85);
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        const BeastData *b = &BEASTS[i];
+        int a;
+        if (b->ac < 5 || b->ac > 25) {
+            printf("  FAIL %s has AC %d\n", b->name, b->ac);
+            failures++;
+        }
+        if (b->hp < 1 || b->hp > 400) {
+            printf("  FAIL %s has %d hit points\n", b->name, b->hp);
+            failures++;
+        }
+        if (!b->speed[0] || !b->cr_text[0]) {
+            printf("  FAIL %s is missing its speed or challenge\n", b->name);
+            failures++;
+        }
+        for (a = 0; a < 6; a++) {
+            if (b->abilities[a] < 1 || b->abilities[a] > 30) {
+                printf("  FAIL %s has an ability score of %d\n", b->name,
+                       b->abilities[a]);
+                failures++;
+            }
+        }
+        if (i > 0 && strcmp(BEASTS[i - 1].name, b->name) >= 0) {
+            printf("  FAIL beasts are not in order at \"%s\"\n", b->name);
+            failures++;
+        }
+        if (b->cr_eighths <= 2) cr_quarter++;
+        if (b->cr_eighths <= 8) moon_cr1++;
+    }
+
+    /* The stat blocks a druid or ranger reaches for first. */
+    {
+        int wolf = find_beast("Wolf");
+        int bear = find_beast("Brown Bear");
+        int eagle = find_beast("Giant Eagle");
+        check(wolf >= 0 && bear >= 0 && eagle >= 0,
+              "the common beasts are present", 1, 1);
+        if (wolf >= 0) {
+            EQ(BEASTS[wolf].ac, 13, "wolf armor class");
+            EQ(BEASTS[wolf].hp, 11, "wolf hit points");
+            EQ(BEASTS[wolf].cr_eighths, 2, "wolf is CR 1/4");
+        }
+        if (bear >= 0) {
+            EQ(BEASTS[bear].hp, 34, "brown bear hit points");
+            EQ(BEASTS[bear].cr_eighths, 8, "brown bear is CR 1");
+            check(!beast_flies(&BEASTS[bear]), "brown bear cannot fly", 1, 1);
+        }
+        if (eagle >= 0) {
+            check(beast_flies(&BEASTS[eagle]), "giant eagle flies", 1, 1);
+            EQ(BEASTS[eagle].abilities[3], 8, "giant eagle Intelligence");
+        }
+        check(beast_swims(&BEASTS[find_beast("Giant Octopus")]),
+              "giant octopus swims", 1, 1);
+    }
+
+    /* A 2nd-level druid needs something to turn into. */
+    check(cr_quarter > 20, "beasts of CR 1/4 or lower", cr_quarter, 21);
+    check(moon_cr1 > 40, "beasts of CR 1 or lower", moon_cr1, 41);
+    check(find_beast("No Such Beast") < 0, "unknown beast is not found", 1, 1);
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -775,6 +875,7 @@ int main(void)
     test_item_reference();
     test_option_lists();
     test_option_spells();
+    test_beasts();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

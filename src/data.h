@@ -11,7 +11,7 @@ typedef enum {
     BOOK_XGE,       /* Xanathar's Guide to Everything */
     BOOK_TCE,       /* Tasha's Cauldron of Everything */
     BOOK_DMG,       /* Dungeon Master's Guide */
-    BOOK_MTF,       /* Mordenkainen's Tome of Foes */
+    BOOK_MPMM,       /* Mordenkainen's Tome of Foes */
     BOOK_MM,        /* Monster Manual */
     BOOK_COUNT
 } SourceBook;
@@ -55,6 +55,11 @@ typedef struct {
     int has_ancestry;           /* dragonborn */
     int first_subrace, subrace_count;
     const char *traits;         /* '|' separated trait summaries */
+    /* Races from Monsters of the Multiverse have no fixed ability
+       increases at all: the spread is always chosen, whatever the custom
+       origins setting says. Appended last so the older rows, which leave it
+       out, are zero-filled. */
+    int origin_choice;
 } RaceData;
 
 typedef struct {
@@ -310,6 +315,60 @@ typedef struct {
 extern const ItemNote ITEM_NOTES[];
 extern const int ITEM_NOTE_COUNT;
 const char *item_notes(const char *name);
+
+/* Class indexes into CLASSES; they must match the order in
+ * data_classes.c. */
+enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
+       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
+       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
+       CLS_ARTIFICER = 12 };
+
+/* The gods of appendix B. A cleric or paladin names one, and the suggested
+ * domains connect that choice to the Divine Domain menu. */
+typedef struct {
+    const char *name;
+    const char *title;          /* "goddess of winter" */
+    const char *pantheon;
+    const char *alignment;
+    const char *domains;        /* comma separated, "None" when none */
+    const char *symbol;
+} Deity;
+
+extern const Deity DEITIES[];
+extern const int DEITY_COUNT;
+int find_deity(const char *name);
+
+/* Beasts, from the Monster Manual: what Wild Shape, a Beast Master
+ * companion and find familiar draw on. Challenge is stored in eighths, so
+ * 1/8 is 1, 1/4 is 2, 1/2 is 4 and 1 is 8; the druid's limits are then
+ * integer comparisons. */
+typedef enum {
+    BSIZE_TINY, BSIZE_SMALL, BSIZE_MEDIUM, BSIZE_LARGE, BSIZE_HUGE,
+    BSIZE_GARGANTUAN
+} BeastSize;
+
+extern const char *const BEAST_SIZE_NAME[];
+
+typedef struct {
+    const char *name;
+    BeastSize size;
+    int ac;
+    int hp;
+    int cr_eighths;
+    const char *speed;
+    int abilities[6];           /* STR DEX CON INT WIS CHA */
+    const char *cr_text;
+    const char *senses;
+} BeastData;
+
+extern const BeastData BEASTS[];
+extern const int BEAST_COUNT_ACTUAL;
+int find_beast(const char *name);
+
+/* Does the beast's speed line mention a swimming or flying speed? Wild
+ * Shape withholds those until 4th and 8th level. */
+int beast_swims(const BeastData *b);
+int beast_flies(const BeastData *b);
 
 /* The lists a class picks from as it levels: eldritch invocations,
  * metamagic, maneuvers, pact boons, arcane shots, elemental disciplines,

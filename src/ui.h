@@ -41,6 +41,9 @@ int  roll_die(int sides);
 int  roll_dice(int count, int sides);
 int  roll_4d6_drop_lowest(void);
 
+/* Case-insensitive substring test; returns 1 when needle is empty. */
+int  contains_ci(const char *haystack, const char *needle);
+
 /* Split a '|' separated list into pieces. Returns the number found.
    The caller supplies storage; pieces point into buf. */
 int  split_pipe(const char *src, char *buf, size_t bufsz,

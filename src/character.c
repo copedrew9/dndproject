@@ -32,11 +32,6 @@ const char *const ALIGNMENT_NAME[ALIGN_COUNT] = {
     "Lawful Evil", "Neutral Evil", "Chaotic Evil"
 };
 
-/* Class ids used by the rules below; they must match data_classes.c. */
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
 
 /* Subclasses are referenced by name so the tables can grow freely. */
 static int is_third_caster(int sub)

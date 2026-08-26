@@ -182,5 +182,93 @@ const FeatData FEATS[] = {
 
 { "Weapon Master", BOOK_PHB, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "STR,DEX",
   "Gain proficiency with four weapons of your choice." },
+
+/* --------------------------------- Tasha's Cauldron of Everything feats --- */
+
+{ "Artificer Initiate", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 0, "",
+  "Learn one artificer cantrip and one 1st-level artificer spell, castable "
+  "once per long rest without a slot, using Intelligence. You also gain "
+  "proficiency with one kind of artisan's tools and can use them as a "
+  "spellcasting focus for those spells." },
+
+{ "Chef", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "CON,WIS",
+  "Proficiency with cook's utensils. Over an hour's short rest you can cook "
+  "food for up to four plus your proficiency bonus creatures, each regaining "
+  "an extra 1d8 hit points from Hit Dice; over a long rest you can bake "
+  "treats that give 1d8 temporary hit points." },
+
+{ "Crusher", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "STR,CON",
+  "Once per turn, when you deal bludgeoning damage you can move the target "
+  "5 feet. When you score a critical hit with bludgeoning damage, attacks "
+  "against that creature have advantage until the start of your next turn." },
+
+{ "Eldritch Adept", BOOK_TCE, "Spellcasting or Pact Magic",
+  NOREQ, NOREQ, 0, "", 1, NOASI, 0, "",
+  "Learn one eldritch invocation of your choice that has no Pact Boon "
+  "prerequisite. You can replace it whenever you gain a level." },
+
+{ "Fey Touched", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1,
+  "INT,WIS,CHA",
+  "Learn misty step and one 1st-level divination or enchantment spell. You "
+  "can cast each once per long rest without a slot, and otherwise with "
+  "slots as normal, using the ability this feat raised." },
+
+{ "Fighting Initiate", BOOK_TCE, "Proficiency with a martial weapon",
+  NOREQ, NOREQ, 0, "Martial weapons", 0, NOASI, 0, "",
+  "Learn one Fighting Style option of your choice. You can replace it "
+  "whenever you gain a level." },
+
+{ "Gunner", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, {0,1,0,0,0,0}, 0, "",
+  "Proficiency with firearms, you ignore the loading property of firearms, "
+  "and being within 5 feet of a hostile creature does not impose "
+  "disadvantage on your ranged attacks." },
+
+{ "Metamagic Adept", BOOK_TCE, "Spellcasting or Pact Magic",
+  NOREQ, NOREQ, 0, "", 1, NOASI, 0, "",
+  "Learn two Metamagic options from the sorcerer class and gain 2 sorcery "
+  "points to spend on them, regained on a long rest. You can replace one "
+  "option whenever you gain a level." },
+
+{ "Piercer", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "STR,DEX",
+  "Once per turn, when you hit with an attack dealing piercing damage you "
+  "can reroll one damage die. A critical hit with piercing damage adds one "
+  "extra damage die to the critical's total." },
+
+{ "Poisoner", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 0, "",
+  "Your poison damage ignores resistance. You gain proficiency with the "
+  "poisoner's kit and can apply a potent poison to a weapon as a bonus "
+  "action: DC 14, 2d8 poison damage and poisoned for 1 minute. You can "
+  "craft 50 gp of that poison over a long rest for 50 gp of materials." },
+
+{ "Shadow Touched", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1,
+  "INT,WIS,CHA",
+  "Learn invisibility and one 1st-level illusion or necromancy spell. You "
+  "can cast each once per long rest without a slot, and otherwise with "
+  "slots as normal, using the ability this feat raised." },
+
+{ "Skill Expert", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "",
+  "Gain proficiency in one skill of your choice, and choose one skill or "
+  "tool you are proficient with to gain expertise in, doubling your "
+  "proficiency bonus for it." },
+
+{ "Slasher", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1, "STR,DEX",
+  "Once per turn, when you deal slashing damage you can reduce the target's "
+  "speed by 10 feet until the start of your next turn. A critical hit with "
+  "slashing damage gives the target disadvantage on attack rolls until the "
+  "start of your next turn." },
+
+{ "Telekinetic", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1,
+  "INT,WIS,CHA",
+  "Learn mage hand, or gain a 30-foot increase to its range if you already "
+  "know it, and you can cast it without components. As a bonus action you "
+  "can shove a creature within 30 feet 5 feet toward or away from you, on a "
+  "failed Strength save." },
+
+{ "Telepathic", BOOK_TCE, "", NOREQ, NOREQ, 0, "", 0, NOASI, 1,
+  "INT,WIS,CHA",
+  "You can speak telepathically to any creature within 60 feet that "
+  "understands a language you know, and you can cast detect thoughts once "
+  "per long rest without a slot, using the ability this feat raised." },
+
 };
 const int FEAT_COUNT = (int)(sizeof(FEATS) / sizeof(FEATS[0]));

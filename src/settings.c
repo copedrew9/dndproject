@@ -18,12 +18,12 @@ const char *const BOOK_NAME[BOOK_COUNT] = {
     "Xanathar's Guide to Everything",
     "Tasha's Cauldron of Everything",
     "Dungeon Master's Guide",
-    "Mordenkainen's Tome of Foes",
+    "Mordenkainen Presents: Monsters of the Multiverse",
     "Monster Manual",
 };
 
 const char *const BOOK_ABBREV[BOOK_COUNT] = {
-    "PHB", "XGE", "TCE", "DMG", "MToF", "MM",
+    "PHB", "XGE", "TCE", "DMG", "MPMM", "MM",
 };
 
 void settings_defaults(Settings *s)

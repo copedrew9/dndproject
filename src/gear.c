@@ -574,6 +574,89 @@ static void pick_or_type(const char *label, const char *const *suggestions,
     }
 }
 
+/* ------------------------------------------------------------------ faith */
+
+/* Does this deity suggest the given domain? The domain list is text so that
+ * it reads well on the sheet, so the match is a substring test against the
+ * subclass name with its "Domain" suffix removed. */
+static int deity_suggests(const Deity *d, const char *domain_subclass)
+{
+    char bare[MAX_NAME];
+    char *space;
+
+    snprintf(bare, sizeof bare, "%s", domain_subclass);
+    space = strstr(bare, " Domain");
+    if (space) *space = '\0';
+    return contains_ci(d->domains, bare);
+}
+
+/* Which domain, if any, this character has already taken. */
+static const char *chosen_domain(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->class_count; i++) {
+        if (c->classes[i].class_id != CLS_CLERIC) continue;
+        if (c->classes[i].subclass_id < 0) continue;
+        return SUBCLASSES[c->classes[i].subclass_id].name;
+    }
+    return NULL;
+}
+
+static void choose_deity(Character *c)
+{
+    const char *pantheons[16];
+    int pn = 0, i, pick;
+    const char *domain = chosen_domain(c);
+
+    /* Pantheons in the order they appear in the table, without repeats. */
+    for (i = 0; i < DEITY_COUNT && pn < 15; i++) {
+        int j, seen = 0;
+        for (j = 0; j < pn; j++) {
+            if (strcmp(pantheons[j], DEITIES[i].pantheon) == 0) seen = 1;
+        }
+        if (!seen) pantheons[pn++] = DEITIES[i].pantheon;
+    }
+    pantheons[pn] = "No deity in particular";
+
+    if (domain) {
+        printf("\n  Deities marked with a star suggest the %s.\n", domain);
+    }
+    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + 1);
+    if (pick == pn) return;
+
+    {
+        const char *opts[128];
+        const char *det[128];
+        static char labels[128][120];
+        static char details[128][160];
+        int map[128], n = 0, choice;
+
+        for (i = 0; i < DEITY_COUNT && n < 128; i++) {
+            const Deity *d = &DEITIES[i];
+            if (strcmp(d->pantheon, pantheons[pick]) != 0) continue;
+
+            snprintf(labels[n], sizeof labels[n], "%s%s, %s",
+                     (domain && deity_suggests(d, domain)) ? "* " : "",
+                     d->name, d->title);
+            snprintf(details[n], sizeof details[n], "%s -- %s. Symbol: %s",
+                     d->alignment, d->domains, d->symbol);
+            opts[n] = labels[n];
+            det[n] = details[n];
+            map[n] = i;
+            n++;
+        }
+        if (n == 0) return;
+
+        choice = ui_menu("  Your deity:", opts, det, n);
+        add_choice(c, "Deity", DEITIES[map[choice]].name);
+
+        if (domain && !deity_suggests(&DEITIES[map[choice]], domain)) {
+            printf("  %s does not suggest the %s, which is worth agreeing "
+                   "with your DM.\n", DEITIES[map[choice]].name, domain);
+        }
+    }
+}
+
 void choose_personality(Character *c)
 {
     const BackgroundData *bg;
@@ -600,6 +683,19 @@ void choose_personality(Character *c)
     pick_or_type("Ideal", bg->ideals, c->ideal, sizeof c->ideal);
     pick_or_type("Bond", bg->bonds, c->bond, sizeof c->bond);
     pick_or_type("Flaw", bg->flaws, c->flaw, sizeof c->flaw);
+
+    /* A cleric or paladin serves someone in particular; everyone else may
+       still keep a faith. */
+    {
+        int devout = 0;
+        for (i = 0; i < c->class_count; i++) {
+            int id = c->classes[i].class_id;
+            if (id == CLS_CLERIC || id == CLS_PALADIN) devout = 1;
+        }
+        if (ui_yesno("\n  Choose a deity for your character?", devout)) {
+            choose_deity(c);
+        }
+    }
 
     ui_line("  Appearance (one line, optional)", c->appearance,
             sizeof c->appearance);

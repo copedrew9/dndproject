@@ -8,6 +8,8 @@
  */
 #include "data.h"
 
+#include <string.h>
+
 /* -------------------------------------------------------------- trinkets */
 
 const char *const TRINKETS[] = {
@@ -218,3 +220,21 @@ const PriceEntry SPELLCASTING_SERVICES[] = {
 };
 const int SPELLCASTING_SERVICE_COUNT =
     (int)(sizeof(SPELLCASTING_SERVICES) / sizeof(SPELLCASTING_SERVICES[0]));
+
+/* ------------------------------------------------------------------ sizes */
+
+const char *const BEAST_SIZE_NAME[] = {
+    "Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"
+};
+
+/* Wild Shape withholds swimmers until 4th level and fliers until 8th, so
+ * the menu has to read the speed line. */
+int beast_swims(const BeastData *b)
+{
+    return strstr(b->speed, "swim") != NULL;
+}
+
+int beast_flies(const BeastData *b)
+{
+    return strstr(b->speed, "fly") != NULL;
+}

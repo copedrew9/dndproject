@@ -7,10 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
 
 /* Subclasses are referenced by name so the tables can grow freely. */
 static int is_third_caster(int sub)
@@ -1117,6 +1113,185 @@ static void offer_class_options(Character *c, int slot, int class_level)
     }
 }
 
+/* Has this character already recorded a choice under this label? */
+static int has_choice(const Character *c, const char *label)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) return 1;
+    }
+    return 0;
+}
+
+static int has_choice_value(const Character *c, const char *label,
+                            const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, value) == 0) return 1;
+    }
+    return 0;
+}
+
+/* ----------------------------------------------------------- beast forms */
+
+/* Renders a challenge rating held in eighths. */
+static const char *cr_text(int eighths)
+{
+    static char buf[16];
+    switch (eighths) {
+    case 0: return "0";
+    case 1: return "1/8";
+    case 2: return "1/4";
+    case 4: return "1/2";
+    default: break;
+    }
+    snprintf(buf, sizeof buf, "%d", eighths / 8);
+    return buf;
+}
+
+/* A druid's Wild Shape is limited by challenge rating and by movement:
+ * CR 1/4 and no swimming or flying at 2nd level, CR 1/2 with swimming at
+ * 4th, CR 1 with flying at 8th. A Circle of the Moon druid uses a better
+ * table: CR 1 from 2nd level, then CR equal to a third of the druid level
+ * rounded down, and it may take swimmers and fliers on the same schedule. */
+static int wild_shape_max_cr(const Character *c, int slot, int druid_level)
+{
+    if (subclass_is(c->classes[slot].subclass_id, "Circle of the Moon")) {
+        int third = druid_level / 3;
+        int cr = druid_level >= 6 ? (third > 0 ? third : 1) : 1;
+        return cr * 8;
+    }
+    if (druid_level >= 8) return 8;         /* CR 1  */
+    if (druid_level >= 4) return 4;         /* CR 1/2 */
+    return 2;                               /* CR 1/4 */
+}
+
+/* Shows the forms available now. Wild Shape is used at the table rather than
+ * recorded once, so this lists what the druid can become instead of asking
+ * them to pick one and writing it down. */
+static void show_wild_shape_forms(const Character *c, int slot,
+                                  int druid_level)
+{
+    int max_cr = wild_shape_max_cr(c, slot, druid_level);
+    int allow_swim = druid_level >= 4
+        || subclass_is(c->classes[slot].subclass_id, "Circle of the Moon");
+    int allow_fly = druid_level >= 8;
+    int i, shown = 0;
+
+    printf("\n  Wild Shape: beasts of challenge %s or lower", cr_text(max_cr));
+    if (!allow_swim)     printf(", with no swimming speed");
+    else if (!allow_fly) printf(", with no flying speed");
+    printf(".\n");
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        const BeastData *b = &BEASTS[i];
+        if (b->cr_eighths > max_cr) continue;
+        if (!allow_swim && beast_swims(b)) continue;
+        if (!allow_fly && beast_flies(b)) continue;
+        printf("    %-24s CR %-4s AC %-3d HP %-4d %s\n",
+               b->name, b->cr_text, b->ac, b->hp, b->speed);
+        shown++;
+    }
+    if (!shown) printf("    No beast in the tables fits those limits.\n");
+    printf("  While transformed you keep your Intelligence, Wisdom and "
+           "Charisma, your alignment, personality and skill and saving "
+           "throw proficiencies.\n");
+}
+
+/* Lists the beasts that fit a set of limits and records the one chosen.
+ * Used for the Beast Master's companion; Wild Shape only lists, because it
+ * is used at the table rather than settled once. */
+static void choose_beast(Character *c, const char *label, const char *prompt,
+                         int max_cr_eighths, BeastSize max_size, int allow_fly)
+{
+    const char *opts[96];
+    static char labels[96][96];
+    int map[96], n = 0, i, pick;
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL && n < 96; i++) {
+        const BeastData *b = &BEASTS[i];
+        if (b->cr_eighths > max_cr_eighths) continue;
+        if (b->size > max_size) continue;
+        if (!allow_fly && beast_flies(b)) continue;
+
+        snprintf(labels[n], sizeof labels[n],
+                 "%-22s CR %-4s AC %-3d HP %-4d %s", b->name, b->cr_text,
+                 b->ac, b->hp, b->speed);
+        opts[n] = labels[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) return;
+
+    pick = ui_menu(prompt, opts, NULL, n);
+    add_choice(c, label, BEASTS[map[pick]].name);
+}
+
+/* The forms find familiar offers, plus the extra ones a Pact of the Chain
+ * warlock may take. */
+static const char *const FAMILIAR_FORMS[] = {
+    "Bat", "Cat", "Crab", "Frog", "Hawk", "Lizard", "Octopus", "Owl",
+    "Poisonous Snake", "Fish", "Rat", "Raven", "Sea Horse", "Spider",
+    "Weasel"
+};
+
+static void offer_beast_choices(Character *c, int slot, int class_level)
+{
+    int id = c->classes[slot].class_id;
+    int sub = c->classes[slot].subclass_id;
+
+    /* Only when the limits actually change; otherwise a druid would see the
+       same list at every level. */
+    if (id == CLS_DRUID && class_level >= 2) {
+        int now_cr = wild_shape_max_cr(c, slot, class_level);
+        int was_cr = class_level > 2
+            ? wild_shape_max_cr(c, slot, class_level - 1) : -1;
+        int moon = subclass_is(c->classes[slot].subclass_id,
+                               "Circle of the Moon");
+        int now_swim = class_level >= 4 || moon;
+        int was_swim = class_level > 2 && ((class_level - 1) >= 4 || moon);
+        int now_fly = class_level >= 8;
+        int was_fly = class_level > 2 && (class_level - 1) >= 8;
+
+        if (now_cr != was_cr || now_swim != was_swim || now_fly != was_fly) {
+            show_wild_shape_forms(c, slot, class_level);
+        }
+    }
+
+    /* A Beast Master's companion is a beast of CR 1/4 or lower with no
+       flying speed. */
+    if (subclass_is(sub, "Beast Master") && class_level == 3
+        && !has_choice(c, "Animal Companion")) {
+        printf("\n  Your animal companion is a beast of challenge 1/4 or "
+               "lower, no larger than Medium and with no flying speed.\n");
+        choose_beast(c, "Animal Companion", "  Animal companion:", 2,
+                     BSIZE_MEDIUM, 0);
+    }
+
+    /* Pact of the Chain names its own familiar forms on top of the usual
+       ones; the base list is offered to anyone who has find familiar. */
+    if (has_choice_value(c, "Pact Boon", "Pact of the Chain")
+        && !has_choice(c, "Familiar")) {
+        static const char *const chain[] = {
+            "Imp", "Pseudodragon", "Quasit", "Sprite"
+        };
+        const char *opts[24];
+        int i, n = 0, pick;
+        for (i = 0; i < (int)(sizeof FAMILIAR_FORMS / sizeof FAMILIAR_FORMS[0]);
+             i++) {
+            if (find_beast(FAMILIAR_FORMS[i]) >= 0 ||
+                strcmp(FAMILIAR_FORMS[i], "Fish") == 0) {
+                opts[n++] = FAMILIAR_FORMS[i];
+            }
+        }
+        for (i = 0; i < 4; i++) opts[n++] = chain[i];
+        pick = ui_menu("  Your familiar's form:", opts, NULL, n);
+        add_choice(c, "Familiar", opts[pick]);
+    }
+}
+
 /* --------------------------------------------------------------- the ladder */
 
 /* Applies everything a single class level grants. */
@@ -1156,6 +1331,10 @@ static void apply_class_level(Character *c, int slot, int class_level,
     /* Invocations, metamagic, maneuvers, runes, favoured enemies and the
        rest of the lists a class draws from as it advances. */
     offer_class_options(c, slot, class_level);
+
+    /* Wild Shape forms, a Beast Master's companion and a chain warlock's
+       familiar all come out of the beast tables. */
+    offer_beast_choices(c, slot, class_level);
 
     /* Expertise. */
     if (id == CLS_ROGUE && (class_level == 1 || class_level == 6)) {

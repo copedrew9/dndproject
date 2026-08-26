@@ -6,9 +6,11 @@ It walks the six steps of *Player's Handbook* chapter 1, asks for every choice
 those steps require, and writes the finished character to
 `<Charactername>.txt`. A saved character can be loaded again and levelled up.
 
-Content comes from the *Player's Handbook*, *Xanathar's Guide to Everything*
-and *Tasha's Cauldron of Everything*: 13 classes, 101 subclasses, 477 spells,
-Tasha's optional class features, and the artificer with its infusions.
+Content comes from the *Player's Handbook*, *Xanathar's Guide to Everything*,
+*Tasha's Cauldron of Everything*, the *Dungeon Master's Guide*, *Monsters of
+the Multiverse* and the *Monster Manual*: 42 races, 13 classes, 101
+subclasses, 477 spells, 57 feats, 270 magic items, 88 beast stat blocks and
+186 deities. A settings menu decides which of those books are in play.
 
 ## Building and running
 
@@ -25,14 +27,24 @@ The main menu offers:
 1. **Create a new character** — the full wizard.
 2. **Load a character and level up** — reads a saved `.txt` and advances it.
 3. **View a saved character** — prints the sheet.
+4. **Content settings** — which books are in play, and whether custom
+   origins, Tasha's optional class features, multiclassing and feats are
+   allowed. The settings are written into the character file, so a character
+   loaded to level up offers the content it was built with.
+5. **Item reference** — look up any item, magic item, weapon property,
+   trinket, lifestyle or service.
 
 ## What it covers
 
-- **Races** — all 9 from the PHB, with their subraces, the dragonborn's
+- **Races** — all 9 from the PHB with their subraces, the dragonborn's
   draconic ancestry, the half-elf's floating ability increases and skill
   versatility, and the variant human's ability increases, skill and bonus
-  feat. Tasha's "Customizing Your Origin" is not used; races keep their PHB
-  ability increases, languages and proficiencies.
+  feat; plus the **33 races of *Monsters of the Multiverse***, from aarakocra
+  to yuan-ti. Tasha's "Customizing Your Origin" is off by default, so PHB
+  races keep their fixed increases; switching it on pools those points and
+  lets you place them. The Multiverse races have no fixed increases at all by
+  design, so they always choose their own spread whatever that setting
+  says.
 - **Classes** — the 12 PHB classes plus the **artificer** from Tasha's,
   levels 1–20, with **101 subclasses**: the 40 from the PHB, 31 from
   Xanathar's, 26 from Tasha's, and the artificer's four specialists. Class
@@ -59,7 +71,8 @@ The main menu offers:
   spell slots use the multiclass spellcaster table when more than one class
   grants Spellcasting (and that class's own table when only one does).
 - **Ability Score Improvements** — at each ASI level, raise scores or take one
-  of the 42 PHB feats, with prerequisites enforced.
+  of **57 feats** (42 from the PHB, 15 from Tasha's), with prerequisites
+  enforced.
 - **Spellcasting** — **477 spells**: 361 from the PHB, 95 from Xanathar's and
   21 from Tasha's, each with level, school, ritual flag, casting time, range,
   components, duration and concentration. Cantrips and spells known/prepared
@@ -69,7 +82,31 @@ The main menu offers:
 - **Equipment** — the class and background starting packages (resolved into
   real items, including "choose any martial weapon" style entries), or roll
   for starting gold and buy from the full PHB catalogue of armour, weapons,
-  gear, tools, packs and mounts, with weight tracked against carrying capacity.
+  gear, tools, packs, tack and vehicles, with weight tracked against carrying
+  capacity. The shop shows an item's full detail before asking you to buy it,
+  and can look items up without buying.
+- **Item information** — every item says what it does, not just what it costs
+  and weighs. Armour carries its AC formula, Strength requirement, Stealth
+  penalty and don/doff times; weapons explain each property they list;
+  and items with no stat line at all — thieves' tools, a healer's kit, a
+  hunting trap — carry what they contain, what they are used for and which
+  ability checks they help with. **270 magic items** from the *Dungeon
+  Master's Guide* are browsable by kind, rarity, attunement or name, and
+  the trinket table, lifestyle expenses and the prices of food, lodging,
+  services and hired spellcasting are all to hand.
+- **Class option lists** — eldritch invocations (with their prerequisites),
+  pact boons, metamagic, Battle Master maneuvers, Arcane Shot options,
+  elemental disciplines, Rune Knight runes, and the ranger's favoured enemies
+  and terrains are all offered as menus and recorded on the sheet. Each list
+  knows how many the class has by each level, so a character levelled in
+  stages is asked exactly once for each.
+- **Beasts** — **88 stat blocks** from the *Monster Manual*. A druid's Wild
+  Shape lists the forms actually available at their level and circle, a Beast
+  Master picks a companion from the beasts that qualify, and a Pact of the
+  Chain warlock picks a familiar.
+- **Deities** — the **186 gods of appendix B** across nine pantheons, with
+  alignment, suggested domains and symbol. A cleric who has already chosen a
+  domain sees which deities suggest it.
 - **Backgrounds** — all 13, with their skills, tools, languages, feature, and
   suggested traits, ideals, bonds and flaws.
 
@@ -133,12 +170,39 @@ Tasha's "Additional Druid Spells" table is destroyed in the OCR — the source
 PDFs are page scans with no recoverable text — so it is omitted rather than
 guessed, and `src/data_optional.c` says so where the list lives.
 
+The beast stat blocks are **extracted** from the *Monster Manual* by
+`tools/extract_beasts.py`:
+
+```sh
+make beasts     # regenerate src/data_beasts.{c,h}
+```
+
+That dump is much cleaner than the others, but its appendix pages set two
+stat blocks side by side and the OCR reads them column by column: both names,
+then both Armor Class lines, then both Hit Points lines. So the script groups
+the headers on a page first and takes each field N at a time, and it bounds
+each block at the next header rather than a fixed number of lines — a wider
+window silently picks up the *following* beast's challenge rating, which is
+how the black bear came out as CR 0. Ability scores are matched to their
+column heading rather than counted off in order, so a destroyed score (a
+charisma that reads as "m", a heading split as "I NT") cannot shift its
+neighbours along. Twelve known-correct stat blocks are checked on every run,
+and the script refuses to write output if any of them disagrees. The handful
+of blocks the dump carries incompletely are typed out in the script and
+flagged if they ever start parsing.
+
 The remaining tables — races, classes, subclasses, features, backgrounds,
-feats and equipment — are **hand-encoded** in `src/data_*.c`. The OCR shreds
-the book's tables (columns get separated from their labels, so the armour
-table's AC values end up detached from the armour names), which makes
-extraction unreliable for exactly the data that must be exact. They were
-written out and checked against the text instead.
+feats, equipment, magic items and deities — are **hand-encoded** in
+`src/data_*.c`. The OCR shreds the book's tables (columns get separated from
+their labels, so the armour table's AC values end up detached from the armour
+names), which makes extraction unreliable for exactly the data that must be
+exact. The *Dungeon Master's Guide* is the worst of them: its magic item
+entries interleave across columns so that an item's name sits above another
+item's description. Appendix B is the same — the dump carries complete
+alignment, domain and symbol columns for the Forgotten Realms table and for
+no other pantheon. Those were written out and checked against the text
+instead; the OCR was used to cross-check the roster for completeness rather
+than to supply the values.
 
 ## Testing
 
@@ -187,8 +251,16 @@ src/data_infusions.c   artificer infusions
 src/data_features.c    class and subclass features by level
 src/data_backgrounds.c backgrounds
 src/data_feats.c       feats
-src/data_equipment.c   armour, weapons, gear, tools, packs, mounts
+src/data_equipment.c   armour, weapons, gear, tools, packs, mounts, vehicles
+src/data_itemtext.c    what each item does, and the weapon properties
+src/data_magicitems.c  the DMG magic item catalogue
+src/data_gearlists.c   trinkets, lifestyles, services, sizes
+src/data_classoptions.c invocations, metamagic, maneuvers, runes and the rest
+src/data_deities.c     the gods of appendix B
 src/data_spells.c/.h   generated by tools/extract_spells.py
+src/data_beasts.c/.h   generated by tools/extract_beasts.py
+src/settings.c         which books and optional rules are in play
+src/reference.c        the item lookup browser
 src/build.c            creation wizard, steps 1-4
 src/progression.c      levels, subclasses, ASIs, feats, spells, level-up
 src/gear.c             equipment and personality
@@ -199,12 +271,14 @@ src/main.c             menu and entry point
 
 ## Scope
 
-The *Player's Handbook*, *Xanathar's Guide to Everything* and *Tasha's
-Cauldron of Everything*. The *Mordenkainen's* dump in `TextFiles/` is not
-used, and neither are Tasha's feats or its "Customizing Your Origin" rules.
+Six books: the *Player's Handbook*, *Xanathar's Guide to Everything*,
+*Tasha's Cauldron of Everything*, the *Dungeon Master's Guide* (magic items),
+*Mordenkainen Presents: Monsters of the Multiverse* (races) and the *Monster
+Manual* (beasts). Any of them except the PHB can be switched off in the
+settings menu, which hides their races, classes, subclasses, spells, feats
+and items everywhere in the wizard.
 
-Choices the books leave to the player and the DM without a fixed list
-(eldritch invocations, Battle Master manoeuvres, metamagic, favoured enemies
-and terrains, the specific artisan's tools a background grants, which magic
-item an artificer replicates) are prompted for and recorded as free text
-rather than enumerated.
+A few choices are still recorded as free text rather than picked from a list,
+because the books do not give one: the specific artisan's tools a background
+grants, and which magic item an artificer's Replicate Magic Item infusion
+copies.

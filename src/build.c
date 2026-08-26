@@ -7,9 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11 };
 
 /* ------------------------------------------------------------- list helpers */
 
@@ -58,25 +55,6 @@ void add_tool(Character *c, const char *tool)
     c->tool_prof_count++;
 }
 
-/* Case-insensitive substring test. */
-static int contains_ci(const char *haystack, const char *needle)
-{
-    size_t nl = strlen(needle);
-    const char *h;
-
-    if (!nl) return 1;
-    for (h = haystack; *h; h++) {
-        size_t k;
-        for (k = 0; k < nl; k++) {
-            int a = (unsigned char)h[k], b = (unsigned char)needle[k];
-            if (a >= 'A' && a <= 'Z') a += 32;
-            if (b >= 'A' && b <= 'Z') b += 32;
-            if (!h[k] || a != b) break;
-        }
-        if (k == nl) return 1;
-    }
-    return 0;
-}
 
 int has_prof(const Character *c, const char *prof)
 {
@@ -560,7 +538,8 @@ static void choose_abilities(Character *c)
  * race grants become a pool the player may place anywhere, the granted
  * languages may be swapped, and a fixed racial proficiency may be traded.
  */
-static void custom_origin_abilities(Character *c, int total)
+static void custom_origin_abilities(Character *c, int total,
+                                    const char *why)
 {
     static const char *const modes[] = {
         "+2 to one ability and +1 to another",
@@ -574,8 +553,8 @@ static void custom_origin_abilities(Character *c, int total)
         avail[a] = 1;
     }
 
-    printf("\n  Customizing Your Origin: your race grants %d points of "
-           "ability increase to place as you like.\n", total);
+    printf("\n  %s: %d points of ability increase to place as you "
+           "like.\n", why, total);
 
     if (total == 3) {
         m = ui_menu("  How would you like to spread them?", modes, NULL, 2);
@@ -649,7 +628,13 @@ static void apply_racial_bonuses(Character *c)
 
     memset(c->racial_bonus, 0, sizeof c->racial_bonus);
 
-    if (SETTINGS.custom_origins) {
+    /* Monsters of the Multiverse races carry no fixed increases by design,
+       so they use the choose-your-own spread even under the PHB rules. */
+    if (r->origin_choice) {
+        custom_origin_abilities(c, 3, "This race has no fixed ability "
+                                "increases");
+        add_choice(c, "Origin", "Chosen (no fixed increases)");
+    } else if (SETTINGS.custom_origins) {
         /* Total the points the race and subrace would have granted, then let
            the player place them wherever they like. */
         int total = 0;
@@ -661,7 +646,7 @@ static void apply_racial_bonuses(Character *c)
         if (s && s->choice_asi_count) total += s->choice_asi_count;
         if (total < 1) total = 3;
 
-        custom_origin_abilities(c, total);
+        custom_origin_abilities(c, total, "Customizing Your Origin");
         add_choice(c, "Origin", "Customized (Tasha's)");
     } else {
         if (!(s && s->replaces_race_asi)) {
