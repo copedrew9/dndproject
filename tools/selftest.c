@@ -13,9 +13,10 @@
 
 enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
        CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11 };
+       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
+       CLS_ARTIFICER = 12 };
 
-enum { SUB_ELDRITCH_KNIGHT = 15, SUB_DRACONIC = 27 };
+
 
 static int failures;
 
@@ -190,7 +191,7 @@ static void test_armour_class(void)
 
     /* Draconic Resilience: 13 + Dex. */
     reset(&c);
-    add_class(&c, CLS_SORCERER, 1, SUB_DRACONIC);
+    add_class(&c, CLS_SORCERER, 1, subclass_by_name("Draconic Bloodline"));
     c.base_score[ABL_DEX] = 12;
     EQ(armour_class(&c), 14, "draconic sorcerer unarmoured");
 }
@@ -249,15 +250,72 @@ static void test_spell_slots(void)
 
     /* Eldritch Knight is a third-caster: fighter 3 -> caster level 1. */
     reset(&c);
-    add_class(&c, CLS_FIGHTER, 3, SUB_ELDRITCH_KNIGHT);
+    add_class(&c, CLS_FIGHTER, 3, subclass_by_name("Eldritch Knight"));
     EQ(caster_level(&c), 1, "eldritch knight 3 caster level");
     spell_slots_for(&c, slots);
     EQ(slots[1], 2, "eldritch knight 3, 1st level");
+
+    /* Paladins and rangers have no spell slots at 1st level. */
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 1, -1);
+    EQ(spell_slots_for(&c, slots), 0, "paladin 1 has no slots");
+    reset(&c);
+    add_class(&c, CLS_RANGER, 1, -1);
+    EQ(spell_slots_for(&c, slots), 0, "ranger 1 has no slots");
+
+    /* The artificer, by contrast, casts from 1st level. */
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 1, -1);
+    spell_slots_for(&c, slots);
+    EQ(slots[1], 2, "artificer 1, 1st level");
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 5, -1);
+    spell_slots_for(&c, slots);
+    EQ(slots[1], 4, "artificer 5, 1st level");
+    EQ(slots[2], 2, "artificer 5, 2nd level");
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 20, -1);
+    spell_slots_for(&c, slots);
+    EQ(slots[5], 2, "artificer 20, 5th level");
+
+    /* Tasha's has the artificer round UP when multiclassing, where the
+     * paladin and ranger round down. */
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 5, -1);
+    add_class(&c, CLS_WIZARD, 1, -1);
+    EQ(caster_level(&c), 4, "artificer 5 / wizard 1 rounds up");
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 5, -1);
+    add_class(&c, CLS_WIZARD, 1, -1);
+    EQ(caster_level(&c), 3, "paladin 5 / wizard 1 rounds down");
 
     /* A plain fighter has none. */
     reset(&c);
     add_class(&c, CLS_FIGHTER, 10, -1);
     EQ(spell_slots_for(&c, slots), 0, "fighter has no slots");
+}
+
+static void test_artificer(void)
+{
+    Character c;
+
+    printf("artificer\n");
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 5, -1);
+    c.base_score[ABL_INT] = 16;                 /* +3 */
+    /* Intelligence modifier + half artificer level, rounded down. */
+    EQ(spells_prepared_count(&c, CLS_ARTIFICER), 5, "prepared at 5th level");
+    EQ(known_spell_count(&c, CLS_ARTIFICER, 1), 2, "cantrips at 5th level");
+
+    reset(&c);
+    add_class(&c, CLS_ARTIFICER, 14, -1);
+    c.base_score[ABL_INT] = 20;                 /* +5 */
+    EQ(spells_prepared_count(&c, CLS_ARTIFICER), 12, "prepared at 14th level");
+    EQ(known_spell_count(&c, CLS_ARTIFICER, 1), 4, "cantrips at 14th level");
+    EQ(INFUSIONS_KNOWN[14], 10, "infusions known at 14th level");
+    EQ(INFUSED_ITEMS[14], 5, "infused items at 14th level");
+    EQ(INFUSIONS_KNOWN[2], 4, "infusions known at 2nd level");
+    EQ(INFUSED_ITEMS[2], 2, "infused items at 2nd level");
 }
 
 static void test_pact_magic(void)
@@ -318,7 +376,9 @@ static void test_spell_data(void)
     int i, cantrips = 0, rituals = 0, conc = 0, noclass = 0;
 
     printf("spell data\n");
-    EQ(SPELL_COUNT, 361, "PHB spell count");
+    /* 361 from the Player's Handbook, 95 from Xanathar's Guide and 21 from
+     * Tasha's Cauldron. */
+    EQ(SPELL_COUNT, 477, "spell count across the three books");
     for (i = 0; i < SPELL_COUNT; i++) {
         if (SPELLS[i].level == 0) cantrips++;
         if (SPELLS[i].ritual) rituals++;
@@ -330,12 +390,10 @@ static void test_spell_data(void)
             failures++;
         }
     }
-    EQ(cantrips, 27, "cantrip count");
+    EQ(cantrips, 44, "cantrip count");
     EQ(noclass, 0, "spells on no class list");
-    check(rituals > 25 && rituals < 40, "ritual spell count in range",
-          rituals, 31);
-    check(conc > 140 && conc < 170, "concentration spell count in range",
-          conc, 154);
+    EQ(rituals, 33, "ritual spell count");
+    EQ(conc, 218, "concentration spell count");
 }
 
 static void test_data_integrity(void)
@@ -344,23 +402,38 @@ static void test_data_integrity(void)
 
     printf("data table integrity\n");
     EQ(RACE_COUNT, 9, "PHB races");
-    EQ(CLASS_COUNT, 12, "PHB classes");
-    EQ(SUBCLASS_COUNT, 40, "PHB subclasses");
+    EQ(CLASS_COUNT, 13, "classes (12 PHB + the artificer)");
     EQ(BACKGROUND_COUNT, 13, "PHB backgrounds");
     EQ(FEAT_COUNT, 42, "PHB feats");
 
-    /* Every subclass must point back at a real class, and every class's
-     * subclass window must land on subclasses belonging to it. */
+    /* Every class must offer at least one subclass, and every subclass must
+     * point back at a real class. */
     for (i = 0; i < CLASS_COUNT; i++) {
-        int k;
-        for (k = 0; k < CLASSES[i].subclass_count; k++) {
-            int s = CLASSES[i].first_subclass + k;
-            char buf[64];
-            snprintf(buf, sizeof buf, "%s subclass %d owner", CLASSES[i].name, k);
-            check(s >= 0 && s < SUBCLASS_COUNT && SUBCLASSES[s].class_id == i,
-                  buf, s < SUBCLASS_COUNT ? SUBCLASSES[s].class_id : -1, i);
+        int ids[64];
+        int n = subclasses_of(i, ids, 64);
+        char buf[64];
+        snprintf(buf, sizeof buf, "%s has subclasses", CLASSES[i].name);
+        check(n > 0, buf, n, 1);
+    }
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        int k, features = 0;
+        if (SUBCLASSES[i].class_id < 0 || SUBCLASSES[i].class_id >= CLASS_COUNT) {
+            printf("  FAIL subclass %d (%s) names no real class\n", i,
+                   SUBCLASSES[i].name);
+            failures++;
+        }
+        /* A subclass with no features would be selectable but empty, which
+         * is how a mistyped index in data_features.c shows up. */
+        for (k = 0; k < FEATURE_COUNT; k++) {
+            if (FEATURES[k].subclass_id == i) features++;
+        }
+        if (features == 0) {
+            printf("  FAIL subclass %d (%s) has no features\n", i,
+                   SUBCLASSES[i].name);
+            failures++;
         }
     }
+    EQ(SUBCLASS_COUNT, 101, "subclasses across the three books");
     /* Every feature must name a class that exists and a level in range. */
     for (i = 0; i < FEATURE_COUNT; i++) {
         if (FEATURES[i].class_id < 0 || FEATURES[i].class_id >= CLASS_COUNT
@@ -382,6 +455,98 @@ static void test_data_integrity(void)
           find_item("Chain mail"), 0);
     check(find_item("chain mail") >= 0, "find chain mail (case-insensitive)",
           find_item("chain mail"), 0);
+}
+
+/* Every spell named in Tasha's "Additional <Class> Spells" lists, and in the
+ * subclass spell grants, must exist in the database -- a typo there would
+ * silently drop a spell the character is entitled to. */
+static int spell_named(const char *name, size_t len)
+{
+    int i;
+    for (i = 0; i < SPELL_COUNT; i++) {
+        size_t j;
+        const char *a = SPELLS[i].name;
+        if (strlen(a) != len) continue;
+        for (j = 0; j < len; j++) {
+            int ca = a[j], cb = name[j];
+            if (ca >= 'A' && ca <= 'Z') ca += 32;
+            if (cb >= 'A' && cb <= 'Z') cb += 32;
+            if (ca != cb) break;
+        }
+        if (j == len) return 1;
+    }
+    return 0;
+}
+
+static void check_spell_list(const char *list, const char *what)
+{
+    const char *p = list;
+
+    while (p && *p) {
+        const char *end;
+        size_t len;
+        while (*p == ' ' || *p == ',') p++;
+        if (!*p) break;
+        end = strchr(p, ',');
+        len = end ? (size_t)(end - p) : strlen(p);
+        while (len && p[len - 1] == ' ') len--;
+        if (len && !spell_named(p, len)) {
+            printf("  FAIL %s names no spell: \"%.*s\"\n", what,
+                   (int)len, p);
+            failures++;
+        }
+        p = end ? end + 1 : NULL;
+    }
+}
+
+static void test_expansion_data(void)
+{
+    int i;
+
+    printf("expansion data\n");
+    EQ(OPTIONAL_FEATURE_COUNT, 42, "Tasha's optional class features");
+    EQ(ADDITIONAL_SPELLS_COUNT, 8, "classes with an additional spell list");
+    EQ(INFUSION_COUNT, 16, "artificer infusions");
+
+    for (i = 0; i < OPTIONAL_FEATURE_COUNT; i++) {
+        if (OPTIONAL_FEATURES[i].class_id < 0
+            || OPTIONAL_FEATURES[i].class_id >= CLASS_COUNT
+            || OPTIONAL_FEATURES[i].level < 1
+            || OPTIONAL_FEATURES[i].level > MAX_LEVEL) {
+            printf("  FAIL optional feature %d (%s) is out of range\n", i,
+                   OPTIONAL_FEATURES[i].name);
+            failures++;
+        }
+    }
+    for (i = 0; i < ADDITIONAL_SPELLS_COUNT; i++) {
+        char what[64];
+        snprintf(what, sizeof what, "%s additional spells",
+                 CLASSES[ADDITIONAL_SPELLS[i].class_id].name);
+        check_spell_list(ADDITIONAL_SPELLS[i].spells, what);
+    }
+    /* Subclass spell grants use the same '|' separated, comma separated form. */
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        char buf[1024], what[80];
+        const char *p;
+        if (!SUBCLASSES[i].bonus_spells[0]) continue;
+        snprintf(what, sizeof what, "%s spells", SUBCLASSES[i].name);
+        strncpy(buf, SUBCLASSES[i].bonus_spells, sizeof buf - 1);
+        buf[sizeof buf - 1] = '\0';
+        for (p = buf; *p; ) {
+            char *bar = strchr((char *)p, '|');
+            if (bar) *bar = '\0';
+            check_spell_list(p, what);
+            if (!bar) break;
+            p = bar + 1;
+        }
+    }
+    for (i = 0; i < INFUSION_COUNT; i++) {
+        if (INFUSIONS[i].min_level < 1 || INFUSIONS[i].min_level > MAX_LEVEL) {
+            printf("  FAIL infusion %s has a bad minimum level\n",
+                   INFUSIONS[i].name);
+            failures++;
+        }
+    }
 }
 
 static void test_carrying_and_coins(void)
@@ -411,10 +576,12 @@ int main(void)
     test_hill_dwarf_and_tough();
     test_armour_class();
     test_spell_slots();
+    test_artificer();
     test_pact_magic();
     test_skills_and_saves();
     test_spell_data();
     test_data_integrity();
+    test_expansion_data();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

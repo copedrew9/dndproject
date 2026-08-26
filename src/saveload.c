@@ -327,6 +327,19 @@ static void write_sheet(FILE *f, const Character *c)
     section(f, "CLASS FEATURES");
     write_features(f, c);
 
+    {
+        int art = class_level_of(c, class_by_name("Artificer"));
+        if (art >= 2) {
+            section(f, "ARTIFICER INFUSIONS");
+            fprintf(f, "  Infusions known: %d   Items infused at once: %d\n",
+                    (int)INFUSIONS_KNOWN[art], (int)INFUSED_ITEMS[art]);
+            for (i = 0; i < c->choice_count; i++) {
+                if (strcmp(c->choices[i].label, "Infusion") != 0) continue;
+                fprintf(f, "    %s\n", c->choices[i].value);
+            }
+        }
+    }
+
     if (c->feat_count) {
         section(f, "FEATS");
         for (i = 0; i < c->feat_count; i++) {
@@ -335,11 +348,36 @@ static void write_sheet(FILE *f, const Character *c)
         }
     }
 
-    if (c->choice_count) {
-        section(f, "CHOICES");
+    {
+        int optional = 0;
         for (i = 0; i < c->choice_count; i++) {
-            fprintf(f, "  %-22s %s\n", c->choices[i].label,
-                    c->choices[i].value);
+            if (strcmp(c->choices[i].label, "Optional feature") == 0) optional++;
+        }
+        if (optional) {
+            section(f, "OPTIONAL CLASS FEATURES (TASHA'S)");
+            for (i = 0; i < c->choice_count; i++) {
+                if (strcmp(c->choices[i].label, "Optional feature") != 0) continue;
+                fprintf(f, "  %s\n", c->choices[i].value);
+            }
+        }
+    }
+
+    {
+        /* Infusions and optional features have their own sections above. */
+        int others = 0;
+        for (i = 0; i < c->choice_count; i++) {
+            if (strcmp(c->choices[i].label, "Infusion") == 0) continue;
+            if (strcmp(c->choices[i].label, "Optional feature") == 0) continue;
+            others++;
+        }
+        if (others) {
+            section(f, "CHOICES");
+            for (i = 0; i < c->choice_count; i++) {
+                if (strcmp(c->choices[i].label, "Infusion") == 0) continue;
+                if (strcmp(c->choices[i].label, "Optional feature") == 0) continue;
+                fprintf(f, "  %-22s %s\n", c->choices[i].label,
+                        c->choices[i].value);
+            }
         }
     }
 

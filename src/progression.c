@@ -9,10 +9,15 @@
 
 enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
        CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11 };
+       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
+       CLS_ARTIFICER = 12 };
 
-enum { SUB_LORE = 2, SUB_VALOR = 3, SUB_LAND = 11, SUB_CHAMPION = 13,
-       SUB_ELDRITCH_KNIGHT = 15, SUB_ARCANE_TRICKSTER = 26 };
+/* Subclasses are referenced by name so the tables can grow freely. */
+static int is_third_caster(int sub)
+{
+    return subclass_is(sub, "Eldritch Knight")
+        || subclass_is(sub, "Arcane Trickster");
+}
 
 /* 0 = roll hit dice, 1 = take the fixed average. Asked once per build. */
 static int hp_use_average = 1;
@@ -27,12 +32,17 @@ static int max_spell_level_for(const Character *c, int slot)
     int sub = c->classes[slot].subclass_id;
     int eff = 0, i;
 
+    if (CLASSES[id].caster_start_level == 0
+        || lvl < CLASSES[id].caster_start_level) {
+        return 0;
+    }
+
     switch (CLASSES[id].caster) {
     case CAST_FULL: eff = lvl; break;
     case CAST_HALF: eff = (lvl + 1) / 2; break;
     case CAST_PACT: return PACT_SLOTS[lvl][1];
     default:
-        if (sub == SUB_ELDRITCH_KNIGHT || sub == SUB_ARCANE_TRICKSTER) {
+        if (is_third_caster(sub)) {
             eff = (lvl + 2) / 3;
         } else {
             return 0;
@@ -62,7 +72,7 @@ int spell_slots_for(const Character *c, int out[10])
 
         if (t == CAST_FULL || t == CAST_HALF) {
             casters++; single = i;
-        } else if (sub == SUB_ELDRITCH_KNIGHT || sub == SUB_ARCANE_TRICKSTER) {
+        } else if (is_third_caster(sub)) {
             casters++; single = i;
         }
     }
@@ -73,13 +83,15 @@ int spell_slots_for(const Character *c, int out[10])
         int lvl = c->classes[single].level;
         int sub = c->classes[single].subclass_id;
 
+        /* Paladins and rangers have no slots at 1st level, and the
+           third-casters none before 3rd. */
+        if (lvl < CLASSES[id].caster_start_level) return 0;
+
         switch (CLASSES[id].caster) {
         case CAST_FULL: eff = lvl; break;
         case CAST_HALF: eff = (lvl + 1) / 2; break;
         default:
-            if (sub == SUB_ELDRITCH_KNIGHT || sub == SUB_ARCANE_TRICKSTER) {
-                eff = (lvl + 2) / 3;
-            }
+            if (is_third_caster(sub)) eff = (lvl + 2) / 3;
             break;
         }
     } else {
@@ -108,8 +120,9 @@ int spells_prepared_count(const Character *c, int class_id)
     int mod = ability_mod(c, CLASSES[class_id].spell_ability);
     int n;
 
-    if (class_id == CLS_PALADIN) n = mod + lvl / 2;
-    else                         n = mod + lvl;
+    /* Half-casters that prepare (paladin, artificer) use half their level. */
+    if (CLASSES[class_id].caster == CAST_HALF) n = mod + lvl / 2;
+    else                                       n = mod + lvl;
     return n < 1 ? 1 : n;
 }
 
@@ -122,7 +135,7 @@ int known_spell_count(const Character *c, int class_id, int cantrips)
     lvl = c->classes[slot].level;
     sub = c->classes[slot].subclass_id;
 
-    if (sub == SUB_ELDRITCH_KNIGHT || sub == SUB_ARCANE_TRICKSTER) {
+    if (is_third_caster(sub)) {
         return cantrips ? THIRD_CANTRIPS[lvl] : THIRD_SPELLS_KNOWN[lvl];
     }
     if (cantrips) {
@@ -177,8 +190,7 @@ static int feat_available(const Character *c, int f)
         int casts = 0;
         for (i = 0; i < c->class_count; i++) {
             if (CLASSES[c->classes[i].class_id].caster != CAST_NONE) casts = 1;
-            if (c->classes[i].subclass_id == SUB_ELDRITCH_KNIGHT
-                || c->classes[i].subclass_id == SUB_ARCANE_TRICKSTER) casts = 1;
+            if (is_third_caster(c->classes[i].subclass_id)) casts = 1;
         }
         if (!casts) return 0;
     }
@@ -292,28 +304,103 @@ void apply_asi_or_feat(Character *c, const char *reason)
     }
 }
 
+
+/* Artificer infusions. The number known rises at 2nd, 6th, 10th, 14th and
+ * 18th level; each has a minimum artificer level, and only Replicate Magic
+ * Item may be learned more than once (Tasha's, p.20). */
+static int infusions_recorded(const Character *c)
+{
+    int i, n = 0;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, "Infusion") == 0) n++;
+    }
+    return n;
+}
+
+static int infusion_taken(const Character *c, const char *name)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, "Infusion") != 0) continue;
+        if (strncmp(c->choices[i].value, name, strlen(name)) == 0) return 1;
+    }
+    return 0;
+}
+
+static void choose_infusions(Character *c, int artificer_level)
+{
+    int want = INFUSIONS_KNOWN[artificer_level] - infusions_recorded(c);
+
+    if (want <= 0) return;
+
+    printf("\n  Infusions known: %d; you can infuse %d item%s at a time.\n",
+           (int)INFUSIONS_KNOWN[artificer_level],
+           (int)INFUSED_ITEMS[artificer_level],
+           INFUSED_ITEMS[artificer_level] == 1 ? "" : "s");
+
+    while (want-- > 0) {
+        const char *opts[64];
+        const char *det[64];
+        static char labels[64][160];
+        int map[64], n = 0, i, pick;
+
+        for (i = 0; i < INFUSION_COUNT && n < 64; i++) {
+            int repeatable = strcmp(INFUSIONS[i].name,
+                                    "Replicate Magic Item") == 0;
+            if (INFUSIONS[i].min_level > artificer_level) continue;
+            if (!repeatable && infusion_taken(c, INFUSIONS[i].name)) continue;
+
+            snprintf(labels[n], sizeof labels[n], "%s -- %s",
+                     INFUSIONS[i].name, INFUSIONS[i].item);
+            opts[n] = labels[n];
+            det[n] = INFUSIONS[i].summary;
+            map[n] = i;
+            n++;
+        }
+        if (n == 0) {
+            printf("    No further infusions are available to you.\n");
+            return;
+        }
+
+        pick = ui_menu("  Choose an artificer infusion:", opts, det, n);
+
+        if (strcmp(INFUSIONS[map[pick]].name, "Replicate Magic Item") == 0) {
+            char item[MAX_NAME];
+            char value[MAX_TEXT];
+            ui_line("    Which magic item does it replicate", item, sizeof item);
+            snprintf(value, sizeof value, "Replicate Magic Item (%s)",
+                     item[0] ? item : "to be chosen");
+            add_choice(c, "Infusion", value);
+        } else {
+            add_choice(c, "Infusion", INFUSIONS[map[pick]].name);
+        }
+    }
+}
+
 /* ------------------------------------------------------------- subclass etc. */
 
 void choose_subclass_for(Character *c, int slot)
 {
     const ClassData *cd = &CLASSES[c->classes[slot].class_id];
-    const char *opts[16];
-    const char *det[16];
-    int i, pick;
+    const char *opts[64];
+    const char *det[64];
+    int ids[64];
+    int i, pick, n;
 
-    if (cd->subclass_count <= 0) return;
+    n = subclasses_of(c->classes[slot].class_id, ids, 64);
+    if (n <= 0) return;
 
-    for (i = 0; i < cd->subclass_count; i++) {
-        opts[i] = SUBCLASSES[cd->first_subclass + i].name;
-        det[i] = SUBCLASSES[cd->first_subclass + i].summary;
+    for (i = 0; i < n; i++) {
+        opts[i] = SUBCLASSES[ids[i]].name;
+        det[i] = SUBCLASSES[ids[i]].summary;
     }
     {
         char prompt[128];
         snprintf(prompt, sizeof prompt, "  %s -- %s:", cd->name,
                  cd->subclass_label);
-        pick = ui_menu(prompt, opts, det, cd->subclass_count);
+        pick = ui_menu(prompt, opts, det, n);
     }
-    c->classes[slot].subclass_id = cd->first_subclass + pick;
+    c->classes[slot].subclass_id = ids[pick];
 
     /* Some subclasses carry a further choice. */
     {
@@ -332,7 +419,7 @@ void choose_subclass_for(Character *c, int slot)
     /* Subclass proficiency grants. */
     {
         int sub = c->classes[slot].subclass_id;
-        if (sub == SUB_VALOR) {
+        if (subclass_is(sub, "College of Valor")) {
             add_prof(c, "Medium armor");
             add_prof(c, "Shields");
             add_prof(c, "Martial weapons");
@@ -355,7 +442,7 @@ void choose_subclass_for(Character *c, int slot)
     }
 
     /* Lore bards gain three extra skills. */
-    if (c->classes[slot].subclass_id == SUB_LORE) {
+    if (subclass_is(c->classes[slot].subclass_id, "College of Lore")) {
         const char *sopts[SKL_COUNT];
         int avail[SKL_COUNT], picks[3], i2;
         for (i2 = 0; i2 < SKL_COUNT; i2++) {
@@ -379,8 +466,11 @@ void choose_fighting_style(Character *c, int class_id)
         "Two-Weapon Fighting (add your ability modifier to the off-hand)"
     };
     int allowed[6], n = 0, i;
-    const char *opts[6];
-    int map[6], pick;
+    const char *opts[16];
+    int map[16], pick;
+    char extra_buf[1024];
+    const char *extra_parts[8];
+    int extra_n = 0;
 
     /* Fighters may take any; paladins exclude Archery and Two-Weapon;
        rangers exclude Great Weapon Fighting and Protection. */
@@ -394,8 +484,23 @@ void choose_fighting_style(Character *c, int class_id)
         map[n] = i;
         n++;
     }
+
+    /* Tasha's Fighting Style Options widens the list. */
+    if (has_optional_feature(c, "Fighting Style Options")) {
+        const char *src = (class_id == CLS_PALADIN) ? TASHA_PALADIN_STYLES
+                        : (class_id == CLS_RANGER)  ? TASHA_RANGER_STYLES
+                        : TASHA_FIGHTER_STYLES;
+        extra_n = split_pipe(src, extra_buf, sizeof extra_buf, extra_parts, 8);
+        for (i = 0; i < extra_n && n < 16; i++) {
+            opts[n] = extra_parts[i];
+            map[n] = -1 - i;                /* negative marks a Tasha's style */
+            n++;
+        }
+    }
+
     pick = ui_menu("  Fighting Style:", opts, NULL, n);
-    add_choice(c, "Fighting Style", all[map[pick]]);
+    add_choice(c, "Fighting Style",
+               map[pick] >= 0 ? all[map[pick]] : extra_parts[-1 - map[pick]]);
 }
 
 void choose_expertise(Character *c, int count)
@@ -419,12 +524,106 @@ void choose_expertise(Character *c, int count)
     for (i = 0; i < count; i++) c->skill_expertise[map[picks[i]]] = 1;
 }
 
+
+/* Tasha's optional class features are opt-in, one at a time, at the class
+ * level that offers them. Taking one is recorded as a choice so it appears
+ * on the sheet along with anything it replaces. */
+static int optional_taken(const Character *c, const char *name)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, "Optional feature") != 0) continue;
+        if (strncmp(c->choices[i].value, name, strlen(name)) == 0) return 1;
+    }
+    return 0;
+}
+
+int has_optional_feature(const Character *c, const char *name)
+{
+    return optional_taken(c, name);
+}
+
+static void offer_optional_features(Character *c, int class_id, int class_level)
+{
+    int i;
+
+    for (i = 0; i < OPTIONAL_FEATURE_COUNT; i++) {
+        const OptionalFeature *of = &OPTIONAL_FEATURES[i];
+        char prompt[MAX_NAME + 64];
+
+        if (of->class_id != class_id || of->level != class_level) continue;
+        if (optional_taken(c, of->name)) continue;
+
+        printf("\n  Optional class feature (Tasha's): %s\n", of->name);
+        ui_wrap(of->summary, 6);
+        if (of->replaces[0]) {
+            printf("      Replaces: %s\n", of->replaces);
+        }
+        snprintf(prompt, sizeof prompt, "  Take %s?", of->name);
+        if (!ui_yesno(prompt, 0)) continue;
+
+        if (of->replaces[0]) {
+            char value[MAX_TEXT];
+            snprintf(value, sizeof value, "%s (replaces %s)", of->name,
+                     of->replaces);
+            add_choice(c, "Optional feature", value);
+        } else {
+            add_choice(c, "Optional feature", of->name);
+        }
+    }
+}
+
+/* The extra spells an "Additional <Class> Spells" feature grants, if taken. */
+static const char *additional_spells_for(const Character *c, int class_id)
+{
+    static const char *const NAMES[] = {
+        "Additional Bard Spells", "Additional Cleric Spells",
+        "Additional Druid Spells", "Additional Paladin Spells",
+        "Additional Ranger Spells", "Additional Sorcerer Spells",
+        "Additional Warlock Spells", "Additional Wizard Spells",
+    };
+    int i;
+    size_t k;
+
+    for (i = 0; i < ADDITIONAL_SPELLS_COUNT; i++) {
+        if (ADDITIONAL_SPELLS[i].class_id != class_id) continue;
+        for (k = 0; k < sizeof NAMES / sizeof NAMES[0]; k++) {
+            if (optional_taken(c, NAMES[k])) {
+                /* Only the one matching this class can be taken by it. */
+                const ClassData *cd = &CLASSES[class_id];
+                char expect[MAX_NAME];
+                snprintf(expect, sizeof expect, "Additional %s Spells",
+                         cd->name);
+                if (optional_taken(c, expect)) return ADDITIONAL_SPELLS[i].spells;
+            }
+        }
+        return NULL;
+    }
+    return NULL;
+}
+
+/* True when `name` appears in a comma separated list. */
+static int name_in_list(const char *list, const char *name)
+{
+    const char *p = list;
+    size_t len = strlen(name);
+
+    while (p && *p) {
+        while (*p == ' ' || *p == ',') p++;
+        if (strncmp(p, name, len) == 0
+            && (p[len] == '\0' || p[len] == ',')) {
+            return 1;
+        }
+        p = strchr(p, ',');
+    }
+    return 0;
+}
+
 /* ------------------------------------------------------------------- spells */
 
 static int spell_class_bit(int class_id, int subclass_id)
 {
-    if (subclass_id == SUB_ELDRITCH_KNIGHT
-        || subclass_id == SUB_ARCANE_TRICKSTER) return SPL_WIZARD;
+    if (is_third_caster(subclass_id)) return SPL_WIZARD;
     switch (class_id) {
     case CLS_BARD:     return SPL_BARD;
     case CLS_CLERIC:   return SPL_CLERIC;
@@ -434,6 +633,7 @@ static int spell_class_bit(int class_id, int subclass_id)
     case CLS_SORCERER: return SPL_SORCERER;
     case CLS_WARLOCK:  return SPL_WARLOCK;
     case CLS_WIZARD:   return SPL_WIZARD;
+    case CLS_ARTIFICER: return SPL_ARTIFICER;
     default:           return 0;
     }
 }
@@ -494,12 +694,31 @@ static int find_spell_by_name(const char *name)
     return -1;
 }
 
+/* A spell is offered when the class list holds it, or when Tasha's
+ * "Additional <Class> Spells" feature has widened that list to include it. */
+static int spell_offered(int spell_id, int bit, const char *extra)
+{
+    char lower[64];
+    size_t i;
+
+    if (SPELLS[spell_id].classes & bit) return 1;
+    if (!extra) return 0;
+
+    for (i = 0; SPELLS[spell_id].name[i] && i + 1 < sizeof lower; i++) {
+        int ch = (unsigned char)SPELLS[spell_id].name[i];
+        lower[i] = (char)((ch >= 'A' && ch <= 'Z') ? ch + 32 : ch);
+    }
+    lower[i] = '\0';
+    return name_in_list(extra, lower);
+}
+
 /* How many spells of this level the class list still offers. */
-static int available_count(const Character *c, int bit, int level)
+static int available_count(const Character *c, int bit, int level,
+                           const char *extra)
 {
     int i, n = 0;
     for (i = 0; i < SPELL_COUNT; i++) {
-        if (!(SPELLS[i].classes & bit)) continue;
+        if (!spell_offered(i, bit, extra)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
         n++;
@@ -511,13 +730,14 @@ static int available_count(const Character *c, int bit, int level)
 static void pick_spells(Character *c, int bit, int class_id, int level,
                         int want, const char *what)
 {
+    const char *extra = additional_spells_for(c, class_id);
     const char *opts[400];
     const char *det[400];
     static char lines[400][160];
     int map[400], n = 0, i, taken = 0;
 
     for (i = 0; i < SPELL_COUNT && n < 400; i++) {
-        if (!(SPELLS[i].classes & bit)) continue;
+        if (!spell_offered(i, bit, extra)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
 
@@ -566,20 +786,26 @@ static void add_bonus_spells(Character *c, int slot)
     char buf[1024];
     const char *groups[8];
     int n, g;
-    /* Cleric domain spells arrive at 1/3/5/7/9; paladin oaths at 3/5/9/13/17;
-       warlock patrons expand the list at 1st through 5th spell level. */
-    static const int cleric_at[5]  = {1, 3, 5, 7, 9};
-    static const int paladin_at[5] = {3, 5, 9, 13, 17};
-    static const int warlock_at[5] = {1, 3, 5, 7, 9};
+    /* Domain and origin spells arrive at 1/3/5/7/9; druid circle spells at
+       2/3/5/7/9; oath, archetype and specialist spells at 3/5/9/13/17. A
+       warlock patron's expanded list unlocks with the spell level, which for
+       a warlock is class level 1/3/5/7/9. */
+    static const int early_at[5]   = {1, 3, 5, 7, 9};
+    static const int druid_at[5]   = {2, 3, 5, 7, 9};
+    static const int martial_at[5] = {3, 5, 9, 13, 17};
     const int *at;
 
     if (sub < 0) return;
     sc = &SUBCLASSES[sub];
     if (!sc->bonus_spells || !sc->bonus_spells[0]) return;
 
-    if (id == CLS_PALADIN)      at = paladin_at;
-    else if (id == CLS_WARLOCK) at = warlock_at;
-    else                        at = cleric_at;
+    if (id == CLS_PALADIN || id == CLS_RANGER || id == CLS_ARTIFICER) {
+        at = martial_at;
+    } else if (id == CLS_DRUID) {
+        at = druid_at;
+    } else {
+        at = early_at;
+    }
 
     n = split_pipe(sc->bonus_spells, buf, sizeof buf, groups, 8);
     for (g = 0; g < n && g < 5; g++) {
@@ -665,8 +891,11 @@ void manage_spells(Character *c, int class_id)
     /* Never ask for more than the class list can still supply, or than the
        sheet has room for. */
     {
+        const char *extra = additional_spells_for(c, class_id);
         int supply = 0;
-        for (lvl = 1; lvl <= maxlvl; lvl++) supply += available_count(c, bit, lvl);
+        for (lvl = 1; lvl <= maxlvl; lvl++) {
+            supply += available_count(c, bit, lvl, extra);
+        }
         if (known > supply) known = supply;
         if (known > MAX_SPELLS - c->spell_count) {
             known = MAX_SPELLS - c->spell_count;
@@ -685,14 +914,16 @@ void manage_spells(Character *c, int class_id)
                  "  Spell level to pick from (%d left to choose)", known);
         choose_level = ui_int(prompt, 1, maxlvl);
 
-        if (available_count(c, bit, choose_level) == 0) {
+        if (available_count(c, bit, choose_level,
+                            additional_spells_for(c, class_id)) == 0) {
             printf("    No %s spells of that level are left to learn.\n",
                    cd->name);
             /* If nothing is left anywhere, stop rather than ask again. */
             {
+                const char *extra2 = additional_spells_for(c, class_id);
                 int supply = 0;
                 for (lvl = 1; lvl <= maxlvl; lvl++) {
-                    supply += available_count(c, bit, lvl);
+                    supply += available_count(c, bit, lvl, extra2);
                 }
                 if (supply == 0) break;
             }
@@ -737,15 +968,24 @@ static void apply_class_level(Character *c, int slot, int class_level,
         choose_subclass_for(c, slot);
     }
 
+    /* Tasha's options come first: taking Fighting Style Options at this very
+       level has to widen the menu before the style is chosen. */
+    offer_optional_features(c, id, class_level);
+
     /* Fighting styles. */
     if ((id == CLS_FIGHTER && class_level == 1)
         || (id == CLS_PALADIN && class_level == 2)
         || (id == CLS_RANGER && class_level == 2)) {
         choose_fighting_style(c, id);
     }
-    if (c->classes[slot].subclass_id == SUB_CHAMPION && class_level == 10) {
+    if (subclass_is(c->classes[slot].subclass_id, "Champion") && class_level == 10) {
         printf("\n  Champion: Additional Fighting Style.\n");
         choose_fighting_style(c, id);
+    }
+
+    /* Artificer infusions arrive at 2nd level and grow from there. */
+    if (id == CLS_ARTIFICER && class_level >= 2) {
+        choose_infusions(c, class_level);
     }
 
     /* Expertise. */

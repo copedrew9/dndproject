@@ -81,7 +81,7 @@ typedef struct {
     Ability spell_ability;
     int subclass_level;
     const char *subclass_label;
-    int first_subclass, subclass_count;
+    int first_subclass, subclass_count;   /* unused; see subclasses_of() */
     /* Multiclassing prerequisites (PHB chapter 6). */
     Ability mc_req[2];
     int mc_req_score[2];
@@ -94,6 +94,13 @@ typedef struct {
     const unsigned char *spells_known;    /* [MAX_LEVEL+1] or NULL */
     const char *quick_build;
     const char *equipment;          /* '|' separated starting equipment choices */
+    /* The class level at which Spellcasting arrives: 1 for full casters and
+       the artificer, 2 for paladins and rangers, 3 for the third-casters,
+       0 for classes that never cast. */
+    int caster_start_level;
+    /* The artificer alone counts half its levels rounded UP towards the
+       multiclass spellcaster table (Tasha's, p.13). */
+    int mc_round_up;
 } ClassData;
 
 typedef struct {
@@ -116,6 +123,14 @@ typedef struct {
     const char *summary;
 } FeatureData;
 
+/* Subclasses are found by scanning for their owning class rather than by a
+   contiguous index window, so new ones can be appended to the table without
+   renumbering anything. */
+int subclass_by_name(const char *name);
+int subclass_is(int subclass_id, const char *name);
+int subclasses_of(int class_id, int *out, int max);
+int class_by_name(const char *name);
+
 extern const ClassData CLASSES[];
 extern const int CLASS_COUNT;
 extern const SubclassData SUBCLASSES[];
@@ -126,6 +141,47 @@ extern const int FEATURE_COUNT;
 /* Spell slot progressions. */
 extern const unsigned char FULL_SLOTS[MAX_LEVEL + 1][10];
 extern const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2];  /* {count, level} */
+/* Tasha's optional class features. */
+typedef struct {
+    int class_id;
+    int level;                  /* class level at which it becomes available */
+    const char *name;
+    const char *replaces;       /* "" when it adds rather than replaces */
+    const char *summary;
+} OptionalFeature;
+
+extern const OptionalFeature OPTIONAL_FEATURES[];
+extern const int OPTIONAL_FEATURE_COUNT;
+
+/* Spells the "Additional <Class> Spells" features add to a class list. */
+typedef struct {
+    int class_id;
+    const char *spells;         /* comma separated, lowercase */
+} AdditionalSpells;
+
+extern const AdditionalSpells ADDITIONAL_SPELLS[];
+extern const int ADDITIONAL_SPELLS_COUNT;
+
+extern const char *const TASHA_FIGHTER_STYLES;
+extern const char *const TASHA_PALADIN_STYLES;
+extern const char *const TASHA_RANGER_STYLES;
+
+/* Artificer infusions (Tasha's). */
+typedef struct {
+    const char *name;
+    const char *prereq;         /* "" when none; otherwise a level note */
+    int min_level;              /* artificer level required */
+    const char *item;           /* the kind of object infused */
+    const char *summary;
+} InfusionData;
+
+extern const InfusionData INFUSIONS[];
+extern const int INFUSION_COUNT;
+
+/* Infusions known and items that can bear one, by artificer level. */
+extern const unsigned char INFUSIONS_KNOWN[MAX_LEVEL + 1];
+extern const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1];
+
 /* Eldritch Knight / Arcane Trickster progressions. */
 extern const unsigned char *const THIRD_CANTRIPS;
 extern const unsigned char *const THIRD_SPELLS_KNOWN;

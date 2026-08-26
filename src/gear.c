@@ -98,6 +98,8 @@ static const struct category CATEGORIES[] = {
     { "simple melee weapons",ITEM_SIMPLE_MELEE, -1, "simple melee weapon" },
     { "any simple weapon",   ITEM_SIMPLE_MELEE, ITEM_SIMPLE_RANGED, "simple weapon" },
     { "simple weapon",       ITEM_SIMPLE_MELEE, ITEM_SIMPLE_RANGED, "simple weapon" },
+    { "simple weapons of your choice", ITEM_SIMPLE_MELEE, ITEM_SIMPLE_RANGED, "simple weapon" },
+    { "martial weapons of your choice", ITEM_MARTIAL_MELEE, ITEM_MARTIAL_RANGED, "martial weapon" },
 };
 
 static void lowercase(const char *src, char *dst, size_t n)
@@ -220,6 +222,7 @@ static void add_phrase(Character *c, const char *phrase)
     if (!*p) return;
 
     qty = leading_quantity(&p);
+    if (strncmp(p, "any ", 4) == 0) p += 4;
 
     for (i = 0; i < sizeof CATEGORIES / sizeof CATEGORIES[0]; i++) {
         if (strcmp(p, CATEGORIES[i].phrase) == 0) {

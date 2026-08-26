@@ -23,6 +23,7 @@ typedef enum {
     SPL_SORCERER = 1u << 5,
     SPL_WARLOCK = 1u << 6,
     SPL_WIZARD = 1u << 7,
+    SPL_ARTIFICER = 1u << 8,
 } SpellClassBit;
 
 typedef struct {

@@ -35,10 +35,15 @@ const char *const ALIGNMENT_NAME[ALIGN_COUNT] = {
 /* Class ids used by the rules below; they must match data_classes.c. */
 enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
        CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11 };
+       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
+       CLS_ARTIFICER = 12 };
 
-/* Subclass ids referenced below; they must match data_classes.c. */
-enum { SUB_DRACONIC = 27, SUB_ELDRITCH_KNIGHT = 15, SUB_ARCANE_TRICKSTER = 26 };
+/* Subclasses are referenced by name so the tables can grow freely. */
+static int is_third_caster(int sub)
+{
+    return subclass_is(sub, "Eldritch Knight")
+        || subclass_is(sub, "Arcane Trickster");
+}
 
 int total_level(const Character *c)
 {
@@ -62,11 +67,11 @@ int class_level_of(const Character *c, int class_id)
     return i < 0 ? 0 : c->classes[i].level;
 }
 
-static int has_subclass(const Character *c, int subclass_id)
+static int has_subclass_named(const Character *c, const char *name)
 {
     int i;
     for (i = 0; i < c->class_count; i++) {
-        if (c->classes[i].subclass_id == subclass_id) return 1;
+        if (subclass_is(c->classes[i].subclass_id, name)) return 1;
     }
     return 0;
 }
@@ -191,7 +196,7 @@ int armour_class(const Character *c)
             alt = 10 + dex + ability_mod(c, ABL_CON);
             if (alt > best) best = alt;
         }
-        if (has_subclass(c, SUB_DRACONIC)) {
+        if (has_subclass_named(c, "Draconic Bloodline")) {
             alt = 13 + dex;
             if (alt > best) best = alt;
         }
@@ -276,7 +281,9 @@ int hit_points_max(const Character *c)
     /* Tough grants 2 per level. */
     if (has_named_feat(c, "Tough")) hp += 2 * lvl;
     /* Draconic Resilience grants 1 per sorcerer level. */
-    if (has_subclass(c, SUB_DRACONIC)) hp += class_level_of(c, CLS_SORCERER);
+    if (has_subclass_named(c, "Draconic Bloodline")) {
+        hp += class_level_of(c, CLS_SORCERER);
+    }
 
     return hp;
 }
@@ -295,11 +302,13 @@ int caster_level(const Character *c)
 
         switch (CLASSES[id].caster) {
         case CAST_FULL: lvl += n; break;
-        case CAST_HALF: lvl += n / 2; break;
+        case CAST_HALF:
+            /* Tasha's has the artificer round up where the paladin and the
+               ranger round down. */
+            lvl += CLASSES[id].mc_round_up ? (n + 1) / 2 : n / 2;
+            break;
         default:
-            if (sub == SUB_ELDRITCH_KNIGHT || sub == SUB_ARCANE_TRICKSTER) {
-                lvl += n / 3;
-            }
+            if (is_third_caster(sub)) lvl += n / 3;
             break;
         }
     }

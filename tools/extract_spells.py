@@ -17,8 +17,19 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "TextFiles", "PHBtext.txt")
+SRC_XGE = os.path.join(ROOT, "TextFiles", "XANATHARtext.txt")
+SRC_TCE = os.path.join(ROOT, "TextFiles", "TASHAtext.txt")
 
 DESC_START, DESC_END = 31590, 43119
+
+# Xanathar's Guide: the class spell lists, then the spell descriptions.
+XGE_LISTS = (25690, 26344)
+XGE_DESC = (26344, 30025)
+
+# Tasha's Cauldron: a single summary table (spell rows, then class rows in
+# the same order), then the spell descriptions.
+TCE_TABLE = (12530, 12617)
+TCE_DESC = (12617, 14097)
 
 SCHOOLS = [
     "abjuration", "conjuration", "divination", "enchantment",
@@ -26,7 +37,11 @@ SCHOOLS = [
 ]
 
 CLASSES = ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer",
-           "warlock", "wizard"]
+           "warlock", "wizard", "artificer"]
+
+# Classes that appear in the PHB's own spell-list chapter; the artificer's
+# list comes from Tasha's instead.
+PHB_CLASSES = CLASSES[:8]
 
 # The class spell lists sit between chapter 10 and the spell descriptions.
 # Their headings are located by name rather than by hardcoded line numbers:
@@ -56,8 +71,8 @@ def strip_lead(s):
     return re.sub(r"^[.,'`\"•*\-]+\s*", "", s).strip()
 
 
-def load_lines():
-    with open(SRC, encoding="utf-8", errors="replace") as fh:
+def load_lines(path=SRC):
+    with open(path, encoding="utf-8", errors="replace") as fh:
         return [clean(l) for l in fh.readlines()]
 
 
@@ -232,10 +247,10 @@ def find_list_bounds(lines):
     a, b = LISTS_REGION
     for idx in range(a - 1, min(b - 1, len(lines))):
         squashed = re.sub(r"[^a-z]", "", lines[idx].lower())
-        for cls in CLASSES:
+        for cls in PHB_CLASSES:
             if squashed == cls + "spells" and cls not in found:
                 found[cls] = idx + 1              # 1-based line number
-    missing = [c for c in CLASSES if c not in found]
+    missing = [c for c in PHB_CLASSES if c not in found]
     if missing:
         raise SystemExit("could not locate spell list heading(s): %s"
                          % ", ".join(missing))
@@ -249,7 +264,7 @@ def find_list_bounds(lines):
 
 
 def extract_lists(lines):
-    out = {c: [] for c in CLASSES}
+    out = {c: [] for c in PHB_CLASSES}
     bounds = find_list_bounds(lines)
     for cls, (a, b) in bounds.items():
         cur = None
@@ -290,6 +305,13 @@ def extract_lists(lines):
 # The OCR mangled these spell names beyond fuzzy matching.
 NAME_REPAIRS = {
     "earth(^uake": "Earthquake",
+    # The OCR reads C as G in some small-capital headings. These four were
+    # found by comparing each description's name with the spelling on the
+    # class spell lists, which are set in ordinary type and came out clean.
+    "gall lightning": "Call Lightning",
+    "prismatig wall": "Prismatic Wall",
+    "vampirig touch": "Vampiric Touch",
+    "wall of forge": "Wall of Force",
 }
 
 # The OCR dropped these stat-block lines entirely.
@@ -326,6 +348,14 @@ LIST_ALIASES = {
 
 # Class-list lines that are page furniture, not spells.
 LIST_NOISE = {"sorc erer sp ells", "sorcerer spells", "wizard spells"}
+
+# Xanathar's spells whose stat line renders the level as the ambiguous "S"
+# glyph, and which appear under a list heading the OCR also mangled. Both were
+# read off the page directly.
+EXPANSION_LEVEL_REPAIRS = {
+    "enervation": 5,
+    "maddening darkness": 8,
+}
 
 # Listed on the wizard's 8th-level list but given no spell description
 # anywhere in the PHB -- a known errata item. It cannot be offered as a
@@ -446,6 +476,375 @@ def emit(ordered):
         fh.write("\n".join(src) + "\n")
 
 
+# --------------------------------------------------------------------------
+# Xanathar's Guide and Tasha's Cauldron
+# --------------------------------------------------------------------------
+#
+# Both books render spell names in small capitals, which the OCR turns into
+# mixed case and sometimes doubles a letter ("ABI-DALZzIM'S"). Their own
+# class lists and summary tables, however, carry properly cased names along
+# with each spell's school. So the lists supply the name, class and school,
+# the description block supplies the stat lines, and the school is required
+# to agree before the two are joined.
+
+
+def collapse(name):
+    """Canonical key with runs of a repeated letter collapsed to one.
+
+    Small-capital OCR turns "Dalzim" into "DALZzIM"; collapsing doubles makes
+    the two forms comparable.
+    """
+    k = fuzzy(name)
+    out = []
+    for ch in k:
+        if not out or out[-1] != ch:
+            out.append(ch)
+    return "".join(out)
+
+
+def edit_distance(a, b):
+    """Levenshtein distance, used only to rescue OCR letter substitutions."""
+    if a == b:
+        return 0
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1,
+                           prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def match_description(descs, name, school):
+    """Finds the description entry for a listed spell, requiring the school
+    to agree. Returns its key, or None."""
+    want_school = school.lower() if school else None
+    candidates = []
+    for key, sp in descs.items():
+        if want_school and sp["school"] != want_school:
+            continue
+        candidates.append((key, sp))
+
+    for keyfn in (canon, fuzzy, collapse):
+        target = keyfn(name)
+        hits = [k for k, sp in candidates if keyfn(sp["name"]) == target]
+        if len(hits) == 1:
+            return hits[0]
+
+    # The small-capital OCR also substitutes letters outright ("Cuaos BoLt"
+    # for "Chaos Bolt"). Having already narrowed to one school, the nearest
+    # name by edit distance identifies it, provided it is clearly nearest.
+    target = collapse(name)
+    scored = sorted((edit_distance(target, collapse(sp["name"])), k)
+                    for k, sp in candidates)
+    if scored:
+        best, key = scored[0]
+        runner_up = scored[1][0] if len(scored) > 1 else 99
+        if best <= max(2, len(target) // 5) and best < runner_up:
+            return key
+    return None
+
+
+def list_level_header(line):
+    """Recognises a spell-list level heading. Returns 0 for cantrips, 1 for
+    a first-level heading, -1 for any other heading, or None if the line is
+    not a heading at all.
+
+    Only 'cantrips' and '1st' need to be read exactly, since they are what
+    marks the start of a class's list; the OCR mangles the rest ("47H LEVEL",
+    "OTH LEVEL") and the real level comes from the matched description.
+    """
+    squashed = re.sub(r"[^a-z0-9]", "", line.lower())
+    if not squashed.endswith("level") and "level" not in squashed:
+        return None
+    if not re.search(r"level$|level\)?$|0level$", squashed):
+        return None
+
+    # "CantTRips" -- the small-capital OCR doubles letters.
+    if "cantrip" in collapse_runs(squashed):
+        return 0
+    head = squashed[:-len("level")] if squashed.endswith("level") else squashed
+    head = head.replace("0", "")
+    if head in ("1st", "ist", "lst", "1s"):
+        return 1
+    return -1
+
+
+def collapse_runs(text):
+    out = []
+    for ch in text:
+        if not out or out[-1] != ch:
+            out.append(ch)
+    return "".join(out)
+
+
+LIST_ENTRY = re.compile(r"^(.+?)\s*\(([a-z]+)(?:,\s*(ritual))?\)\s*$", re.I)
+
+
+def parse_xge_lists(lines):
+    """Parses Xanathar's class spell lists.
+
+    The headings sometimes appear in a run before their blocks rather than
+    inline, so headings and blocks are collected separately and paired by
+    order. A block ends when a level heading repeats, which is how one
+    class's list is told from the next.
+    """
+    a, b = XGE_LISTS
+    headings, blocks = [], []
+    block = None
+    seen_first = False
+    pending = ""
+
+    for raw in lines[a - 1: b - 1]:
+        line = strip_lead(raw)
+        if not line:
+            continue
+
+        squashed = re.sub(r"[^a-z]", "", line.lower())
+        if squashed.endswith("spells") and squashed[:-6] in CLASSES:
+            headings.append(squashed[:-6])
+            pending = ""
+            continue
+
+        lvl = list_level_header(line)
+        if lvl is not None:
+            if lvl == 0 or (lvl == 1 and seen_first) or block is None:
+                block = []
+                blocks.append(block)
+                seen_first = False
+            if lvl == 1:
+                seen_first = True
+            pending = ""
+            continue
+
+        if block is None:
+            continue
+
+        # A long name wraps, leaving the "(school)" on the following line.
+        candidate = (pending + " " + line).strip() if pending else line
+        m = LIST_ENTRY.match(candidate)
+        if not m:
+            pending = candidate if "(" not in candidate else ""
+            continue
+        pending = ""
+
+        name, school, ritual = m.group(1).strip(), m.group(2).lower(), m.group(3)
+        if school not in SCHOOLS:
+            continue
+        block.append((name, school, bool(ritual)))
+
+    return headings, blocks
+
+
+def parse_tce_table(lines):
+    """Parses Tasha's summary table.
+
+    It is printed as two column groups: every spell's level, name, school and
+    concentration flag, then every spell's ritual flag and class list in the
+    same order. Zipping them recovers the assignments.
+    """
+    a, b = TCE_TABLE
+    rows, classlists = [], []
+    ordinal = re.compile(r"^(0|[1-9IilL]st|2nd|3rd|[4-9]th)\s+(.+?)\s+"
+                         r"([A-Za-z]+)\s+(Yes|No)\s*$")
+    classrow = re.compile(r"^(Yes|No)\s+([A-Z][A-Za-z]+(?:,\s*[A-Z][A-Za-z]+)*)\s*$")
+
+    for raw in lines[a - 1: b - 1]:
+        line = re.sub(r"\s+", " ", strip_lead(raw)).replace("|", "").strip()
+        if not line:
+            continue
+        m = ordinal.match(line)
+        if m:
+            ord_txt = m.group(1)
+            if ord_txt == "0":
+                lvl = 0
+            elif ord_txt[0].isdigit():
+                lvl = int(ord_txt[0])
+            else:
+                lvl = 1                 # "Ist" is the OCR's 1st
+            school = m.group(3).lower()
+            if school in SCHOOLS:
+                rows.append((m.group(2).strip(), lvl, school))
+            continue
+        m = classrow.match(line)
+        if m:
+            names = [c.strip().lower() for c in m.group(2).split(",")]
+            if all(c in CLASSES for c in names):
+                classlists.append((bool(m.group(1) == "Yes"), names))
+
+    return rows, classlists
+
+
+# Tasha's prints the artificer spell list in interleaved columns that the OCR
+# shreds, so it is written out here instead. Only the names are recorded --
+# each spell's level and school come from its own description -- and every
+# name is checked against the database below.
+ARTIFICER_SPELLS = [
+    # cantrips
+    "Acid Splash", "Booming Blade", "Create Bonfire", "Dancing Lights",
+    "Fire Bolt", "Frostbite", "Green-Flame Blade", "Guidance", "Light",
+    "Lightning Lure", "Mage Hand", "Magic Stone", "Mending", "Message",
+    "Poison Spray", "Prestidigitation", "Ray of Frost", "Resistance",
+    "Shocking Grasp", "Spare the Dying", "Sword Burst", "Thorn Whip",
+    "Thunderclap",
+    # 1st
+    "Absorb Elements", "Alarm", "Catapult", "Cure Wounds", "Detect Magic",
+    "Disguise Self", "Expeditious Retreat", "Faerie Fire", "False Life",
+    "Feather Fall", "Grease", "Identify", "Jump", "Longstrider",
+    "Purify Food and Drink", "Sanctuary", "Snare", "Tasha's Caustic Brew",
+    # 2nd
+    "Aid", "Alter Self", "Arcane Lock", "Blur", "Continual Flame",
+    "Darkvision", "Enhance Ability", "Enlarge/Reduce", "Heat Metal",
+    "Invisibility", "Lesser Restoration", "Levitate", "Magic Mouth",
+    "Magic Weapon", "Protection from Poison", "Pyrotechnics", "Rope Trick",
+    "See Invisibility", "Skywrite", "Spider Climb", "Web",
+    # 3rd
+    "Blink", "Catnap", "Create Food and Water", "Dispel Magic",
+    "Elemental Weapon", "Flame Arrows", "Fly", "Glyph of Warding", "Haste",
+    "Intellect Fortress", "Protection from Energy", "Revivify",
+    "Tiny Servant", "Water Breathing", "Water Walk",
+    # 4th
+    "Arcane Eye", "Elemental Bane", "Fabricate", "Freedom of Movement",
+    "Leomund's Secret Chest", "Mordenkainen's Faithful Hound",
+    "Mordenkainen's Private Sanctum", "Otiluke's Resilient Sphere",
+    "Stone Shape", "Stoneskin", "Summon Construct",
+    # 5th
+    "Animate Objects", "Bigby's Hand", "Creation", "Greater Restoration",
+    "Skill Empowerment", "Transmute Rock", "Wall of Stone",
+]
+
+# Spells per level the artificer list must end up with.
+ARTIFICER_BY_LEVEL = {0: 23, 1: 18, 2: 21, 3: 15, 4: 11, 5: 7}
+
+
+def add_expansion_spells(spells, problems):
+    """Merges the Xanathar's and Tasha's spells into the PHB set."""
+
+    # ---- Xanathar's Guide -------------------------------------------------
+    xge_lines = load_lines(SRC_XGE)
+    xge_desc = extract_spells(xge_lines[XGE_DESC[0] - 1: XGE_DESC[1] - 1])
+    headings, blocks = parse_xge_lists(xge_lines)
+
+    if len(headings) != len(blocks):
+        problems.append("Xanathar's: %d class headings but %d list blocks"
+                        % (len(headings), len(blocks)))
+        return
+
+    added = {}
+    for cls, block in zip(headings, blocks):
+        for name, school, ritual in block:
+            key = match_description(xge_desc, name, school)
+            if key is None:
+                problems.append("Xanathar's: no description for %r (%s)"
+                                % (name, school))
+                continue
+            sp = xge_desc[key]
+            entry = added.get(key)
+            if entry is None:
+                entry = dict(sp)
+                entry["name"] = titlecase(name)
+                entry["school"] = school
+                entry["ritual"] = ritual or sp["ritual"]
+                entry["classes"] = set()
+                added[key] = entry
+            entry["classes"].add(cls)
+
+    for key, entry in added.items():
+        if entry["level"] is None:
+            entry["level"] = EXPANSION_LEVEL_REPAIRS.get(entry["name"].lower())
+        if entry["level"] is None:
+            problems.append("Xanathar's: unresolved level for %r"
+                            % entry["name"])
+            continue
+        merge_spell(spells, entry, problems, "Xanathar's")
+
+    if len(added) != len(xge_desc):
+        missing = sorted(xge_desc[k]["name"] for k in xge_desc if k not in added)
+        problems.append("Xanathar's: %d of %d spells are on no class list: %s"
+                        % (len(missing), len(xge_desc), ", ".join(missing)))
+
+    # ---- Tasha's Cauldron -------------------------------------------------
+    tce_lines = load_lines(SRC_TCE)
+    tce_desc = extract_spells(tce_lines[TCE_DESC[0] - 1: TCE_DESC[1] - 1])
+    rows, classlists = parse_tce_table(tce_lines)
+
+    if len(rows) != len(classlists):
+        problems.append("Tasha's: %d spell rows but %d class rows"
+                        % (len(rows), len(classlists)))
+    elif len(rows) != len(tce_desc):
+        problems.append("Tasha's: %d table rows but %d descriptions"
+                        % (len(rows), len(tce_desc)))
+    else:
+        for (name, level, school), (ritual, classes) in zip(rows, classlists):
+            key = match_description(tce_desc, name, school)
+            if key is None:
+                problems.append("Tasha's: no description for %r (%s)"
+                                % (name, school))
+                continue
+            entry = dict(tce_desc[key])
+            entry["name"] = name
+            entry["level"] = level
+            entry["school"] = school
+            entry["ritual"] = ritual
+            entry["classes"] = set(classes)
+            merge_spell(spells, entry, problems, "Tasha's")
+
+    # ---- the artificer list ----------------------------------------------
+    by_name = {canon(sp["name"]): sp for sp in spells.values()}
+    counts = {}
+    for name in ARTIFICER_SPELLS:
+        sp = by_name.get(canon(name))
+        if sp is None:
+            problems.append("artificer list: no spell named %r" % name)
+            continue
+        sp["classes"].add("artificer")
+        counts[sp["level"]] = counts.get(sp["level"], 0) + 1
+
+    for level, want in ARTIFICER_BY_LEVEL.items():
+        got = counts.get(level, 0)
+        if got != want:
+            problems.append("artificer list: %d spells of level %d, expected %d"
+                            % (got, level, want))
+
+
+def titlecase(name):
+    """Title-cases a spell name the way the books print it."""
+    small = {"of", "the", "from", "and", "or", "in", "on", "to", "a", "an"}
+    parts = name.split()
+    out = []
+    for i, w in enumerate(parts):
+        low = w.lower()
+        if i > 0 and low in small:
+            out.append(low)
+        elif "'" in w:
+            head, _, tail = w.partition("'")
+            out.append(head[:1].upper() + head[1:].lower() + "'" + tail.lower())
+        elif "-" in w:
+            out.append("-".join(p[:1].upper() + p[1:].lower()
+                                for p in w.split("-")))
+        else:
+            out.append(w[:1].upper() + w[1:].lower())
+    return " ".join(out)
+
+
+def merge_spell(spells, entry, problems, book):
+    """Adds an expansion spell, or merges it into an existing entry."""
+    key = entry["name"].lower()
+    existing = spells.get(key)
+    if existing is None:
+        # A spell reprinted from another book may already be present under a
+        # slightly different key; look for it before adding a duplicate.
+        for k, sp in spells.items():
+            if canon(sp["name"]) == canon(entry["name"]):
+                existing = sp
+                break
+    if existing is not None:
+        existing["classes"] |= entry["classes"]
+        return
+    spells[key] = entry
+
+
 def main():
     lines = load_lines()
     spells = apply_repairs(extract_spells(lines[DESC_START - 1: DESC_END - 1]))
@@ -453,7 +852,7 @@ def main():
     exact, loose = build_index(spells)
 
     unmatched, level_votes = {}, {}
-    for cls in CLASSES:
+    for cls in PHB_CLASSES:
         entries = lists[cls]
         skip = set()
         for idx, (nm, lvl) in enumerate(entries):
@@ -484,20 +883,23 @@ def main():
         elif votes and len(votes) == 1 and sp["level"] not in votes:
             sp["level"] = sorted(votes)[0]
 
-    for sp in spells.values():
-        sp["conc"] = bool(re.match(r"^concentration", sp["duration"] or "", re.I))
-
-    # Guard against a mis-detected section boundary silently moving spells
-    # from one class list to another.
+    # The cantrip guard checks the PHB's own section boundaries, so take the
+    # counts before the expansions contribute cantrips of their own.
     cantrip_errors = []
-    for cls in CLASSES:
-        bit = cls
+    for cls in PHB_CLASSES:
         got = sum(1 for sp in spells.values()
-                  if bit in sp["classes"] and sp["level"] == 0)
+                  if cls in sp["classes"] and sp["level"] == 0)
         want = EXPECTED_CANTRIPS[cls]
         if got != want:
             cantrip_errors.append("%s: %d cantrips, expected %d"
                                   % (cls, got, want))
+
+    # ---------------------------------------------------------- expansions
+    problems = []
+    add_expansion_spells(spells, problems)
+
+    for sp in spells.values():
+        sp["conc"] = bool(re.match(r"^concentration", sp["duration"] or "", re.I))
 
     ordered = sorted(spells.values(), key=lambda s: s["name"].lower())
 
@@ -522,7 +924,10 @@ def main():
     for e in cantrip_errors:
         sys.stderr.write("    ! %s\n" % e)
 
-    if nleft or unresolved or bad or cantrip_errors:
+    for e in problems:
+        sys.stderr.write("    ! %s\n" % e)
+
+    if nleft or unresolved or bad or cantrip_errors or problems:
         sys.stderr.write("EXTRACTION INCOMPLETE\n")
         return 1
     emit(ordered)

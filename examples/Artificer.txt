@@ -1,0 +1,246 @@
+================================================================
+ Nebin11
+ Artificer 8 (Alchemist)
+================================================================
+ Player: Nebin11                  Race: Tiefling
+ Background: Sailor               Alignment: Neutral Evil
+ Level: 8                         Proficiency Bonus: +3
+
+----------------------------------------------------------------
+ ABILITY SCORES
+----------------------------------------------------------------
+  Strength       18  (+4)     Saving throw +4
+  Dexterity      19  (+4)     Saving throw +4
+  Constitution    7  (-2)     Saving throw +1  (proficient)
+  Intelligence    7  (-2)     Saving throw +1  (proficient)
+  Wisdom         18  (+4)     Saving throw +4
+  Charisma       19  (+4)     Saving throw +4
+
+----------------------------------------------------------------
+ COMBAT
+----------------------------------------------------------------
+  Armor Class      16
+  Initiative       +4
+  Speed            30 ft.
+  Hit Points       27
+  Hit Dice         8d8
+  Passive Perception 17
+
+----------------------------------------------------------------
+ SKILLS
+----------------------------------------------------------------
+     Acrobatics         +4  (DEX)
+     Animal Handling    +4  (WIS)
+     Arcana             -2  (INT)
+  *  Athletics          +7  (STR)
+     Deception          +4  (CHA)
+     History            -2  (INT)
+     Insight            +4  (WIS)
+     Intimidation       +4  (CHA)
+     Investigation      -2  (INT)
+     Medicine           +4  (WIS)
+  *  Nature             +1  (INT)
+  *  Perception         +7  (WIS)
+     Performance        +4  (CHA)
+     Persuasion         +4  (CHA)
+     Religion           -2  (INT)
+  *  Sleight of Hand    +7  (DEX)
+     Stealth            +4  (DEX)
+     Survival           +4  (WIS)
+  (* proficient, E expertise)
+
+----------------------------------------------------------------
+ PROFICIENCIES AND LANGUAGES
+----------------------------------------------------------------
+  Armor and weapons:
+    Light armor, Medium armor, Shields, Simple weapons
+  Tools:
+    Navigator's tools, Vehicles (water), Smith's tools
+  Languages:
+    Common, Infernal
+
+----------------------------------------------------------------
+ RACIAL TRAITS
+----------------------------------------------------------------
+  - Darkvision: 60 feet
+  - Hellish Resistance: resistance to fire damage
+  - Infernal Legacy: you know thaumaturgy; hellish rebuke at 3rd level and darkness at 5th level, each once per long rest, using Charisma
+
+----------------------------------------------------------------
+ BACKGROUND FEATURE
+----------------------------------------------------------------
+  Ship's Passage: You can secure free passage on a sailing ship for yourself and your companions, in exchange for helping crew the vessel.
+
+----------------------------------------------------------------
+ CLASS FEATURES
+----------------------------------------------------------------
+
+  Artificer 8
+     1  Magical Tinkering                Bestow a minor property on a Tiny nonmagical object: light, a recorded message, an odor or sound, or a visual effect. You may have Intelligence modifier objects so imbued.
+     1  Spellcasting                     You cast artificer spells using Intelligence, through thieves' tools or artisan's tools as a focus, preparing Intelligence modifier + half your artificer level spells.
+     2  Infuse Item                      Learn artificer infusions and imbue nonmagical objects with them after a long rest, turning them into magic items.
+     3  Artificer Specialist             Choose the Alchemist, Armorer, Artillerist or Battle Smith specialism.
+     3  The Right Tool for the Job       Spend an hour with thieves' tools or artisan's tools to magically create one set of artisan's tools.
+     4  Ability Score Improvement        Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
+     6  Tool Expertise                   Double your proficiency bonus for ability checks with tools you are proficient with.
+     7  Flash of Genius                  As a reaction, add your Intelligence modifier to an ability check or saving throw made by you or an ally within 30 feet.
+     8  Ability Score Improvement        Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
+     3  Tool Proficiency                 Gain proficiency with alchemist's supplies.
+     3  Experimental Elixir              Create a random elixir after a long rest, or by spending a spell slot: healing, swiftness, resilience, boldness, flight or transformation.
+     5  Alchemical Savant                Add your Intelligence modifier to one roll of any artificer spell that restores hit points or deals acid, fire, necrotic or poison damage.
+
+----------------------------------------------------------------
+ ARTIFICER INFUSIONS
+----------------------------------------------------------------
+  Infusions known: 6   Items infused at once: 3
+    Enhanced Arcane Focus
+    Returning Weapon
+    Enhanced Weapon
+    Enhanced Defense
+    Spell-Refueling Ring
+    Replicate Magic Item (to be chosen)
+
+----------------------------------------------------------------
+ FEATS
+----------------------------------------------------------------
+  Weapon Master
+      Gain proficiency with four weapons of your choice.
+
+----------------------------------------------------------------
+ CHOICES
+----------------------------------------------------------------
+  Background equipment   A belaying pin (club), 50 feet of silk rope, a lucky charm, common clothes
+
+----------------------------------------------------------------
+ SPELLCASTING
+----------------------------------------------------------------
+  Artificer  ability Intelligence  save DC  9   attack +1
+
+  Spell slots (caster level 4):
+     1st: 4  2nd: 3
+
+  Cantrips
+    Sword Burst                Conjuration
+        Casting Time: 1 action           Range: Self (5-foot radius)
+        Components:   V
+        Duration:     Instantaneous
+    Frostbite                  Evocation
+        Casting Time: 1 action           Range: 60 feet
+        Components:   V,S
+        Duration:     Instantaneous
+
+  Level 1
+    Healing Word               Evocation, always prepared
+        Casting Time: 1 bonus action     Range: 60 feet
+        Components:   V
+        Duration:     Instantaneous
+    Ray of Sickness            Necromancy, always prepared
+        Casting Time: 1 action           Range: 60 feet
+        Components:   Y, S
+        Duration:     Instantaneous
+    Alarm                      Abjuration, ritual
+        Casting Time: 1 minute           Range: 30 feet
+        Components:   V, S, M (a tiny bell and a piece of fine silver wire)
+        Duration:     8 hours
+    Faerie Fire                Evocation
+        Casting Time: 1 action           Range: 60 feet
+        Components:   V
+        Duration:     Concentration, up to 1 minute
+
+  Level 2
+    Flaming Sphere             Conjuration, always prepared
+        Casting Time: 1 action           Range: 60 feet
+        Components:   V, S, M (a bit of tallow, a pinch of brimstone, and a dusting of powdered iron)
+        Duration:     Concentration, up to 1 minute
+    Melf's Acid Arrow          Evocation, always prepared
+        Casting Time: 1 action           Range: 90 feet
+        Components:   V, S, M (powdered rhubarb leaf and an adder's stomach)
+        Duration:     Instantaneous
+
+----------------------------------------------------------------
+ EQUIPMENT
+----------------------------------------------------------------
+    1 x Spear                       1d6 piercing
+    1 x Club                        1d4 bludgeoning
+    1 x Light crossbow              1d8 piercing
+    1 x Crossbow bolts (20)       
+    1 x Scale mail                 (equipped)
+    1 x Thieves' tools            
+    1 x Dungeoneer's pack         
+        contains: Backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50 feet of hempen rope
+
+  Coins: 0 pp, 10 gp, 0 ep, 0 sp, 0 cp
+  Carried weight: 132.2 lb of a 270 lb capacity
+
+----------------------------------------------------------------
+ PERSONALITY
+----------------------------------------------------------------
+  Age 606, 3 ft 9 in, 541 lb, brown eyes, tan skin, black hair
+
+  Trait:  I work hard so that I can play hard when the work is done.
+  Bond:   I will always remember my first ship.
+  Flaw:   I cannot help but pocket loose coins and trinkets I come across.
+
+
+================================================================
+ MACHINE-READABLE DATA -- the creator reads this to reload
+ the character for levelling up. Editing it by hand is fine,
+ but keep the field names and the '|' separators intact.
+================================================================
+#BEGIN-DNDDATA v1
+NAME|Nebin11
+PLAYER|Nebin11
+RACE|Tiefling
+BACKGROUND|Sailor
+ALIGNMENT|Neutral Evil
+CLASS|Artificer|8|Alchemist|-1
+BASE|17|19|7|6|17|16
+RACIALBONUS|0|0|0|1|0|2
+ASIBONUS|1|0|0|0|1|1
+SAVEPROF|0|0|1|1|0|0
+SKILL|Athletics|1|0
+SKILL|Nature|1|0
+SKILL|Perception|1|0
+SKILL|Sleight of Hand|1|0
+LANG|Common
+LANG|Infernal
+TOOL|Navigator's tools
+TOOL|Vehicles (water)
+TOOL|Smith's tools
+PROF|Light armor
+PROF|Medium armor
+PROF|Shields
+PROF|Simple weapons
+FEAT|Weapon Master
+CHOICE|Infusion|Enhanced Arcane Focus
+CHOICE|Infusion|Returning Weapon
+CHOICE|Infusion|Enhanced Weapon
+CHOICE|Infusion|Enhanced Defense
+CHOICE|Infusion|Spell-Refueling Ring
+CHOICE|Infusion|Replicate Magic Item (to be chosen)
+CHOICE|Background equipment|A belaying pin (club), 50 feet of silk rope, a lucky charm, common clothes
+ITEM|1|0|Spear
+ITEM|1|0|Club
+ITEM|1|0|Light crossbow
+ITEM|1|0|Crossbow bolts (20)
+ITEM|1|1|Scale mail
+ITEM|1|0|Thieves' tools
+ITEM|1|0|Dungeoneer's pack
+COINS|0|0|0|10|0
+SPELL|1|1|Artificer|Healing Word
+SPELL|1|1|Artificer|Ray of Sickness
+SPELL|1|1|Artificer|Flaming Sphere
+SPELL|1|1|Artificer|Melf's Acid Arrow
+SPELL|1|0|Artificer|Sword Burst
+SPELL|1|0|Artificer|Frostbite
+SPELL|1|0|Artificer|Alarm
+SPELL|1|0|Artificer|Faerie Fire
+HPROLLS|8|8|5|5|5|5|5|5|5
+BODY|606|45|541|brown|tan|black
+TRAIT|I work hard so that I can play hard when the work is done.
+IDEAL|
+BOND|I will always remember my first ship.
+FLAW|I cannot help but pocket loose coins and trinkets I come across.
+APPEARANCE|
+BACKSTORY|
+#END-DNDDATA

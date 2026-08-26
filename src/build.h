@@ -46,4 +46,7 @@ int  class_of_spell(const Character *c, int spell_id);
 /* True when the character meets the PHB multiclassing prerequisites. */
 int  multiclass_ok_public(const Character *c, int class_id, int *why);
 
+/* True when the character took one of Tasha's optional class features. */
+int  has_optional_feature(const Character *c, const char *name);
+
 #endif /* BUILD_H */

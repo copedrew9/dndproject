@@ -1,5 +1,6 @@
 /* data_classes.c -- PHB chapter 3 classes, subclasses and level progressions. */
 #include "data.h"
+#include <string.h>
 
 /* ------------------------------------------------------ skill option lists */
 
@@ -39,6 +40,9 @@ static const Skill SK_SORCERER[] = {
 static const Skill SK_WARLOCK[] = {
     SKL_ARCANA, SKL_DECEPTION, SKL_HISTORY, SKL_INTIMIDATION,
     SKL_INVESTIGATION, SKL_NATURE, SKL_RELIGION };
+static const Skill SK_ARTIFICER[] = {
+    SKL_ARCANA, SKL_HISTORY, SKL_INVESTIGATION, SKL_MEDICINE, SKL_NATURE,
+    SKL_PERCEPTION, SKL_SLEIGHT_OF_HAND };
 static const Skill SK_WIZARD[] = {
     SKL_ARCANA, SKL_HISTORY, SKL_INSIGHT, SKL_INVESTIGATION, SKL_MEDICINE,
     SKL_RELIGION };
@@ -72,6 +76,15 @@ static const unsigned char SK_KNOWN_WARLOCK[21] =
 
 static const unsigned char SK_KNOWN_RANGER[21] =
     {0, 0,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11};
+
+/* Artificer (Tasha's): a half-caster that has spell slots from 1st level. */
+static const unsigned char CK_ARTIFICER[21] =
+    {0, 2,2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,4};
+
+const unsigned char INFUSIONS_KNOWN[MAX_LEVEL + 1] =
+    {0, 0,4,4,4,4,6,6,6,6,8,8,8,8,10,10,10,10,12,12,12};
+const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1] =
+    {0, 0,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6};
 
 /* Eldritch Knight and Arcane Trickster: third-casters. */
 static const unsigned char CK_THIRD[21] =
@@ -116,181 +129,6 @@ const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2] = {
     {3,5},{3,5},{3,5},{3,5},{3,5},{3,5},{4,5},{4,5},{4,5},{4,5},
 };
 
-/* ------------------------------------------------------------- subclasses */
-
-const SubclassData SUBCLASSES[] = {
-    /* --- barbarian (0-1) --- */
-    { 0, "Path of the Berserker",
-      "Fury in battle: frenzy grants a bonus attack at the cost of exhaustion.",
-      "", "", "" },
-    { 0, "Path of the Totem Warrior",
-      "A spirit animal guides you, granting resilience or ferocity.",
-      "", "Totem spirit", "Bear|Eagle|Wolf" },
-
-    /* --- bard (2-3) --- */
-    { 1, "College of Lore",
-      "Knowledge and cutting words; extra skills and additional magical secrets.",
-      "", "", "" },
-    { 1, "College of Valor",
-      "A battle skald: martial training and inspiration that aids attacks.",
-      "", "", "" },
-
-    /* --- cleric (4-10) --- */
-    { 2, "Knowledge Domain",
-      "The pursuit of learning; you read thoughts and borrow proficiencies.",
-      "command, identify|augury, suggestion|nondetection, speak with dead|"
-      "arcane eye, confusion|legend lore, scrying", "", "" },
-    { 2, "Life Domain",
-      "Healing and vitality; your cures are more potent than others'.",
-      "bless, cure wounds|lesser restoration, spiritual weapon|"
-      "beacon of hope, revivify|death ward, guardian of faith|"
-      "mass cure wounds, raise dead", "", "" },
-    { 2, "Light Domain",
-      "Radiance and fire; you blind foes and shield allies with light.",
-      "burning hands, faerie fire|flaming sphere, scorching ray|"
-      "daylight, fireball|guardian of faith, wall of fire|"
-      "flame strike, scrying", "", "" },
-    { 2, "Nature Domain",
-      "The natural world; you command beasts and plants.",
-      "animal friendship, speak with animals|barkskin, spike growth|"
-      "plant growth, wind wall|dominate beast, grasping vine|"
-      "insect plague, tree stride", "", "" },
-    { 2, "Tempest Domain",
-      "Storm and thunder; you strike with maximised lightning and thunder.",
-      "fog cloud, thunderwave|gust of wind, shatter|"
-      "call lightning, sleet storm|control water, ice storm|"
-      "destructive wave, insect plague", "", "" },
-    { 2, "Trickery Domain",
-      "Deception and stealth; you create illusory duplicates and bless allies "
-      "with stealth.",
-      "charm person, disguise self|mirror image, pass without trace|"
-      "blink, dispel magic|dimension door, polymorph|"
-      "dominate person, modify memory", "", "" },
-    { 2, "War Domain",
-      "Battle prowess; bonus attacks and divine strikes.",
-      "divine favor, shield of faith|magic weapon, spiritual weapon|"
-      "crusader's mantle, spirit guardians|freedom of movement, stoneskin|"
-      "flame strike, hold monster", "", "" },
-
-    /* --- druid (11-12) --- */
-    { 3, "Circle of the Land",
-      "A druid of a particular terrain, with extra spells and recovery.",
-      "", "Land type",
-      "Arctic|Coast|Desert|Forest|Grassland|Mountain|Swamp|Underdark" },
-    { 3, "Circle of the Moon",
-      "A shapeshifter: wild shape as a bonus action into fiercer forms.",
-      "", "", "" },
-
-    /* --- fighter (13-15) --- */
-    { 4, "Champion",
-      "Simple, relentless martial excellence; improved critical hits.",
-      "", "", "" },
-    { 4, "Battle Master",
-      "Tactical manoeuvres fuelled by superiority dice.",
-      "", "", "" },
-    { 4, "Eldritch Knight",
-      "A fighter who weaves wizard magic into swordplay (third-caster).",
-      "", "", "" },
-
-    /* --- monk (16-18) --- */
-    { 5, "Way of the Open Hand",
-      "Mastery of unarmed combat; manipulate a foe's ki.",
-      "", "", "" },
-    { 5, "Way of Shadow",
-      "A ninja of stealth and darkness, stepping between shadows.",
-      "", "", "" },
-    { 5, "Way of the Four Elements",
-      "Bend the elements to your will through ki-fuelled disciplines.",
-      "", "", "" },
-
-    /* --- paladin (19-21) --- */
-    { 6, "Oath of Devotion",
-      "The classic knight in shining armour: honesty, courage, duty.",
-      "protection from evil and good, sanctuary|"
-      "lesser restoration, zone of truth|beacon of hope, dispel magic|"
-      "freedom of movement, guardian of faith|commune, flame strike", "", "" },
-    { 6, "Oath of the Ancients",
-      "A green knight preserving light and life in the world.",
-      "ensnaring strike, speak with animals|moonbeam, misty step|"
-      "plant growth, protection from energy|ice storm, stoneskin|"
-      "commune with nature, tree stride", "", "" },
-    { 6, "Oath of Vengeance",
-      "A dark avenger who punishes wrongdoers at any cost.",
-      "bane, hunter's mark|hold person, misty step|"
-      "haste, protection from energy|banishment, dimension door|"
-      "hold monster, scrying", "", "" },
-
-    /* --- ranger (22-23) --- */
-    { 7, "Hunter",
-      "A monster slayer with tactics tuned to the prey you face.",
-      "", "", "" },
-    { 7, "Beast Master",
-      "You bond with an animal companion that fights alongside you.",
-      "", "", "" },
-
-    /* --- rogue (24-26) --- */
-    { 8, "Thief",
-      "Fast hands, climbing and the use of magic items others cannot.",
-      "", "", "" },
-    { 8, "Assassin",
-      "Disguise, poison and devastating strikes against the unready.",
-      "", "", "" },
-    { 8, "Arcane Trickster",
-      "A rogue who enhances stealth and mischief with wizard magic "
-      "(third-caster).",
-      "", "", "" },
-
-    /* --- sorcerer (27-28) --- */
-    { 9, "Draconic Bloodline",
-      "Dragon blood grants resilience, tougher skin and elemental affinity.",
-      "", "Dragon ancestor",
-      "Black (acid)|Blue (lightning)|Brass (fire)|Bronze (lightning)|"
-      "Copper (acid)|Gold (fire)|Green (poison)|Red (fire)|Silver (cold)|"
-      "White (cold)" },
-    { 9, "Wild Magic",
-      "Raw chaos: your magic sometimes surges beyond your control.",
-      "", "", "" },
-
-    /* --- warlock (29-31) --- */
-    { 10, "The Archfey",
-      "A patron of the Feywild; charm, escape and beguilement.",
-      "faerie fire, sleep|calm emotions, phantasmal force|"
-      "blink, plant growth|dominate beast, greater invisibility|"
-      "dominate person, seeming", "", "" },
-    { 10, "The Fiend",
-      "A patron from the lower planes; fire, temptation and dark luck.",
-      "burning hands, command|blindness/deafness, scorching ray|"
-      "fireball, stinking cloud|fire shield, wall of fire|"
-      "flame strike, hallow", "", "" },
-    { 10, "The Great Old One",
-      "An alien intelligence; telepathy and psychic domination.",
-      "dissonant whispers, Tasha's hideous laughter|"
-      "detect thoughts, phantasmal force|clairvoyance, sending|"
-      "dominate beast, Evard's black tentacles|"
-      "dominate person, telekinesis", "", "" },
-
-    /* --- wizard (32-39) --- */
-    { 11, "School of Abjuration",
-      "Protective magic; an arcane ward absorbs damage for you.", "", "", "" },
-    { 11, "School of Conjuration",
-      "Summoning and teleportation; conjure objects and blink between spaces.",
-      "", "", "" },
-    { 11, "School of Divination",
-      "Glimpse the future; portent replaces rolls with foreseen numbers.",
-      "", "", "" },
-    { 11, "School of Enchantment",
-      "Charm and compulsion; bend minds to your will.", "", "", "" },
-    { 11, "School of Evocation",
-      "Elemental destruction, sculpted so allies are spared.", "", "", "" },
-    { 11, "School of Illusion",
-      "Deception made real; illusions you can reshape at will.", "", "", "" },
-    { 11, "School of Necromancy",
-      "Life and death; harvest life force and command the undead.", "", "", "" },
-    { 11, "School of Transmutation",
-      "Change matter and form; a transmuter's stone grants shifting benefits.",
-      "", "", "" },
-};
-const int SUBCLASS_COUNT = (int)(sizeof(SUBCLASSES) / sizeof(SUBCLASSES[0]));
 
 /* ---------------------------------------------------------------- classes */
 
@@ -307,7 +145,8 @@ const ClassData CLASSES[] = {
   "Highest score Strength, then Constitution.",
   "(a) a greataxe or (b) any martial melee weapon|"
   "(a) two handaxes or (b) any simple weapon|"
-  "An explorer's pack and four javelins" },
+  "An explorer's pack and four javelins",
+  0, 0 },
 
 { "Bard", 8, {ABL_DEX, ABL_CHA},
   "Light armor",
@@ -323,7 +162,8 @@ const ClassData CLASSES[] = {
   "(a) a rapier, (b) a longsword or (c) any simple weapon|"
   "(a) a diplomat's pack or (b) an entertainer's pack|"
   "(a) a lute or (b) any other musical instrument|"
-  "Leather armor and a dagger" },
+  "Leather armor and a dagger",
+  1, 0 },
 
 { "Cleric", 8, {ABL_WIS, ABL_CHA},
   "Light armor, medium armor, shields",
@@ -339,7 +179,8 @@ const ClassData CLASSES[] = {
   "(a) scale mail, (b) leather armor or (c) chain mail (if proficient)|"
   "(a) a light crossbow and 20 bolts or (b) any simple weapon|"
   "(a) a priest's pack or (b) an explorer's pack|"
-  "A shield and a holy symbol" },
+  "A shield and a holy symbol",
+  1, 0 },
 
 { "Druid", 8, {ABL_INT, ABL_WIS},
   "Light armor, medium armor, shields (druids will not wear metal armor)",
@@ -355,7 +196,8 @@ const ClassData CLASSES[] = {
   "Highest score Wisdom, then Constitution.",
   "(a) a wooden shield or (b) any simple weapon|"
   "(a) a scimitar or (b) any simple melee weapon|"
-  "Leather armor, an explorer's pack and a druidic focus" },
+  "Leather armor, an explorer's pack and a druidic focus",
+  1, 0 },
 
 { "Fighter", 10, {ABL_STR, ABL_CON},
   "All armor, shields",
@@ -370,7 +212,8 @@ const ClassData CLASSES[] = {
   "(a) chain mail or (b) leather armor, longbow and 20 arrows|"
   "(a) a martial weapon and a shield or (b) two martial weapons|"
   "(a) a light crossbow and 20 bolts or (b) two handaxes|"
-  "(a) a dungeoneer's pack or (b) an explorer's pack" },
+  "(a) a dungeoneer's pack or (b) an explorer's pack",
+  3, 0 },
 
 { "Monk", 8, {ABL_STR, ABL_DEX},
   "None",
@@ -385,7 +228,8 @@ const ClassData CLASSES[] = {
   "Highest score Dexterity, then Wisdom.",
   "(a) a shortsword or (b) any simple weapon|"
   "(a) a dungeoneer's pack or (b) an explorer's pack|"
-  "10 darts" },
+  "10 darts",
+  0, 0 },
 
 { "Paladin", 10, {ABL_WIS, ABL_CHA},
   "All armor, shields",
@@ -400,7 +244,8 @@ const ClassData CLASSES[] = {
   "(a) a martial weapon and a shield or (b) two martial weapons|"
   "(a) five javelins or (b) any simple melee weapon|"
   "(a) a priest's pack or (b) an explorer's pack|"
-  "Chain mail and a holy symbol" },
+  "Chain mail and a holy symbol",
+  2, 0 },
 
 { "Ranger", 10, {ABL_STR, ABL_DEX},
   "Light armor, medium armor, shields",
@@ -416,7 +261,8 @@ const ClassData CLASSES[] = {
   "(a) scale mail or (b) leather armor|"
   "(a) two shortswords or (b) two simple melee weapons|"
   "(a) a dungeoneer's pack or (b) an explorer's pack|"
-  "A longbow and a quiver of 20 arrows" },
+  "A longbow and a quiver of 20 arrows",
+  2, 0 },
 
 { "Rogue", 8, {ABL_DEX, ABL_INT},
   "Light armor",
@@ -432,7 +278,8 @@ const ClassData CLASSES[] = {
   "(a) a rapier or (b) a shortsword|"
   "(a) a shortbow and quiver of 20 arrows or (b) a shortsword|"
   "(a) a burglar's pack, (b) a dungeoneer's pack or (c) an explorer's pack|"
-  "Leather armor, two daggers and thieves' tools" },
+  "Leather armor, two daggers and thieves' tools",
+  3, 0 },
 
 { "Sorcerer", 6, {ABL_CON, ABL_CHA},
   "None",
@@ -447,7 +294,8 @@ const ClassData CLASSES[] = {
   "(a) a light crossbow and 20 bolts or (b) any simple weapon|"
   "(a) a component pouch or (b) an arcane focus|"
   "(a) a dungeoneer's pack or (b) an explorer's pack|"
-  "Two daggers" },
+  "Two daggers",
+  1, 0 },
 
 { "Warlock", 8, {ABL_WIS, ABL_CHA},
   "Light armor",
@@ -462,7 +310,8 @@ const ClassData CLASSES[] = {
   "(a) a light crossbow and 20 bolts or (b) any simple weapon|"
   "(a) a component pouch or (b) an arcane focus|"
   "(a) a scholar's pack or (b) a dungeoneer's pack|"
-  "Leather armor, any simple weapon and two daggers" },
+  "Leather armor, any simple weapon and two daggers",
+  1, 0 },
 
 { "Wizard", 6, {ABL_INT, ABL_WIS},
   "None",
@@ -477,6 +326,59 @@ const ClassData CLASSES[] = {
   "(a) a quarterstaff or (b) a dagger|"
   "(a) a component pouch or (b) an arcane focus|"
   "(a) a scholar's pack or (b) an explorer's pack|"
-  "A spellbook" },
+  "A spellbook",
+  1, 0 },
+
+{ "Artificer", 8, {ABL_CON, ABL_INT},
+  "Light armor, medium armor, shields",
+  "Simple weapons",
+  "Thieves' tools, tinker's tools, one type of artisan's tools of your choice",
+  SK_ARTIFICER, NSK(SK_ARTIFICER), 2,
+  CAST_HALF, PREP_PREPARED, ABL_INT,
+  3, "Artificer Specialist", 0, 0,
+  {ABL_INT, ABL_INT}, {13, 0}, 1, 0,
+  "Light armor, medium armor, shields, thieves' tools, tinker's tools", 5, 10,
+  CK_ARTIFICER, NULL,
+  "Highest score Intelligence, then Constitution or Dexterity.",
+  "Two simple weapons of your choice|"
+  "A light crossbow and 20 bolts|"
+  "(a) studded leather armor or (b) scale mail|"
+  "Thieves' tools and a dungeoneer's pack",
+  1, 1 },
 };
 const int CLASS_COUNT = (int)(sizeof(CLASSES) / sizeof(CLASSES[0]));
+
+/* ------------------------------------------------------------- lookups */
+
+int subclass_by_name(const char *name)
+{
+    int i;
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        if (strcmp(SUBCLASSES[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+int subclass_is(int subclass_id, const char *name)
+{
+    if (subclass_id < 0 || subclass_id >= SUBCLASS_COUNT) return 0;
+    return strcmp(SUBCLASSES[subclass_id].name, name) == 0;
+}
+
+int subclasses_of(int class_id, int *out, int max)
+{
+    int i, n = 0;
+    for (i = 0; i < SUBCLASS_COUNT && n < max; i++) {
+        if (SUBCLASSES[i].class_id == class_id) out[n++] = i;
+    }
+    return n;
+}
+
+int class_by_name(const char *name)
+{
+    int i;
+    for (i = 0; i < CLASS_COUNT; i++) {
+        if (strcmp(CLASSES[i].name, name) == 0) return i;
+    }
+    return -1;
+}

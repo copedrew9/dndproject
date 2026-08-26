@@ -41,7 +41,7 @@ def read_prompt(proc, transcript):
         ch = proc.stdout.read(1)
         if not ch:
             return None
-        buf.append(ch)
+        buf.append(ch.decode("utf-8", "replace"))
         text = "".join(buf)
         if text.endswith(": "):
             # Nothing further within the grace period means it is waiting.
@@ -78,11 +78,13 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
                "--errors-for-leak-kinds=none"] + cmd
 
+    # Unbuffered binary pipes: the prompt test below asks the OS whether more
+    # output is pending, and Python's own buffering would hide it, making a
+    # colon in the middle of a paragraph look like a prompt.
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
-                            text=True, bufsize=1, cwd=workdir,
-                            errors="replace")
+                            bufsize=0, cwd=workdir)
     transcript = []
     replies = []
     name = rng.choice(NAMES) + str(seed)
@@ -113,13 +115,13 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
                 reply = answer(prompt, rng, name)
 
             replies.append(reply)
-            proc.stdin.write(reply + "\n")
+            proc.stdin.write((reply + "\n").encode())
             proc.stdin.flush()
     except BrokenPipeError:
         pass
 
     out, err = proc.communicate(timeout=300)
-    transcript.append(out)
+    transcript.append(out.decode("utf-8", "replace"))
     if RECORD_TO:
         with open(RECORD_TO, "w") as fh:
             fh.write("\n".join(replies) + "\n")
@@ -166,8 +168,8 @@ def main():
             if rc != 0:
                 failures += 1
                 print("run %d (seed %d): exit %d" % (i, seed, rc))
-                if err.strip():
-                    print("  stderr: %s" % err.strip()[:2000])
+                if err and err.strip():
+                    print("  stderr: %s" % err.decode("utf-8", "replace")[:2000])
                 tail = transcript[-1500:]
                 print("  tail: ...%s" % tail.replace("\n", "\n  "))
             elif not produced:
