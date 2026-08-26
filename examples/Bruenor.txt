@@ -1,0 +1,169 @@
+================================================================
+ Bruenor
+ Fighter 1
+================================================================
+ Player: Bob                      Race: Dwarf / Mountain Dwarf
+ Background: Folk Hero            Alignment: Lawful Good
+ Level: 1                         Proficiency Bonus: +2
+
+----------------------------------------------------------------
+ ABILITY SCORES
+----------------------------------------------------------------
+  Strength       17  (+3)     Saving throw +5  (proficient)
+  Dexterity      10  (+0)     Saving throw +0
+  Constitution   16  (+3)     Saving throw +5  (proficient)
+  Intelligence    8  (-1)     Saving throw -1
+  Wisdom         13  (+1)     Saving throw +1
+  Charisma       12  (+1)     Saving throw +1
+
+----------------------------------------------------------------
+ COMBAT
+----------------------------------------------------------------
+  Armor Class      18
+  Initiative       +0
+  Speed            25 ft.
+  Hit Points       13
+  Hit Dice         1d10
+  Passive Perception 13
+
+----------------------------------------------------------------
+ SKILLS
+----------------------------------------------------------------
+     Acrobatics         +0  (DEX)
+  *  Animal Handling    +3  (WIS)
+     Arcana             -1  (INT)
+  *  Athletics          +5  (STR)
+     Deception          +1  (CHA)
+     History            -1  (INT)
+     Insight            +1  (WIS)
+     Intimidation       +1  (CHA)
+     Investigation      -1  (INT)
+     Medicine           +1  (WIS)
+     Nature             -1  (INT)
+  *  Perception         +3  (WIS)
+     Performance        +1  (CHA)
+     Persuasion         +1  (CHA)
+     Religion           -1  (INT)
+     Sleight of Hand    +0  (DEX)
+     Stealth            +0  (DEX)
+  *  Survival           +3  (WIS)
+  (* proficient, E expertise)
+
+----------------------------------------------------------------
+ PROFICIENCIES AND LANGUAGES
+----------------------------------------------------------------
+  Armor and weapons:
+    Light armor, Medium armor, Battleaxe, Handaxe, Light hammer, Warhammer, All armor, Shields, Simple weapons, Martial weapons
+  Tools:
+    Smith's tools, Vehicles (land)
+  Languages:
+    Common, Dwarvish
+
+----------------------------------------------------------------
+ RACIAL TRAITS
+----------------------------------------------------------------
+  - Darkvision: 60 feet
+  - Dwarven Resilience: advantage on saves against poison, and resistance to poison damage
+  - Dwarven Combat Training: battleaxe, handaxe, light hammer, warhammer
+  - Tool Proficiency: smith's, brewer's or mason's tools
+  - Stonecunning: double proficiency on History checks about stonework
+  - Speed is not reduced by wearing heavy armor
+  - Dwarven Armor Training: proficiency with light and medium armor
+
+----------------------------------------------------------------
+ BACKGROUND FEATURE
+----------------------------------------------------------------
+  Rustic Hospitality: Common folk shelter you from the law or anyone searching for you, as long as you do not put them at risk.
+
+----------------------------------------------------------------
+ CLASS FEATURES
+----------------------------------------------------------------
+
+  Fighter 1
+     1  Fighting Style                   Choose a fighting style: Archery, Defense, Dueling, Great Weapon Fighting, Protection or Two-Weapon Fighting.
+     1  Second Wind                      As a bonus action, regain 1d10 + fighter level hit points, once per short or long rest.
+
+----------------------------------------------------------------
+ CHOICES
+----------------------------------------------------------------
+  Fighting Style         Defense (+1 AC while wearing armor)
+  Background equipment   A set of artisan's tools, a shovel, an iron pot, common clothes
+
+----------------------------------------------------------------
+ EQUIPMENT
+----------------------------------------------------------------
+    1 x Chain mail                 (equipped)
+    1 x Battleaxe                   1d8 slashing
+    1 x Shield                     (equipped)
+    1 x Light crossbow              1d8 piercing
+    1 x Crossbow bolts (20)       
+    1 x Explorer's pack           
+        contains: Backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50 feet of hempen rope
+
+  Coins: 0 pp, 10 gp, 0 ep, 0 sp, 0 cp
+  Carried weight: 144.2 lb of a 255 lb capacity
+
+----------------------------------------------------------------
+ PERSONALITY
+----------------------------------------------------------------
+  Age 150, 4 ft 5 in, 180 lb, brown eyes, tan skin, black hair
+
+  Trait:  I judge people by their actions, not their words.
+  Ideal:  Respect: people deserve to be treated with dignity.
+  Bond:   I have a family, but I have no idea where they are.
+  Flaw:   The tyrant who rules my land will stop at nothing to see me killed.
+
+
+================================================================
+ MACHINE-READABLE DATA -- the creator reads this to reload
+ the character for levelling up. Editing it by hand is fine,
+ but keep the field names and the '|' separators intact.
+================================================================
+#BEGIN-DNDDATA v1
+NAME|Bruenor
+PLAYER|Bob
+RACE|Dwarf
+SUBRACE|Mountain Dwarf
+BACKGROUND|Folk Hero
+ALIGNMENT|Lawful Good
+CLASS|Fighter|1|-|-1
+BASE|15|10|14|8|13|12
+RACIALBONUS|2|0|2|0|0|0
+ASIBONUS|0|0|0|0|0|0
+SAVEPROF|1|0|1|0|0|0
+SKILL|Animal Handling|1|0
+SKILL|Athletics|1|0
+SKILL|Perception|1|0
+SKILL|Survival|1|0
+LANG|Common
+LANG|Dwarvish
+TOOL|Smith's tools
+TOOL|Vehicles (land)
+PROF|Light armor
+PROF|Medium armor
+PROF|Battleaxe
+PROF|Handaxe
+PROF|Light hammer
+PROF|Warhammer
+PROF|All armor
+PROF|Shields
+PROF|Simple weapons
+PROF|Martial weapons
+CHOICE|Fighting Style|Defense (+1 AC while wearing armor)
+CHOICE|Background equipment|A set of artisan's tools, a shovel, an iron pot, common clothes
+ITEM|1|1|Chain mail
+ITEM|1|0|Battleaxe
+ITEM|1|1|Shield
+ITEM|1|0|Light crossbow
+ITEM|1|0|Crossbow bolts (20)
+ITEM|1|0|Explorer's pack
+COINS|0|0|0|10|0
+HPROLLS|1|10
+BODY|150|53|180|brown|tan|black
+TRAIT|I judge people by their actions, not their words.
+IDEAL|Respect: people deserve to be treated with dignity.
+BOND|I have a family, but I have no idea where they are.
+FLAW|The tyrant who rules my land will stop at nothing to see me killed.
+APPEARANCE|
+BACKSTORY|
+#END-DNDDATA

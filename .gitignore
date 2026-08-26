@@ -1,0 +1,8 @@
+build/
+dndcreator
+*.o
+*.d
+__pycache__/
+selftest
+*.txt
+!examples/*.txt
