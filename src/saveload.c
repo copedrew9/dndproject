@@ -109,10 +109,10 @@ static void warn_unknown(const char *kind, const char *name)
                     "current data; it was left out.\n", kind, name);
 }
 
-static void wrap_to(FILE *f, const char *text, int indent)
+static void wrap_from(FILE *f, const char *text, int indent, int start_col)
 {
     const int width = 76;
-    int col = 0;
+    int col = start_col;
     const char *p = text;
 
     while (*p) {
@@ -137,6 +137,21 @@ static void wrap_to(FILE *f, const char *text, int indent)
     }
     if (col) fputc('\n', f);
 }
+
+static void wrap_to(FILE *f, const char *text, int indent)
+{
+    wrap_from(f, text, indent, 0);
+}
+
+/* As wrap_to, but the first line begins with a label already printed at
+   the margin -- "  1. " -- so a short note takes one line, not two. */
+static void wrap_after(FILE *f, const char *label, const char *text,
+                       int indent)
+{
+    fprintf(f, "%s", label);
+    wrap_from(f, text, indent, (int)strlen(label));
+}
+
 
 static void class_line(const Character *c, char *out, size_t n)
 {
@@ -265,7 +280,8 @@ static void write_sheet(FILE *f, const Character *c)
             c->subrace_id >= 0 ? " / " : "",
             c->subrace_id >= 0 ? SUBRACES[c->subrace_id].name : "");
     fprintf(f, " Background: %-20s Alignment: %s\n",
-            c->background_id >= 0 ? BACKGROUNDS[c->background_id].name : "-",
+            c->background_id >= 0 ? BACKGROUNDS[c->background_id].name
+                : (c->background_name[0] ? c->background_name : "-"),
             ALIGNMENT_NAME[c->alignment]);
     fprintf(f, " Level: %-25d Proficiency Bonus: +%d\n",
             total_level(c), proficiency_bonus(c));
@@ -386,6 +402,9 @@ static void write_sheet(FILE *f, const Character *c)
         section(f, "BACKGROUND FEATURE");
         fprintf(f, "  %s: %s\n", BACKGROUNDS[c->background_id].feature_name,
                 BACKGROUNDS[c->background_id].feature_summary);
+    } else if (c->background_feature[0]) {
+        fprintf(f, "  %s: %s\n", c->background_feature,
+                c->background_feature_text);
     }
 
     section(f, "CLASS FEATURES");
@@ -533,8 +552,24 @@ static void write_sheet(FILE *f, const Character *c)
     if (c->ideal[0])      fprintf(f, "  Ideal:  %s\n", c->ideal);
     if (c->bond[0])       fprintf(f, "  Bond:   %s\n", c->bond);
     if (c->flaw[0])       fprintf(f, "  Flaw:   %s\n", c->flaw);
-    if (c->appearance[0]) fprintf(f, "\n  Appearance: %s\n", c->appearance);
-    if (c->backstory[0])  fprintf(f, "  Backstory:  %s\n", c->backstory);
+    if (c->appearance[0]) {
+        fprintf(f, "\n  Appearance:\n");
+        wrap_to(f, c->appearance, 4);
+    }
+    if (c->backstory[0]) {
+        fprintf(f, "\n  Backstory:\n");
+        wrap_to(f, c->backstory, 4);
+    }
+
+    if (c->note_count) {
+        int k;
+        section(f, "NOTES");
+        for (k = 0; k < c->note_count; k++) {
+            char label[16];
+            snprintf(label, sizeof label, "  %2d. ", k + 1);
+            wrap_after(f, label, c->notes[k], 6);
+        }
+    }
 }
 
 /* -------------------------------------------------------- the data block */
@@ -564,6 +599,12 @@ static void write_data(FILE *f, const Character *c)
     }
     if (c->background_id >= 0) {
         fprintf(f, "BACKGROUND|%s\n", BACKGROUNDS[c->background_id].name);
+    } else if (c->background_name[0]) {
+        /* A background built with the customization rules has no table row
+           to point at, so everything it granted is written out. */
+        fprintf(f, "CUSTOMBG|%s|%s|%s|%s\n", c->background_name,
+                c->background_feature, c->background_feature_text,
+                c->background_equipment);
     }
     fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
     if (c->ancestry_id >= 0) {
@@ -662,6 +703,12 @@ static void write_data(FILE *f, const Character *c)
     fprintf(f, "BOND|%s\n", c->bond);
     fprintf(f, "FLAW|%s\n", c->flaw);
     fprintf(f, "APPEARANCE|%s\n", c->appearance);
+    {
+        int k;
+        for (k = 0; k < c->note_count; k++) {
+            fprintf(f, "NOTE|%s\n", c->notes[k]);
+        }
+    }
     fprintf(f, "BACKSTORY|%s\n", c->backstory);
 
     fprintf(f, "%s\n", DATA_END);
@@ -777,6 +824,21 @@ int load_character(const char *path, Character *c)
             c->subrace_id = index_of_subrace(fields[1]);
         } else if (!strcmp(fields[0], "BACKGROUND") && n >= 2) {
             c->background_id = index_of_background(fields[1]);
+        } else if (!strcmp(fields[0], "CUSTOMBG") && n >= 5) {
+            c->background_id = -1;
+            snprintf(c->background_name, sizeof c->background_name, "%s",
+                     fields[1]);
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", fields[2]);
+            snprintf(c->background_feature_text,
+                     sizeof c->background_feature_text, "%s", fields[3]);
+            snprintf(c->background_equipment,
+                     sizeof c->background_equipment, "%s", fields[4]);
+        } else if (!strcmp(fields[0], "NOTE") && n >= 2) {
+            if (c->note_count < MAX_NOTES) {
+                snprintf(c->notes[c->note_count++], MAX_TEXT, "%s",
+                         fields[1]);
+            }
         } else if (!strcmp(fields[0], "ALIGNMENT") && n >= 2) {
             c->alignment = (Alignment)index_of_alignment(fields[1]);
         } else if (!strcmp(fields[0], "ANCESTRY") && n >= 2) {

@@ -81,6 +81,7 @@ typedef struct {
 
 #define MAX_ATTUNED 3
 #define MAX_SIDEKICKS 4
+#define MAX_NOTES 16
 #define MAX_SK_CHOICES 12
 
 
@@ -174,6 +175,19 @@ typedef struct {
        though the book warns the table slows down past one each. */
     Sidekick sidekicks[MAX_SIDEKICKS];
     int sidekick_count;
+
+    /* A background built with the PHB's customization rules rather than
+       taken from the table. background_id is -1 in that case, and these
+       carry what the player chose instead. */
+    char background_name[MAX_NAME];
+    char background_feature[MAX_NAME];
+    char background_feature_text[MAX_TEXT];
+    char background_equipment[MAX_TEXT];
+
+    /* Anything the player wants to remember: contacts, debts, the name of
+       the innkeeper's dog. */
+    char notes[MAX_NOTES][MAX_TEXT];
+    int  note_count;
 
     /* Personality (PHB chapter 4). */
     char trait[MAX_TEXT];

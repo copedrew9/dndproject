@@ -1,5 +1,6 @@
 /* gear.c -- starting equipment, the shop, and personality (PHB chapters 4-5). */
 #include "backstory.h"
+#include "details.h"
 #include "build.h"
 #include "reference.h"
 #include "ui.h"
@@ -563,8 +564,12 @@ static void pick_or_type(const char *label, const char *const *suggestions,
     char prompt[128];
     int count = 0;
 
-    while (count < 9 && suggestions[count]) count++;
     snprintf(prompt, sizeof prompt, "  %s:", label);
+    if (!suggestions) {                 /* nothing to suggest; just ask */
+        ui_line(prompt, out, n);
+        return;
+    }
+    while (count < 9 && suggestions[count]) count++;
     ui_pick_or_type(prompt, suggestions, count, out, n);
 }
 
@@ -669,14 +674,23 @@ void choose_personality(Character *c)
     ui_line_default("  Skin", "tan", c->skin, sizeof c->skin);
     ui_line_default("  Hair", "black", c->hair, sizeof c->hair);
 
-    if (c->background_id < 0) return;
-    bg = &BACKGROUNDS[c->background_id];
+    /* A character with a background of their own has no table to draw
+       suggestions from, but still has a personality; the step used to be
+       skipped entirely in that case. */
+    bg = (c->background_id >= 0) ? &BACKGROUNDS[c->background_id] : NULL;
 
-    printf("\n  Suggested characteristics for the %s background:\n", bg->name);
-    pick_or_type("Personality trait", bg->traits, c->trait, sizeof c->trait);
-    pick_or_type("Ideal", bg->ideals, c->ideal, sizeof c->ideal);
-    pick_or_type("Bond", bg->bonds, c->bond, sizeof c->bond);
-    pick_or_type("Flaw", bg->flaws, c->flaw, sizeof c->flaw);
+    if (bg) {
+        printf("\n  Suggested characteristics for the %s background:\n",
+               bg->name);
+    } else {
+        printf("\n  Your background is your own, so these are yours to "
+               "write.\n");
+    }
+    pick_or_type("Personality trait", bg ? bg->traits : NULL, c->trait,
+                 sizeof c->trait);
+    pick_or_type("Ideal", bg ? bg->ideals : NULL, c->ideal, sizeof c->ideal);
+    pick_or_type("Bond", bg ? bg->bonds : NULL, c->bond, sizeof c->bond);
+    pick_or_type("Flaw", bg ? bg->flaws : NULL, c->flaw, sizeof c->flaw);
 
     /* A cleric or paladin serves someone in particular; everyone else may
        still keep a faith. */
@@ -704,5 +718,9 @@ void choose_personality(Character *c)
     if (!c->backstory[0]) {
         ui_line("  Backstory (one line, optional)", c->backstory,
                 sizeof c->backstory);
+    }
+
+    if (ui_yesno("\n  Add any notes about this character?", 0)) {
+        edit_details(c);
     }
 }

@@ -7,6 +7,7 @@
 #include "dnd.h"
 #include "data.h"
 #include "build.h"
+#include "details.h"
 #include "homebrew.h"
 #include "inventory.h"
 #include "sidekick.h"
@@ -99,6 +100,10 @@ static void do_level_up(void)
         manage_sidekicks(&c);
     }
 
+    if (ui_yesno("\n  Add or change any notes?", 0)) {
+        edit_details(&c);
+    }
+
     ui_header("Your Character");
     print_sheet(&c);
     save_and_report(&c);
@@ -140,6 +145,19 @@ static int load_by_name(const char *prompt, Character *c)
     return 0;
 }
 
+static void do_details(void)
+{
+    Character c;
+
+    ui_header("Notes and Character Details");
+    if (load_by_name("  Character name (or a path to the .txt file)", &c))
+        return;
+    printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
+
+    edit_details(&c);
+    if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
+}
+
 static void do_sidekicks(void)
 {
     Character c;
@@ -178,6 +196,7 @@ int main(int argc, char **argv)
         "Manage a character's inventory",
         "Manage a character's sidekicks",
         "Homebrew (your own items and spells)",
+        "Notes and character details",
         "Quit"
     };
     unsigned int seed = (unsigned int)time(NULL);
@@ -216,7 +235,7 @@ int main(int argc, char **argv)
         printf("  D&D 5th Edition Character Creator\n");
         ui_rule();
 
-        pick = ui_menu("  What would you like to do?", menu, NULL, 9);
+        pick = ui_menu("  What would you like to do?", menu, NULL, 10);
         switch (pick) {
         case 0: do_create(); break;
         case 1: do_level_up(); break;
@@ -226,6 +245,7 @@ int main(int argc, char **argv)
         case 5: do_inventory(); break;
         case 6: do_sidekicks(); break;
         case 7: homebrew_menu(); break;
+        case 8: do_details(); break;
         default: return 0;
         }
     }

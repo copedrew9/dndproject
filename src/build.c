@@ -806,6 +806,108 @@ static void check_multiclass_requirements(Character *c)
 
 /* ------------------------------------------------------------------- step 4 */
 
+/* The PHB's own rules for building a background instead of taking one:
+ * choose any two skills, a total of two tools or languages, keep or replace
+ * the feature, and pick the equipment or take coin for it. */
+static void custom_background(Character *c)
+{
+    char buf[MAX_NAME];
+    int picks[2], i;
+
+    ui_header("A Background of Your Own");
+    ui_para("The Player's Handbook lets you build a background rather than "
+            "take one: any two skills, two tools or languages between them, "
+            "and any feature you like -- one from another background, or one "
+            "you write yourself.");
+
+    ui_line_default("  What is it called", "Custom Background", buf,
+                    sizeof c->background_name);
+    snprintf(c->background_name, sizeof c->background_name, "%s", buf);
+    c->background_id = -1;
+
+    /* Any two skills. */
+    {
+        const char *opts[SKL_COUNT];
+        int avail[SKL_COUNT];
+        for (i = 0; i < SKL_COUNT; i++) {
+            opts[i] = SKILL_NAME[i];
+            avail[i] = !c->skill_prof[i];
+        }
+        ui_multi("  Which two skills?", opts, avail, SKL_COUNT, 2, picks);
+        for (i = 0; i < 2; i++) {
+            if (picks[i] >= 0) c->skill_prof[picks[i]] = 1;
+        }
+    }
+
+    /* Two tools or languages, in any mix. */
+    for (i = 0; i < 2; i++) {
+        static const char *const kinds[] = {
+            "A tool proficiency", "A language"
+        };
+        char prompt[64];
+
+        snprintf(prompt, sizeof prompt, "  Choice %d of 2:", i + 1);
+        if (ui_menu(prompt, kinds, NULL, 2) == 0) {
+            ui_line("    Which tool", buf, sizeof buf);
+            if (buf[0]) add_tool(c, buf);
+        } else {
+            const char *opts[32];
+            int avail[32], lang[1], k;
+            for (k = 0; k < LANGUAGE_COUNT; k++) {
+                opts[k] = LANGUAGES[k];
+                avail[k] = !has_language(c, LANGUAGES[k]);
+            }
+            ui_multi("    Which language?", opts, avail, LANGUAGE_COUNT, 1,
+                     lang);
+            if (lang[0] >= 0) add_language(c, LANGUAGES[lang[0]]);
+        }
+    }
+
+    /* A feature: one from the printed backgrounds, or your own. */
+    {
+        const char *opts[32];
+        const char *det[32];
+        int map[32], n = 0, pick;
+
+        for (i = 0; i < BACKGROUND_COUNT && n < 31; i++) {
+            if (!book_enabled(BACKGROUNDS[i].book)) continue;
+            opts[n] = BACKGROUNDS[i].feature_name;
+            det[n] = BACKGROUNDS[i].feature_summary;
+            map[n] = i;
+            n++;
+        }
+        opts[n] = "Write my own";
+        det[n] = NULL;
+
+        pick = ui_menu("  Which feature?", opts, det, n + 1);
+        if (pick == n) {
+            ui_line("    What is the feature called", c->background_feature,
+                    sizeof c->background_feature);
+            ui_line("    What does it do", c->background_feature_text,
+                    sizeof c->background_feature_text);
+        } else {
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", BACKGROUNDS[map[pick]].feature_name);
+            snprintf(c->background_feature_text,
+                     sizeof c->background_feature_text, "%s",
+                     BACKGROUNDS[map[pick]].feature_summary);
+        }
+        if (!c->background_feature[0]) {
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", "Background Feature");
+        }
+    }
+
+    /* Equipment and starting coin. The gear step still offers to take gold
+       instead of a package, so this is only what the background itself
+       hands over. */
+    ui_line("  What equipment does it come with (blank for none)",
+            c->background_equipment, sizeof c->background_equipment);
+    c->gold += ui_int("  Starting gold from the background", 0, 1000);
+
+    printf("\n  %s: %s\n", c->background_name, c->background_feature);
+}
+
 static void choose_background(Character *c)
 {
     const char *names[16];
@@ -826,7 +928,18 @@ static void choose_background(Character *c)
             map[n] = i;
             n++;
         }
+        names[n] = "Build one of my own";
+        details[n] = "Choose any two skills, two tools or languages, and "
+                     "any feature -- the Player's Handbook's own rules for "
+                     "customizing a background";
+        map[n] = -1;
+        n++;
+
         pick = map[ui_menu("Backgrounds:", names, details, n)];
+    }
+    if (pick < 0) {
+        custom_background(c);
+        return;
     }
     c->background_id = pick;
 

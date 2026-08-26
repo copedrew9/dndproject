@@ -1239,6 +1239,57 @@ static void test_life_tables(void)
     }
 }
 
+static void test_notes_and_custom_background(void)
+{
+    Character c;
+    int i;
+
+    printf("notes and a background of your own\n");
+
+    reset(&c);
+    EQ(c.note_count, 0, "a new character has no notes");
+    EQ(c.background_id, -1, "a fresh character has no background yet");
+
+    /* Notes hold what they are given, up to the limit. */
+    for (i = 0; i < MAX_NOTES + 4; i++) {
+        if (c.note_count >= MAX_NOTES) break;
+        snprintf(c.notes[c.note_count], MAX_TEXT, "note %d", i);
+        c.note_count++;
+    }
+    EQ(c.note_count, MAX_NOTES, "notes fill to the limit and stop");
+    check(strcmp(c.notes[0], "note 0") == 0, "the first note is kept", 1, 1);
+    check(strcmp(c.notes[MAX_NOTES - 1], "note 15") == 0,
+          "and so is the last", 1, 1);
+
+    /* Removing one closes the gap, as the screen does. */
+    {
+        int k;
+        for (k = 0; k < c.note_count - 1; k++) {
+            memcpy(c.notes[k], c.notes[k + 1], MAX_TEXT);
+        }
+        c.note_count--;
+        EQ(c.note_count, MAX_NOTES - 1, "removing a note shortens the list");
+        check(strcmp(c.notes[0], "note 1") == 0,
+              "and the rest move up", 1, 1);
+    }
+
+    /* A background of your own is marked by an id of -1 and carries its own
+       name and feature, so nothing indexes the table. */
+    reset(&c);
+    c.background_id = -1;
+    snprintf(c.background_name, sizeof c.background_name, "Sky Pilgrim");
+    snprintf(c.background_feature, sizeof c.background_feature,
+             "Reader of Winds");
+    check(c.background_id < 0, "a custom background has no table row", 1, 1);
+    check(c.background_name[0] != '\0', "but it does have a name", 1, 1);
+
+    /* The two skills it grants are ordinary skill proficiencies. */
+    c.skill_prof[SKL_SURVIVAL] = 1;
+    c.skill_prof[SKL_INSIGHT] = 1;
+    EQ(skill_bonus(&c, SKL_SURVIVAL) - ability_mod(&c, ABL_WIS),
+       proficiency_bonus(&c), "a custom background's skill is proficient");
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -1282,6 +1333,7 @@ int main(void)
     test_magic_armour_class();
     test_magic_scores_and_speeds();
     test_life_tables();
+    test_notes_and_custom_background();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");
