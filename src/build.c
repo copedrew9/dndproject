@@ -183,11 +183,17 @@ static void choose_race(Character *c)
             "talents you gain from ancestry, and increases one or more "
             "ability scores.");
 
-    for (i = 0; i < RACE_COUNT; i++) {
-        names[i] = RACES[i].name;
-        details[i] = NULL;
+    {
+        int map[64], n = 0;
+        for (i = 0; i < RACE_COUNT && n < 64; i++) {
+            if (!book_enabled(RACES[i].book)) continue;
+            names[n] = RACES[i].name;
+            details[n] = NULL;
+            map[n] = i;
+            n++;
+        }
+        pick = map[ui_menu("Races:", names, details, n)];
     }
-    pick = ui_menu("Races:", names, details, RACE_COUNT);
     c->race_id = pick;
 
     printf("\n%s traits:\n", RACES[pick].name);
@@ -205,12 +211,16 @@ static void choose_race(Character *c)
     c->subrace_id = -1;
     if (RACES[pick].subrace_count > 0) {
         int first = RACES[pick].first_subrace;
-        int n = RACES[pick].subrace_count;
-        for (i = 0; i < n; i++) {
-            names[i] = SUBRACES[first + i].name;
-            details[i] = SUBRACES[first + i].traits;
+        int total = RACES[pick].subrace_count;
+        int map[32], n = 0;
+        for (i = 0; i < total && n < 32; i++) {
+            if (!book_enabled(SUBRACES[first + i].book)) continue;
+            names[n] = SUBRACES[first + i].name;
+            details[n] = SUBRACES[first + i].traits;
+            map[n] = first + i;
+            n++;
         }
-        c->subrace_id = first + ui_menu("Subraces:", names, details, n);
+        if (n > 0) c->subrace_id = map[ui_menu("Subraces:", names, details, n)];
     }
 
     /* Draconic ancestry. */
@@ -315,6 +325,7 @@ static void choose_classes(Character *c, int *target_level)
 {
     const char *names[16];
     const char *details[16];
+    int class_map[16], class_n;
     int i, remaining;
 
     ui_header("Step 2: Choose a Class");
@@ -324,19 +335,37 @@ static void choose_classes(Character *c, int *target_level)
     *target_level = ui_int("\nWhat total character level are you building to",
                            1, MAX_LEVEL);
 
-    for (i = 0; i < CLASS_COUNT; i++) {
-        names[i] = CLASSES[i].name;
-        details[i] = CLASSES[i].quick_build;
+    {
+        int n = 0;
+        for (i = 0; i < CLASS_COUNT && n < 16; i++) {
+            if (!book_enabled(CLASSES[i].book)) continue;
+            names[n] = CLASSES[i].name;
+            details[n] = CLASSES[i].quick_build;
+            class_map[n] = i;
+            n++;
+        }
+        class_n = n;
     }
 
     c->class_count = 0;
     remaining = *target_level;
 
     while (remaining > 0) {
-        int pick = ui_menu(c->class_count == 0 ? "Classes:"
-                                               : "Add levels in which class?",
-                           names, details, CLASS_COUNT);
-        int slot = find_class_slot(c, pick);
+        int pick;
+        int slot;
+
+        /* Without the multiclassing rule the whole build is one class. */
+        if (!SETTINGS.multiclassing && c->class_count == 1) {
+            c->classes[0].level += remaining;
+            remaining = 0;
+            break;
+        }
+
+        pick = class_map[ui_menu(c->class_count == 0
+                                     ? "Classes:"
+                                     : "Add levels in which class?",
+                                 names, details, class_n)];
+        slot = find_class_slot(c, pick);
         int levels, maxlev;
 
         if (slot < 0) {
@@ -525,7 +554,91 @@ static void choose_abilities(Character *c)
     }
 }
 
-/* Applies racial increases, including the ones the player chooses. */
+/* Applies racial increases, including the ones the player chooses.
+ *
+ * With Tasha's Customizing Your Origin switched on, the fixed increases a
+ * race grants become a pool the player may place anywhere, the granted
+ * languages may be swapped, and a fixed racial proficiency may be traded.
+ */
+static void custom_origin_abilities(Character *c, int total)
+{
+    static const char *const modes[] = {
+        "+2 to one ability and +1 to another",
+        "+1 to each of three abilities"
+    };
+    const char *opts[ABL_COUNT];
+    int avail[ABL_COUNT], picks[3], a, m;
+
+    for (a = 0; a < ABL_COUNT; a++) {
+        opts[a] = ABILITY_NAME[a];
+        avail[a] = 1;
+    }
+
+    printf("\n  Customizing Your Origin: your race grants %d points of "
+           "ability increase to place as you like.\n", total);
+
+    if (total == 3) {
+        m = ui_menu("  How would you like to spread them?", modes, NULL, 2);
+        if (m == 0) {
+            ui_multi("  +2 to which ability?", opts, avail, ABL_COUNT, 1, picks);
+            if (picks[0] >= 0) {
+                c->racial_bonus[picks[0]] += 2;
+                avail[picks[0]] = 0;
+            }
+            ui_multi("  +1 to which ability?", opts, avail, ABL_COUNT, 1, picks);
+            if (picks[0] >= 0) c->racial_bonus[picks[0]] += 1;
+        } else {
+            ui_multi("  +1 to which three abilities?", opts, avail,
+                     ABL_COUNT, 3, picks);
+            for (a = 0; a < 3; a++) {
+                if (picks[a] >= 0) c->racial_bonus[picks[a]] += 1;
+            }
+        }
+        return;
+    }
+
+    /* Any other total is spread one point at a time. */
+    for (a = 0; a < total; a++) {
+        char prompt[64];
+        snprintf(prompt, sizeof prompt, "  Place +1 (%d of %d):", a + 1, total);
+        ui_multi(prompt, opts, NULL, ABL_COUNT, 1, picks);
+        if (picks[0] >= 0) c->racial_bonus[picks[0]] += 1;
+    }
+}
+
+static void custom_origin_languages(Character *c)
+{
+    ui_para("Customizing Your Origin also lets you swap the languages your "
+            "race grants. Common is always kept.");
+    if (!ui_yesno("  Replace your racial languages?", 0)) return;
+
+    /* Keep Common, drop the rest, then choose replacements. */
+    {
+        int kept = 0, i, dropped;
+        char keep[MAX_LANGS][MAX_NAME];
+        for (i = 0; i < c->language_count; i++) {
+            if (strcmp(c->languages[i], "Common") == 0) {
+                strcpy(keep[kept++], c->languages[i]);
+            }
+        }
+        dropped = c->language_count - kept;
+        c->language_count = kept;
+        for (i = 0; i < kept; i++) strcpy(c->languages[i], keep[i]);
+
+        for (i = 0; i < dropped; i++) {
+            const char *opts[32];
+            int avail[32], picks[1], k;
+            for (k = 0; k < LANGUAGE_COUNT; k++) {
+                opts[k] = LANGUAGES[k];
+                avail[k] = !has_language(c, LANGUAGES[k]);
+            }
+            ui_multi("  Replacement language:", opts, avail, LANGUAGE_COUNT,
+                     1, picks);
+            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
+        }
+    }
+}
+
 static void apply_racial_bonuses(Character *c)
 {
     const RaceData *r = &RACES[c->race_id];
@@ -536,29 +649,47 @@ static void apply_racial_bonuses(Character *c)
 
     memset(c->racial_bonus, 0, sizeof c->racial_bonus);
 
-    if (!(s && s->replaces_race_asi)) {
-        for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += r->ability[a];
-    }
-    if (s) {
-        for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += s->ability[a];
-        if (s->choice_asi_count) choice_count = s->choice_asi_count;
-    }
-
-    /* The half-elf's two free points may not go into Charisma. */
-    if (strcmp(r->name, "Half-Elf") == 0) exclude_cha = 1;
-
-    if (choice_count > 0) {
-        const char *opts[ABL_COUNT];
-        int avail[ABL_COUNT], picks[4], i, n = 0;
-
-        for (a = 0; a < ABL_COUNT; a++) {
-            opts[n] = ABILITY_NAME[a];
-            avail[n] = !(exclude_cha && a == ABL_CHA);
-            n++;
+    if (SETTINGS.custom_origins) {
+        /* Total the points the race and subrace would have granted, then let
+           the player place them wherever they like. */
+        int total = 0;
+        if (!(s && s->replaces_race_asi)) {
+            for (a = 0; a < ABL_COUNT; a++) total += r->ability[a];
         }
-        ui_multi("Racial ability increase: +1 to which abilities?",
-                 opts, avail, n, choice_count, picks);
-        for (i = 0; i < choice_count; i++) c->racial_bonus[picks[i]] += 1;
+        if (s) for (a = 0; a < ABL_COUNT; a++) total += s->ability[a];
+        total += r->choice_asi_count * (r->choice_asi_amount ? r->choice_asi_amount : 1);
+        if (s && s->choice_asi_count) total += s->choice_asi_count;
+        if (total < 1) total = 3;
+
+        custom_origin_abilities(c, total);
+        add_choice(c, "Origin", "Customized (Tasha's)");
+    } else {
+        if (!(s && s->replaces_race_asi)) {
+            for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += r->ability[a];
+        }
+        if (s) {
+            for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += s->ability[a];
+            if (s->choice_asi_count) choice_count = s->choice_asi_count;
+        }
+
+        /* The half-elf's two free points may not go into Charisma. */
+        if (strcmp(r->name, "Half-Elf") == 0) exclude_cha = 1;
+
+        if (choice_count > 0) {
+            const char *opts[ABL_COUNT];
+            int avail[ABL_COUNT], picks[4], i, n = 0;
+
+            for (a = 0; a < ABL_COUNT; a++) {
+                opts[n] = ABILITY_NAME[a];
+                avail[n] = !(exclude_cha && a == ABL_CHA);
+                n++;
+            }
+            ui_multi("Racial ability increase: +1 to which abilities?",
+                     opts, avail, n, choice_count, picks);
+            for (i = 0; i < choice_count; i++) {
+                if (picks[i] >= 0) c->racial_bonus[picks[i]] += 1;
+            }
+        }
     }
 
     /* Extra languages from race and subrace. */
@@ -573,9 +704,11 @@ static void apply_racial_bonuses(Character *c)
             }
             ui_multi("Extra language from your race:", opts, avail,
                      LANGUAGE_COUNT, 1, picks);
-            add_language(c, LANGUAGES[picks[0]]);
+            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
         }
     }
+
+    if (SETTINGS.custom_origins) custom_origin_languages(c);
 
     /* Half-elf skill versatility and the variant human's free skill. */
     {
@@ -589,7 +722,9 @@ static void apply_racial_bonuses(Character *c)
             }
             ui_multi("Racial skill proficiency:", opts, avail, SKL_COUNT,
                      extra, picks);
-            for (i = 0; i < extra; i++) c->skill_prof[picks[i]] = 1;
+            for (i = 0; i < extra; i++) {
+                if (picks[i] >= 0) c->skill_prof[picks[i]] = 1;
+            }
         }
     }
 }
@@ -647,11 +782,17 @@ static void choose_background(Character *c)
             "the world. It grants two skills, sometimes tools or languages, "
             "and a feature.");
 
-    for (i = 0; i < BACKGROUND_COUNT; i++) {
-        names[i] = BACKGROUNDS[i].name;
-        details[i] = BACKGROUNDS[i].feature_summary;
+    {
+        int map[32], n = 0;
+        for (i = 0; i < BACKGROUND_COUNT && n < 32; i++) {
+            if (!book_enabled(BACKGROUNDS[i].book)) continue;
+            names[n] = BACKGROUNDS[i].name;
+            details[n] = BACKGROUNDS[i].feature_summary;
+            map[n] = i;
+            n++;
+        }
+        pick = map[ui_menu("Backgrounds:", names, details, n)];
     }
-    pick = ui_menu("Backgrounds:", names, details, BACKGROUND_COUNT);
     c->background_id = pick;
 
     c->skill_prof[BACKGROUNDS[pick].skills[0]] = 1;
@@ -701,7 +842,7 @@ static void choose_background(Character *c)
         }
         ui_multi("Language from your background:", opts, avail,
                  LANGUAGE_COUNT, 1, picks);
-        add_language(c, LANGUAGES[picks[0]]);
+        if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
     }
 }
 
@@ -740,7 +881,7 @@ static void choose_class_skills(Character *c)
         snprintf(prompt, sizeof prompt, "%s skill proficiencies:", cd->name);
         ui_multi(prompt, opts, avail, n, picks_wanted, picks);
         for (k = 0; k < picks_wanted; k++) {
-            c->skill_prof[cd->skill_options[picks[k]]] = 1;
+            if (picks[k] >= 0) c->skill_prof[cd->skill_options[picks[k]]] = 1;
         }
     }
 }

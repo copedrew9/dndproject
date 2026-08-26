@@ -1,5 +1,6 @@
 /* gear.c -- starting equipment, the shop, and personality (PHB chapters 4-5). */
 #include "build.h"
+#include "reference.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -151,6 +152,7 @@ static void pick_from_category(Character *c, int cat_a, int cat_b,
     for (i = 0; i < ITEM_COUNT && n < 128; i++) {
         if ((int)ITEMS[i].category != cat_a
             && (cat_b < 0 || (int)ITEMS[i].category != cat_b)) continue;
+        if (!book_enabled(ITEMS[i].book)) continue;
         snprintf(lines[n], sizeof lines[n], "%-20s %s %s", ITEMS[i].name,
                  ITEMS[i].damage, ITEMS[i].damage_type);
         opts[n] = lines[n];
@@ -435,9 +437,10 @@ static void shop(Character *c)
             static char lines[256][160];
             int map[256], n = 0, pick, qty;
 
-            for (i = 0; i < ITEM_COUNT && n < 256; i++) {
+            for (i = 0; i < ITEM_COUNT && n < 254; i++) {
                 char price[32], weight[32];
                 if ((int)ITEMS[i].category != cat) continue;
+                if (!book_enabled(ITEMS[i].book)) continue;
                 print_price(ITEMS[i].cost_cp, price, sizeof price);
                 print_weight(ITEMS[i].weight_tenths, weight, sizeof weight);
 
@@ -478,7 +481,17 @@ static void shop(Character *c)
             }
             if (n == 0) continue;
 
-            pick = ui_menu("  Item:", opts, NULL, n);
+            opts[n] = "Look an item up without buying";
+            opts[n + 1] = "Back to the categories";
+            pick = ui_menu("  Item:", opts, NULL, n + 2);
+            if (pick == n + 1) continue;
+            if (pick == n) {
+                int look = ui_menu("  Look up:", opts, NULL, n);
+                show_item_detail(map[look]);
+                continue;
+            }
+            show_item_detail(map[pick]);
+            if (!ui_yesno("  Buy it?", 1)) continue;
             qty = ui_int("  Quantity", 1, 99);
 
             {
@@ -521,6 +534,10 @@ void choose_equipment(Character *c)
 
     shop(c);
     auto_equip(c);
+
+    if (c->item_count && ui_yesno("\n  Look over what you are carrying?", 0)) {
+        inventory_reference(c);
+    }
 
     printf("\n  Armor Class %d, carrying %d.%d lb of a %d lb capacity.\n",
            armour_class(c), current_weight_tenths(c) / 10,

@@ -7,8 +7,10 @@
 #include "dnd.h"
 #include "data.h"
 #include "build.h"
+#include "reference.h"
 #include "saveload.h"
 #include "ui.h"
+#include "data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,6 +111,8 @@ int main(int argc, char **argv)
         "Create a new character",
         "Load a character and level up",
         "View a saved character",
+        "Content settings (books and optional rules)",
+        "Item reference (equipment, magic items, prices)",
         "Quit"
     };
     unsigned int seed = (unsigned int)time(NULL);
@@ -127,6 +131,7 @@ int main(int argc, char **argv)
         }
     }
     rng_seed(seed);
+    settings_defaults(&SETTINGS);
 
     for (;;) {
         int pick;
@@ -136,11 +141,13 @@ int main(int argc, char **argv)
         printf("  D&D 5th Edition Character Creator\n");
         ui_rule();
 
-        pick = ui_menu("  What would you like to do?", menu, NULL, 4);
+        pick = ui_menu("  What would you like to do?", menu, NULL, 6);
         switch (pick) {
         case 0: do_create(); break;
         case 1: do_level_up(); break;
         case 2: do_view(); break;
+        case 3: settings_menu(&SETTINGS); break;
+        case 4: reference_menu(); break;
         default: return 0;
         }
     }

@@ -224,7 +224,7 @@ def extract_spells(lines):
         key = name.lower()
         if key not in spells:
             spells[key] = {
-                "name": name, "level": level, "school": school,
+                "name": name, "book": "phb", "level": level, "school": school,
                 "ritual": ritual, "time": ct, "range": rng,
                 "components": comp, "duration": dur, "conc": conc,
                 "classes": set(),
@@ -435,6 +435,8 @@ def emit(ordered):
     hdr += ['} SpellClassBit;', '',
             'typedef struct {',
             '    const char *name;',
+            '    unsigned char book;         /* matches SourceBook in data.h:',
+            '                                   0 PHB, 1 XGE, 2 TCE */',
             '    unsigned char level;        /* 0 = cantrip */',
             '    unsigned char school;       /* School */',
             '    unsigned char ritual;',
@@ -458,8 +460,9 @@ def emit(ordered):
     src += ['};', '', 'const SpellData SPELLS[] = {']
     for sp in ordered:
         bits = " | ".join("SPL_" + c.upper() for c in sorted(sp["classes"]))
-        src.append('    { %s, %d, SCHOOL_%s, %d, %d,' % (
-            cstr(sp["name"]), sp["level"], sp["school"].upper(),
+        book = {"phb": 0, "xge": 1, "tce": 2}[sp.get("book", "phb")]
+        src.append('    { %s, %d, %d, SCHOOL_%s, %d, %d,' % (
+            cstr(sp["name"]), book, sp["level"], sp["school"].upper(),
             1 if sp["ritual"] else 0, 1 if sp["conc"] else 0))
         src.append('      %s, %s,' % (cstr(sp["time"]), cstr(sp["range"])))
         src.append('      %s,' % cstr(sp["components"]))
@@ -744,6 +747,7 @@ def add_expansion_spells(spells, problems):
             if entry is None:
                 entry = dict(sp)
                 entry["name"] = titlecase(name)
+                entry["book"] = "xge"
                 entry["school"] = school
                 entry["ritual"] = ritual or sp["ritual"]
                 entry["classes"] = set()
@@ -784,6 +788,7 @@ def add_expansion_spells(spells, problems):
                 continue
             entry = dict(tce_desc[key])
             entry["name"] = name
+            entry["book"] = "tce"
             entry["level"] = level
             entry["school"] = school
             entry["ritual"] = ritual

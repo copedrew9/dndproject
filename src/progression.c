@@ -224,6 +224,7 @@ static void apply_feat_asi(Character *c, int f)
         ui_multi("  This feat also raises an ability by 1:", opts, avail,
                  n, fd->asi_choice_count, picks);
         for (i = 0; i < fd->asi_choice_count; i++) {
+            if (picks[i] < 0) continue;
             c->asi_bonus[picks[i]] += 1;
             if (strcmp(fd->name, "Resilient") == 0) {
                 c->save_prof[picks[i]] = 1;
@@ -242,7 +243,9 @@ void apply_asi_or_feat(Character *c, const char *reason)
     int m;
 
     printf("\n  %s\n", reason);
-    m = ui_menu("  Ability Score Improvement:", modes, NULL, 3);
+    /* Feats are an optional rule; without them only the two increases apply. */
+    m = ui_menu("  Ability Score Improvement:", modes, NULL,
+                SETTINGS.feats ? 3 : 2);
 
     if (m == 0 || m == 1) {
         const char *opts[ABL_COUNT];
@@ -264,7 +267,9 @@ void apply_asi_or_feat(Character *c, const char *reason)
         } else {
             ui_multi("  Which ability score(s)?", opts, avail, ABL_COUNT,
                      want, picks);
-            for (a = 0; a < want; a++) c->asi_bonus[picks[a]] += step;
+            for (a = 0; a < want; a++) {
+                if (picks[a] >= 0) c->asi_bonus[picks[a]] += step;
+            }
             return;
         }
     }
@@ -275,6 +280,7 @@ void apply_asi_or_feat(Character *c, const char *reason)
         int map[64], n = 0, i, pick;
 
         for (i = 0; i < FEAT_COUNT; i++) {
+            if (!book_enabled(FEATS[i].book)) continue;
             if (!feat_available(c, i)) continue;
             opts[n] = FEATS[i].name;
             det[n] = FEATS[i].summary;
@@ -390,6 +396,16 @@ void choose_subclass_for(Character *c, int slot)
     n = subclasses_of(c->classes[slot].class_id, ids, 64);
     if (n <= 0) return;
 
+    /* Hide subclasses from books this character is not using. */
+    {
+        int keep = 0;
+        for (i = 0; i < n; i++) {
+            if (book_enabled(SUBCLASSES[ids[i]].book)) ids[keep++] = ids[i];
+        }
+        n = keep;
+        if (n <= 0) return;
+    }
+
     for (i = 0; i < n; i++) {
         opts[i] = SUBCLASSES[ids[i]].name;
         det[i] = SUBCLASSES[ids[i]].summary;
@@ -451,7 +467,9 @@ void choose_subclass_for(Character *c, int slot)
         }
         ui_multi("  College of Lore bonus proficiencies:", sopts, avail,
                  SKL_COUNT, 3, picks);
-        for (i2 = 0; i2 < 3; i2++) c->skill_prof[picks[i2]] = 1;
+        for (i2 = 0; i2 < 3; i2++) {
+            if (picks[i2] >= 0) c->skill_prof[picks[i2]] = 1;
+        }
     }
 }
 
@@ -521,7 +539,9 @@ void choose_expertise(Character *c, int count)
 
     ui_multi("  Expertise -- double your proficiency bonus for:",
              opts, avail, n, count, picks);
-    for (i = 0; i < count; i++) c->skill_expertise[map[picks[i]]] = 1;
+    for (i = 0; i < count; i++) {
+        if (picks[i] >= 0) c->skill_expertise[map[picks[i]]] = 1;
+    }
 }
 
 
@@ -552,6 +572,7 @@ static void offer_optional_features(Character *c, int class_id, int class_level)
         char prompt[MAX_NAME + 64];
 
         if (of->class_id != class_id || of->level != class_level) continue;
+        if (!SETTINGS.optional_features || !book_enabled(of->book)) continue;
         if (optional_taken(c, of->name)) continue;
 
         printf("\n  Optional class feature (Tasha's): %s\n", of->name);
@@ -719,6 +740,7 @@ static int available_count(const Character *c, int bit, int level,
     int i, n = 0;
     for (i = 0; i < SPELL_COUNT; i++) {
         if (!spell_offered(i, bit, extra)) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
         n++;
@@ -738,6 +760,7 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 
     for (i = 0; i < SPELL_COUNT && n < 400; i++) {
         if (!spell_offered(i, bit, extra)) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
 
@@ -776,6 +799,80 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
     }
 }
 
+/* Grants one group of comma-separated spell names. */
+static void grant_spell_group(Character *c, const char *group, int class_id,
+                              int always)
+{
+    char names[256], *p, *start;
+
+    strncpy(names, group, sizeof names - 1);
+    names[sizeof names - 1] = '\0';
+    start = names;
+    for (p = names;; p++) {
+        if (*p == ',' || *p == '\0') {
+            int end = (*p == '\0');
+            *p = '\0';
+            while (*start == ' ') start++;
+            if (*start) {
+                int sid = find_spell_by_name(start);
+                if (sid >= 0) add_spell(c, sid, class_id, 1, always);
+            }
+            if (end) break;
+            start = p + 1;
+        }
+    }
+}
+
+/* Circle of the Land terrain spells and Genie kind spells hang off the
+ * option the player chose, not the subclass, so they need their own pass. */
+static void add_option_spells(Character *c, int slot)
+{
+    int sub = c->classes[slot].subclass_id;
+    int opt = c->classes[slot].subclass_option;
+    int id = c->classes[slot].class_id;
+    int lvl = c->classes[slot].level;
+    int i;
+
+    if (sub < 0 || opt < 0) return;
+
+    for (i = 0; i < OPTION_SPELLS_COUNT; i++) {
+        char obuf[512], sbuf[1024], lbuf[64];
+        const char *onames[16], *groups[8];
+        int no, ng, g, at[8], nat = 0;
+        const char *q;
+
+        if (!subclass_is(sub, OPTION_SPELLS[i].subclass)) continue;
+
+        /* Match by the option's name rather than its index, so the option
+           lists in data_subclasses.c can be reordered safely. */
+        no = split_pipe(SUBCLASSES[sub].options, obuf, sizeof obuf, onames, 16);
+        if (opt >= no) continue;
+        if (strcmp(onames[opt], OPTION_SPELLS[i].option) != 0) continue;
+
+        strncpy(lbuf, OPTION_SPELLS[i].levels, sizeof lbuf - 1);
+        lbuf[sizeof lbuf - 1] = '\0';
+        for (q = lbuf; *q && nat < 8; ) {
+            while (*q == ' ' || *q == ',') q++;
+            if (*q >= '0' && *q <= '9') {
+                int v = 0;
+                while (*q >= '0' && *q <= '9') v = v * 10 + (*q++ - '0');
+                at[nat++] = v;
+            } else if (*q) {
+                q++;
+            }
+        }
+
+        ng = split_pipe(OPTION_SPELLS[i].spells, sbuf, sizeof sbuf, groups, 8);
+        for (g = 0; g < ng && g < nat; g++) {
+            if (lvl < at[g]) break;
+            /* A warlock's expanded list is a menu, not a grant; everyone
+               else has these always prepared. */
+            grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
+        }
+        return;
+    }
+}
+
 /* Adds the always-prepared domain, oath, circle or patron spells earned so far. */
 static void add_bonus_spells(Character *c, int slot)
 {
@@ -809,28 +906,9 @@ static void add_bonus_spells(Character *c, int slot)
 
     n = split_pipe(sc->bonus_spells, buf, sizeof buf, groups, 8);
     for (g = 0; g < n && g < 5; g++) {
-        char names[256], *p, *start;
         if (lvl < at[g]) break;
-
-        strncpy(names, groups[g], sizeof names - 1);
-        names[sizeof names - 1] = '\0';
-        start = names;
-        for (p = names;; p++) {
-            if (*p == ',' || *p == '\0') {
-                int end = (*p == '\0');
-                *p = '\0';
-                while (*start == ' ') start++;
-                if (*start) {
-                    int sid = find_spell_by_name(start);
-                    if (sid >= 0) {
-                        /* Warlock expanded lists are options, not grants. */
-                        add_spell(c, sid, id, 1, id != CLS_WARLOCK);
-                    }
-                }
-                if (end) break;
-                start = p + 1;
-            }
-        }
+        /* Warlock expanded lists are options, not grants. */
+        grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
     }
 }
 
@@ -860,6 +938,7 @@ void manage_spells(Character *c, int class_id)
            spell_save_dc(c, class_id), spell_attack_bonus(c, class_id));
 
     add_bonus_spells(c, slot);
+    add_option_spells(c, slot);
 
     cantrips = known_spell_count(c, class_id, 1);
     if (cantrips > 0) {
@@ -952,6 +1031,92 @@ int class_of_spell(const Character *c, int spell_id)
     return c->class_count ? c->classes[0].class_id : 0;
 }
 
+/* ------------------------------------------------- class option lists */
+
+/* How many entries with this label the character has already recorded. */
+static int options_recorded(const Character *c, const char *label)
+{
+    int i, n = 0;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) n++;
+    }
+    return n;
+}
+
+static int option_already_taken(const Character *c, const char *label,
+                                const char *name)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, name) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Offer everything this class and subclass draw from, at this class level.
+ * Each list says how many are known by now; the difference from what has
+ * already been recorded is what is still owed, so a character who levels up
+ * in stages is asked exactly once for each. */
+static void offer_class_options(Character *c, int slot, int class_level)
+{
+    const ClassData *cd = &CLASSES[c->classes[slot].class_id];
+    int sub = c->classes[slot].subclass_id;
+    int li;
+
+    for (li = 0; li < OPTION_LIST_COUNT; li++) {
+        const OptionList *ol = &OPTION_LISTS[li];
+        int want;
+
+        if (strcmp(ol->class_name, cd->name) != 0) continue;
+        if (ol->subclass_name[0]) {
+            if (sub < 0 || !subclass_is(sub, ol->subclass_name)) continue;
+        }
+
+        want = (int)ol->known[class_level] - options_recorded(c, ol->label);
+        if (want <= 0) continue;
+
+        printf("\n  %s knows %d %s at level %d.\n", cd->name,
+               (int)ol->known[class_level], ol->plural, class_level);
+
+        while (want-- > 0) {
+            const char *opts[128];
+            const char *det[128];
+            static char labels[128][128];
+            int map[128], n = 0, i, pick;
+
+            for (i = 0; i < ol->count && n < 128; i++) {
+                const ClassOption *o = &ol->options[i];
+                if (!book_enabled(o->book)) continue;
+                if (o->min_level > class_level) continue;
+                if (!ol->repeatable
+                    && option_already_taken(c, ol->label, o->name)) continue;
+
+                if (o->prereq[0]) {
+                    snprintf(labels[n], sizeof labels[n], "%s (needs %s)",
+                             o->name, o->prereq);
+                } else {
+                    snprintf(labels[n], sizeof labels[n], "%s", o->name);
+                }
+                opts[n] = labels[n];
+                det[n] = o->summary[0] ? o->summary : NULL;
+                map[n] = i;
+                n++;
+            }
+            if (n == 0) {
+                printf("    Nothing further is available to you yet.\n");
+                break;
+            }
+            {
+                char prompt[96];
+                snprintf(prompt, sizeof prompt, "  Choose a %s:", ol->label);
+                pick = ui_menu(prompt, opts, det, n);
+            }
+            add_choice(c, ol->label, ol->options[map[pick]].name);
+        }
+    }
+}
+
 /* --------------------------------------------------------------- the ladder */
 
 /* Applies everything a single class level grants. */
@@ -987,6 +1152,10 @@ static void apply_class_level(Character *c, int slot, int class_level,
     if (id == CLS_ARTIFICER && class_level >= 2) {
         choose_infusions(c, class_level);
     }
+
+    /* Invocations, metamagic, maneuvers, runes, favoured enemies and the
+       rest of the lists a class draws from as it advances. */
+    offer_class_options(c, slot, class_level);
 
     /* Expertise. */
     if (id == CLS_ROGUE && (class_level == 1 || class_level == 6)) {

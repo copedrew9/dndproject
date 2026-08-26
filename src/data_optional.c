@@ -15,134 +15,134 @@
 const OptionalFeature OPTIONAL_FEATURES[] = {
 /* class, level, name, replaces, summary */
 
-{ 0, 3, "Primal Knowledge", "",
+{ 0, BOOK_TCE, 3, "Primal Knowledge", "",
   "Gain proficiency in one more barbarian skill, and while raging you can "
   "make Strength checks in place of Acrobatics, Intimidation, Perception, "
   "Stealth or Survival." },
-{ 0, 7, "Instinctive Pounce", "",
+{ 0, BOOK_TCE, 7, "Instinctive Pounce", "",
   "When you enter your rage as a bonus action, move up to half your speed." },
 
-{ 1, 1, "Additional Bard Spells", "",
+{ 1, BOOK_TCE, 1, "Additional Bard Spells", "",
   "Fourteen more spells are added to the bard spell list." },
-{ 1, 2, "Magical Inspiration", "",
+{ 1, BOOK_TCE, 2, "Magical Inspiration", "",
   "A creature can spend your Bardic Inspiration die to add it to a spell's "
   "damage or healing." },
-{ 1, 4, "Bardic Versatility", "",
+{ 1, BOOK_TCE, 4, "Bardic Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may swap a cantrip "
   "or replace one Expertise skill." },
 
-{ 2, 1, "Additional Cleric Spells", "",
+{ 2, BOOK_TCE, 1, "Additional Cleric Spells", "",
   "Eight more spells are added to the cleric spell list." },
-{ 2, 2, "Harness Divine Power", "",
+{ 2, BOOK_TCE, 2, "Harness Divine Power", "",
   "Expend a use of Channel Divinity to regain one expended spell slot." },
-{ 2, 4, "Cantrip Versatility", "",
+{ 2, BOOK_TCE, 4, "Cantrip Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may replace one "
   "cantrip with another from your class list." },
-{ 2, 8, "Blessed Strikes", "Divine Strike or Potent Spellcasting",
+{ 2, BOOK_TCE, 8, "Blessed Strikes", "Divine Strike or Potent Spellcasting",
   "Once per turn, when you hit with a weapon or a cantrip, deal an extra "
   "1d8 radiant damage." },
 
-{ 3, 1, "Additional Druid Spells", "",
+{ 3, BOOK_TCE, 1, "Additional Druid Spells", "",
   "Fifteen more spells are added to the druid spell list." },
-{ 3, 2, "Wild Companion", "",
+{ 3, BOOK_TCE, 2, "Wild Companion", "",
   "Expend a Wild Shape use to cast find familiar without material "
   "components; the familiar is a fey that lasts half your druid level in "
   "hours." },
-{ 3, 4, "Cantrip Versatility", "",
+{ 3, BOOK_TCE, 4, "Cantrip Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may replace one "
   "cantrip with another from your class list." },
 
-{ 4, 1, "Fighting Style Options", "",
+{ 4, BOOK_TCE, 1, "Fighting Style Options", "",
   "Blind Fighting, Interception, Superior Technique, Thrown Weapon Fighting "
   "and Unarmed Fighting join your list of fighting styles." },
-{ 4, 3, "Maneuver Options", "",
+{ 4, BOOK_TCE, 3, "Maneuver Options", "",
   "The Battle Master gains further manoeuvres: ambush, bait and switch, "
   "brace, commander's strike, grappling strike, quick toss, tactical "
   "assessment and the rest." },
-{ 4, 4, "Martial Versatility", "",
+{ 4, BOOK_TCE, 4, "Martial Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may replace a "
   "fighting style or a Battle Master manoeuvre." },
 
-{ 5, 2, "Dedicated Weapon", "",
+{ 5, BOOK_TCE, 2, "Dedicated Weapon", "",
   "After a short or long rest, name a simple or martial weapon that lacks "
   "the heavy and special properties; it counts as a monk weapon." },
-{ 5, 3, "Ki-Fueled Attack", "",
+{ 5, BOOK_TCE, 3, "Ki-Fueled Attack", "",
   "After spending 1 ki or more on an action, make an unarmed strike or a "
   "monk weapon attack as a bonus action." },
-{ 5, 4, "Quickened Healing", "",
+{ 5, BOOK_TCE, 4, "Quickened Healing", "",
   "Spend 2 ki as an action to regain a roll of your Martial Arts die plus "
   "your proficiency bonus in hit points." },
-{ 5, 5, "Focused Aim", "",
+{ 5, BOOK_TCE, 5, "Focused Aim", "",
   "Spend 1 to 3 ki after a miss to add 2 per point to the attack roll." },
 
-{ 6, 2, "Additional Paladin Spells", "",
+{ 6, BOOK_TCE, 2, "Additional Paladin Spells", "",
   "Five more spells are added to the paladin spell list." },
-{ 6, 2, "Fighting Style Options", "",
+{ 6, BOOK_TCE, 2, "Fighting Style Options", "",
   "Blessed Warrior, Blind Fighting and Interception join your list of "
   "fighting styles." },
-{ 6, 3, "Harness Divine Power", "",
+{ 6, BOOK_TCE, 3, "Harness Divine Power", "",
   "Expend a use of Channel Divinity to regain one expended spell slot." },
-{ 6, 4, "Martial Versatility", "",
+{ 6, BOOK_TCE, 4, "Martial Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may replace a "
   "fighting style." },
 
-{ 7, 1, "Deft Explorer", "Natural Explorer",
+{ 7, BOOK_TCE, 1, "Deft Explorer", "Natural Explorer",
   "Canny: expertise in one skill, two more languages; later Roving grants "
   "speed and climbing and swimming, and Tireless grants temporary hit "
   "points and reduced exhaustion." },
-{ 7, 1, "Favored Foe", "Favored Enemy",
+{ 7, BOOK_TCE, 1, "Favored Foe", "Favored Enemy",
   "Mark a creature you hit for an extra 1d4 damage once per turn while you "
   "concentrate, proficiency-bonus times per long rest." },
-{ 7, 2, "Additional Ranger Spells", "",
+{ 7, BOOK_TCE, 2, "Additional Ranger Spells", "",
   "Fourteen more spells are added to the ranger spell list." },
-{ 7, 2, "Fighting Style Options", "",
+{ 7, BOOK_TCE, 2, "Fighting Style Options", "",
   "Blind Fighting, Druidic Warrior and Thrown Weapon Fighting join your "
   "list of fighting styles." },
-{ 7, 2, "Spellcasting Focus", "",
+{ 7, BOOK_TCE, 2, "Spellcasting Focus", "",
   "You can use a druidic focus as a spellcasting focus for your ranger "
   "spells." },
-{ 7, 3, "Primal Awareness", "Primeval Awareness",
+{ 7, BOOK_TCE, 3, "Primal Awareness", "Primeval Awareness",
   "You always have speak with animals, beast sense, speak with plants, "
   "locate creature and commune with nature prepared, each castable once "
   "per long rest without a slot." },
-{ 7, 4, "Martial Versatility", "",
+{ 7, BOOK_TCE, 4, "Martial Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may replace a "
   "fighting style." },
-{ 7, 10, "Nature's Veil", "Hide in Plain Sight",
+{ 7, BOOK_TCE, 10, "Nature's Veil", "Hide in Plain Sight",
   "As a bonus action, become invisible until the end of your next turn, "
   "proficiency-bonus times per long rest." },
 
-{ 8, 3, "Steady Aim", "",
+{ 8, BOOK_TCE, 3, "Steady Aim", "",
   "As a bonus action, gain advantage on your next attack this turn; your "
   "speed becomes 0 until the end of the turn." },
 
-{ 9, 1, "Additional Sorcerer Spells", "",
+{ 9, BOOK_TCE, 1, "Additional Sorcerer Spells", "",
   "Twenty-one more spells are added to the sorcerer spell list." },
-{ 9, 3, "Metamagic Options", "",
+{ 9, BOOK_TCE, 3, "Metamagic Options", "",
   "Seeking Spell and Transmuted Spell join your Metamagic choices, and you "
   "may swap one Metamagic option whenever you gain a sorcerer level." },
-{ 9, 4, "Sorcerous Versatility", "",
+{ 9, BOOK_TCE, 4, "Sorcerous Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may swap a Metamagic "
   "option or a cantrip." },
-{ 9, 5, "Magical Guidance", "",
+{ 9, BOOK_TCE, 5, "Magical Guidance", "",
   "Spend 1 sorcery point to reroll a failed ability check." },
 
-{ 10, 1, "Additional Warlock Spells", "",
+{ 10, BOOK_TCE, 1, "Additional Warlock Spells", "",
   "Twenty more spells are added to the warlock spell list." },
-{ 10, 2, "Eldritch Invocation Options", "",
+{ 10, BOOK_TCE, 2, "Eldritch Invocation Options", "",
   "Further invocations become available, including Eldritch Smite, Gift of "
   "the Depths, Investment of the Chain Master, Rebuke of the Talisman and "
   "Undying Servitude." },
-{ 10, 3, "Pact Boon Option", "",
+{ 10, BOOK_TCE, 3, "Pact Boon Option", "",
   "The Pact of the Talisman: an amulet that lets its wearer add a d4 to a "
   "failed ability check." },
-{ 10, 4, "Eldritch Versatility", "",
+{ 10, BOOK_TCE, 4, "Eldritch Versatility", "",
   "Whenever you gain an Ability Score Improvement, you may swap a cantrip, "
   "an invocation, or your Pact Boon." },
 
-{ 11, 1, "Additional Wizard Spells", "",
+{ 11, BOOK_TCE, 1, "Additional Wizard Spells", "",
   "Twenty-three more spells are added to the wizard spell list." },
-{ 11, 3, "Cantrip Formulas", "",
+{ 11, BOOK_TCE, 3, "Cantrip Formulas", "",
   "After each long rest, replace one wizard cantrip you know with another "
   "from your spellbook's formulas." },
 };
@@ -226,3 +226,49 @@ const char *const TASHA_RANGER_STYLES =
     "Blind Fighting (blindsight 10 feet)|"
     "Druidic Warrior (two druid cantrips, cast with Wisdom)|"
     "Thrown Weapon Fighting (draw as part of the attack, +2 damage)";
+
+/* ------------------------------------------------- option-dependent spells
+ *
+ * Most subclasses grant the same extra spells to everyone who takes them, so
+ * SubclassData carries a single list. Two do not: a Circle of the Land druid
+ * gets spells for the terrain they choose, and a warlock of the Genie gets
+ * spells for their patron's kind. Those lists hang off the option instead,
+ * and the levels they arrive at differ, so each entry says so.
+ */
+const OptionSpells OPTION_SPELLS[] = {
+{ "Circle of the Land", "Arctic", "3,5,7,9",
+  "hold person, spike growth|sleet storm, slow|"
+  "freedom of movement, ice storm|commune with nature, cone of cold" },
+{ "Circle of the Land", "Coast", "3,5,7,9",
+  "mirror image, misty step|water breathing, water walk|"
+  "control water, freedom of movement|conjure elemental, scrying" },
+{ "Circle of the Land", "Desert", "3,5,7,9",
+  "blur, silence|create food and water, protection from energy|"
+  "blight, hallucinatory terrain|insect plague, wall of stone" },
+{ "Circle of the Land", "Forest", "3,5,7,9",
+  "barkskin, spider climb|call lightning, plant growth|"
+  "divination, freedom of movement|commune with nature, tree stride" },
+{ "Circle of the Land", "Grassland", "3,5,7,9",
+  "invisibility, pass without trace|daylight, haste|"
+  "divination, freedom of movement|dream, insect plague" },
+{ "Circle of the Land", "Mountain", "3,5,7,9",
+  "spider climb, spike growth|lightning bolt, meld into stone|"
+  "stone shape, stoneskin|passwall, wall of stone" },
+{ "Circle of the Land", "Swamp", "3,5,7,9",
+  "darkness, melf's acid arrow|water walk, stinking cloud|"
+  "freedom of movement, locate creature|insect plague, scrying" },
+{ "Circle of the Land", "Underdark", "3,5,7,9",
+  "spider climb, web|gaseous form, stinking cloud|"
+  "greater invisibility, stone shape|cloudkill, insect plague" },
+
+{ "The Genie", "Dao (earth)", "1,3,5,7,9",
+  "sanctuary|spike growth|meld into stone|stoneskin|wall of stone" },
+{ "The Genie", "Djinni (air)", "1,3,5,7,9",
+  "thunderwave|gust of wind|wind wall|greater invisibility|seeming" },
+{ "The Genie", "Efreeti (fire)", "1,3,5,7,9",
+  "burning hands|scorching ray|fireball|fire shield|flame strike" },
+{ "The Genie", "Marid (water)", "1,3,5,7,9",
+  "fog cloud|blur|sleet storm|control water|cone of cold" },
+};
+const int OPTION_SPELLS_COUNT =
+    (int)(sizeof(OPTION_SPELLS) / sizeof(OPTION_SPELLS[0]));

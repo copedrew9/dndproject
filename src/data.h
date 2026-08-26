@@ -4,10 +4,44 @@
 
 #include "dnd.h"
 
+/* ------------------------------------------------------------- source books */
+
+typedef enum {
+    BOOK_PHB,       /* Player's Handbook */
+    BOOK_XGE,       /* Xanathar's Guide to Everything */
+    BOOK_TCE,       /* Tasha's Cauldron of Everything */
+    BOOK_DMG,       /* Dungeon Master's Guide */
+    BOOK_MTF,       /* Mordenkainen's Tome of Foes */
+    BOOK_MM,        /* Monster Manual */
+    BOOK_COUNT
+} SourceBook;
+
+extern const char *const BOOK_NAME[BOOK_COUNT];
+extern const char *const BOOK_ABBREV[BOOK_COUNT];
+
+/* Which books and optional rules a build may draw on. Chosen from the
+   settings menu and stored with the character so a reload offers the same
+   content. */
+typedef struct {
+    int book[BOOK_COUNT];       /* 1 = enabled */
+    int custom_origins;         /* Tasha's Customizing Your Origin */
+    int optional_features;      /* Tasha's optional class features */
+    int multiclassing;          /* PHB chapter 6 variant rule */
+    int feats;                  /* PHB feats variant rule */
+} Settings;
+
+extern Settings SETTINGS;
+
+void settings_defaults(Settings *s);
+int  book_enabled(SourceBook b);
+void settings_menu(Settings *s);
+void settings_summary(const Settings *s, char *out, size_t n);
+
 /* ------------------------------------------------------------------- races */
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int ability[ABL_COUNT];
     int speed;
     CreatureSize size;
@@ -25,6 +59,7 @@ typedef struct {
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int ability[ABL_COUNT];
     int speed_override;         /* 0 = inherit from race (wood elf: 35) */
     int darkvision_override;    /* 0 = inherit (drow: 120) */
@@ -68,6 +103,7 @@ typedef enum {
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int hit_die;
     Ability save_prof[2];
     const char *armour_profs;
@@ -105,6 +141,7 @@ typedef struct {
 
 typedef struct {
     int class_id;
+    SourceBook book;
     const char *name;
     const char *summary;
     /* Domain/oath/circle spells always prepared, "" when none. Groups are
@@ -144,6 +181,7 @@ extern const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2];  /* {count, level} */
 /* Tasha's optional class features. */
 typedef struct {
     int class_id;
+    SourceBook book;
     int level;                  /* class level at which it becomes available */
     const char *name;
     const char *replaces;       /* "" when it adds rather than replaces */
@@ -193,6 +231,7 @@ int asi_levels_for(int class_id, int out[], int max);
 
 typedef struct {
     const char *name;
+    SourceBook book;
     Skill skills[2];
     const char *tool_profs;
     int extra_languages;
@@ -213,6 +252,7 @@ extern const int BACKGROUND_COUNT;
 
 typedef struct {
     const char *name;
+    SourceBook book;
     const char *prereq;         /* human readable, "" when none */
     /* Machine-checkable prerequisites. */
     Ability req_ability;        /* ABL_COUNT = none */
@@ -239,6 +279,7 @@ typedef enum {
 
 typedef struct {
     const char *name;
+    SourceBook book;
     ItemCategory category;
     int cost_cp;                /* in copper pieces */
     int weight_tenths;          /* pounds x 10, so 0.5 lb is 5 */
@@ -258,6 +299,96 @@ extern const ItemData ITEMS[];
 extern const int ITEM_COUNT;
 
 int find_item(const char *name);
+
+/* Item detail: descriptions, and what an item does when it has no stat line.
+ * data_itemtext.c carries the prose; data_equipment.c carries the numbers. */
+typedef struct {
+    const char *item;
+    const char *text;
+} ItemNote;
+
+extern const ItemNote ITEM_NOTES[];
+extern const int ITEM_NOTE_COUNT;
+const char *item_notes(const char *name);
+
+/* The lists a class picks from as it levels: eldritch invocations,
+ * metamagic, maneuvers, pact boons, arcane shots, elemental disciplines,
+ * runes, and the ranger's favoured enemies and terrains. */
+typedef struct {
+    const char *name;
+    SourceBook book;
+    int min_level;              /* class level required; 0 = none */
+    const char *prereq;         /* other requirement, "" when none */
+    const char *summary;
+} ClassOption;
+
+typedef struct {
+    const char *class_name;
+    const char *subclass_name;  /* "" means the whole class */
+    const char *label;          /* singular, e.g. "Eldritch Invocation" */
+    const char *plural;
+    const ClassOption *options;
+    int count;
+    const unsigned char *known; /* known[level], indexed by class level */
+    int repeatable;             /* the same entry may be chosen twice */
+} OptionList;
+
+/* Extra spells that depend on a subclass option rather than the subclass:
+ * the Circle of the Land's terrain and the Genie warlock's patron kind.
+ * "levels" is a comma-separated list matching the '|' separated groups. */
+typedef struct {
+    const char *subclass;
+    const char *option;
+    const char *levels;
+    const char *spells;
+} OptionSpells;
+
+extern const OptionSpells OPTION_SPELLS[];
+extern const int OPTION_SPELLS_COUNT;
+
+extern const OptionList OPTION_LISTS[];
+extern const int OPTION_LIST_COUNT;
+
+/* Trinkets, lifestyles and the price of things that are not equipment. */
+extern const char *const TRINKETS[];
+extern const int TRINKET_COUNT;
+
+typedef struct {
+    const char *name;
+    int cost_cp_per_day;        /* 0 for wretched, which costs nothing */
+    const char *text;
+} Lifestyle;
+
+extern const Lifestyle LIFESTYLES[];
+extern const int LIFESTYLE_COUNT;
+
+typedef struct {
+    const char *name;
+    int cost_cp;
+} PriceEntry;
+
+extern const PriceEntry SERVICES[];
+extern const int SERVICE_COUNT;
+extern const PriceEntry SPELLCASTING_SERVICES[];
+extern const int SPELLCASTING_SERVICE_COUNT;
+
+/* Magic items, from the Dungeon Master's Guide. Attunement is separate from
+ * the rarity line because a character may attune to only three at once. */
+typedef struct {
+    const char *name;
+    SourceBook book;
+    const char *type;
+    const char *rarity;
+    const char *attunement;     /* NULL when no attunement is required */
+    const char *text;
+} MagicItem;
+
+extern const MagicItem MAGIC_ITEMS[];
+extern const int MAGIC_ITEM_COUNT;
+int find_magic_item(const char *name);
+
+extern const ItemNote WEAPON_PROPERTIES[];
+extern const int WEAPON_PROPERTY_COUNT;
 
 /* ------------------------------------------------------------------ lookups */
 

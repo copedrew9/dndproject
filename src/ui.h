@@ -27,9 +27,13 @@ int  ui_menu(const char *prompt, const char *const *options,
 
 /* Choose n distinct entries from options; fills picks[] with indices.
    Entries where available[i] is 0 are shown as unavailable and cannot be
-   chosen. Pass NULL for available to allow everything. */
-void ui_multi(const char *prompt, const char *const *options,
-              const int *available, int count, int n, int *picks);
+   chosen. Pass NULL for available to allow everything.
+
+   Returns how many were actually chosen, which is less than n when the list
+   has run out of available entries; unfilled picks[] slots are set to -1, so
+   callers must either check the return value or skip negative indices. */
+int ui_multi(const char *prompt, const char *const *options,
+             const int *available, int count, int n, int *picks);
 
 /* Dice. */
 void rng_seed(unsigned int seed);

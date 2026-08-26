@@ -4,21 +4,21 @@
 /* Subraces are grouped by parent race; RACES indexes into this table. */
 const SubraceData SUBRACES[] = {
     /* 0-1 dwarf */
-    { "Hill Dwarf", {0,0,0,0,1,0}, 0, 0, 0, 0, 0, 0, 0,
+    { "Hill Dwarf", BOOK_PHB, {0,0,0,0,1,0}, 0, 0, 0, 0, 0, 0, 0,
       "Dwarven Toughness: your hit point maximum increases by 1, and by 1 "
       "again every time you gain a level" },
-    { "Mountain Dwarf", {2,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+    { "Mountain Dwarf", BOOK_PHB, {2,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Dwarven Armor Training: proficiency with light and medium armor" },
 
     /* 2-4 elf */
-    { "High Elf", {0,0,0,1,0,0}, 0, 0, 1, 0, 0, 0, 0,
+    { "High Elf", BOOK_PHB, {0,0,0,1,0,0}, 0, 0, 1, 0, 0, 0, 0,
       "Elf Weapon Training: longsword, shortsword, shortbow, longbow|"
       "Cantrip: one wizard cantrip, cast with Intelligence" },
-    { "Wood Elf", {0,0,0,0,1,0}, 35, 0, 0, 0, 0, 0, 0,
+    { "Wood Elf", BOOK_PHB, {0,0,0,0,1,0}, 35, 0, 0, 0, 0, 0, 0,
       "Elf Weapon Training: longsword, shortsword, shortbow, longbow|"
       "Fleet of Foot: base walking speed 35 feet|"
       "Mask of the Wild: hide when lightly obscured by natural phenomena" },
-    { "Dark Elf (Drow)", {0,0,0,0,0,1}, 0, 120, 0, 0, 0, 0, 0,
+    { "Dark Elf (Drow)", BOOK_PHB, {0,0,0,0,0,1}, 0, 120, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|"
       "Sunlight Sensitivity: disadvantage on attacks and sight-based "
       "Perception in direct sunlight|"
@@ -27,26 +27,26 @@ const SubraceData SUBRACES[] = {
       "Drow Weapon Training: rapier, shortsword, hand crossbow" },
 
     /* 5-6 halfling */
-    { "Lightfoot Halfling", {0,0,0,0,0,1}, 0, 0, 0, 0, 0, 0, 0,
+    { "Lightfoot Halfling", BOOK_PHB, {0,0,0,0,0,1}, 0, 0, 0, 0, 0, 0, 0,
       "Naturally Stealthy: hide behind a creature at least one size larger" },
-    { "Stout Halfling", {0,0,1,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+    { "Stout Halfling", BOOK_PHB, {0,0,1,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Stout Resilience: advantage on saves against poison, and resistance "
       "to poison damage" },
 
     /* 7-8 human */
-    { "Standard Human", {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0, "" },
-    { "Variant Human", {0,0,0,0,0,0}, 0, 0, 0, 2, 1, 1, 1,
+    { "Standard Human", BOOK_PHB, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0, "" },
+    { "Variant Human", BOOK_PHB, {0,0,0,0,0,0}, 0, 0, 0, 2, 1, 1, 1,
       "Ability Score Increase: +1 to two abilities of your choice|"
       "Skills: proficiency in one skill of your choice|"
       "Feat: one feat of your choice" },
 
     /* 9-10 gnome */
-    { "Forest Gnome", {0,1,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+    { "Forest Gnome", BOOK_PHB, {0,1,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Natural Illusionist: you know the minor illusion cantrip, cast with "
       "Intelligence|"
       "Speak with Small Beasts: communicate simple ideas to Small or "
       "smaller beasts" },
-    { "Rock Gnome", {0,0,1,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+    { "Rock Gnome", BOOK_PHB, {0,0,1,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Artificer's Lore: double proficiency on History checks about magic, "
       "alchemical or technological items|"
       "Tinker: proficiency with tinker's tools; build Tiny clockwork devices" },
@@ -54,7 +54,7 @@ const SubraceData SUBRACES[] = {
 const int SUBRACE_COUNT = (int)(sizeof(SUBRACES) / sizeof(SUBRACES[0]));
 
 const RaceData RACES[] = {
-    { "Dwarf", {0,0,2,0,0,0}, 25, SZ_MEDIUM, 60, "Common, Dwarvish", 0, 0, 0, 0, 0, 0,
+    { "Dwarf", BOOK_PHB, {0,0,2,0,0,0}, 25, SZ_MEDIUM, 60, "Common, Dwarvish", 0, 0, 0, 0, 0, 0,
       0, 2,
       "Darkvision: 60 feet|"
       "Dwarven Resilience: advantage on saves against poison, and "
@@ -64,7 +64,7 @@ const RaceData RACES[] = {
       "Stonecunning: double proficiency on History checks about stonework|"
       "Speed is not reduced by wearing heavy armor" },
 
-    { "Elf", {0,2,0,0,0,0}, 30, SZ_MEDIUM, 60, "Common, Elvish", 0, 0, 0, 0, 0, 0,
+    { "Elf", BOOK_PHB, {0,2,0,0,0,0}, 30, SZ_MEDIUM, 60, "Common, Elvish", 0, 0, 0, 0, 0, 0,
       2, 3,
       "Darkvision: 60 feet|"
       "Keen Senses: proficiency in Perception|"
@@ -72,19 +72,19 @@ const RaceData RACES[] = {
       "cannot put you to sleep|"
       "Trance: 4 hours of meditation counts as 8 hours of sleep" },
 
-    { "Halfling", {0,2,0,0,0,0}, 25, SZ_SMALL, 0, "Common, Halfling", 0, 0, 0, 0, 0, 0,
+    { "Halfling", BOOK_PHB, {0,2,0,0,0,0}, 25, SZ_SMALL, 0, "Common, Halfling", 0, 0, 0, 0, 0, 0,
       5, 2,
       "Lucky: reroll a 1 on an attack roll, ability check or saving throw|"
       "Brave: advantage on saves against being frightened|"
       "Halfling Nimbleness: move through the space of any creature at least "
       "one size larger" },
 
-    { "Human", {1,1,1,1,1,1}, 30, SZ_MEDIUM, 0, "Common", 1, 0, 0, 0, 0, 0,
+    { "Human", BOOK_PHB, {1,1,1,1,1,1}, 30, SZ_MEDIUM, 0, "Common", 1, 0, 0, 0, 0, 0,
       7, 2,
       "Ability Score Increase: +1 to every ability score|"
       "Extra Language: one language of your choice" },
 
-    { "Dragonborn", {2,0,0,0,0,1}, 30, SZ_MEDIUM, 0, "Common, Draconic", 0, 0, 0, 0, 0, 1,
+    { "Dragonborn", BOOK_PHB, {2,0,0,0,0,1}, 30, SZ_MEDIUM, 0, "Common, Draconic", 0, 0, 0, 0, 0, 1,
       0, 0,
       "Draconic Ancestry: choose a dragon type|"
       "Breath Weapon: exhale energy in the shape set by your ancestry. "
@@ -93,13 +93,13 @@ const RaceData RACES[] = {
       "on a short or long rest|"
       "Damage Resistance: to the damage type of your ancestry" },
 
-    { "Gnome", {0,0,0,2,0,0}, 25, SZ_SMALL, 60, "Common, Gnomish", 0, 0, 0, 0, 0, 0,
+    { "Gnome", BOOK_PHB, {0,0,0,2,0,0}, 25, SZ_SMALL, 60, "Common, Gnomish", 0, 0, 0, 0, 0, 0,
       9, 2,
       "Darkvision: 60 feet|"
       "Gnome Cunning: advantage on Intelligence, Wisdom and Charisma saves "
       "against magic" },
 
-    { "Half-Elf", {0,0,0,0,0,2}, 30, SZ_MEDIUM, 60, "Common, Elvish", 1, 2, 2, 1, 0, 0,
+    { "Half-Elf", BOOK_PHB, {0,0,0,0,0,2}, 30, SZ_MEDIUM, 60, "Common, Elvish", 1, 2, 2, 1, 0, 0,
       0, 0,
       "Darkvision: 60 feet|"
       "Fey Ancestry: advantage on saves against being charmed, and magic "
@@ -107,7 +107,7 @@ const RaceData RACES[] = {
       "Skill Versatility: proficiency in two skills of your choice|"
       "Ability Score Increase: +1 to two abilities of your choice" },
 
-    { "Half-Orc", {2,0,1,0,0,0}, 30, SZ_MEDIUM, 60, "Common, Orc", 0, 0, 0, 0, 0, 0,
+    { "Half-Orc", BOOK_PHB, {2,0,1,0,0,0}, 30, SZ_MEDIUM, 60, "Common, Orc", 0, 0, 0, 0, 0, 0,
       0, 0,
       "Darkvision: 60 feet|"
       "Menacing: proficiency in Intimidation|"
@@ -116,7 +116,7 @@ const RaceData RACES[] = {
       "Savage Attacks: roll one extra weapon damage die on a melee "
       "critical hit" },
 
-    { "Tiefling", {0,0,0,1,0,2}, 30, SZ_MEDIUM, 60, "Common, Infernal", 0, 0, 0, 0, 0, 0,
+    { "Tiefling", BOOK_PHB, {0,0,0,1,0,2}, 30, SZ_MEDIUM, 60, "Common, Infernal", 0, 0, 0, 0, 0, 0,
       0, 0,
       "Darkvision: 60 feet|"
       "Hellish Resistance: resistance to fire damage|"

@@ -133,7 +133,7 @@ const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2] = {
 /* ---------------------------------------------------------------- classes */
 
 const ClassData CLASSES[] = {
-{ "Barbarian", 12, {ABL_STR, ABL_CON},
+{ "Barbarian", BOOK_PHB, 12, {ABL_STR, ABL_CON},
   "Light armor, medium armor, shields",
   "Simple weapons, martial weapons", "",
   SK_BARBARIAN, NSK(SK_BARBARIAN), 2,
@@ -148,7 +148,7 @@ const ClassData CLASSES[] = {
   "An explorer's pack and four javelins",
   0, 0 },
 
-{ "Bard", 8, {ABL_DEX, ABL_CHA},
+{ "Bard", BOOK_PHB, 8, {ABL_DEX, ABL_CHA},
   "Light armor",
   "Simple weapons, hand crossbows, longswords, rapiers, shortswords",
   "Three musical instruments of your choice",
@@ -165,7 +165,7 @@ const ClassData CLASSES[] = {
   "Leather armor and a dagger",
   1, 0 },
 
-{ "Cleric", 8, {ABL_WIS, ABL_CHA},
+{ "Cleric", BOOK_PHB, 8, {ABL_WIS, ABL_CHA},
   "Light armor, medium armor, shields",
   "All simple weapons", "",
   SK_CLERIC, NSK(SK_CLERIC), 2,
@@ -182,7 +182,7 @@ const ClassData CLASSES[] = {
   "A shield and a holy symbol",
   1, 0 },
 
-{ "Druid", 8, {ABL_INT, ABL_WIS},
+{ "Druid", BOOK_PHB, 8, {ABL_INT, ABL_WIS},
   "Light armor, medium armor, shields (druids will not wear metal armor)",
   "Clubs, daggers, darts, javelins, maces, quarterstaffs, scimitars, "
   "sickles, slings, spears",
@@ -199,7 +199,7 @@ const ClassData CLASSES[] = {
   "Leather armor, an explorer's pack and a druidic focus",
   1, 0 },
 
-{ "Fighter", 10, {ABL_STR, ABL_CON},
+{ "Fighter", BOOK_PHB, 10, {ABL_STR, ABL_CON},
   "All armor, shields",
   "Simple weapons, martial weapons", "",
   SK_FIGHTER, NSK(SK_FIGHTER), 2,
@@ -215,7 +215,7 @@ const ClassData CLASSES[] = {
   "(a) a dungeoneer's pack or (b) an explorer's pack",
   3, 0 },
 
-{ "Monk", 8, {ABL_STR, ABL_DEX},
+{ "Monk", BOOK_PHB, 8, {ABL_STR, ABL_DEX},
   "None",
   "Simple weapons, shortswords",
   "One artisan's tool or one musical instrument of your choice",
@@ -231,7 +231,7 @@ const ClassData CLASSES[] = {
   "10 darts",
   0, 0 },
 
-{ "Paladin", 10, {ABL_WIS, ABL_CHA},
+{ "Paladin", BOOK_PHB, 10, {ABL_WIS, ABL_CHA},
   "All armor, shields",
   "Simple weapons, martial weapons", "",
   SK_PALADIN, NSK(SK_PALADIN), 2,
@@ -247,7 +247,7 @@ const ClassData CLASSES[] = {
   "Chain mail and a holy symbol",
   2, 0 },
 
-{ "Ranger", 10, {ABL_STR, ABL_DEX},
+{ "Ranger", BOOK_PHB, 10, {ABL_STR, ABL_DEX},
   "Light armor, medium armor, shields",
   "Simple weapons, martial weapons", "",
   SK_RANGER, NSK(SK_RANGER), 3,
@@ -264,7 +264,7 @@ const ClassData CLASSES[] = {
   "A longbow and a quiver of 20 arrows",
   2, 0 },
 
-{ "Rogue", 8, {ABL_DEX, ABL_INT},
+{ "Rogue", BOOK_PHB, 8, {ABL_DEX, ABL_INT},
   "Light armor",
   "Simple weapons, hand crossbows, longswords, rapiers, shortswords",
   "Thieves' tools",
@@ -281,7 +281,7 @@ const ClassData CLASSES[] = {
   "Leather armor, two daggers and thieves' tools",
   3, 0 },
 
-{ "Sorcerer", 6, {ABL_CON, ABL_CHA},
+{ "Sorcerer", BOOK_PHB, 6, {ABL_CON, ABL_CHA},
   "None",
   "Daggers, darts, slings, quarterstaffs, light crossbows", "",
   SK_SORCERER, NSK(SK_SORCERER), 2,
@@ -297,7 +297,7 @@ const ClassData CLASSES[] = {
   "Two daggers",
   1, 0 },
 
-{ "Warlock", 8, {ABL_WIS, ABL_CHA},
+{ "Warlock", BOOK_PHB, 8, {ABL_WIS, ABL_CHA},
   "Light armor",
   "Simple weapons", "",
   SK_WARLOCK, NSK(SK_WARLOCK), 2,
@@ -313,7 +313,7 @@ const ClassData CLASSES[] = {
   "Leather armor, any simple weapon and two daggers",
   1, 0 },
 
-{ "Wizard", 6, {ABL_INT, ABL_WIS},
+{ "Wizard", BOOK_PHB, 6, {ABL_INT, ABL_WIS},
   "None",
   "Daggers, darts, slings, quarterstaffs, light crossbows", "",
   SK_WIZARD, NSK(SK_WIZARD), 2,
@@ -329,7 +329,7 @@ const ClassData CLASSES[] = {
   "A spellbook",
   1, 0 },
 
-{ "Artificer", 8, {ABL_CON, ABL_INT},
+{ "Artificer", BOOK_TCE, 8, {ABL_CON, ABL_INT},
   "Light armor, medium armor, shields",
   "Simple weapons",
   "Thieves' tools, tinker's tools, one type of artisan's tools of your choice",

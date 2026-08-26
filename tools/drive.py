@@ -100,8 +100,14 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
             if steps > 4000:
                 raise RuntimeError("too many prompts")
 
-            at_main_menu = ("Choose [1-4]" in prompt
-                            and "What would you like to do" in transcript[-1])
+            # The main menu grows as features are added, so read its size
+            # out of the prompt rather than hardcoding it.
+            menu_size = re.search(r"Choose \[1-(\d+)\]", prompt)
+            # A single read can split the menu from its prompt, so look at
+            # the accumulated tail rather than only the last chunk.
+            tail = "".join(transcript[-4:])[-600:]
+            at_main_menu = (menu_size is not None
+                            and "What would you like to do" in tail)
             if at_main_menu:
                 saves = sum(t.count("Saved to") for t in transcript)
                 wanted = 2 if levelup else 1
@@ -110,7 +116,7 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
                 elif saves < wanted:
                     reply = "2"                 # load and level up
                 else:
-                    reply = "4"                 # quit
+                    reply = menu_size.group(1)  # quit is always last
             else:
                 reply = answer(prompt, rng, name)
 

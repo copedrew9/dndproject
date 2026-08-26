@@ -226,6 +226,12 @@ static void write_sheet(FILE *f, const Character *c)
             ALIGNMENT_NAME[c->alignment]);
     fprintf(f, " Level: %-25d Proficiency Bonus: +%d\n",
             total_level(c), proficiency_bonus(c));
+    {
+        char sbuf[256];
+        settings_summary(&SETTINGS, sbuf, sizeof sbuf);
+        fprintf(f, " Sources: ");
+        fprintf(f, "%s\n", sbuf);
+    }
     if (c->ancestry_id >= 0) {
         fprintf(f, " Draconic Ancestry: %s (%s, %s)\n",
                 ANCESTRIES[c->ancestry_id].dragon,
@@ -426,6 +432,11 @@ static void write_data(FILE *f, const Character *c)
     hr(f);
     fprintf(f, "%s\n", DATA_BEGIN);
 
+    fprintf(f, "SETTINGS");
+    for (i = 0; i < BOOK_COUNT; i++) fprintf(f, "|%d", SETTINGS.book[i]);
+    fprintf(f, "|%d|%d|%d|%d\n", SETTINGS.custom_origins,
+            SETTINGS.optional_features, SETTINGS.multiclassing,
+            SETTINGS.feats);
     fprintf(f, "NAME|%s\n", c->name);
     fprintf(f, "PLAYER|%s\n", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
@@ -601,7 +612,16 @@ int load_character(const char *path, Character *c)
         n = split_fields(line, fields, 32);
         if (n < 1) continue;
 
-        if (!strcmp(fields[0], "NAME") && n >= 2) {
+        if (!strcmp(fields[0], "SETTINGS") && n >= BOOK_COUNT + 5) {
+            int k;
+            for (k = 0; k < BOOK_COUNT; k++) {
+                SETTINGS.book[k] = atoi(fields[k + 1]);
+            }
+            SETTINGS.custom_origins    = atoi(fields[BOOK_COUNT + 1]);
+            SETTINGS.optional_features = atoi(fields[BOOK_COUNT + 2]);
+            SETTINGS.multiclassing     = atoi(fields[BOOK_COUNT + 3]);
+            SETTINGS.feats             = atoi(fields[BOOK_COUNT + 4]);
+        } else if (!strcmp(fields[0], "NAME") && n >= 2) {
             copy_field(c->name, sizeof c->name, fields[1]);
         } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {
             copy_field(c->player, sizeof c->player, fields[1]);

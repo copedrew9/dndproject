@@ -158,14 +158,32 @@ int ui_menu(const char *prompt, const char *const *options,
     return ui_int("  Choose", 1, count) - 1;
 }
 
-void ui_multi(const char *prompt, const char *const *options,
-              const int *available, int count, int n, int *picks)
+int ui_multi(const char *prompt, const char *const *options,
+             const int *available, int count, int n, int *picks)
 {
     int chosen = 0;
     int taken[256];
+    int usable_total = 0;
     int i;
 
     memset(taken, 0, sizeof taken);
+    for (i = 0; i < n; i++) picks[i] = -1;
+
+    /* Never ask for more than can be given. A character who already has
+       every proficiency on offer would otherwise be asked forever. */
+    for (i = 0; i < count; i++) {
+        if (!available || available[i]) usable_total++;
+    }
+    if (usable_total < n) {
+        if (usable_total == 0) {
+            printf("\n%s\n  Nothing on this list is still available to "
+                   "you.\n", prompt);
+            return 0;
+        }
+        printf("\n%s\n  Only %d of these are still available to you.\n",
+               prompt, usable_total);
+        n = usable_total;
+    }
 
     printf("\n%s (choose %d)\n", prompt, n);
     while (chosen < n) {
@@ -195,6 +213,7 @@ void ui_multi(const char *prompt, const char *const *options,
         taken[pick] = 1;
         picks[chosen++] = pick;
     }
+    return chosen;
 }
 
 /* Dice --------------------------------------------------------------------- */

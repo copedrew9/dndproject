@@ -549,6 +549,195 @@ static void test_expansion_data(void)
     }
 }
 
+/* -------------------------------------------------- items and option lists */
+
+static void test_item_reference(void)
+{
+    int i, notes_matched = 0;
+
+    printf("item reference\n");
+
+    /* Every note must name a real catalogue item, or the lookup silently
+       never fires. */
+    for (i = 0; i < ITEM_NOTE_COUNT; i++) {
+        if (find_item(ITEM_NOTES[i].item) >= 0) {
+            notes_matched++;
+        } else {
+            printf("  FAIL item note names no catalogue item: \"%s\"\n",
+                   ITEM_NOTES[i].item);
+            failures++;
+        }
+        if (!ITEM_NOTES[i].text || !ITEM_NOTES[i].text[0]) {
+            printf("  FAIL item note is empty: \"%s\"\n", ITEM_NOTES[i].item);
+            failures++;
+        }
+    }
+    EQ(notes_matched, ITEM_NOTE_COUNT, "item notes resolve to catalogue items");
+
+    /* Armour, weapons and tools should all have something to say. */
+    check(item_notes("Plate armor") != NULL, "plate armor has a note", 1, 1);
+    check(item_notes("Thieves' tools") != NULL, "thieves' tools have a note",
+          1, 1);
+    check(item_notes("Healer's kit") != NULL, "healer's kit has a note", 1, 1);
+
+    EQ(WEAPON_PROPERTY_COUNT, 11, "weapon properties explained");
+    EQ(TRINKET_COUNT, 100, "trinkets");
+    EQ(LIFESTYLE_COUNT, 7, "lifestyles");
+    check(SERVICE_COUNT > 20, "food, lodging and services priced",
+          SERVICE_COUNT, 21);
+
+    /* Magic items: every one needs a type, a rarity and a description, and
+       the artifacts must all be present. */
+    check(MAGIC_ITEM_COUNT > 250, "magic items", MAGIC_ITEM_COUNT, 251);
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        const MagicItem *m = &MAGIC_ITEMS[i];
+        if (!m->type[0] || !m->rarity[0] || !m->text[0]) {
+            printf("  FAIL magic item is incomplete: \"%s\"\n", m->name);
+            failures++;
+        }
+        if (i > 0 && strcmp(MAGIC_ITEMS[i - 1].name, m->name) == 0) {
+            printf("  FAIL magic item listed twice: \"%s\"\n", m->name);
+            failures++;
+        }
+    }
+    check(find_magic_item("Deck of Many Things") >= 0, "find a magic item by "
+          "name", 1, 1);
+    check(find_magic_item("Bag of Holding") >= 0, "find bag of holding", 1, 1);
+    check(find_magic_item("No Such Item") < 0, "unknown magic item is not "
+          "found", 1, 1);
+}
+
+static void test_option_lists(void)
+{
+    int i, j;
+
+    printf("class option lists\n");
+    check(OPTION_LIST_COUNT >= 9, "class option lists", OPTION_LIST_COUNT, 9);
+
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        int cls = -1, prev = 0;
+
+        for (j = 0; j < CLASS_COUNT; j++) {
+            if (strcmp(CLASSES[j].name, ol->class_name) == 0) cls = j;
+        }
+        if (cls < 0) {
+            printf("  FAIL option list names no class: \"%s\"\n",
+                   ol->class_name);
+            failures++;
+        }
+        if (ol->subclass_name[0]) {
+            int found = 0;
+            for (j = 0; j < SUBCLASS_COUNT; j++) {
+                if (strcmp(SUBCLASSES[j].name, ol->subclass_name) == 0) found = 1;
+            }
+            if (!found) {
+                printf("  FAIL option list names no subclass: \"%s\"\n",
+                       ol->subclass_name);
+                failures++;
+            }
+        }
+
+        /* A class never forgets an option, and never knows more than exist. */
+        for (j = 0; j <= MAX_LEVEL; j++) {
+            if (ol->known[j] < prev) {
+                printf("  FAIL %s known count falls at level %d\n",
+                       ol->label, j);
+                failures++;
+            }
+            if (ol->known[j] > ol->count) {
+                printf("  FAIL %s knows %d of only %d at level %d\n",
+                       ol->label, (int)ol->known[j], ol->count, j);
+                failures++;
+            }
+            prev = ol->known[j];
+        }
+
+        for (j = 0; j < ol->count; j++) {
+            if (!ol->options[j].name[0]) {
+                printf("  FAIL %s has an unnamed entry\n", ol->label);
+                failures++;
+            }
+            if (ol->options[j].min_level > MAX_LEVEL) {
+                printf("  FAIL %s entry \"%s\" is never reachable\n",
+                       ol->label, ol->options[j].name);
+                failures++;
+            }
+        }
+    }
+
+    /* The counts a player would notice. */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        if (strcmp(ol->label, "Eldritch Invocation") == 0) {
+            EQ(ol->known[2], 2, "warlock knows 2 invocations at 2nd level");
+            EQ(ol->known[20], 8, "warlock knows 8 invocations at 20th level");
+        }
+        if (strcmp(ol->label, "Metamagic option") == 0) {
+            EQ(ol->known[3], 2, "sorcerer knows 2 metamagic at 3rd level");
+            EQ(ol->known[17], 4, "sorcerer knows 4 metamagic at 17th level");
+        }
+        if (strcmp(ol->label, "Maneuver") == 0) {
+            EQ(ol->known[3], 3, "battle master knows 3 maneuvers at 3rd");
+            EQ(ol->known[15], 9, "battle master knows 9 maneuvers at 15th");
+        }
+    }
+}
+
+static void test_option_spells(void)
+{
+    int i, j;
+
+    printf("option-dependent spells\n");
+    EQ(OPTION_SPELLS_COUNT, 12, "subclass options that grant spells");
+
+    for (i = 0; i < OPTION_SPELLS_COUNT; i++) {
+        const OptionSpells *os = &OPTION_SPELLS[i];
+        int sub = -1, found_option = 0;
+        char buf[512];
+        const char *parts[16];
+        int n;
+
+        for (j = 0; j < SUBCLASS_COUNT; j++) {
+            if (strcmp(SUBCLASSES[j].name, os->subclass) == 0) sub = j;
+        }
+        if (sub < 0) {
+            printf("  FAIL option spells name no subclass: \"%s\"\n",
+                   os->subclass);
+            failures++;
+            continue;
+        }
+
+        /* The option must be spelled exactly as the subclass lists it, or
+           the match at level-up silently never fires. */
+        n = split_pipe(SUBCLASSES[sub].options, buf, sizeof buf, parts, 16);
+        for (j = 0; j < n; j++) {
+            if (strcmp(parts[j], os->option) == 0) found_option = 1;
+        }
+        if (!found_option) {
+            printf("  FAIL \"%s\" is not an option of %s\n", os->option,
+                   os->subclass);
+            failures++;
+        }
+
+        {
+            char sbuf[1024];
+            const char *groups[8];
+            int ng = split_pipe(os->spells, sbuf, sizeof sbuf, groups, 8);
+            int nlevels = 1, k;
+            for (k = 0; os->levels[k]; k++) {
+                if (os->levels[k] == ',') nlevels++;
+            }
+            if (ng != nlevels) {
+                printf("  FAIL %s has %d spell groups but %d levels\n",
+                       os->option, ng, nlevels);
+                failures++;
+            }
+            for (k = 0; k < ng; k++) check_spell_list(groups[k], os->option);
+        }
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -569,6 +758,7 @@ static void test_carrying_and_coins(void)
 int main(void)
 {
     printf("dndcreator self-test\n\n");
+    settings_defaults(&SETTINGS);
 
     test_modifiers();
     test_proficiency();
@@ -582,6 +772,9 @@ int main(void)
     test_spell_data();
     test_data_integrity();
     test_expansion_data();
+    test_item_reference();
+    test_option_lists();
+    test_option_spells();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

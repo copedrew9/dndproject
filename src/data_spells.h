@@ -28,6 +28,8 @@ typedef enum {
 
 typedef struct {
     const char *name;
+    unsigned char book;         /* matches SourceBook in data.h:
+                                   0 PHB, 1 XGE, 2 TCE */
     unsigned char level;        /* 0 = cantrip */
     unsigned char school;       /* School */
     unsigned char ritual;

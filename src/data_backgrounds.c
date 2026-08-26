@@ -7,7 +7,7 @@
 #include "data.h"
 
 const BackgroundData BACKGROUNDS[] = {
-{ "Acolyte", {SKL_INSIGHT, SKL_RELIGION}, "", 2,
+{ "Acolyte", BOOK_PHB, {SKL_INSIGHT, SKL_RELIGION}, "", 2,
   "Holy symbol, prayer book or prayer wheel, 5 sticks of incense, "
   "vestments, common clothes", 15,
   "Shelter of the Faithful",
@@ -35,7 +35,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I am inflexible in my thinking.",
     "I am suspicious of strangers and expect the worst of them.", NULL } },
 
-{ "Charlatan", {SKL_DECEPTION, SKL_SLEIGHT_OF_HAND},
+{ "Charlatan", BOOK_PHB, {SKL_DECEPTION, SKL_SLEIGHT_OF_HAND},
   "Disguise kit, forgery kit", 0,
   "Fine clothes, disguise kit, tools of the con of your choice", 15,
   "False Identity",
@@ -62,7 +62,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I am too greedy for my own good.",
     "I cannot resist swindling people more powerful than me.", NULL } },
 
-{ "Criminal", {SKL_DECEPTION, SKL_STEALTH},
+{ "Criminal", BOOK_PHB, {SKL_DECEPTION, SKL_STEALTH},
   "One type of gaming set, thieves' tools", 0,
   "Crowbar, dark common clothes with a hood", 15,
   "Criminal Contact",
@@ -89,7 +89,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I have a tell that reveals when I am lying.",
     "I turn tail and run when things look bad.", NULL } },
 
-{ "Entertainer", {SKL_ACROBATICS, SKL_PERFORMANCE},
+{ "Entertainer", BOOK_PHB, {SKL_ACROBATICS, SKL_PERFORMANCE},
   "Disguise kit, one type of musical instrument", 0,
   "A musical instrument, the favour of an admirer, a costume", 15,
   "By Popular Demand",
@@ -116,7 +116,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I once satirised a noble who still wants my head.",
     "I have trouble keeping my true feelings hidden.", NULL } },
 
-{ "Folk Hero", {SKL_ANIMAL_HANDLING, SKL_SURVIVAL},
+{ "Folk Hero", BOOK_PHB, {SKL_ANIMAL_HANDLING, SKL_SURVIVAL},
   "One type of artisan's tools, vehicles (land)", 0,
   "A set of artisan's tools, a shovel, an iron pot, common clothes", 10,
   "Rustic Hospitality",
@@ -144,7 +144,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I have a weakness for the vices of the city.",
     "I am inflexible in my thinking.", NULL } },
 
-{ "Guild Artisan", {SKL_INSIGHT, SKL_PERSUASION},
+{ "Guild Artisan", BOOK_PHB, {SKL_INSIGHT, SKL_PERSUASION},
   "One type of artisan's tools", 1,
   "A set of artisan's tools, a letter of introduction from your guild, "
   "traveller's clothes", 15,
@@ -172,7 +172,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I am never satisfied with what I have; I always want more.",
     "I am horribly jealous of anyone who can outshine my handiwork.", NULL } },
 
-{ "Hermit", {SKL_MEDICINE, SKL_RELIGION}, "Herbalism kit", 1,
+{ "Hermit", BOOK_PHB, {SKL_MEDICINE, SKL_RELIGION}, "Herbalism kit", 1,
   "A scroll case stuffed full of notes, a winter blanket, common clothes, "
   "a herbalism kit", 5,
   "Discovery",
@@ -200,7 +200,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I let my need to win arguments overshadow friendships.",
     "I would risk too much to uncover a lost bit of knowledge.", NULL } },
 
-{ "Noble", {SKL_HISTORY, SKL_PERSUASION}, "One type of gaming set", 1,
+{ "Noble", BOOK_PHB, {SKL_HISTORY, SKL_PERSUASION}, "One type of gaming set", 1,
   "Fine clothes, a signet ring, a scroll of pedigree", 25,
   "Position of Privilege",
   "People are inclined to think the best of you; you are welcome in high "
@@ -226,7 +226,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I have an insatiable desire for carnal pleasures.",
     "In fact, the world does revolve around me.", NULL } },
 
-{ "Outlander", {SKL_ATHLETICS, SKL_SURVIVAL},
+{ "Outlander", BOOK_PHB, {SKL_ATHLETICS, SKL_SURVIVAL},
   "One type of musical instrument", 1,
   "A staff, a hunting trap, a trophy from an animal you killed, "
   "traveller's clothes", 10,
@@ -254,7 +254,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I am slow to trust members of other races, tribes and societies.",
     "Violence is my answer to almost any challenge.", NULL } },
 
-{ "Sage", {SKL_ARCANA, SKL_HISTORY}, "", 2,
+{ "Sage", BOOK_PHB, {SKL_ARCANA, SKL_HISTORY}, "", 2,
   "A bottle of black ink, a quill, a small knife, a letter from a dead "
   "colleague posing a question you have not yet answered, common clothes", 10,
   "Researcher",
@@ -281,7 +281,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I overlook obvious solutions in favour of complicated ones.",
     "I speak without really thinking through my words, invariably insulting others.", NULL } },
 
-{ "Sailor", {SKL_ATHLETICS, SKL_PERCEPTION},
+{ "Sailor", BOOK_PHB, {SKL_ATHLETICS, SKL_PERCEPTION},
   "Navigator's tools, vehicles (water)", 0,
   "A belaying pin (club), 50 feet of silk rope, a lucky charm, "
   "common clothes", 10,
@@ -309,7 +309,7 @@ const BackgroundData BACKGROUNDS[] = {
     "I cannot help but pocket loose coins and trinkets I come across.",
     "My pride will probably lead to my destruction.", NULL } },
 
-{ "Soldier", {SKL_ATHLETICS, SKL_INTIMIDATION},
+{ "Soldier", BOOK_PHB, {SKL_ATHLETICS, SKL_INTIMIDATION},
   "One type of gaming set, vehicles (land)", 0,
   "An insignia of rank, a trophy taken from a fallen enemy, a set of bone "
   "dice or deck of cards, common clothes", 10,
@@ -338,7 +338,7 @@ const BackgroundData BACKGROUNDS[] = {
     "My hatred of my enemies is blind and unreasoning.",
     "I obey the law, even if it causes misery.", NULL } },
 
-{ "Urchin", {SKL_SLEIGHT_OF_HAND, SKL_STEALTH},
+{ "Urchin", BOOK_PHB, {SKL_SLEIGHT_OF_HAND, SKL_STEALTH},
   "Disguise kit, thieves' tools", 0,
   "A small knife, a map of the city you grew up in, a pet mouse, a token to "
   "remember your parents by, common clothes", 10,
