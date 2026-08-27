@@ -336,9 +336,6 @@ What the books themselves do not settle:
   neither can be told from the other. Reading those two off the page by
   hand is what turned up the minotaur carrying Imposing Presence, which
   belongs to a different minotaur entirely, in place of Labyrinthine Recall.
-- **The orc** is the one race whose row disagrees with its book on purpose.
-  It follows the newer printing: darkvision out to 120 feet, Adrenaline Rush
-  recharging on a short rest as well as a long one, and no Powerful Build.
 
 ## Testing
 

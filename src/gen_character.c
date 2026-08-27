@@ -316,12 +316,13 @@ const RaceData RACES[] = {
       "action|Labyrinthine Recall: you always know which way is "
       "north, and have advantage on Survival checks to navigate or "
       "track", 1 },
-    { "Orc", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 120,
+    { "Orc", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 120 feet|Adrenaline Rush: Dash as a bonus action "
+      "Darkvision: 60 feet|Adrenaline Rush: Dash as a bonus action "
       "and gain temporary hit points equal to your proficiency "
       "bonus, a number of times equal to your proficiency bonus per "
-      "short or long rest|Relentless Endurance: drop to 1 hit point "
+      "short rest|Powerful Build: you count as one size larger for "
+      "carrying capacity|Relentless Endurance: drop to 1 hit point "
       "instead of 0, once per long rest", 1 },
     { "Satyr", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,

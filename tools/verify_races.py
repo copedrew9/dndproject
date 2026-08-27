@@ -40,11 +40,6 @@ HEADING = re.compile(r"[A-Z][A-Z ,'-]{2,30} TRAITS")
 # Races whose block cannot be told from the one after it, because the
 # heading between them is missing from the dump. Their numbers are the
 # ones a person still has to read off the page.
-#
-# The orc is also the one race whose row deliberately disagrees with this
-# dump: it follows the newer printing, which gives darkvision out to 120
-# feet, lets Adrenaline Rush recharge on a short rest as well as a long one,
-# and drops Powerful Build. Do not "correct" it back against the text here.
 UNBOUNDED = {"Minotaur", "Orc"}
 
 
