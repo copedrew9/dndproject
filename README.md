@@ -28,8 +28,10 @@ The main menu offers:
 3. **View a saved character** — prints the sheet.
 4. **Content settings** — which books are in play, and whether custom
    origins, TCE's optional class features, multiclassing and feats are
-   allowed. The settings are written into the character file, so a character
-   loaded to level up offers the content it was built with.
+   allowed, and whether the sheet prints where the level sits on the
+   experience table. The settings are written into the character file, so a
+   character loaded to level up offers the content it was built with -- and
+   keeps its own answer on the experience line.
 5. **Reference** — look up any item, magic item, weapon property, trinket,
    lifestyle, service or condition.
 6. **Manage a character's inventory** — pick things up, put them down,
@@ -323,9 +325,6 @@ comparing the numbers:
 
 What the books themselves do not settle:
 
-- ***Trap the Soul*** appears on the PHB's wizard spell list with no
-  description anywhere in that book, and it is in neither XGE nor TCE. It is
-  left out, and the extractor says so.
 - **The thirteen SCAG backgrounds** are not here, because that book is not
   among the six.
 - **MPMM** is the one book whose text is still OCR, no clean copy of it
@@ -334,8 +333,12 @@ What the books themselves do not settle:
   air genasi's speed and darkvision and the earth genasi's darkvision. The
   minotaur and the orc are the two it leaves alone: the orc's heading is
   missing from the dump, so its traits run on into the minotaur's block and
-  neither can be told from the other. Both were read off the page by hand
-  and are right, but nothing is watching them.
+  neither can be told from the other. Reading those two off the page by
+  hand is what turned up the minotaur carrying Imposing Presence, which
+  belongs to a different minotaur entirely, in place of Labyrinthine Recall.
+- **The orc** is the one race whose row disagrees with its book on purpose.
+  It follows the newer printing: darkvision out to 120 feet, Adrenaline Rush
+  recharging on a short rest as well as a long one, and no Powerful Build.
 
 ## Testing
 
@@ -441,7 +444,8 @@ so the sheet carries the numbers a player reaches for most:
   conditional -- Dueling, Great Weapon Fighting, Sneak Attack, Rage -- and the
   sheet says so rather than quietly leaving it out.
 - **Where the level sits on the advancement table**, so the distance to the
-  next one is on the page rather than in someone's head.
+  next one is on the page rather than in someone's head. Tables that hand
+  out levels rather than experience can switch the line off in the settings.
 - **The encumbrance thresholds** from the variant rule, and whether the
   character is over them.
 

@@ -1642,7 +1642,8 @@ const SpellData BOOK_SPELLS[] = {
       "V, S, M (a piece of ice or a small white rock chip)", "Instantaneous",
       SPL_SORCERER | SPL_WIZARD },
     { "Soul Cage", BOOK_XGE, 6, SCHOOL_NECROMANCY, 0, 0,
-      "1 reaction, which you take when a hu-", "60 feet",
+      "1 reaction, which you take when a humanoid you can see "
+      "within 60 feet of you dies", "60 feet",
       "V, S, M (a tiny silver cage worth 100 gp)", "8 hours",
       SPL_WARLOCK | SPL_WIZARD },
     { "Spare the Dying", BOOK_PHB, 0, SCHOOL_NECROMANCY, 0, 0,

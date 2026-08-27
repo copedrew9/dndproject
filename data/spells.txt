@@ -403,7 +403,7 @@ SPELL|Sleet Storm|PHB|3|Conjuration|0|1|1 action|150 feet|V, S, M (a pinch of du
 SPELL|Slow|PHB|3|Transmutation|0|1|1 action|120 feet|V, S, M (a drop of molasses)|Concentration, up to 1 minute|sorcerer,wizard
 SPELL|Snare|XGE|1|Abjuration|0|0|1 minute|Touch|S, M (25 feet of rope, which the spell consumes)|8 hours|druid,ranger,wizard,artificer
 SPELL|Snilloc's Snowball Swarm|XGE|2|Evocation|0|0|1 action|90 feet|V, S, M (a piece of ice or a small white rock chip)|Instantaneous|sorcerer,wizard
-SPELL|Soul Cage|XGE|6|Necromancy|0|0|1 reaction, which you take when a hu-|60 feet|V, S, M (a tiny silver cage worth 100 gp)|8 hours|warlock,wizard
+SPELL|Soul Cage|XGE|6|Necromancy|0|0|1 reaction, which you take when a humanoid you can see within 60 feet of you dies|60 feet|V, S, M (a tiny silver cage worth 100 gp)|8 hours|warlock,wizard
 SPELL|Spare the Dying|PHB|0|Necromancy|0|0|1 action|Touch|V, S|Instantaneous|cleric,artificer
 SPELL|Speak with Animals|PHB|1|Divination|1|0|1 action|Self|V, S|10 minutes|bard,druid,ranger
 SPELL|Speak WITH Dead|PHB|3|Necromancy|0|0|1 action|10 feet|V, S, M (burning incense)|10 minutes|bard,cleric
