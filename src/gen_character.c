@@ -128,14 +128,14 @@ const RaceData RACES[] = {
       "at 3rd level and darkness at 5th level, each once per long "
       "rest, using Charisma", 0 },
     { "Aarakocra", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Flight: a flying speed of 30 feet, but not while wearing "
       "medium or heavy armor|Talons: unarmed strikes deal 1d6 "
       "slashing damage|Wind Caller: cast gust of wind once per long "
       "rest without a slot, from 5th level, using a spellcasting "
       "ability of your choice", 1 },
     { "Aasimar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Celestial Resistance: resistance to necrotic and radiant "
       "damage|Darkvision: 60 feet|Healing Hands: heal a creature "
       "you touch for d4 per level, once per long rest|Light Bearer: "
@@ -144,7 +144,7 @@ const RaceData RACES[] = {
       "1 minute -- Heavenly Wings, Inner Radiance or Necrotic "
       "Shroud -- once per long rest", 1 },
     { "Bugbear", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Long-Limbed: your reach is 5 feet longer "
       "for melee attacks on your turn|Powerful Build: you count as "
       "one size larger for carrying capacity|Sneaky: proficiency in "
@@ -153,7 +153,7 @@ const RaceData RACES[] = {
       "extra 2d6 damage to a creature that has not taken a turn yet "
       "in combat", 1 },
     { "Centaur", BOOK_MPMM, {0,0,0,0,0,0}, 40, SZ_MEDIUM, 0,
-      "Common, Sylvan", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Charge: after moving 30 feet "
       "in a straight line, a melee weapon attack deals an extra 1d6 "
       "damage|Equine Build: you count as one size larger for "
@@ -162,20 +162,20 @@ const RaceData RACES[] = {
       "Affinity: proficiency in one of Animal Handling, Medicine, "
       "Nature or Survival", 1 },
     { "Changeling", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Shapechanger: as an action, "
       "change your appearance and voice to any Medium or Small "
       "humanoid you have seen; your statistics do not "
       "change|Changeling Instincts: proficiency in two of "
       "Deception, Insight, Intimidation, Performance or Persuasion", 1 },
     { "Deep Gnome", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 120,
-      "Common, Gnomish", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Gnomish Magic Resistance: "
       "advantage on saving throws against spells|Gnomish Magic: "
       "cast disguise self once per long rest from 3rd level, and "
       "nondetection on yourself from 5th level, without a slot", 1 },
     { "Duergar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 120,
-      "Common, Dwarvish", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Dwarven Resilience: advantage "
       "on saves against poison, and resistance to poison "
       "damage|Duergar Magic: cast enlarge/reduce on yourself from "
@@ -183,7 +183,7 @@ const RaceData RACES[] = {
       "once per long rest|Psionic Fortitude: advantage on saves "
       "against being charmed or stunned", 1 },
     { "Eladrin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Elvish", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Darkvision: 60 feet|Fey "
       "Ancestry: advantage on saves to avoid or end the charmed "
       "condition|Fey Step: teleport 30 feet as a bonus action, a "
@@ -193,13 +193,13 @@ const RaceData RACES[] = {
       "hours of meditation counts as a long rest, and you may "
       "change your season", 1 },
     { "Fairy", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 0,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Fairy Flight: a flying speed "
       "equal to your walking speed|Fairy Magic: you know "
       "druidcraft; cast faerie fire from 3rd level and "
       "enlarge/reduce from 5th level, each once per long rest", 1 },
     { "Firbolg", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Elvish, Giant", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Firbolg Magic: cast detect magic and disguise self, each "
       "once per short rest, using a spellcasting ability of your "
       "choice|Hidden Step: turn invisible as a bonus action until "
@@ -208,52 +208,53 @@ const RaceData RACES[] = {
       "one size larger for carrying capacity|Speech of Beast and "
       "Leaf: beasts and plants can understand you, and you have "
       "advantage on Charisma checks made to influence them", 1 },
-    { "Genasi, Air", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
-      "Unending Breath: you can hold your breath indefinitely while "
-      "not incapacitated|Lightning Resistance: resistance to "
-      "lightning damage|Air Genasi Magic: you know shocking grasp; "
-      "cast feather fall from 3rd level and levitate from 5th "
-      "level, each once per long rest", 1 },
-    { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
-      "Earth Walk: difficult terrain made of earth or stone costs "
-      "no extra movement|Merge with Stone: cast pass without trace "
-      "once per long rest|Earth Genasi Magic: you know blade ward", 1 },
+    { "Genasi, Air", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 60,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Darkvision: 60 feet|Unending Breath: you can hold your "
+      "breath indefinitely while not incapacitated|Lightning "
+      "Resistance: resistance to lightning damage|Air Genasi Magic: "
+      "you know shocking grasp; cast feather fall from 3rd level "
+      "and levitate from 5th level, each once per long rest", 1 },
+    { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Darkvision: 60 feet|Earth Walk: difficult terrain made of "
+      "earth or stone costs no extra movement|Merge with Stone: "
+      "cast pass without trace once per long rest|Earth Genasi "
+      "Magic: you know blade ward", 1 },
     { "Genasi, Fire", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fire Resistance: resistance to fire "
       "damage|Reach to the Blaze: you know produce flame; cast "
       "burning hands from 3rd level once per long rest", 1 },
     { "Genasi, Water", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Acid Resistance: resistance to acid "
       "damage|Amphibious: you can breathe air and water|Swim: a "
       "swimming speed equal to your walking speed|Call to the Wave: "
       "you know acid splash; cast create or destroy water from 3rd "
       "level once per long rest", 1 },
     { "Githyanki", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Gith", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Astral Knowledge: after each long rest, gain proficiency in "
       "one skill of your choice until your next long rest|Githyanki "
       "Psionics: you know mage hand, cast without components; from "
       "3rd level jump and from 5th level misty step, each once per "
       "long rest|Psychic Resilience: resistance to psychic damage", 1 },
     { "Githzerai", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Gith", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Githzerai Psionics: you know mage hand, cast without "
       "components; from 3rd level shield and from 5th level detect "
       "thoughts, each once per long rest|Mental Discipline: "
       "resistance to psychic damage|Psychic Resilience: advantage "
       "on saves against being charmed or frightened", 1 },
     { "Goblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
-      "Common, Goblin", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fury of the Small: once per short rest, "
       "deal extra damage equal to your proficiency bonus to a "
       "creature larger than you|Fey: your creature type is "
       "fey|Nimble Escape: Disengage or Hide as a bonus action", 1 },
     { "Goliath", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Giant", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Little Giant: proficiency in Athletics, and you count as one "
       "size larger for carrying capacity|Mountain Born: resistance "
       "to cold damage, and you are acclimated to high "
@@ -261,7 +262,7 @@ const RaceData RACES[] = {
       "1d12 plus your Constitution modifier, a number of times "
       "equal to your proficiency bonus per long rest", 1 },
     { "Harengon", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Hare-Trigger: you can add "
       "your proficiency bonus to initiative rolls|Leporine Senses: "
       "proficiency in Perception|Lucky Footwork: as a reaction to a "
@@ -270,7 +271,7 @@ const RaceData RACES[] = {
       "equal to five times your proficiency bonus, without "
       "provoking", 1 },
     { "Hobgoblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Goblin", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey: your creature type is fey|Fey Gift: "
       "as a bonus action, grant a creature within 30 feet temporary "
       "hit points, or one of three other benefits, a number of "
@@ -279,7 +280,7 @@ const RaceData RACES[] = {
       "add a bonus equal to the number of allies within 30 feet, up "
       "to your proficiency bonus", 1 },
     { "Kenku", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Expert Duplication: advantage on checks made to copy writing "
       "or craftwork you can see|Kenku Recall: proficiency in two "
       "skills of your choice, and you can roll one of those checks "
@@ -288,7 +289,7 @@ const RaceData RACES[] = {
       "heard; a listener may see through it with an Insight check "
       "against your Deception", 1 },
     { "Kobold", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
-      "Common, Draconic", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Draconic Cry: as a bonus action, enemies "
       "within 10 feet grant advantage on attacks against them until "
       "the start of your next turn, a number of times equal to your "
@@ -297,7 +298,7 @@ const RaceData RACES[] = {
       "on saves against being frightened) or Draconic Sorcery (one "
       "sorcerer cantrip)", 1 },
     { "Lizardfolk", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Draconic", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Bite: unarmed strikes deal 1d6 piercing damage|Cunning "
       "Artisan: craft a shield, club, javelin or darts from a "
       "corpse over a short rest|Hold Breath: you can hold your "
@@ -307,15 +308,16 @@ const RaceData RACES[] = {
       "unarmored|Nature's Intuition: proficiency in two of Animal "
       "Handling, Nature, Perception, Stealth or Survival", 1 },
     { "Minotaur", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Minotaur", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Horns: unarmed strikes deal 1d6 piercing damage|Goring Rush: "
       "after taking the Dash action, make a horn attack as a bonus "
       "action|Hammering Horns: after hitting with a melee attack, "
       "shove a creature within 5 feet up to 10 feet as a bonus "
-      "action|Imposing Presence: proficiency in Intimidation or "
-      "Persuasion", 1 },
+      "action|Labyrinthine Recall: you always know which way is "
+      "north, and have advantage on Survival checks to navigate or "
+      "track", 1 },
     { "Orc", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Orc", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Adrenaline Rush: Dash as a bonus action "
       "and gain temporary hit points equal to your proficiency "
       "bonus, a number of times equal to your proficiency bonus per "
@@ -323,14 +325,14 @@ const RaceData RACES[] = {
       "carrying capacity|Relentless Endurance: drop to 1 hit point "
       "instead of 0, once per long rest", 1 },
     { "Satyr", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 0,
-      "Common, Sylvan", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Ram: unarmed strikes deal 1d6 "
       "bludgeoning damage|Magic Resistance: advantage on saves "
       "against spells|Mirthful Leaps: add a d8 to the distance of "
       "any jump|Reveler: proficiency in Performance and Persuasion, "
       "and with one musical instrument", 1 },
     { "Sea Elf", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Elvish, Aquan", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
       "avoid or end the charmed condition|Child of the Sea: you can "
       "breathe air and water, and have a swimming speed of 30 "
@@ -339,7 +341,7 @@ const RaceData RACES[] = {
       "Perception|Trance: four hours of meditation counts as a long "
       "rest", 1 },
     { "Shadar-kai", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Elvish", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
       "avoid or end the charmed condition|Necrotic Resistance: "
       "resistance to necrotic damage|Blessing of the Raven Queen: "
@@ -349,7 +351,7 @@ const RaceData RACES[] = {
       "Senses: proficiency in Perception|Trance: four hours of "
       "meditation counts as a long rest", 1 },
     { "Shifter", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Shifting: as a bonus action, gain "
       "temporary hit points equal to twice your proficiency bonus "
       "for 1 minute, a number of times equal to your proficiency "
@@ -357,7 +359,7 @@ const RaceData RACES[] = {
       "Longtooth, Swiftstride or Wildhunt; each adds an effect "
       "while shifted", 1 },
     { "Tabaxi", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common", 2, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Cat's Claws: a climbing speed equal to "
       "your walking speed, and unarmed strikes deal 1d6 slashing "
       "damage|Cat's Talent: proficiency in Perception and "
@@ -365,7 +367,7 @@ const RaceData RACES[] = {
       "cannot do so again until you move 0 feet on one of your "
       "turns", 1 },
     { "Tortle", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
-      "Common, Aquan", 1, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Claws: unarmed strikes deal 1d6 slashing damage|Hold Breath: "
       "you can hold your breath for 1 hour|Natural Armor: AC 17, "
       "unaffected by Dexterity, and you gain no benefit from "
@@ -374,7 +376,7 @@ const RaceData RACES[] = {
       "saves, but prone and unable to move|Survival Instinct: "
       "proficiency in Survival", 1 },
     { "Triton", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Amphibious: you can breathe air and "
       "water|Swim: a swimming speed of 30 feet|Control Air and "
       "Water: cast fog cloud; from 3rd level gust of wind and from "
@@ -383,7 +385,7 @@ const RaceData RACES[] = {
       "elementals that can breathe water|Guardian of the Depths: "
       "resistance to cold damage", 1 },
     { "Yuan-ti", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Abyssal, Draconic", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Innate Spellcasting: you know poison "
       "spray and animal friendship (snakes only, at will); cast "
       "suggestion once per long rest from 3rd level|Magic "

@@ -333,12 +333,14 @@ static void write_sheet(FILE *f, const Character *c)
            the advancement table is what tells a player how far off the
            next one is. */
         int lv = total_level(c);
-        fprintf(f, "  Experience       %d needed for level %d",
-                XP_FOR_LEVEL[lv], lv);
-        if (lv < MAX_LEVEL) {
-            fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+        if (SETTINGS.experience) {
+            fprintf(f, "  Experience       %d needed for level %d",
+                    XP_FOR_LEVEL[lv], lv);
+            if (lv < MAX_LEVEL) {
+                fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+            }
+            fprintf(f, "\n");
         }
-        fprintf(f, "\n");
     }
 
     {
@@ -640,9 +642,9 @@ static void write_data(FILE *f, const Character *c)
 
     fprintf(f, "SETTINGS");
     for (i = 0; i < BOOK_COUNT; i++) fprintf(f, "|%d", SETTINGS.book[i]);
-    fprintf(f, "|%d|%d|%d|%d\n", SETTINGS.custom_origins,
+    fprintf(f, "|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
             SETTINGS.optional_features, SETTINGS.multiclassing,
-            SETTINGS.feats);
+            SETTINGS.feats, SETTINGS.experience);
     fprintf(f, "NAME|%s\n", c->name);
     fprintf(f, "PLAYER|%s\n", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
@@ -880,6 +882,10 @@ int load_character(const char *path, Character *c)
             SETTINGS.optional_features = atoi(fields[BOOK_COUNT + 2]);
             SETTINGS.multiclassing     = atoi(fields[BOOK_COUNT + 3]);
             SETTINGS.feats             = atoi(fields[BOOK_COUNT + 4]);
+            /* Written since the experience line became optional; a file
+               from before that has the line, as it always did. */
+            SETTINGS.experience = (n >= BOOK_COUNT + 6)
+                                ? atoi(fields[BOOK_COUNT + 5]) : 1;
         } else if (!strcmp(fields[0], "NAME") && n >= 2) {
             copy_field(c->name, sizeof c->name, fields[1]);
         } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {

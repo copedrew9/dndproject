@@ -28,8 +28,10 @@ The main menu offers:
 3. **View a saved character** — prints the sheet.
 4. **Content settings** — which books are in play, and whether custom
    origins, TCE's optional class features, multiclassing and feats are
-   allowed. The settings are written into the character file, so a character
-   loaded to level up offers the content it was built with.
+   allowed, and whether the sheet prints where the level sits on the
+   experience table. The settings are written into the character file, so a
+   character loaded to level up offers the content it was built with -- and
+   keeps its own answer on the experience line.
 5. **Reference** — look up any item, magic item, weapon property, trinket,
    lifestyle, service or condition.
 6. **Manage a character's inventory** — pick things up, put them down,
@@ -302,8 +304,9 @@ rather than the book's -- "Standard Human", for a human the PHB prints under
 no heading of its own, and five composite feature names -- and the audit says
 so rather than reporting them as missing.
 
-Names are the cheap check. `tools/verify_equipment.py` and
-`tools/verify_deities.py` do the expensive one, comparing the numbers:
+Names are the cheap check. `tools/verify_equipment.py`,
+`tools/verify_deities.py` and `tools/verify_races.py` do the expensive one,
+comparing the numbers:
 
 - **All 214 PHB equipment rows** -- cost, weight, damage die and type,
   armour class, the Dexterity cap, Strength requirement and stealth --
@@ -322,15 +325,17 @@ Names are the cheap check. `tools/verify_equipment.py` and
 
 What the books themselves do not settle:
 
-- ***Trap the Soul*** appears on the PHB's wizard spell list with no
-  description anywhere in that book, and it is in neither XGE nor TCE. It is
-  left out, and the extractor says so.
 - **The thirteen SCAG backgrounds** are not here, because that book is not
   among the six.
 - **MPMM** is the one book whose text is still OCR, no clean copy of it
-  having been to hand. Its races are checked against that text like
-  everything else, but the numbers beside them have not had the treatment
-  above.
+  having been to hand. `tools/verify_races.py` checks 31 of its 33 races
+  against it anyway -- size, walking speed, darkvision -- which caught the
+  air genasi's speed and darkvision and the earth genasi's darkvision. The
+  minotaur and the orc are the two it leaves alone: the orc's heading is
+  missing from the dump, so its traits run on into the minotaur's block and
+  neither can be told from the other. Reading those two off the page by
+  hand is what turned up the minotaur carrying Imposing Presence, which
+  belongs to a different minotaur entirely, in place of Labyrinthine Recall.
 
 ## Testing
 
@@ -341,6 +346,7 @@ flushing, the harness can synchronise on real prompts and answer anything.
 
 ```sh
 make check                                  # the suite below
+make asan                                   # the same, with the sanitizers
 python3 tools/drive.py --runs 30            # 30 random characters
 python3 tools/drive.py --runs 10 --levelup  # create, save, reload, level up
 python3 tools/drive.py --runs 8 --valgrind  # under valgrind
@@ -379,6 +385,7 @@ tools/pdf_text.py      the books' PDFs -> TextFiles/, run once
 tools/audit.py         checks every name in data/ against TextFiles/
 tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
+tools/verify_races.py      checks the MPMM race numbers
 tools/extract_deities.py   writes the DEITY rows from appendix B
 
 src/dnd.h              core types and the Character struct
@@ -434,7 +441,8 @@ so the sheet carries the numbers a player reaches for most:
   conditional -- Dueling, Great Weapon Fighting, Sneak Attack, Rage -- and the
   sheet says so rather than quietly leaving it out.
 - **Where the level sits on the advancement table**, so the distance to the
-  next one is on the page rather than in someone's head.
+  next one is on the page rather than in someone's head. Tables that hand
+  out levels rather than experience can switch the line off in the settings.
 - **The encumbrance thresholds** from the variant rule, and whether the
   character is over them.
 

@@ -29,6 +29,10 @@ typedef struct {
     int optional_features;      /* Tasha's optional class features */
     int multiclassing;          /* PHB chapter 6 variant rule */
     int feats;                  /* PHB feats variant rule */
+    /* Whether the sheet prints where the level sits on the advancement
+       table. Tables that hand out levels rather than experience do not want
+       the line, so it can be switched off. */
+    int experience;
 } Settings;
 
 extern Settings SETTINGS;

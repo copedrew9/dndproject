@@ -53,6 +53,7 @@ audit:
 verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_deities.py
+	python3 tools/verify_races.py
 
 # Assertions on the rules engine.
 TESTBIN  = selftest
@@ -71,7 +72,19 @@ check: test dataverify verify $(BIN)
 	python3 tools/roundtrip.py
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
+# The same drive, built with the sanitizers. This is what caught the race
+# menu writing past the end of its array; a plain build did not notice, and
+# neither did valgrind, the array being on the stack.
+asan:
+	$(MAKE) clean
+	$(MAKE) CFLAGS="-std=c99 -O1 -g -fsanitize=address,undefined \
+	  -fno-omit-frame-pointer"
+	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 25 --seed 1
+	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 10 --seed 500 \
+	  --levelup
+	$(MAKE) clean
+
 clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) $(DUMPBIN).d
 
-.PHONY: all clean check test data dataverify audit verify
+.PHONY: all clean check test data dataverify audit verify asan

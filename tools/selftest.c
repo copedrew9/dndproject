@@ -1415,6 +1415,16 @@ static void test_attacks(void)
     }
 
     EQ(CONDITION_COUNT, 15, "conditions, appendix A plus exhaustion");
+
+    /* The wizard builds each menu into an array of MENU_MAX entries. A
+       table that outgrows it used to be written past the end of that array:
+       42 races against 32 slots put the last ten races into the details of
+       the first ten, and would have corrupted the stack on a longer list. */
+    EQ(RACE_COUNT <= MENU_MAX, 1, "races fit the race menu");
+    EQ(SUBRACE_COUNT <= MENU_MAX, 1, "subraces fit");
+    EQ(CLASS_COUNT <= MENU_MAX, 1, "classes fit");
+    EQ(BACKGROUND_COUNT + 1 <= MENU_MAX,
+       1, "backgrounds fit, with a slot kept for one of your own");
 }
 
 static void test_choice_lists(void)

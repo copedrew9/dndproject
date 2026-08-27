@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 
+
 /* ------------------------------------------------------------- list helpers */
 
 int has_language(const Character *c, const char *lang)
@@ -339,8 +340,8 @@ void add_item_by_name(Character *c, const char *name, int qty, int equipped)
 
 static void choose_race(Character *c)
 {
-    const char *names[32];
-    const char *details[32];
+    const char *names[MENU_MAX];
+    const char *details[MENU_MAX];
     int i, pick;
 
     ui_header("Step 1: Choose a Race");
@@ -349,8 +350,8 @@ static void choose_race(Character *c)
             "ability scores.");
 
     {
-        int map[64], n = 0;
-        for (i = 0; i < RACE_COUNT && n < 64; i++) {
+        int map[MENU_MAX], n = 0;
+        for (i = 0; i < RACE_COUNT && n < MENU_MAX; i++) {
             if (!book_enabled(RACES[i].book)) continue;
             names[n] = RACES[i].name;
             details[n] = NULL;
@@ -377,8 +378,8 @@ static void choose_race(Character *c)
     if (RACES[pick].subrace_count > 0) {
         int first = RACES[pick].first_subrace;
         int total = RACES[pick].subrace_count;
-        int map[32], n = 0;
-        for (i = 0; i < total && n < 32; i++) {
+        int map[MENU_MAX], n = 0;
+        for (i = 0; i < total && n < MENU_MAX; i++) {
             if (!book_enabled(SUBRACES[first + i].book)) continue;
             names[n] = SUBRACES[first + i].name;
             details[n] = SUBRACES[first + i].traits;
@@ -488,9 +489,9 @@ static void describe_mc_req(int class_id, char *out, size_t n)
 
 static void choose_classes(Character *c, int *target_level)
 {
-    const char *names[16];
-    const char *details[16];
-    int class_map[16], class_n;
+    const char *names[MENU_MAX];
+    const char *details[MENU_MAX];
+    int class_map[MENU_MAX], class_n;
     int i, remaining;
 
     ui_header("Step 2: Choose a Class");
@@ -502,7 +503,7 @@ static void choose_classes(Character *c, int *target_level)
 
     {
         int n = 0;
-        for (i = 0; i < CLASS_COUNT && n < 16; i++) {
+        for (i = 0; i < CLASS_COUNT && n < MENU_MAX; i++) {
             if (!book_enabled(CLASSES[i].book)) continue;
             names[n] = CLASSES[i].name;
             details[n] = CLASSES[i].quick_build;
@@ -1047,8 +1048,8 @@ static void custom_background(Character *c)
 
 static void choose_background(Character *c)
 {
-    const char *names[16];
-    const char *details[16];
+    const char *names[MENU_MAX];
+    const char *details[MENU_MAX];
     int i, pick;
 
     ui_header("Step 4: Describe Your Character -- Background");
@@ -1057,8 +1058,9 @@ static void choose_background(Character *c)
             "and a feature.");
 
     {
-        int map[32], n = 0;
-        for (i = 0; i < BACKGROUND_COUNT && n < 32; i++) {
+        int map[MENU_MAX], n = 0;
+        /* One slot is kept back for "Build one of my own" below. */
+        for (i = 0; i < BACKGROUND_COUNT && n < MENU_MAX - 1; i++) {
             if (!book_enabled(BACKGROUNDS[i].book)) continue;
             names[n] = BACKGROUNDS[i].name;
             details[n] = BACKGROUNDS[i].feature_summary;
