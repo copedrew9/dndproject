@@ -73,10 +73,17 @@ test: $(TESTBIN)
 
 # Build many characters at random and check none of them crash, that a saved
 # character reloads unchanged, and that it all holds under valgrind.
+#
+# drive.py answers the creation wizard; stress.py wanders the rest of the
+# main menu -- settings, reference, inventory, sidekicks, homebrew, notes --
+# in one session, and fuzz_files.py corrupts the files the program reads
+# rather than the answers it is given.
 check: test dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
+	python3 tools/stress.py --runs 6 --seed 1 --ops 4
+	python3 tools/fuzz_files.py --runs 150 --seed 1
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race
@@ -89,6 +96,9 @@ asan:
 	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 25 --seed 1
 	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 10 --seed 500 \
 	  --levelup
+	ASAN_OPTIONS=detect_leaks=0 python3 tools/stress.py --runs 4 --seed 1 \
+	  --ops 5 --nasty 0.3
+	ASAN_OPTIONS=detect_leaks=0 python3 tools/fuzz_files.py --runs 200 --seed 1
 	$(MAKE) clean
 
 clean:

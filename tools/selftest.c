@@ -8,6 +8,7 @@
 #include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
+#include "saveload.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1647,6 +1648,315 @@ static void test_carrying_and_coins(void)
     EQ(current_weight_tenths(&c), 570, "100 gp adds 2 lb");
 }
 
+
+/* ----------------------------------------------- the whole data matrix */
+
+/* Round trips a character through the file and back, and checks the file it
+   writes the second time is the file it wrote the first.
+ *
+ * tools/roundtrip.py makes this check on characters the wizard happens to
+ * build; here it runs over every row of every table, which is how a race,
+ * a subclass, a magic item or a spell that the writer and the reader
+ * disagree about gets found rather than waited for. */
+static char sheet_a[600000], sheet_b[600000];
+
+static size_t slurp(const char *path, char *out, size_t max)
+{
+    FILE *f = fopen(path, "r");
+    size_t n;
+
+    if (!f) return 0;
+    n = fread(out, 1, max - 1, f);
+    out[n] = '\0';
+    fclose(f);
+    return n;
+}
+
+/* Returns 1 when the character survives being written and read back. */
+static int survives_the_file(const Character *c, const char *what)
+{
+    char path[MAX_NAME + 8];
+    Character back;
+    size_t na, nb;
+
+    if (save_character(c, path, sizeof path) != 0) {
+        printf("  FAIL %-52s could not be written\n", what);
+        failures++;
+        return 0;
+    }
+    na = slurp(path, sheet_a, sizeof sheet_a);
+    if (load_character(path, &back) != 0) {
+        printf("  FAIL %-52s could not be read back\n", what);
+        failures++;
+        remove(path);
+        return 0;
+    }
+    if (save_character(&back, path, sizeof path) != 0) {
+        printf("  FAIL %-52s could not be rewritten\n", what);
+        failures++;
+        remove(path);
+        return 0;
+    }
+    nb = slurp(path, sheet_b, sizeof sheet_b);
+    remove(path);
+
+    if (na == 0 || na != nb || memcmp(sheet_a, sheet_b, na) != 0) {
+        size_t i = 0, line = 1, col = 0;
+        while (i < na && i < nb && sheet_a[i] == sheet_b[i]) {
+            if (sheet_a[i] == '\n') { line++; col = 0; } else col++;
+            i++;
+        }
+        printf("  FAIL %-52s differs at line %lu column %lu\n",
+               what, (unsigned long)line, (unsigned long)col);
+        printf("        wrote %.60s\n", sheet_a + i - col);
+        printf("        read  %.60s\n", sheet_b + i - col);
+        failures++;
+        return 0;
+    }
+    return 1;
+}
+
+static void base_character(Character *c, const char *name)
+{
+    int a;
+
+    reset(c);
+    snprintf(c->name, sizeof c->name, "%s", name);
+    snprintf(c->player, sizeof c->player, "Self Test");
+    for (a = 0; a < ABL_COUNT; a++) c->base_score[a] = 12;
+}
+
+/* Every race and subrace, every class at every level, and every subclass:
+   built, written, read back and written again. */
+static void test_sweep_characters(void)
+{
+    Character c;
+    int i, lvl;
+
+    printf("every race, class and subclass through the file\n");
+
+    for (i = 0; i < RACE_COUNT; i++) {
+        int k, subs = RACES[i].subrace_count;
+
+        base_character(&c, "SelftestRace");
+        c.race_id = i;
+        if (RACES[i].has_ancestry) c.ancestry_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+        if (!survives_the_file(&c, RACES[i].name)) return;
+
+        for (k = 0; k < subs; k++) {
+            c.subrace_id = RACES[i].first_subrace + k;
+            if (!survives_the_file(&c, SUBRACES[c.subrace_id].name)) return;
+        }
+    }
+
+    for (i = 0; i < CLASS_COUNT; i++) {
+        for (lvl = 1; lvl <= MAX_LEVEL; lvl++) {
+            int h;
+
+            base_character(&c, "SelftestClass");
+            c.race_id = 0;
+            add_class(&c, i, lvl, -1);
+            for (h = 0; h < lvl; h++) c.hp_rolls[h] = 5;
+            c.hp_roll_count = lvl;
+            if (!survives_the_file(&c, CLASSES[i].name)) return;
+        }
+    }
+
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        int h;
+
+        base_character(&c, "SelftestSubclass");
+        c.race_id = 0;
+        add_class(&c, SUBCLASSES[i].class_id, MAX_LEVEL, i);
+        for (h = 0; h < MAX_LEVEL; h++) c.hp_rolls[h] = 5;
+        c.hp_roll_count = MAX_LEVEL;
+        if (!survives_the_file(&c, SUBCLASSES[i].name)) return;
+    }
+}
+
+/* Every spell, every magic item and every beast, one at a time. A row the
+   sheet cannot print, or that the loader cannot find its way back to, shows
+   up here rather than on the day a player picks it. */
+static void test_sweep_content(void)
+{
+    Character c;
+    int i;
+
+    printf("every spell, magic item and beast through the file\n");
+
+    for (i = 0; i < SPELL_COUNT; i++) {
+        base_character(&c, "SelftestSpell");
+        c.race_id = 0;
+        add_class(&c, CLS_WIZARD, MAX_LEVEL, -1);
+        c.hp_rolls[0] = 6;
+        c.hp_roll_count = 1;
+        c.spells[0].spell_id = i;
+        c.spells[0].class_id = CLS_WIZARD;
+        c.spells[0].prepared = 1;
+        c.spell_count = 1;
+        if (!survives_the_file(&c, SPELLS[i].name)) return;
+    }
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        base_character(&c, "SelftestMagic");
+        c.race_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+        add_magic_item(&c, i, 1, MAGIC_ITEMS[i].attunement ? 1 : 0, 0);
+        if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
+    }
+
+    for (i = 0; i < ITEM_COUNT; i++) {
+        base_character(&c, "SelftestItem");
+        c.race_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+        add_item(&c, i, 1, 0);
+        if (!survives_the_file(&c, ITEMS[i].name)) return;
+    }
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        Sidekick *sk;
+
+        base_character(&c, "SelftestBeast");
+        c.race_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+        sk = &c.sidekicks[c.sidekick_count++];
+        memset(sk, 0, sizeof *sk);
+        snprintf(sk->name, sizeof sk->name, "Companion");
+        snprintf(sk->creature, sizeof sk->creature, "%s", BEASTS[i].name);
+        snprintf(sk->speed, sizeof sk->speed, "%s", BEASTS[i].speed);
+        sk->beast_id = i;
+        sk->cls = SK_WARRIOR;
+        sk->level = 1;
+        sk->role = -1;
+        sk->hp = BEASTS[i].hp;
+        sk->ac = BEASTS[i].ac;
+        if (!survives_the_file(&c, BEASTS[i].name)) return;
+    }
+}
+
+/* Text that the '|' separated format cannot take at face value. A name, a
+   note or a tool with a separator or an escape in it used to be written
+   raw, and everything after the stray character was lost on reload. */
+static void test_awkward_text(void)
+{
+    static const char *const AWKWARD[] = {
+        "a|b", "back\\slash", "both|and\\here", "#END-DNDDATA",
+        "#BEGIN-DNDDATA v1", "NAME|spoof", "trailing|", "|leading",
+        "\\p literal", "\\n literal", "pipes||together"
+    };
+    const int n = (int)(sizeof AWKWARD / sizeof AWKWARD[0]);
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i;
+
+    printf("text the file format has to escape\n");
+
+    for (i = 0; i < n; i++) {
+        base_character(&c, "SelftestText");
+        c.race_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+
+        snprintf(c.player, sizeof c.player, "%s", AWKWARD[i]);
+        snprintf(c.trait, sizeof c.trait, "%s", AWKWARD[i]);
+        snprintf(c.appearance, sizeof c.appearance, "%s", AWKWARD[i]);
+        snprintf(c.eyes, sizeof c.eyes, "%s", AWKWARD[i]);
+        add_language(&c, AWKWARD[i]);
+        add_tool(&c, AWKWARD[i]);
+        add_choice(&c, "Fighting Style", AWKWARD[i]);
+        snprintf(c.notes[0].title, sizeof c.notes[0].title, "%s", AWKWARD[i]);
+        snprintf(c.notes[0].body, sizeof c.notes[0].body,
+                 "%s\nsecond line\n%s", AWKWARD[i], AWKWARD[i]);
+        c.note_count = 1;
+
+        if (save_character(&c, path, sizeof path) != 0
+            || load_character(path, &back) != 0) {
+            printf("  FAIL %-52s would not save and load\n", AWKWARD[i]);
+            failures++;
+            remove(path);
+            continue;
+        }
+        remove(path);
+
+        check(!strcmp(back.player, c.player), "player survives", 0, 0);
+        check(!strcmp(back.trait, c.trait), "trait survives", 0, 0);
+        check(!strcmp(back.appearance, c.appearance), "appearance survives",
+              0, 0);
+        check(!strcmp(back.eyes, c.eyes), "eye colour survives", 0, 0);
+        check(back.language_count == c.language_count
+              && !strcmp(back.languages[0], c.languages[0]),
+              "language survives", 0, 0);
+        check(back.tool_prof_count == c.tool_prof_count
+              && !strcmp(back.tool_profs[0], c.tool_profs[0]),
+              "tool survives", 0, 0);
+        check(back.choice_count == c.choice_count
+              && !strcmp(back.choices[0].value, c.choices[0].value),
+              "choice survives", 0, 0);
+        check(back.note_count == 1
+              && !strcmp(back.notes[0].title, c.notes[0].title)
+              && !strcmp(back.notes[0].body, c.notes[0].body),
+              "note survives", 0, 0);
+    }
+
+    /* A note long enough to have been cut in half by the read buffer. */
+    base_character(&c, "SelftestLongNote");
+    c.race_id = 0;
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.hp_rolls[0] = 10;
+    c.hp_roll_count = 1;
+    for (i = 0; i + 8 < (int)sizeof c.notes[0].body - 1; i += 8) {
+        memcpy(c.notes[0].body + i, "abcdefg\n", 8);
+    }
+    c.notes[0].body[i] = '\0';
+    snprintf(c.notes[0].title, sizeof c.notes[0].title, "A very long note");
+    c.note_count = 1;
+    if (save_character(&c, path, sizeof path) == 0
+        && load_character(path, &back) == 0) {
+        EQ((long)strlen(back.notes[0].body), (long)strlen(c.notes[0].body),
+           "a note of 2000 characters comes back whole");
+    } else {
+        printf("  FAIL long note would not save and load\n");
+        failures++;
+    }
+    remove(path);
+}
+
+/* The two id spaces, and a row the loader must decline. */
+static void test_inventory_id_spaces(void)
+{
+    Character c;
+
+    printf("the two item tables are told apart\n");
+
+    base_character(&c, "SelftestIds");
+    c.race_id = 0;
+    add_class(&c, CLS_FIGHTER, 1, -1);
+
+    /* item_id indexes MAGIC_ITEMS here and ITEMS there; an ordinary item
+       must never be merged into a magic entry that shares its index. */
+    add_magic_item(&c, 5, 1, 0, 0);
+    add_item(&c, 5, 1, 0);
+    EQ(c.item_count, 2, "an item and a magic item at index 5 stay apart");
+    EQ(c.inventory[0].quantity, 1, "the magic item keeps its quantity");
+    EQ(c.inventory[0].is_magic, 1, "the first entry is the magic one");
+    EQ(c.inventory[1].is_magic, 0, "the second is the ordinary one");
+
+    /* A quantity of zero is declined, and nothing may be written for it. */
+    base_character(&c, "SelftestZero");
+    add_magic_item(&c, 5, 0, 0, 0);
+    EQ(c.item_count, 0, "a quantity of zero adds nothing");
+}
+
 int main(void)
 {
     printf("dndcreator self-test\n\n");
@@ -1677,6 +1987,10 @@ int main(void)
     test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
+    test_inventory_id_spaces();
+    test_awkward_text();
+    test_sweep_characters();
+    test_sweep_content();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");
     return failures ? 1 : 0;
