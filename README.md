@@ -6,10 +6,10 @@ It walks the six steps of PHB chapter 1, asks for every choice those steps
 require, and writes the finished character to `<Charactername>.txt`. A saved
 character can be loaded again and levelled up.
 
-Content comes from six sourcebooks -- PHB, XGE, TCE, DMG, MPMM and MM -- and
-covers 42 races, 13 classes, 101 subclasses, 477 spells, 72 feats, 270 magic
-items, 88 beast stat blocks and 195 deities. A settings menu decides which of
-those are in play.
+Content comes from seven sourcebooks -- PHB, XGE, TCE, DMG, MPMM, MM and
+SCAG -- and covers 42 races with 30 subraces, 13 classes, 107 subclasses,
+477 spells, 73 feats, 26 backgrounds, 277 magic items, 88 beast stat blocks
+and 195 deities. A settings menu decides which of those are in play.
 
 ## Building and running
 
@@ -28,10 +28,10 @@ The main menu offers:
 3. **View a saved character** — prints the sheet.
 4. **Content settings** — which books are in play, and whether custom
    origins, TCE's optional class features, multiclassing and feats are
-   allowed, and whether the sheet prints where the level sits on the
-   experience table. The settings are written into the character file, so a
-   character loaded to level up offers the content it was built with -- and
-   keeps its own answer on the experience line.
+   allowed, whether the sheet prints where the level sits on the experience
+   table, and whether you roll your own dice. The settings are written into
+   the character file, so a character loaded to level up offers the content
+   it was built with -- and keeps its own answer on the experience line.
 5. **Reference** — look up any item, magic item, weapon property, trinket,
    lifestyle, service or condition.
 6. **Manage a character's inventory** — pick things up, put them down,
@@ -45,7 +45,11 @@ The main menu offers:
 
 ## What it covers
 
-- **Races** — all 9 from the PHB with their subraces, the dragonborn's
+- **Races** — all 9 from the PHB with their **30 subraces** — the 11 in that
+  book, and 19 more from SCAG: the duergar, the svirfneblin, the ghostwise
+  halfling, the tiefling's variants (Feral, Devil's Tongue, Hellfire, Winged
+  and the pairings the book allows), and the half-elf's, which trade Skill
+  Versatility for a trait of the elf parent — the dragonborn's
   draconic ancestry, the half-elf's floating ability increases and skill
   versatility, and the variant human's ability increases, skill and bonus
   feat; plus the **33 races of MPMM**, from aarakocra to yuan-ti. TCE's
@@ -54,8 +58,11 @@ The main menu offers:
   MPMM races have no fixed increases at all by design, so they always choose
   their own spread whatever that setting says.
 - **Classes** — the 12 PHB classes plus the **artificer** from TCE, levels
-  1–20, with **101 subclasses**: the 40 from the PHB, 31 from XGE, 26 from
-  TCE, and the artificer's four specialists. Class and subclass features are
+  1–20, with **107 subclasses**: the 40 from the PHB, 31 from XGE, 26 from
+  TCE, the artificer's four specialists, and 6 that only SCAG printed — the
+  Path of the Battlerager, the Arcana Domain, the Purple Dragon Knight, the
+  Way of the Long Death, the Oath of the Crown and the Undying patron. The
+  five SCAG subclasses that XGE reprinted are not offered twice. Class and subclass features are
   listed at every level, along with the sub-choices (totem animal, storm aura,
   kensei weapons, starry form, rune, genie kind, Circle of the Land terrain,
   draconic bloodline).
@@ -74,12 +81,19 @@ The main menu offers:
   the fighting style menu.
 - **Ability scores** — standard array, 4d6 drop lowest, 27-point buy, or
   entered by hand.
+- **Your own dice** — a setting that stops the program rolling anything.
+  With it on, every roll it would have made is asked for instead: ability
+  scores (four dice at a time, and it tells you which one it dropped), hit
+  points on levelling up, starting gold, height and weight, a trinket, a
+  sidekick's hit points and every backstory table. Bounds are shown and
+  enforced, so a mistyped total is caught rather than written down.
 - **Multiclassing** — full PHB chapter 6 rules: ability prerequisites are
   checked, later classes grant only the reduced multiclass proficiencies, and
   spell slots use the multiclass spellcaster table when more than one class
   grants Spellcasting (and that class's own table when only one does).
 - **Ability Score Improvements** — at each ASI level, raise scores or take one
-  of **72 feats** (42 from the PHB, 15 from TCE, 15 racial feats from XGE),
+  of **73 feats** (42 from the PHB, 15 from TCE, 15 racial feats from XGE,
+  and SCAG's Svirfneblin Magic),
   with prerequisites enforced — including the racial ones, so a halfling is
   offered Bountiful Luck and Second Chance and a human is not.
 - **Backstory** — XGE's "This Is Your Life" tables: birthplace, siblings, who
@@ -104,10 +118,15 @@ The main menu offers:
   penalty and don/doff times; weapons explain each property they list;
   and items with no stat line at all — thieves' tools, a healer's kit, a
   hunting trap — carry what they contain, what they are used for and which
-  ability checks they help with. **270 magic items** from the *Dungeon
-  Master's Guide* are browsable by kind, rarity, attunement or name, and
+  ability checks they help with. **277 magic items** from the *Dungeon
+  Master's Guide* are browsable by kind, rarity, attunement or name --
+  every one it prints, artifacts included, and
   the trinket table, lifestyle expenses and the prices of food, lodging,
   services and hired spellcasting are all to hand.
+- **Languages** — the PHB's 16, plus the **18 regional tongues of Faerun**
+  that SCAG gives its human ethnicities, from Alzhedo to Uluik. They come and
+  go with SCAG like everything else, so a table not playing in the Realms
+  never sees them.
 - **Class option lists** — eldritch invocations (with their prerequisites),
   pact boons, metamagic, Battle Master maneuvers, Arcane Shot options,
   elemental disciplines, Rune Knight runes, and the ranger's favoured enemies
@@ -160,11 +179,17 @@ The main menu offers:
   `|`-separated format, so they can be written by hand or shared. Homebrew
   is a source book like any other in the settings menu, so switching it off
   hides everything without deleting it.
-- **Backgrounds** — all 13, with their skills, tools, languages, feature, and
-  suggested traits, ideals, bonds and flaws. Or build one of your own by the
-  PHB's own rules (p.125): any two skills, two tools or
-  languages between them, and any feature — one borrowed from a printed
-  background or written yourself.
+- **Backgrounds** — all 13 from the PHB, with their skills, tools, languages,
+  feature, and suggested traits, ideals, bonds and flaws; plus SCAG's 13,
+  from City Watch (and its investigator variant) to Waterdhavian Noble. Five
+  of those name one skill and leave the other to you -- "Persuasion, plus one
+  from among Arcana, History, Nature, and Religion" -- and the wizard asks
+  rather than choosing for you. SCAG sends you to a PHB background
+  for traits and ideals rather than printing its own tables, so those are
+  left open and the wizard asks for them. Or build one of your own by the
+  PHB's own rules (p.125): any two skills, two tools or languages between
+  them, and any feature — one borrowed from a printed background or written
+  yourself.
 - **Notes and prose** — a character carries notes, each with a title and a
   body that may run to paragraphs: a contact, a debt, a patron's demands,
   the history behind a family sword. Type as many lines as you like; a blank
@@ -293,7 +318,7 @@ make verify     # the numbers beside those names are the book's too
 make check      # the above, plus the test suite
 ```
 
-`tools/audit.py` looks up all 2,627 names -- races, classes, subclasses,
+`tools/audit.py` looks up all 2,739 names -- races, classes, subclasses,
 features, feats, equipment, magic items, spells, deities, beasts -- in the
 dump of the book each claims to come from. All of them are found. Matching
 stays tolerant, because the typesetting still gets in the way: words are set
@@ -301,8 +326,19 @@ with a space inside them, small capitals come back as mixed case, and a
 section opening with a decorative initial loses that letter altogether, which
 is why *Quickened Healing* is set as "UICKENED HEALING". Six names are ours
 rather than the book's -- "Standard Human", for a human the PHB prints under
-no heading of its own, and five composite feature names -- and the audit says
-so rather than reporting them as missing.
+no heading of its own, five composite feature names, and three pairings of
+SCAG tiefling variants -- and the audit says so rather than reporting them as
+missing.
+
+The audit runs one way: every name in `data/` has to appear in its book. A
+gap hides in the other direction, because an entry nobody wrote down is not
+a name that fails to resolve -- it is simply absent, and nothing notices.
+`tools/verify_coverage.py` closes that: it enumerates the books by the fixed
+line each entry opens with -- a magic item's "Wondrous item, rare (requires
+attunement)", a spell's "3rd-level evocation" -- and subtracts what `data/`
+has. It found seven magic items nobody had entered, the Axe of the Dwarvish
+Lords and the Eye and Hand of Vecna among them. It now reports none, for 434
+spells and 255 magic items.
 
 Names are the cheap check. `tools/verify_equipment.py`,
 `tools/verify_deities.py` and `tools/verify_races.py` do the expensive one,
@@ -325,8 +361,6 @@ comparing the numbers:
 
 What the books themselves do not settle:
 
-- **The thirteen SCAG backgrounds** are not here, because that book is not
-  among the six.
 - **MPMM** is the one book whose text is still OCR, no clean copy of it
   having been to hand. `tools/verify_races.py` checks 31 of its 33 races
   against it anyway -- size, walking speed, darkvision -- which caught the
@@ -386,6 +420,7 @@ tools/audit.py         checks every name in data/ against TextFiles/
 tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
 tools/verify_races.py      checks the MPMM race numbers
+tools/verify_coverage.py   looks for book content data/ is missing
 tools/extract_deities.py   writes the DEITY rows from appendix B
 
 src/dnd.h              core types and the Character struct
@@ -414,10 +449,11 @@ src/main.c             menu and entry point
 
 ## Scope
 
-Six sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races) and MM
-(beasts), plus whatever the DM adds as homebrew. Any of them except the PHB
-can be switched off in the settings menu, which hides their races, classes,
-subclasses, spells, feats and items everywhere in the wizard.
+Seven sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races), MM (beasts)
+and SCAG (subraces, subclasses, backgrounds, languages and a feat), plus
+whatever the DM adds as homebrew. Any of them
+except the PHB can be switched off in the settings menu, which hides their
+races, classes, subclasses, spells, feats and items everywhere in the wizard.
 
 The item, magic item and spell banks are pointers rather than fixed arrays,
 so `src/homebrew.c` can replace each with the book's entries followed by the
@@ -445,6 +481,10 @@ so the sheet carries the numbers a player reaches for most:
   out levels rather than experience can switch the line off in the settings.
 - **The encumbrance thresholds** from the variant rule, and whether the
   character is over them.
+
+Every roll above can be handed back to the player: switch on "roll your own
+dice" in the settings and the program asks for the result instead of
+generating one, which is what a table that rolls in the open wants.
 
 Height and weight are rolled on the PHB's own table where the books give the
 race a row: the roll that sets the inches above the base height is the one

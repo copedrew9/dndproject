@@ -5,7 +5,7 @@
  Player: Nebin11                  Race: Tiefling
  Background: Sailor               Alignment: Neutral Evil
  Level: 8                         Proficiency Bonus: +3
- Sources: PHB, XGE, TCE, DMG, MPMM, MM, Homebrew; origins PHB, optional features on, multiclassing on, feats on, experience on
+ Sources: PHB, XGE, TCE, DMG, MPMM, MM, SCAG, Homebrew; origins PHB, optional features on, multiclassing on, feats on, experience on
 
 ----------------------------------------------------------------
  ABILITY SCORES
@@ -206,7 +206,7 @@
  but keep the field names and the '|' separators intact.
 ================================================================
 #BEGIN-DNDDATA v1
-SETTINGS|1|1|1|1|1|1|1|0|1|1|1|1
+SETTINGS|PHB,XGE,TCE,DMG,MPMM,MM,SCAG,Homebrew|0|1|1|1|1
 NAME|Nebin11
 PLAYER|Nebin11
 RACE|Tiefling

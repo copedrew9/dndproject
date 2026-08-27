@@ -40,6 +40,7 @@ typedef enum {
 } Skill;
 
 extern const char *const SKILL_NAME[SKL_COUNT];
+int skill_by_name(const char *name);
 extern const Ability SKILL_ABILITY[SKL_COUNT];
 
 /* --------------------------------------------------------------- size, etc. */

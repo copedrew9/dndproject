@@ -20,6 +20,18 @@ const char *const SKILL_NAME[SKL_COUNT] = {
     "Nature", "Perception", "Performance", "Persuasion", "Religion",
     "Sleight of Hand", "Stealth", "Survival"
 };
+/* A skill by the name the data files use for it. -1 for anything else, so a
+ * misspelling in a data file shows up as a skill nobody can pick rather than
+ * as a proficiency in the wrong thing. */
+int skill_by_name(const char *name)
+{
+    int i;
+    for (i = 0; i < SKL_COUNT; i++) {
+        if (strcmp(SKILL_NAME[i], name) == 0) return i;
+    }
+    return -1;
+}
+
 const Ability SKILL_ABILITY[SKL_COUNT] = {
     ABL_DEX, ABL_WIS, ABL_INT, ABL_STR, ABL_CHA,
     ABL_INT, ABL_WIS, ABL_CHA, ABL_INT, ABL_WIS,

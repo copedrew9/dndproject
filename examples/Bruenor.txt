@@ -5,7 +5,7 @@
  Player: Bob                      Race: Dwarf / Mountain Dwarf
  Background: Folk Hero            Alignment: Lawful Good
  Level: 1                         Proficiency Bonus: +2
- Sources: PHB, XGE, TCE, DMG, MPMM, MM, Homebrew; origins PHB, optional features on, multiclassing on, feats on, experience on
+ Sources: PHB, XGE, TCE, DMG, MPMM, MM, SCAG, Homebrew; origins PHB, optional features on, multiclassing on, feats on, experience on
 
 ----------------------------------------------------------------
  ABILITY SCORES
@@ -136,7 +136,7 @@
  but keep the field names and the '|' separators intact.
 ================================================================
 #BEGIN-DNDDATA v1
-SETTINGS|1|1|1|1|1|1|1|0|1|1|1|1
+SETTINGS|PHB,XGE,TCE,DMG,MPMM,MM,SCAG,Homebrew|0|1|1|1|1
 NAME|Bruenor
 PLAYER|Bob
 RACE|Dwarf

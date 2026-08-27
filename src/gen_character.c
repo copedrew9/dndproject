@@ -4,23 +4,41 @@
  */
 #include "data.h"
 
-const char *const LANGUAGES[] = {
-    "Common",
-    "Dwarvish",
-    "Elvish",
-    "Giant",
-    "Gnomish",
-    "Goblin",
-    "Halfling",
-    "Orc",
-    "Abyssal",
-    "Celestial",
-    "Deep Speech",
-    "Draconic",
-    "Infernal",
-    "Primordial",
-    "Sylvan",
-    "Undercommon",
+const LanguageData LANGUAGES[] = {
+    { "Common", BOOK_PHB },
+    { "Dwarvish", BOOK_PHB },
+    { "Elvish", BOOK_PHB },
+    { "Giant", BOOK_PHB },
+    { "Gnomish", BOOK_PHB },
+    { "Goblin", BOOK_PHB },
+    { "Halfling", BOOK_PHB },
+    { "Orc", BOOK_PHB },
+    { "Abyssal", BOOK_PHB },
+    { "Celestial", BOOK_PHB },
+    { "Deep Speech", BOOK_PHB },
+    { "Draconic", BOOK_PHB },
+    { "Infernal", BOOK_PHB },
+    { "Primordial", BOOK_PHB },
+    { "Sylvan", BOOK_PHB },
+    { "Undercommon", BOOK_PHB },
+    { "Dambrathan", BOOK_SCAG },
+    { "Midani", BOOK_SCAG },
+    { "Alzhedo", BOOK_SCAG },
+    { "Waelan", BOOK_SCAG },
+    { "Guran", BOOK_SCAG },
+    { "Halruaan", BOOK_SCAG },
+    { "Illuskan", BOOK_SCAG },
+    { "Roushoum", BOOK_SCAG },
+    { "Chessentan", BOOK_SCAG },
+    { "Mulhorandi", BOOK_SCAG },
+    { "Untheric", BOOK_SCAG },
+    { "Thayan", BOOK_SCAG },
+    { "Rashemi", BOOK_SCAG },
+    { "Shaaran", BOOK_SCAG },
+    { "Shou", BOOK_SCAG },
+    { "Tuigan", BOOK_SCAG },
+    { "Turmic", BOOK_SCAG },
+    { "Uluik", BOOK_SCAG },
 };
 const int LANGUAGE_COUNT =
     (int)(sizeof(LANGUAGES) / sizeof(LANGUAGES[0]));
@@ -32,6 +50,17 @@ const SubraceData SUBRACES[] = {
     { "Mountain Dwarf", BOOK_PHB, {2,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Dwarven Armor Training: proficiency with light and medium "
       "armor" },
+    { "Duergar (Gray Dwarf)", BOOK_SCAG, {1,0,0,0,0,0}, 0, 120, 0, 0, 0, 0, 0,
+      "Superior Darkvision: 120 feet|Extra Language: "
+      "Undercommon|Duergar Resilience: advantage on saves against "
+      "illusions, and against being charmed or paralysed|Duergar "
+      "Magic: cast enlarge/reduce on yourself from 3rd level, using "
+      "only the enlarge option, and invisibility on yourself from "
+      "5th, each once per long rest and needing no material "
+      "components, using Intelligence; neither can be cast in "
+      "direct sunlight, though sunlight does not end one already "
+      "cast|Sunlight Sensitivity: disadvantage on attacks and "
+      "sight-based Perception in direct sunlight" },
     { "High Elf", BOOK_PHB, {0,0,0,1,0,0}, 0, 0, 1, 0, 0, 0, 0,
       "Elf Weapon Training: longsword, shortsword, shortbow, "
       "longbow|Cantrip: one wizard cantrip, cast with Intelligence" },
@@ -52,6 +81,10 @@ const SubraceData SUBRACES[] = {
     { "Stout Halfling", BOOK_PHB, {0,0,1,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "Stout Resilience: advantage on saves against poison, and "
       "resistance to poison damage" },
+    { "Ghostwise Halfling", BOOK_SCAG, {0,0,0,0,1,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Silent Speech: speak telepathically to one creature within "
+      "30 feet at a time, which understands you only if you share a "
+      "language" },
     { "Standard Human", BOOK_PHB, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
       "" },
     { "Variant Human", BOOK_PHB, {0,0,0,0,0,0}, 0, 0, 0, 2, 1, 1, 1,
@@ -66,13 +99,87 @@ const SubraceData SUBRACES[] = {
       "Artificer's Lore: double proficiency on History checks about "
       "magic, alchemical or technological items|Tinker: proficiency "
       "with tinker's tools; build Tiny clockwork devices" },
+    { "Svirfneblin (Deep Gnome)", BOOK_SCAG, {0,1,0,0,0,0}, 0, 120, 0, 0, 0, 0, 0,
+      "Superior Darkvision: 120 feet|Stone Camouflage: advantage on "
+      "Stealth checks to hide in rocky terrain|Extra Language: "
+      "Undercommon" },
+    { "Skill Versatility", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Skill Versatility: proficiency in two skills of your choice, "
+      "as the Player's Handbook has it" },
+    { "Keen Senses", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Keen Senses: proficiency in Perception. This replaces Skill "
+      "Versatility" },
+    { "Elf Weapon Training", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Elf Weapon Training: proficiency with the longsword, "
+      "shortsword, shortbow and longbow, from a wood, moon or sun "
+      "elf parent. This replaces Skill Versatility" },
+    { "Fleet of Foot", BOOK_SCAG, {0,0,0,0,0,0}, 35, 0, 0, 0, -2, 0, 0,
+      "Fleet of Foot: your walking speed rises to 35 feet, from a "
+      "wood elf parent. This replaces Skill Versatility" },
+    { "Mask of the Wild", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Mask of the Wild: you can hide when only lightly obscured by "
+      "foliage, heavy rain, falling snow, mist or other natural "
+      "phenomena, from a wood elf parent. This replaces Skill "
+      "Versatility" },
+    { "Cantrip", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Cantrip: one wizard cantrip of your choice, using "
+      "Intelligence, from a moon or sun elf parent. This replaces "
+      "Skill Versatility" },
+    { "Drow Magic", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Drow Magic: you know dancing lights; faerie fire at 3rd "
+      "level and darkness at 5th, each once per long rest, using "
+      "Charisma, from a drow parent. This replaces Skill "
+      "Versatility" },
+    { "Swimming Speed", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, -2, 0, 0,
+      "Swimming Speed: a swimming speed of 30 feet, from an aquatic "
+      "elf parent. This replaces Skill Versatility" },
+    { "Mark of Asmodeus", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Mark of Asmodeus: the tiefling of the Player's Handbook, "
+      "unchanged. The archdevil's rite claimed every tiefling in "
+      "the world a century ago, and his bloodline is still the most "
+      "numerous in Faerun. Take this to keep the race's own ability "
+      "increases and Infernal Legacy" },
+    { "Feral", BOOK_SCAG, {0,2,0,1,0,0}, 0, 0, 0, 0, 0, 0, 1,
+      "Feral: your Dexterity increases by 2 and your Intelligence "
+      "by 1, replacing the tiefling's usual increases" },
+    { "Devil's Tongue", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Devil's Tongue: you know vicious mockery; cast charm person "
+      "as a 2nd-level spell from 3rd level and enthrall from 5th, "
+      "each once per long rest, using Charisma. This replaces "
+      "Infernal Legacy" },
+    { "Hellfire", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Hellfire: from 3rd level you can cast burning hands once per "
+      "day as a 2nd-level spell. This replaces the hellish rebuke "
+      "of Infernal Legacy; the rest of that trait stands" },
+    { "Winged", BOOK_SCAG, {0,0,0,0,0,0}, 0, 0, 0, 0, 0, 0, 0,
+      "Winged: bat-like wings sprout from your shoulder blades, "
+      "giving you a flying speed of 30 feet. This replaces Infernal "
+      "Legacy" },
+    { "Feral Devil's Tongue", BOOK_SCAG, {0,2,0,1,0,0}, 0, 0, 0, 0, 0, 0, 1,
+      "Feral: your Dexterity increases by 2 and your Intelligence "
+      "by 1, replacing the tiefling's usual increases|Devil's "
+      "Tongue: you know vicious mockery; cast charm person as a "
+      "2nd-level spell from 3rd level and enthrall from 5th, each "
+      "once per long rest, using Charisma. This replaces Infernal "
+      "Legacy" },
+    { "Feral Hellfire", BOOK_SCAG, {0,2,0,1,0,0}, 0, 0, 0, 0, 0, 0, 1,
+      "Feral: your Dexterity increases by 2 and your Intelligence "
+      "by 1, replacing the tiefling's usual increases|Hellfire: "
+      "from 3rd level you can cast burning hands once per day as a "
+      "2nd-level spell. This replaces the hellish rebuke of "
+      "Infernal Legacy; the rest of that trait stands" },
+    { "Feral Winged", BOOK_SCAG, {0,2,0,1,0,0}, 0, 0, 0, 0, 0, 0, 1,
+      "Feral: your Dexterity increases by 2 and your Intelligence "
+      "by 1, replacing the tiefling's usual increases|Winged: "
+      "bat-like wings sprout from your shoulder blades, giving you "
+      "a flying speed of 30 feet. This replaces Infernal Legacy" },
 };
 const int SUBRACE_COUNT =
     (int)(sizeof(SUBRACES) / sizeof(SUBRACES[0]));
 
 const RaceData RACES[] = {
     { "Dwarf", BOOK_PHB, {0,0,2,0,0,0}, 25, SZ_MEDIUM, 60,
-      "Common, Dwarvish", 0, 0, 0, 0, 0, 0, 0, 2,
+      "Common, Dwarvish", 0, 0, 0, 0, 0, 0, 0, 3,
       "Darkvision: 60 feet|Dwarven Resilience: advantage on saves "
       "against poison, and resistance to poison damage|Dwarven "
       "Combat Training: battleaxe, handaxe, light hammer, "
@@ -80,19 +187,19 @@ const RaceData RACES[] = {
       "tools|Stonecunning: double proficiency on History checks "
       "about stonework|Speed is not reduced by wearing heavy armor", 0 },
     { "Elf", BOOK_PHB, {0,2,0,0,0,0}, 30, SZ_MEDIUM, 60,
-      "Common, Elvish", 0, 0, 0, 0, 0, 0, 2, 3,
+      "Common, Elvish", 0, 0, 0, 0, 0, 0, 3, 3,
       "Darkvision: 60 feet|Keen Senses: proficiency in "
       "Perception|Fey Ancestry: advantage on saves against being "
       "charmed, and magic cannot put you to sleep|Trance: 4 hours "
       "of meditation counts as 8 hours of sleep", 0 },
     { "Halfling", BOOK_PHB, {0,2,0,0,0,0}, 25, SZ_SMALL, 0,
-      "Common, Halfling", 0, 0, 0, 0, 0, 0, 5, 2,
+      "Common, Halfling", 0, 0, 0, 0, 0, 0, 6, 3,
       "Lucky: reroll a 1 on an attack roll, ability check or saving "
       "throw|Brave: advantage on saves against being "
       "frightened|Halfling Nimbleness: move through the space of "
       "any creature at least one size larger", 0 },
     { "Human", BOOK_PHB, {1,1,1,1,1,1}, 30, SZ_MEDIUM, 0,
-      "Common", 1, 0, 0, 0, 0, 0, 7, 2,
+      "Common", 1, 0, 0, 0, 0, 0, 9, 2,
       "Ability Score Increase: +1 to every ability score|Extra "
       "Language: one language of your choice", 0 },
     { "Dragonborn", BOOK_PHB, {2,0,0,0,0,1}, 30, SZ_MEDIUM, 0,
@@ -104,11 +211,11 @@ const RaceData RACES[] = {
       "recharges on a short or long rest|Damage Resistance: to the "
       "damage type of your ancestry", 0 },
     { "Gnome", BOOK_PHB, {0,0,0,2,0,0}, 25, SZ_SMALL, 60,
-      "Common, Gnomish", 0, 0, 0, 0, 0, 0, 9, 2,
+      "Common, Gnomish", 0, 0, 0, 0, 0, 0, 11, 3,
       "Darkvision: 60 feet|Gnome Cunning: advantage on "
       "Intelligence, Wisdom and Charisma saves against magic", 0 },
     { "Half-Elf", BOOK_PHB, {0,0,0,0,0,2}, 30, SZ_MEDIUM, 60,
-      "Common, Elvish", 1, 2, 2, 1, 0, 0, 0, 0,
+      "Common, Elvish", 1, 2, 2, 1, 0, 0, 14, 8,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves against "
       "being charmed, and magic cannot put you to sleep|Skill "
       "Versatility: proficiency in two skills of your "
@@ -122,7 +229,7 @@ const RaceData RACES[] = {
       "Attacks: roll one extra weapon damage die on a melee "
       "critical hit", 0 },
     { "Tiefling", BOOK_PHB, {0,0,0,1,0,2}, 30, SZ_MEDIUM, 60,
-      "Common, Infernal", 0, 0, 0, 0, 0, 0, 0, 0,
+      "Common, Infernal", 0, 0, 0, 0, 0, 0, 22, 8,
       "Darkvision: 60 feet|Hellish Resistance: resistance to fire "
       "damage|Infernal Legacy: you know thaumaturgy; hellish rebuke "
       "at 3rd level and darkness at 5th level, each once per long "
@@ -1389,6 +1496,42 @@ const SubclassData SUBCLASSES[] = {
       "Your spellbook awakens; you rewrite spells and let the book "
       "take a hit.",
       "",
+      "", "" },
+    { 0, BOOK_SCAG, "Path of the Battlerager",
+      "Dwarves who fight in spiked armour, using it as a weapon and "
+      "giving themselves to the fury of battle.",
+      "",
+      "", "" },
+    { 2, BOOK_SCAG, "Arcana Domain",
+      "A cleric of the gods of magic, drawing on the wizard's art "
+      "alongside your own.",
+      "detect magic, magic missile|magic weapon, Nystul's magic "
+      "aura|dispel magic, magic circle|arcane eye, Leomund's secret "
+      "chest|planar binding, teleportation circle",
+      "", "" },
+    { 4, BOOK_SCAG, "Purple Dragon Knight",
+      "A knight of Cormyr, called a banneret elsewhere, who turns a "
+      "band of allies into a war band.",
+      "",
+      "", "" },
+    { 5, BOOK_SCAG, "Way of the Long Death",
+      "Monks obsessed with the mechanics of dying, who draw "
+      "vitality from the deaths of others.",
+      "",
+      "", "" },
+    { 6, BOOK_SCAG, "Oath of the Crown",
+      "An oath sworn to the ideals of civilisation and the "
+      "sovereign who embodies them.",
+      "command, compelled duel|warding bond, zone of truth|aura of "
+      "vitality, spirit guardians|banishment, guardian of "
+      "faith|circle of power, geas",
+      "", "" },
+    { 10, BOOK_SCAG, "The Undying",
+      "A patron who has cheated death itself, and grants a measure "
+      "of that endurance.",
+      "false life, ray of sickness|blindness/deafness, "
+      "silence|feign death, speak with dead|aura of life, death "
+      "ward|contagion, legend lore",
       "", "" },
 };
 const int SUBCLASS_COUNT =
@@ -3406,6 +3549,99 @@ const FeatureData FEATURES[] = {
     { 11, 100, 14, "One with the Word",
       "Sacrifice a spell slot to avoid damage; if the book is "
       "destroyed you may age instead." },
+    { 0, 101, 3, "Battlerager Armor",
+      "While raging in spiked armour, make a bonus-action attack "
+      "with the spikes for 1d4 piercing, and a successful grapple "
+      "deals 3 piercing." },
+    { 0, 101, 6, "Reckless Abandon",
+      "Using Reckless Attack while raging also grants temporary hit "
+      "points equal to your Constitution modifier, lost when the "
+      "rage ends." },
+    { 0, 101, 10, "Battlerager Charge",
+      "Take the Dash action as a bonus action while raging." },
+    { 0, 101, 14, "Spiked Retribution",
+      "A creature that hits you in melee takes 3 piercing damage "
+      "while you are raging, not incapacitated, and wearing spiked "
+      "armour." },
+    { 2, 102, 1, "Arcane Initiate",
+      "Proficiency in Arcana, and two cantrips from the wizard list "
+      "that count as cleric cantrips for you." },
+    { 2, 102, 2, "Channel Divinity: Arcane Abjuration",
+      "Turn one celestial, elemental, fey or fiend within 30 feet "
+      "on a failed Wisdom save; from 5th level it is banished "
+      "instead if its challenge rating is low enough." },
+    { 2, 102, 6, "Spell Breaker",
+      "When you restore hit points to an ally with a spell of 1st "
+      "level or higher, you may also end one spell of equal or "
+      "lower level on them." },
+    { 2, 102, 8, "Potent Spellcasting",
+      "Add your Wisdom modifier to the damage of any cleric "
+      "cantrip." },
+    { 2, 102, 17, "Arcane Mastery",
+      "Choose a 6th, 7th, 8th and 9th level wizard spell; they "
+      "become always-prepared domain spells." },
+    { 4, 103, 3, "Rallying Cry",
+      "When you use Second Wind, up to three allies within 60 feet "
+      "who can see or hear you each regain hit points equal to your "
+      "fighter level." },
+    { 4, 103, 7, "Royal Envoy",
+      "Proficiency in Persuasion, or another social skill if you "
+      "already have it, and your proficiency bonus is doubled for "
+      "Persuasion checks." },
+    { 4, 103, 10, "Inspiring Surge",
+      "When you use Action Surge, an ally within 60 feet may make "
+      "one weapon attack as a reaction; two allies from 17th level." },
+    { 4, 103, 15, "Bulwark",
+      "When you use Indomitable on an Intelligence, Wisdom or "
+      "Charisma save, an ally within 60 feet who failed the same "
+      "save may reroll it too." },
+    { 5, 104, 3, "Touch of Death",
+      "Reducing a creature within 5 feet to 0 hit points grants "
+      "temporary hit points equal to your Wisdom modifier plus your "
+      "monk level." },
+    { 5, 104, 6, "Hour of Reaping",
+      "As an action, every creature within 30 feet that can see you "
+      "is frightened until the end of your next turn on a failed "
+      "Wisdom save." },
+    { 5, 104, 11, "Mastery of Death",
+      "When reduced to 0 hit points, spend 1 ki point to drop to 1 "
+      "instead." },
+    { 5, 104, 17, "Touch of the Long Death",
+      "Touch a creature and spend 1 to 10 ki points; it takes 2d10 "
+      "necrotic damage per point on a failed Constitution save, "
+      "half on a success." },
+    { 6, 105, 3, "Channel Divinity: Champion Challenge",
+      "Creatures of your choice within 30 feet cannot willingly "
+      "move more than 30 feet from you on a failed Wisdom save." },
+    { 6, 105, 3, "Channel Divinity: Turn the Tide",
+      "As a bonus action, creatures within 30 feet that can hear "
+      "you and are at half hit points or below regain 1d6 plus your "
+      "Charisma modifier." },
+    { 6, 105, 7, "Divine Allegiance",
+      "As a reaction, take the damage a creature within 5 feet "
+      "would take; that damage to you cannot be reduced or "
+      "prevented." },
+    { 6, 105, 15, "Unyielding Spirit",
+      "Advantage on saving throws against being paralysed or "
+      "stunned." },
+    { 6, 105, 20, "Exalted Champion",
+      "For 1 hour: resistance to nonmagical weapon damage, allies "
+      "within 30 feet have advantage on death saves, and you and "
+      "they have advantage on Wisdom saves." },
+    { 10, 106, 1, "Among the Dead",
+      "You learn spare the dying, have advantage on saves against "
+      "disease, and undead must save to target you directly with an "
+      "attack or harmful spell." },
+    { 10, 106, 6, "Defy Death",
+      "Regain 1d8 plus your Constitution modifier when you succeed "
+      "on a death saving throw or stabilise a creature, once per "
+      "long rest." },
+    { 10, 106, 10, "Undying Nature",
+      "You can hold your breath indefinitely, need no food, water "
+      "or sleep, and age one year for every ten that pass." },
+    { 10, 106, 14, "Indestructible Life",
+      "As a bonus action, regain 1d8 plus your warlock level and "
+      "reattach a severed body part, once per short or long rest." },
 };
 const int FEATURE_COUNT =
     (int)(sizeof(FEATURES) / sizeof(FEATURES[0]));
@@ -4288,7 +4524,7 @@ const int OPTION_LIST_COUNT =
 
 const BackgroundData BACKGROUNDS[] = {
     { "Acolyte", BOOK_PHB,
-      { SKL_INSIGHT, SKL_RELIGION },
+      { SKL_INSIGHT, SKL_RELIGION }, 0, "",
       "", 2,
       "Holy symbol, prayer book or prayer wheel, 5 sticks of "
       "incense, vestments, common clothes",
@@ -4336,7 +4572,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Charlatan", BOOK_PHB,
-      { SKL_DECEPTION, SKL_SLEIGHT_OF_HAND },
+      { SKL_DECEPTION, SKL_SLEIGHT_OF_HAND }, 0, "",
       "Disguise kit, forgery kit", 0,
       "Fine clothes, disguise kit, tools of the con of your choice",
       15, "False Identity",
@@ -4390,7 +4626,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Criminal", BOOK_PHB,
-      { SKL_DECEPTION, SKL_STEALTH },
+      { SKL_DECEPTION, SKL_STEALTH }, 0, "",
       "One type of gaming set, thieves' tools", 0,
       "Crowbar, dark common clothes with a hood",
       15, "Criminal Contact",
@@ -4436,7 +4672,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Entertainer", BOOK_PHB,
-      { SKL_ACROBATICS, SKL_PERFORMANCE },
+      { SKL_ACROBATICS, SKL_PERFORMANCE }, 0, "",
       "Disguise kit, one type of musical instrument", 0,
       "A musical instrument, the favour of an admirer, a costume",
       15, "By Popular Demand",
@@ -4484,7 +4720,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Folk Hero", BOOK_PHB,
-      { SKL_ANIMAL_HANDLING, SKL_SURVIVAL },
+      { SKL_ANIMAL_HANDLING, SKL_SURVIVAL }, 0, "",
       "One type of artisan's tools, vehicles (land)", 0,
       "A set of artisan's tools, a shovel, an iron pot, common "
       "clothes",
@@ -4537,7 +4773,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Guild Artisan", BOOK_PHB,
-      { SKL_INSIGHT, SKL_PERSUASION },
+      { SKL_INSIGHT, SKL_PERSUASION }, 0, "",
       "One type of artisan's tools", 1,
       "A set of artisan's tools, a letter of introduction from your "
       "guild, traveller's clothes",
@@ -4592,7 +4828,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Hermit", BOOK_PHB,
-      { SKL_MEDICINE, SKL_RELIGION },
+      { SKL_MEDICINE, SKL_RELIGION }, 0, "",
       "Herbalism kit", 1,
       "A scroll case stuffed full of notes, a winter blanket, "
       "common clothes, a herbalism kit",
@@ -4647,7 +4883,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Noble", BOOK_PHB,
-      { SKL_HISTORY, SKL_PERSUASION },
+      { SKL_HISTORY, SKL_PERSUASION }, 0, "",
       "One type of gaming set", 1,
       "Fine clothes, a signet ring, a scroll of pedigree",
       25, "Position of Privilege",
@@ -4701,7 +4937,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Outlander", BOOK_PHB,
-      { SKL_ATHLETICS, SKL_SURVIVAL },
+      { SKL_ATHLETICS, SKL_SURVIVAL }, 0, "",
       "One type of musical instrument", 1,
       "A staff, a hunting trap, a trophy from an animal you killed, "
       "traveller's clothes",
@@ -4756,7 +4992,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Sage", BOOK_PHB,
-      { SKL_ARCANA, SKL_HISTORY },
+      { SKL_ARCANA, SKL_HISTORY }, 0, "",
       "", 2,
       "A bottle of black ink, a quill, a small knife, a letter from "
       "a dead colleague posing a question you have not yet "
@@ -4813,7 +5049,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Sailor", BOOK_PHB,
-      { SKL_ATHLETICS, SKL_PERCEPTION },
+      { SKL_ATHLETICS, SKL_PERCEPTION }, 0, "",
       "Navigator's tools, vehicles (water)", 0,
       "A belaying pin (club), 50 feet of silk rope, a lucky charm, "
       "common clothes",
@@ -4866,7 +5102,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Soldier", BOOK_PHB,
-      { SKL_ATHLETICS, SKL_INTIMIDATION },
+      { SKL_ATHLETICS, SKL_INTIMIDATION }, 0, "",
       "One type of gaming set, vehicles (land)", 0,
       "An insignia of rank, a trophy taken from a fallen enemy, a "
       "set of bone dice or deck of cards, common clothes",
@@ -4918,7 +5154,7 @@ const BackgroundData BACKGROUNDS[] = {
     }
     },
     { "Urchin", BOOK_PHB,
-      { SKL_SLEIGHT_OF_HAND, SKL_STEALTH },
+      { SKL_SLEIGHT_OF_HAND, SKL_STEALTH }, 0, "",
       "Disguise kit, thieves' tools", 0,
       "A small knife, a map of the city you grew up in, a pet "
       "mouse, a token to remember your parents by, common clothes",
@@ -4969,6 +5205,575 @@ const BackgroundData BACKGROUNDS[] = {
       "I will never fully trust anyone other than myself.",
       "I would rather kill someone in their sleep than fight fair.",
       "It is not stealing if I need it more than someone else.",
+      NULL
+    }
+    },
+    { "City Watch", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_INSIGHT }, 0, "",
+      "", 2,
+      "A uniform in the style of your unit and indicative of your "
+      "rank, a horn with which to summon help, a set of manacles",
+      10, "Watcher's Eye",
+      "You can easily find the local watch post, and just as easily "
+      "pick out the dens of criminal activity in a community.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Investigator (City Watch Variant)", BOOK_SCAG,
+      { SKL_INVESTIGATION, SKL_INSIGHT }, 0, "",
+      "", 2,
+      "A uniform in the style of your unit and indicative of your "
+      "rank, a horn with which to summon help, a set of manacles",
+      10, "Watcher's Eye",
+      "You can easily find the local watch post, and just as easily "
+      "pick out the dens of criminal activity in a community.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Clan Crafter", BOOK_SCAG,
+      { SKL_HISTORY, SKL_INSIGHT }, 0, "",
+      "One type of artisan's tools", 1,
+      "A set of artisan's tools you are proficient with, a maker's "
+      "mark chisel, traveler's clothes",
+      5, "Respect of the Stout Folk",
+      "You always have free room and board among shield dwarves or "
+      "gold dwarves, who esteem clan crafters above all outsiders.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Cloistered Scholar", BOOK_SCAG,
+      { SKL_HISTORY, SKL_COUNT }, 1, "Arcana|Nature|Religion",
+      "", 2,
+      "The scholar's robes of your cloister, a writing kit, a "
+      "borrowed book on the subject of your study",
+      10, "Library Access",
+      "You have free access to your cloister's library, bar its "
+      "most secret holdings, and know how to navigate its people "
+      "and bureaucracy.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Courtier", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_PERSUASION }, 0, "",
+      "", 2,
+      "A set of fine clothes",
+      5, "Court Functionary",
+      "You can reach the records and inner workings of any noble "
+      "court or government: who its movers are, whom to ask for a "
+      "favour, and what the current intrigues are.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Faction Agent", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_COUNT }, 1, "Arcana|History|Investigation|Nature|Religion|Animal "
+      "Handling|Medicine|Perception|Survival|Deception|Intimidation|Performance|Persuasion",
+      "", 2,
+      "A badge or emblem of your faction, a copy of a seminal "
+      "faction text or a code-book, common clothes",
+      15, "Safe Haven",
+      "Your faction's network can hide you, house you or find you "
+      "information, though its agents will not risk their lives for "
+      "you.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Far Traveler", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_PERCEPTION }, 0, "",
+      "One musical instrument or gaming set of your homeland", 1,
+      "One set of traveler's clothes, any one musical instrument or "
+      "gaming set you are proficient with, poorly wrought maps of "
+      "your homeland",
+      5, "All Eyes on You",
+      "Everything about you marks you as foreign, which draws "
+      "curiosity you can parley into access to people and places "
+      "otherwise closed to you.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Inheritor", BOOK_SCAG,
+      { SKL_SURVIVAL, SKL_COUNT }, 1, "Arcana|History|Religion",
+      "One gaming set or musical instrument", 1,
+      "Your inheritance, a set of traveler's clothes, any tools you "
+      "are proficient with",
+      15, "Inheritance",
+      "Something has come down to you: a document, a trinket, an "
+      "heirloom or an article of clothing. Its full story is yours "
+      "to discover with the DM.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Knight of the Order", BOOK_SCAG,
+      { SKL_PERSUASION, SKL_COUNT }, 1, "Arcana|History|Nature|Religion",
+      "One gaming set or musical instrument", 1,
+      "One set of traveler's clothes, a signet, banner or seal "
+      "representing your place or rank in the order",
+      10, "Knightly Regard",
+      "You receive shelter and aid from members of your order and "
+      "those sympathetic to it, and can call on them for assistance "
+      "short of open danger.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Mercenary Veteran", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_PERSUASION }, 0, "",
+      "One type of gaming set, vehicles (land)", 0,
+      "A uniform of your company, an insignia of your rank, a "
+      "gaming set of your choice",
+      10, "Mercenary Life",
+      "You can identify a mercenary company by its emblem, know "
+      "where mercenaries drink in any town, and can find work "
+      "between adventures.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Urban Bounty Hunter", BOOK_SCAG,
+      { SKL_COUNT, SKL_COUNT }, 2, "Deception|Insight|Persuasion|Stealth",
+      "Two of: one type of gaming set, one musical instrument, "
+      "thieves' tools", 0,
+      "A set of clothes appropriate to your duties",
+      20, "Ear to the Ground",
+      "You have a contact in any city you visit, drawn from the "
+      "part of society your quarries move through, who tells you "
+      "about local people and places.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Uthgardt Tribe Member", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_SURVIVAL }, 0, "",
+      "One type of musical instrument or artisan's tools", 1,
+      "A hunting trap, a totemic token or set of tattoos marking "
+      "your tribal totem, a set of traveler's clothes",
+      10, "Uthgardt Heritage",
+      "You forage twice as much food and water as you otherwise "
+      "would, and can call on the hospitality of your people and "
+      "their allies.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Waterdhavian Noble", BOOK_SCAG,
+      { SKL_HISTORY, SKL_PERSUASION }, 0, "",
+      "One type of gaming set or one musical instrument", 1,
+      "A set of fine clothes, a signet ring or brooch, a scroll of "
+      "pedigree, a skin of fine zzar or wine",
+      20, "Kept in Style",
+      "In Waterdeep and the North your name and signet cover your "
+      "everyday expenses, your house settling the accounting later.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
       NULL
     }
     },
@@ -5548,6 +6353,15 @@ const FeatData FEATS[] = {
       "without trace, each castable once per long rest without a "
       "slot. Wisdom is your spellcasting ability for them.",
       "Wood Elf" },
+    { "Svirfneblin Magic", BOOK_SCAG,
+      "Gnome (deep gnome)",
+      ABL_COUNT, ABL_COUNT, 0, "", 0,
+      {0,0,0,0,0,0}, 0, "",
+      "You can cast nondetection on yourself at will, needing no "
+      "material component, and can cast blindness/deafness, blur "
+      "and disguise self once each, regaining them on a long rest. "
+      "Intelligence is your spellcasting ability for them.",
+      "Svirfneblin (Deep Gnome)" },
 };
 const int FEAT_COUNT =
     (int)(sizeof(FEATS) / sizeof(FEATS[0]));

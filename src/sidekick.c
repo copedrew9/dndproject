@@ -285,7 +285,8 @@ static void apply_sidekick_level(Sidekick *sk, int level, int roll_hp)
         /* The hit die is the creature's own; d8 stands in when the stat
            block came from the beast tables without one stated. */
         int die = 8;
-        int gain = roll_hp ? roll_die(die) : (die / 2 + 1);
+        int gain = roll_hp ? ui_roll_die(die, "the sidekick's hit points")
+                           : (die / 2 + 1);
         gain += sidekick_ability_mod(sk, ABL_CON);
         if (gain < 1) gain = 1;
         sk->hp += gain;

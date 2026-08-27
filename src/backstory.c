@@ -25,7 +25,7 @@ static int roll_table_die(const char *die)
     int sides = d ? atoi(d + 1) : 20;
 
     if (sides < 2) sides = 20;
-    return roll_dice(n, sides);
+    return ui_roll(n, sides, "this table");
 }
 
 static const LifeEntry *entry_for(const LifeTable *t, int roll)

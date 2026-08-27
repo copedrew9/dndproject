@@ -37,6 +37,10 @@ const ItemData BOOK_ITEMS[] = {
       75000, 400, 15, 2, 0, 1,
       "", "", "",
       "" },
+    { "Spiked Armor", BOOK_SCAG, ITEM_MEDIUM_ARMOR,
+      7500, 450, 14, 2, 0, 1,
+      "", "", "",
+      "" },
     { "Ring mail", BOOK_PHB, ITEM_HEAVY_ARMOR,
       3000, 400, 14, 0, 0, 1,
       "", "", "",
@@ -905,6 +909,12 @@ const ItemNote ITEM_NOTES[] = {
     { "Half plate",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
       "doff 5 minutes. Disadvantage on Stealth." },
+    { "Spiked Armor",
+      "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
+      "doff 5 minutes. Disadvantage on Stealth. A rare dwarven make "
+      "-- a leather coat and leggings studded with metal spikes -- "
+      "and the armour a Path of the Battlerager barbarian needs "
+      "before any of its features do anything." },
     { "Ring mail",
       "Heavy armor: Dexterity does not apply. Don 10 minutes, doff "
       "5 minutes. Disadvantage on Stealth." },
@@ -3516,6 +3526,90 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "detect evil and good, and a shock wave on a hit that stuns a "
       "creature on a failed DC 15 Constitution save. It makes its "
       "dwarven wielder reluctant to leave underground." },
+    { "Axe of the Dwarvish Lords", BOOK_DMG,
+      "Weapon (battleaxe)", "artifact",
+      "requires attunement",
+      "The axe the First King forged in the heart of a volcano with "
+      "Moradin's aid, and lost centuries later in a civil war "
+      "fought over it. A magic weapon granting +3 to attack and "
+      "damage rolls, which also functions as a belt of dwarvenkind, "
+      "a dwarven thrower and a sword of sharpness. A dwarf attuned "
+      "to it is immune to poison damage, sees 60 feet further in "
+      "the dark, and gains proficiency with the blacksmithing, "
+      "brewing and stonemasonry tools. It can conjure an earth "
+      "elemental once per dawn, and teleport you from any fixed "
+      "piece of dwarven stonework once in three days. It is cursed: "
+      "a non-dwarf who attunes to it grows more dwarflike each day "
+      "until, after seven, they look like one, and the change "
+      "outlasts the attunement." },
+    { "Cap of Water Breathing", BOOK_DMG,
+      "Wondrous item", "uncommon",
+      NULL,
+      "Underwater, an action and the command word wrap your head in "
+      "a bubble of air and you breathe normally. The bubble stays "
+      "until you repeat the command word, remove the cap, or leave "
+      "the water." },
+    { "Eye of Vecna", BOOK_DMG,
+      "Wondrous item", "artifact",
+      "requires attunement",
+      "A bloodshot organ torn from its socket. To attune to it you "
+      "must gouge out your own eye and press the artifact into the "
+      "socket, where it grafts itself; if it is ever removed you "
+      "die. Your alignment changes to neutral evil. You gain "
+      "truesight and can see as though with a ring of X-ray vision. "
+      "It holds 8 charges, regaining 1d4+4 at dawn, and casts "
+      "clairvoyance, crown of madness, disintegrate, dominate "
+      "monster or eyebite at save DC 18. Each casting carries a 5 "
+      "percent chance that Vecna tears out your soul, devours it "
+      "and wears your body as a puppet." },
+    { "Hand of Vecna", BOOK_DMG,
+      "Wondrous item", "artifact",
+      "requires attunement",
+      "A mummified and shrivelled left hand. To attune to it you "
+      "must cut off your own left hand at the wrist and press the "
+      "artifact to the stump, where it grafts itself and works as a "
+      "hand; if it is ever removed you die. Your alignment changes "
+      "to neutral evil. Your Strength becomes 20 unless it is "
+      "already 20 or higher, and melee attacks made with the hand, "
+      "or with a weapon it holds, deal an extra 2d8 cold damage. It "
+      "holds 8 charges, regaining 1d4+4 at dawn, and casts finger "
+      "of death, sleep, slow or teleport at save DC 18. Each "
+      "casting turns suggestion on you, demanding an evil act. "
+      "Attuned to both the eye and the hand, you are immune to "
+      "disease and poison, cannot be surprised unless "
+      "incapacitated, and regain 1d10 hit points at the start of "
+      "each of your turns." },
+    { "Moonblade", BOOK_DMG,
+      "Weapon (longsword)", "legendary",
+      "requires attunement by an elf or half-elf of neutral good "
+      "alignment",
+      "An heirloom of the elven noble houses, passed from parent to "
+      "child and bonded to one bearer for life. Attuning to it "
+      "takes a ritual in an elven regent's throne room or a temple "
+      "of the elven gods; a blade that judges you craven, erratic "
+      "or corrupt rejects you, and you make attack rolls, ability "
+      "checks and saving throws with disadvantage for 24 hours. A "
+      "blade carries one rune for each master it has served, "
+      "typically 1d6+1. The first always grants +1 to attack and "
+      "damage rolls, and each rune after it adds a property the DM "
+      "rolls or chooses. It is sentient, neutral good, Intelligence "
+      "12, Wisdom 10, Charisma 12, with hearing and darkvision to "
+      "120 feet, and speaks by sending feeling through your hand." },
+    { "Quiver of Ehlonna", BOOK_DMG,
+      "Wondrous item", "uncommon",
+      NULL,
+      "Three compartments, each opening on an extradimensional "
+      "space, and the whole thing never weighs more than 2 pounds. "
+      "The shortest holds sixty arrows, bolts or the like; the "
+      "middle one eighteen javelins or similar; the longest six "
+      "long objects such as bows, quarterstaffs or spears. You draw "
+      "from it as from an ordinary quiver or scabbard." },
+    { "Sentinel Shield", BOOK_DMG,
+      "Armor (shield)", "uncommon",
+      NULL,
+      "Emblazoned with the symbol of an eye. While you hold it you "
+      "have advantage on initiative rolls and on Wisdom "
+      "(Perception) checks." },
 };
 const int BOOK_MAGIC_ITEM_COUNT =
     (int)(sizeof(BOOK_MAGIC_ITEMS) / sizeof(BOOK_MAGIC_ITEMS[0]));
@@ -3579,6 +3673,9 @@ const MagicRule MAGIC_RULES[] = {
     { "Ring of Warmth", .resist = "cold" },
     { "Frost Brand", .resist = "fire" },
     { "Periapt of Proof against Poison", .immune = "poison" },
+    { "Sentinel Shield", .shield = 2 },
+    { "Stone of Good Luck (Luckstone)", .save_bonus = 1 },
+    { "Hand of Vecna", .sets_ability = 1, .sets_to = 20 },
 };
 const int MAGIC_RULE_COUNT =
     (int)(sizeof(MAGIC_RULES) / sizeof(MAGIC_RULES[0]));

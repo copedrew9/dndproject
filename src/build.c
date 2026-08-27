@@ -444,6 +444,15 @@ static void choose_race(Character *c)
             add_prof(c, "Hand crossbow");
         } else if (strcmp(sn, "Rock Gnome") == 0) {
             add_tool(c, "Tinker's tools");
+        } else if (strcmp(sn, "Elf Weapon Training") == 0) {
+            /* The half-elf variant of the same name, taken in place of
+               Skill Versatility. */
+            add_prof(c, "Longsword");
+            add_prof(c, "Shortsword");
+            add_prof(c, "Shortbow");
+            add_prof(c, "Longbow");
+        } else if (strcmp(sn, "Keen Senses") == 0) {
+            c->skill_prof[SKL_PERCEPTION] = 1;
         }
     }
     if (strcmp(RACES[pick].name, "Dwarf") == 0) {
@@ -700,7 +709,7 @@ static void choose_abilities(Character *c)
         for (;;) {
             printf("\n  Rolled: ");
             for (i = 0; i < 6; i++) {
-                pool[i] = roll_4d6_drop_lowest();
+                pool[i] = ui_roll_4d6_drop_lowest("an ability score");
                 printf("%d ", pool[i]);
             }
             printf("\n");
@@ -773,6 +782,24 @@ static void custom_origin_abilities(Character *c, int total,
     }
 }
 
+/* The languages a character could still learn: the books in play, minus the
+ * ones already spoken. The list is filtered here rather than at each of the
+ * four places that asks for a language, because SCAG's regional tongues take
+ * it well past the sixteen the PHB prints -- past what those places used to
+ * size their arrays for. */
+static int language_choices(const Character *c, const char **opts, int *avail,
+                            int max)
+{
+    int k, n = 0;
+    for (k = 0; k < LANGUAGE_COUNT && n < max; k++) {
+        if (!book_enabled(LANGUAGES[k].book)) continue;
+        opts[n] = LANGUAGES[k].name;
+        avail[n] = !has_language(c, LANGUAGES[k].name);
+        n++;
+    }
+    return n;
+}
+
 static void custom_origin_languages(Character *c)
 {
     ui_para("Customizing Your Origin also lets you swap the languages your "
@@ -793,15 +820,11 @@ static void custom_origin_languages(Character *c)
         for (i = 0; i < kept; i++) strcpy(c->languages[i], keep[i]);
 
         for (i = 0; i < dropped; i++) {
-            const char *opts[32];
-            int avail[32], picks[1], k;
-            for (k = 0; k < LANGUAGE_COUNT; k++) {
-                opts[k] = LANGUAGES[k];
-                avail[k] = !has_language(c, LANGUAGES[k]);
-            }
-            ui_multi("  Replacement language:", opts, avail, LANGUAGE_COUNT,
-                     1, picks);
-            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
+            const char *opts[MENU_MAX];
+            int avail[MENU_MAX], picks[1], n;
+            n = language_choices(c, opts, avail, MENU_MAX);
+            ui_multi("  Replacement language:", opts, avail, n, 1, picks);
+            if (picks[0] >= 0) add_language(c, opts[picks[0]]);
         }
     }
 }
@@ -869,15 +892,12 @@ static void apply_racial_bonuses(Character *c)
     {
         int extra = r->extra_languages + (s ? s->extra_languages : 0);
         for (a = 0; a < extra; a++) {
-            const char *opts[32];
-            int avail[32], picks[1], i;
-            for (i = 0; i < LANGUAGE_COUNT; i++) {
-                opts[i] = LANGUAGES[i];
-                avail[i] = !has_language(c, LANGUAGES[i]);
-            }
-            ui_multi("Extra language from your race:", opts, avail,
-                     LANGUAGE_COUNT, 1, picks);
-            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
+            const char *opts[MENU_MAX];
+            int avail[MENU_MAX], picks[1], n;
+            n = language_choices(c, opts, avail, MENU_MAX);
+            ui_multi("Extra language from your race:", opts, avail, n,
+                     1, picks);
+            if (picks[0] >= 0) add_language(c, opts[picks[0]]);
         }
     }
 
@@ -989,15 +1009,11 @@ static void custom_background(Character *c)
             ui_line("    Which tool", buf, sizeof buf);
             if (buf[0]) add_tool(c, buf);
         } else {
-            const char *opts[32];
-            int avail[32], lang[1], k;
-            for (k = 0; k < LANGUAGE_COUNT; k++) {
-                opts[k] = LANGUAGES[k];
-                avail[k] = !has_language(c, LANGUAGES[k]);
-            }
-            ui_multi("    Which language?", opts, avail, LANGUAGE_COUNT, 1,
-                     lang);
-            if (lang[0] >= 0) add_language(c, LANGUAGES[lang[0]]);
+            const char *opts[MENU_MAX];
+            int avail[MENU_MAX], lang[1], n;
+            n = language_choices(c, opts, avail, MENU_MAX);
+            ui_multi("    Which language?", opts, avail, n, 1, lang);
+            if (lang[0] >= 0) add_language(c, opts[lang[0]]);
         }
     }
 
@@ -1082,25 +1098,49 @@ static void choose_background(Character *c)
     }
     c->background_id = pick;
 
-    c->skill_prof[BACKGROUNDS[pick].skills[0]] = 1;
-    c->skill_prof[BACKGROUNDS[pick].skills[1]] = 1;
+    /* The skills the background simply grants. A slot holding SKL_COUNT is
+       one the book leaves to the player, and is filled in below. */
+    for (i = 0; i < 2; i++) {
+        Skill sk = BACKGROUNDS[pick].skills[i];
+        if (sk < SKL_COUNT) {
+            c->skill_prof[sk] = 1;
+            printf("  Skill gained: %s\n", SKILL_NAME[sk]);
+        }
+    }
 
-    printf("\n  Skills gained: %s, %s\n",
-           SKILL_NAME[BACKGROUNDS[pick].skills[0]],
-           SKILL_NAME[BACKGROUNDS[pick].skills[1]]);
+    /* "Persuasion, plus one from among Arcana, History, Nature, and
+       Religion" and its like. */
+    if (BACKGROUNDS[pick].skill_choice_count > 0) {
+        char buf[256];
+        const char *opts[MENU_MAX];
+        int avail[MENU_MAX], picks[4], n, k;
+        n = split_pipe(BACKGROUNDS[pick].skill_choices, buf, sizeof buf,
+                       opts, MENU_MAX);
+        for (k = 0; k < n; k++) {
+            int id = skill_by_name(opts[k]);
+            avail[k] = (id >= 0) && !c->skill_prof[id];
+        }
+        ui_multi("Skill from your background:", opts, avail, n,
+                 BACKGROUNDS[pick].skill_choice_count, picks);
+        for (k = 0; k < BACKGROUNDS[pick].skill_choice_count; k++) {
+            int id;
+            if (picks[k] < 0) continue;
+            id = skill_by_name(opts[picks[k]]);
+            if (id >= 0) {
+                c->skill_prof[id] = 1;
+                printf("  Skill gained: %s\n", SKILL_NAME[id]);
+            }
+        }
+    }
 
     grant_tool_line(c, BACKGROUNDS[pick].tool_profs, "Your background");
 
     for (i = 0; i < BACKGROUNDS[pick].extra_languages; i++) {
-        const char *opts[32];
-        int avail[32], picks[1], k;
-        for (k = 0; k < LANGUAGE_COUNT; k++) {
-            opts[k] = LANGUAGES[k];
-            avail[k] = !has_language(c, LANGUAGES[k]);
-        }
-        ui_multi("Language from your background:", opts, avail,
-                 LANGUAGE_COUNT, 1, picks);
-        if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
+        const char *opts[MENU_MAX];
+        int avail[MENU_MAX], picks[1], n;
+        n = language_choices(c, opts, avail, MENU_MAX);
+        ui_multi("Language from your background:", opts, avail, n, 1, picks);
+        if (picks[0] >= 0) add_language(c, opts[picks[0]]);
     }
 }
 
