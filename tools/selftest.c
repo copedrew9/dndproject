@@ -515,14 +515,11 @@ static void test_data_integrity(void)
         EQ(with_choices, 5, "SCAG backgrounds that leave a skill to you");
     }
     {
-        int phb = 0, tce = 0, k;
+        int phb = 0, tce = 0, xge = 0, scag = 0, k;
         for (k = 0; k < FEAT_COUNT; k++) {
-            if (FEATS[k].book == BOOK_PHB) phb++;
-            if (FEATS[k].book == BOOK_TCE) tce++;
-        }
-        int xge = 0, scag = 0;
-        for (k = 0; k < FEAT_COUNT; k++) {
-            if (FEATS[k].book == BOOK_XGE) xge++;
+            if (FEATS[k].book == BOOK_PHB)  phb++;
+            if (FEATS[k].book == BOOK_TCE)  tce++;
+            if (FEATS[k].book == BOOK_XGE)  xge++;
             if (FEATS[k].book == BOOK_SCAG) scag++;
         }
         EQ(phb, 42, "PHB feats");
@@ -541,13 +538,8 @@ static void test_data_integrity(void)
             if (!FEATS[k].req_race[0]) continue;
             np = split_pipe(FEATS[k].req_race, buf, sizeof buf, parts, 8);
             for (q = 0; q < np; q++) {
-                int found = 0, r;
-                for (r = 0; r < RACE_COUNT; r++) {
-                    if (!strcmp(RACES[r].name, parts[q])) found = 1;
-                }
-                for (r = 0; r < SUBRACE_COUNT; r++) {
-                    if (!strcmp(SUBRACES[r].name, parts[q])) found = 1;
-                }
+                int found = find_race(parts[q]) >= 0
+                         || find_subrace(parts[q]) >= 0;
                 if (!found) {
                     printf("  FAIL feat \"%s\" needs race \"%s\", which "
                            "does not exist\n", FEATS[k].name, parts[q]);
@@ -1727,6 +1719,17 @@ static void base_character(Character *c, const char *name)
     for (a = 0; a < ABL_COUNT; a++) c->base_score[a] = 12;
 }
 
+/* The sweep's usual subject: a 1st-level fighter of the first race, with one
+   hit die rolled, ready to have the row under test hung on it. */
+static void plain_fighter(Character *c, const char *name)
+{
+    base_character(c, name);
+    c->race_id = 0;
+    add_class(c, CLS_FIGHTER, 1, -1);
+    c->hp_rolls[0] = 10;
+    c->hp_roll_count = 1;
+}
+
 /* Every race and subrace, every class at every level, and every subclass:
    built, written, read back and written again. */
 static void test_sweep_characters(void)
@@ -1802,21 +1805,13 @@ static void test_sweep_content(void)
     }
 
     for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
-        base_character(&c, "SelftestMagic");
-        c.race_id = 0;
-        add_class(&c, CLS_FIGHTER, 1, -1);
-        c.hp_rolls[0] = 10;
-        c.hp_roll_count = 1;
+        plain_fighter(&c, "SelftestMagic");
         add_magic_item(&c, i, 1, MAGIC_ITEMS[i].attunement ? 1 : 0, 0);
         if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
     }
 
     for (i = 0; i < ITEM_COUNT; i++) {
-        base_character(&c, "SelftestItem");
-        c.race_id = 0;
-        add_class(&c, CLS_FIGHTER, 1, -1);
-        c.hp_rolls[0] = 10;
-        c.hp_roll_count = 1;
+        plain_fighter(&c, "SelftestItem");
         add_item(&c, i, 1, 0);
         if (!survives_the_file(&c, ITEMS[i].name)) return;
     }
@@ -1824,11 +1819,7 @@ static void test_sweep_content(void)
     for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
         Sidekick *sk;
 
-        base_character(&c, "SelftestBeast");
-        c.race_id = 0;
-        add_class(&c, CLS_FIGHTER, 1, -1);
-        c.hp_rolls[0] = 10;
-        c.hp_roll_count = 1;
+        plain_fighter(&c, "SelftestBeast");
         sk = &c.sidekicks[c.sidekick_count++];
         memset(sk, 0, sizeof *sk);
         snprintf(sk->name, sizeof sk->name, "Companion");
@@ -1861,11 +1852,7 @@ static void test_awkward_text(void)
     printf("text the file format has to escape\n");
 
     for (i = 0; i < n; i++) {
-        base_character(&c, "SelftestText");
-        c.race_id = 0;
-        add_class(&c, CLS_FIGHTER, 1, -1);
-        c.hp_rolls[0] = 10;
-        c.hp_roll_count = 1;
+        plain_fighter(&c, "SelftestText");
 
         snprintf(c.player, sizeof c.player, "%s", AWKWARD[i]);
         snprintf(c.trait, sizeof c.trait, "%s", AWKWARD[i]);
@@ -1909,11 +1896,7 @@ static void test_awkward_text(void)
     }
 
     /* A note long enough to have been cut in half by the read buffer. */
-    base_character(&c, "SelftestLongNote");
-    c.race_id = 0;
-    add_class(&c, CLS_FIGHTER, 1, -1);
-    c.hp_rolls[0] = 10;
-    c.hp_roll_count = 1;
+    plain_fighter(&c, "SelftestLongNote");
     for (i = 0; i + 8 < (int)sizeof c.notes[0].body - 1; i += 8) {
         memcpy(c.notes[0].body + i, "abcdefg\n", 8);
     }

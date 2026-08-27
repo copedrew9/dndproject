@@ -68,13 +68,19 @@ static void show_carried(const Character *c)
     }
 }
 
-/* Builds the menu of everything carried. Returns the number of entries. */
-static int carried_menu(const Character *c, const char **opts,
-                        char lines[][128], int *map, int max)
+/* Builds a menu of the carried entries `wanted` accepts -- everything, when
+   it is NULL. Returns how many there are; map[i] is the inventory index of
+   menu entry i. The three screens that ask about carried things differ only
+   in that filter and in what they say. */
+static int carried_menu(const Character *c, int (*wanted)(const Character *,
+                                                          int),
+                        const char **opts, char lines[][128], int *map,
+                        int max)
 {
     int i, n = 0;
 
     for (i = 0; i < c->item_count && n < max; i++) {
+        if (wanted && !wanted(c, i)) continue;
         entry_line(c, i, lines[n], 128);
         opts[n] = lines[n];
         map[n] = i;
@@ -256,7 +262,7 @@ static void remove_gear(Character *c)
         static char lines[MAX_ITEMS][128];
         int map[MAX_ITEMS], n, pick, qty, have;
 
-        n = carried_menu(c, opts, lines, map, MAX_ITEMS);
+        n = carried_menu(c, NULL, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  Nothing to put down.\n");
             return;
@@ -296,28 +302,25 @@ static const char *entry_name(const Character *c, int i)
 
 /* Only one suit of armour and one shield can be worn at a time, so equipping
  * one takes the other off rather than silently stacking two armour bonuses. */
+/* Armour and shields, magical or not. */
+static int is_wearable(const Character *c, int i)
+{
+    if (c->inventory[i].is_magic) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+        return r && (r->armor_base || r->shield);
+    }
+    return ITEMS[c->inventory[i].item_id].category <= ITEM_SHIELD;
+}
+
 static void equip_gear(Character *c)
 {
     for (;;) {
         const char *opts[MAX_ITEMS + 1];
         static char lines[MAX_ITEMS][128];
-        int map[MAX_ITEMS], n = 0, i, pick;
+        int map[MAX_ITEMS], n, i, pick;
 
-        for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
-            if (c->inventory[i].is_magic) {
-                /* Magic armour and shields are worn like any other. */
-                const MagicRule *r =
-                    magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
-                if (!r || (!r->armor_base && !r->shield)) continue;
-            } else {
-                ItemCategory cat = ITEMS[c->inventory[i].item_id].category;
-                if (cat > ITEM_SHIELD) continue;  /* armour and shields only */
-            }
-            entry_line(c, i, lines[n], sizeof lines[n]);
-            opts[n] = lines[n];
-            map[n] = i;
-            n++;
-        }
+        n = carried_menu(c, is_wearable, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  You have no armor or shield to wear.\n");
             return;
@@ -357,21 +360,20 @@ static void equip_gear(Character *c)
 
 /* ---------------------------------------------------------------- attunement */
 
+static int needs_attunement(const Character *c, int i)
+{
+    return c->inventory[i].is_magic
+        && MAGIC_ITEMS[c->inventory[i].item_id].attunement != NULL;
+}
+
 static void attune_items(Character *c)
 {
     for (;;) {
         const char *opts[MAX_ITEMS + 1];
         static char lines[MAX_ITEMS][128];
-        int map[MAX_ITEMS], n = 0, i, pick;
+        int map[MAX_ITEMS], n, pick;
 
-        for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
-            if (!c->inventory[i].is_magic) continue;
-            if (!MAGIC_ITEMS[c->inventory[i].item_id].attunement) continue;
-            entry_line(c, i, lines[n], sizeof lines[n]);
-            opts[n] = lines[n];
-            map[n] = i;
-            n++;
-        }
+        n = carried_menu(c, needs_attunement, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  You carry nothing that needs attunement.\n");
             return;

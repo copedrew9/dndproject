@@ -25,6 +25,13 @@ void add_language(Character *c, const char *lang);
 void add_tool(Character *c, const char *tool);
 void add_prof(Character *c, const char *prof);
 void add_choice(Character *c, const char *label, const char *value);
+
+/* The three ways the choices list is read back. */
+int  count_choices(const Character *c, const char *label);
+int  has_choice_starting(const Character *c, const char *label,
+                         const char *value);
+int  has_choice_exactly(const Character *c, const char *label,
+                        const char *value);
 void add_item(Character *c, int item_id, int qty, int equipped);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 

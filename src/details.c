@@ -102,15 +102,19 @@ static void add_note(Character *c)
     }
 }
 
-static void remove_note(Character *c)
+/* Lists the notes and asks which one. Returns its index, or -1 when there
+   are none or the answer was Back. `nothing` is what to say when the list is
+   empty, `prompt` what to ask when it is not. */
+static int pick_note(const Character *c, const char *nothing,
+                     const char *prompt)
 {
     const char *opts[MAX_NOTES + 1];
     static char labels[MAX_NOTES][80];
     int i, pick;
 
     if (c->note_count == 0) {
-        printf("  There are no notes to remove.\n");
-        return;
+        printf("  %s\n", nothing);
+        return -1;
     }
     for (i = 0; i < c->note_count; i++) {
         note_summary(&c->notes[i], labels[i], sizeof labels[i]);
@@ -118,9 +122,16 @@ static void remove_note(Character *c)
     }
     opts[c->note_count] = "Back";
 
-    pick = ui_menu("  Remove which?", opts, NULL, c->note_count + 1);
-    if (pick == c->note_count) return;
+    pick = ui_menu(prompt, opts, NULL, c->note_count + 1);
+    return (pick == c->note_count) ? -1 : pick;
+}
 
+static void remove_note(Character *c)
+{
+    int i, pick = pick_note(c, "There are no notes to remove.",
+                            "  Remove which?");
+
+    if (pick < 0) return;
     show_note(&c->notes[pick]);
     if (!ui_yesno("  Remove it?", 0)) return;
 
@@ -133,23 +144,9 @@ static void remove_note(Character *c)
 
 static void edit_note(Character *c)
 {
-    const char *opts[MAX_NOTES + 1];
-    static char labels[MAX_NOTES][80];
-    int i, pick;
+    int pick = pick_note(c, "There are no notes to edit.", "  Which note?");
 
-    if (c->note_count == 0) {
-        printf("  There are no notes to edit.\n");
-        return;
-    }
-    for (i = 0; i < c->note_count; i++) {
-        note_summary(&c->notes[i], labels[i], sizeof labels[i]);
-        opts[i] = labels[i];
-    }
-    opts[c->note_count] = "Back";
-
-    pick = ui_menu("  Which note?", opts, NULL, c->note_count + 1);
-    if (pick == c->note_count) return;
-
+    if (pick < 0) return;
     show_note(&c->notes[pick]);
 
     {
@@ -208,7 +205,7 @@ static void notes_menu(Character *c)
 /* Offers the background's suggestions where there are any, and always
  * allows something else -- including for a character with no background at
  * all, which the creation wizard used to skip over entirely. */
-static void edit_line(const Character *c, const char *label,
+static void edit_line(const char *label,
                       const char *const *suggestions, char *out)
 {
     char prompt[96];
@@ -227,7 +224,6 @@ static void edit_line(const Character *c, const char *label,
     } else {
         ui_line(prompt, out, MAX_TEXT);
     }
-    (void)c;
 }
 
 static void personality_menu(Character *c)
@@ -243,12 +239,12 @@ static void personality_menu(Character *c)
                "suggest -- write what fits.\n", c->background_name);
     }
 
-    edit_line(c, "Personality trait", bg ? bg->traits : NULL, c->trait);
-    edit_line(c, "Ideal",             bg ? bg->ideals : NULL, c->ideal);
-    edit_line(c, "Bond",              bg ? bg->bonds  : NULL, c->bond);
-    edit_line(c, "Flaw",              bg ? bg->flaws  : NULL, c->flaw);
-    edit_line(c, "Appearance",        NULL, c->appearance);
-    edit_line(c, "Backstory",         NULL, c->backstory);
+    edit_line("Personality trait", bg ? bg->traits : NULL, c->trait);
+    edit_line("Ideal",             bg ? bg->ideals : NULL, c->ideal);
+    edit_line("Bond",              bg ? bg->bonds  : NULL, c->bond);
+    edit_line("Flaw",              bg ? bg->flaws  : NULL, c->flaw);
+    edit_line("Appearance",        NULL, c->appearance);
+    edit_line("Backstory",         NULL, c->backstory);
 }
 
 /* ---------------------------------------------------------------- the screen */

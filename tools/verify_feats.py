@@ -36,10 +36,17 @@ What the dumps do to get in the way:
     misread letter. Anything further apart than that is reported.
   * Page 156 of the PHB interleaves its two columns: the Grappler heading is
     followed immediately by the Inspiring Leader heading and only then by
-    Grappler's prerequisite, so neither name has its own text under it. A feat
-    whose block runs into another feat's -- no text at all before the next
-    heading, or two "Prerequisite" lines inside one block -- is reported
-    unchecked rather than guessed at, and those two were read by hand.
+    Grappler's prerequisite, which leaves three feats there with somebody
+    else's text under their name. A feat whose block runs into another
+    feat's -- no text at all before the next heading, a heading above it in
+    that state, or two "Prerequisite" lines inside one block -- is reported
+    unchecked rather than guessed at. Grappler, Inspiring Leader and Heavy
+    Armor Master are those three, and they were read off page 156 by hand:
+    Strength 13, Charisma 13, proficiency with heavy armor, and a Strength
+    increase for the last of them. A book that has left a feat unchecked has
+    its prerequisites and its increases counted instead: the count cannot say
+    which feat is wrong, but one the book prints and no row claims, or the
+    other way about, still shows up.
   * Two of Tasha's optional features, Maneuver Options and Eldritch Invocation
     Options, are printed with no "Nth-level ... feature" line at all, because
     maneuvers and invocations are reached by more than one route. Their class
@@ -204,22 +211,25 @@ def headings(text, name):
 
 
 def blocks(text, names):
-    """name -> (heading start, heading end, end of its text).
+    """name -> the blocks printed under it, in the order the dump has them.
 
     A feat's text runs from its own heading to the next heading of any feat,
     which is how the interleaved columns give themselves away: a heading with
-    nothing between it and the next one.
+    nothing between it and the next one, whose text has been pushed down
+    under the name below it.
     """
     at = {}
     for name in names:
         for pos in headings(text, name):
             at.setdefault(pos, []).append(name)
     starts = sorted(at)
-    out = {}
+    out, run_on = {}, False
     for n, pos in enumerate(starts):
         end = starts[n + 1][0] if n + 1 < len(starts) else len(text)
+        empty = len(text[pos[1]:end].strip()) < 60
         for name in at[pos]:
-            out.setdefault(name, []).append((pos[0], pos[1], end))
+            out.setdefault(name, []).append((pos[1], end, empty, run_on))
+        run_on = empty
     return out
 
 
@@ -229,7 +239,7 @@ ABILITY_PREREQ = re.compile(
     r"^(strength|dexterity|constitution|intelligence|wisdom|charisma)"
     r"(?:\s+or\s+(strength|dexterity|constitution|intelligence|wisdom|"
     r"charisma))?\s+(\d+)\s+or higher$", re.I)
-PROF_PREREQ = re.compile(r"^proficiency with (?:an?\s+)?(.+?)s?$", re.I)
+PROF_PREREQ = re.compile(r"^proficiency with (?:an?\s+)?(.+)$", re.I)
 SPELL_PREREQ = re.compile(r"^(the ability to cast at least one spell|"
                           r"spellcasting or pact magic(?: feature)?)$", re.I)
 
@@ -237,36 +247,53 @@ NAMED = {"strength": "STR", "dexterity": "DEX", "constitution": "CON",
          "intelligence": "INT", "wisdom": "WIS", "charisma": "CHA"}
 
 
+def prof_key(text):
+    """"Martial weapons" and "a martial weapon" are the same requirement."""
+    key = squash(text)
+    return key[:-1] if key.endswith("s") else key
+
+
 def shape(prereq):
-    """A printed prerequisite as something two of them can be compared by."""
-    prereq = prereq.strip().rstrip(".")
-    m = ABILITY_PREREQ.match(prereq)
+    """A printed prerequisite, as (something to compare, what it says).
+
+    An ability requirement is compared as the abilities and the score, a
+    proficiency as the proficiency, and everything left -- which is a race,
+    in every feat that has one -- as its own words.
+    """
+    said = prereq.strip().rstrip(".")
+    m = ABILITY_PREREQ.match(said)
     if m:
         got = [NAMED[m.group(1).lower()]]
         if m.group(2):
             got.append(NAMED[m.group(2).lower()])
-        return ("ability", tuple(got), int(m.group(3)))
-    if SPELL_PREREQ.match(prereq):
-        return ("spell",)
-    m = PROF_PREREQ.match(prereq)
+        return (("ability", tuple(got), int(m.group(3))), said)
+    if SPELL_PREREQ.match(said):
+        return (("spell",), said)
+    m = PROF_PREREQ.match(said)
     if m:
-        return ("prof", squash(m.group(1)))
-    return ("other", squash(prereq))
+        return (("prof", prof_key(m.group(1))), said)
+    return (("other", squash(said)), said)
 
 
 def row_prereq(r):
-    """The prerequisite a FEAT row states, in the same shape."""
-    text = r.str(2).strip()
-    if not text:
+    """The prerequisite a FEAT row states in the fields the program reads.
+
+    A row states its prerequisite twice, once in these fields and once in the
+    words a player is shown, and both are compared with the book.
+    """
+    said = r.str(2).strip()
+    if not said:
         return None
     if r.str(3) != "-":
         got = [r.str(3)] + ([r.str(4)] if r.str(4) != "-" else [])
-        return ("ability", tuple(got), r.int(5))
+        return (("ability", tuple(got), r.int(5)),
+                "%s %d or higher" % (" or ".join(got), r.int(5)))
     if r.int(7):
-        return ("spell",)
+        return (("spell",), "the ability to cast a spell")
     if r.str(6):
-        return ("prof", squash(r.str(6)))
-    return ("other", squash(text))
+        return (("prof", prof_key(r.str(6))),
+                "proficiency with %s" % r.str(6))
+    return (("other", squash(said)), said)
 
 
 def same_prereq(want, got):
@@ -277,21 +304,16 @@ def same_prereq(want, got):
     """
     if want is None or got is None:
         return want == got
-    if want[0] != got[0]:
+    if want[0][0] != got[0][0]:
         return False
-    if want[0] == "other":
-        return difflib.SequenceMatcher(None, want[1], got[1]).ratio() >= 0.8
-    return want == got
+    if want[0][0] == "other":
+        return difflib.SequenceMatcher(None, want[0][1],
+                                       got[0][1]).ratio() >= 0.8
+    return want[0] == got[0]
 
 
 def show(prereq):
-    if prereq is None:
-        return "none"
-    if prereq[0] == "ability":
-        return "%s %d or higher" % (" or ".join(prereq[1]), prereq[2])
-    if prereq[0] == "spell":
-        return "the ability to cast a spell"
-    return "%s %s" % (prereq[0], prereq[1])
+    return "none" if prereq is None else "%r" % prereq[1]
 
 
 # ----------------------------------------------------------- ability increase
@@ -303,14 +325,14 @@ def book_asi(window):
     "?" means the block holds more than one increase, which is the dump
     having run two feats together rather than a feat granting two.
     """
-    said = ASI.findall(squash(flat(window)))
+    said = list(ASI.finditer(squash(flat(window))))
     if not said:
         return None
     if len(said) > 1:
         return "?"
-    if ANY_ASI.search(said[0]):
+    if ANY_ASI.search(said[0].group(0)):
         return "any"
-    got = [a for a in ABILITIES if re.search(ABILITY_RE[a], said[0])]
+    got = [a for a in ABILITIES if re.search(ABILITY_RE[a], said[0].group(1))]
     return tuple(got) if got else "?"
 
 
@@ -335,13 +357,34 @@ def show_asi(asi):
 # ------------------------------------------------------------------ the feats
 
 
+def tally(problems, book, text, rows):
+    """Count a book's prerequisites and increases against the rows'.
+
+    This is the net under the feats the interleaving leaves unchecked. It
+    cannot say which feat is wrong, but a prerequisite or an increase that
+    the book prints and no row claims -- or the other way about -- changes
+    the count, whichever feat it belongs to.
+    """
+    for what, printed, claimed in (
+            ("prerequisites in all",
+             len([l for l in text.split("\n") if PREREQ_LINE.match(l)]),
+             len([r for r in rows if r.str(2).strip()])),
+            ("ability score increases in all",
+             len(ASI.findall(squash(flat(text)))),
+             len([r for r in rows if row_asi(r) is not None]))):
+        if printed != claimed:
+            problems.append(("the %s feats" % book, what, str(claimed),
+                             str(printed)))
+
+
 def check_feats(problems, unchecked):
     checked = 0
+    data = read_file("character.txt")
     for book in ("PHB", "TCE", "XGE", "SCAG"):
         text = region(book, *FEAT_REGION[book])
-        rows = [r for r in read_file("character.txt")
-                if r.tag == "FEAT" and r.str(1) == book]
+        rows = [r for r in data if r.tag == "FEAT" and r.str(1) == book]
         where = blocks(text, [r.str(0) for r in rows])
+        skipped = 0
 
         for r in rows:
             name = r.str(0)
@@ -349,21 +392,31 @@ def check_feats(problems, unchecked):
             if not found:
                 unchecked.append((name, "no heading for it in the %s dump"
                                   % book))
+                skipped += 1
                 continue
             if len(found) > 1:
                 unchecked.append((name, "the %s dump prints this heading %d "
                                   "times" % (book, len(found))))
+                skipped += 1
                 continue
-            _, start, end = found[0]
+            start, end, empty, run_on = found[0]
             window = text[start:end]
-            if len(window.strip()) < 60:
+            if empty:
                 unchecked.append((name, "the dump runs this heading straight "
                                   "into the next one, leaving no text under "
                                   "it"))
+                skipped += 1
+                continue
+            if run_on:
+                unchecked.append((name, "the heading above this one has no "
+                                  "text under it, so this block holds that "
+                                  "feat's text as well as its own"))
+                skipped += 1
                 continue
             if len(re.findall(r"Prerequisite", window)) > 1:
                 unchecked.append((name, "two prerequisites inside one block; "
                                   "the dump has interleaved the columns here"))
+                skipped += 1
                 continue
 
             printed = None
@@ -375,19 +428,31 @@ def check_feats(problems, unchecked):
             if printed is None and "Prerequisite" in window:
                 unchecked.append((name, "a prerequisite the dump has moved "
                                   "away from its heading"))
+                skipped += 1
                 continue
 
             checked += 1
-            said = row_prereq(r)
-            if not same_prereq(said, printed):
-                problems.append((name, "prerequisite", show(said),
-                                 show(printed)))
+            words = r.str(2).strip()
+            for what, said in (("prerequisite", row_prereq(r)),
+                               ("prerequisite, as the row words it",
+                                shape(words) if words else None)):
+                if not same_prereq(said, printed):
+                    problems.append((name, what, show(said), show(printed)))
+                    break
 
-            got = book_asi(flat(window))
-            mine = row_asi(r)
-            if got != mine and not (got and mine and set(got) == set(mine)):
+            got, mine = book_asi(window), row_asi(r)
+            if got == "?":
+                unchecked.append((name, "increase: more than one is printed "
+                                  "inside this block"))
+                skipped += 1
+            elif got != mine and not (isinstance(got, tuple)
+                                      and isinstance(mine, tuple)
+                                      and set(got) == set(mine)):
                 problems.append((name, "ability score increase",
                                  show_asi(mine), show_asi(got)))
+
+        if skipped:
+            tally(problems, book, text, rows)
     return checked
 
 
@@ -425,7 +490,7 @@ def check_optfeatures(problems, unchecked):
         # Versatility of their own, so the copy that belongs to this row is
         # the one whose subhead names this row's class.
         seen = []
-        for _, start, end in found:
+        for start, end, _, _ in found:
             window = flat(text[start:min(end, start + 4000)])
             m = LEVEL.search(window[:200])
             seen.append((m, window, start))

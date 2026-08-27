@@ -330,28 +330,9 @@ void apply_asi_or_feat(Character *c, const char *reason)
 /* Artificer infusions. The number known rises at 2nd, 6th, 10th, 14th and
  * 18th level; each has a minimum artificer level, and only Replicate Magic
  * Item may be learned more than once (Tasha's, p.20). */
-static int infusions_recorded(const Character *c)
-{
-    int i, n = 0;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, "Infusion") == 0) n++;
-    }
-    return n;
-}
-
-static int infusion_taken(const Character *c, const char *name)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, "Infusion") != 0) continue;
-        if (strncmp(c->choices[i].value, name, strlen(name)) == 0) return 1;
-    }
-    return 0;
-}
-
 static void choose_infusions(Character *c, int artificer_level)
 {
-    int want = INFUSIONS_KNOWN[artificer_level] - infusions_recorded(c);
+    int want = INFUSIONS_KNOWN[artificer_level] - count_choices(c, "Infusion");
 
     if (want <= 0) return;
 
@@ -370,7 +351,7 @@ static void choose_infusions(Character *c, int artificer_level)
             int repeatable = strcmp(INFUSIONS[i].name,
                                     "Replicate Magic Item") == 0;
             if (INFUSIONS[i].min_level > artificer_level) continue;
-            if (!repeatable && infusion_taken(c, INFUSIONS[i].name)) continue;
+            if (!repeatable && has_choice_starting(c, "Infusion", INFUSIONS[i].name)) continue;
 
             snprintf(labels[n], sizeof labels[n], "%s -- %s",
                      INFUSIONS[i].name, INFUSIONS[i].item);
@@ -574,19 +555,9 @@ void choose_expertise(Character *c, int count)
 /* Tasha's optional class features are opt-in, one at a time, at the class
  * level that offers them. Taking one is recorded as a choice so it appears
  * on the sheet along with anything it replaces. */
-static int optional_taken(const Character *c, const char *name)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, "Optional feature") != 0) continue;
-        if (strncmp(c->choices[i].value, name, strlen(name)) == 0) return 1;
-    }
-    return 0;
-}
-
 int has_optional_feature(const Character *c, const char *name)
 {
-    return optional_taken(c, name);
+    return has_choice_starting(c, "Optional feature", name);
 }
 
 static void offer_optional_features(Character *c, int class_id, int class_level)
@@ -599,7 +570,7 @@ static void offer_optional_features(Character *c, int class_id, int class_level)
 
         if (of->class_id != class_id || of->level != class_level) continue;
         if (!SETTINGS.optional_features || !book_enabled(of->book)) continue;
-        if (optional_taken(c, of->name)) continue;
+        if (has_choice_starting(c, "Optional feature", of->name)) continue;
 
         printf("\n  Optional class feature (Tasha's): %s\n", of->name);
         ui_wrap(of->summary, 6);
@@ -635,13 +606,13 @@ static const char *additional_spells_for(const Character *c, int class_id)
     for (i = 0; i < ADDITIONAL_SPELLS_COUNT; i++) {
         if (ADDITIONAL_SPELLS[i].class_id != class_id) continue;
         for (k = 0; k < sizeof NAMES / sizeof NAMES[0]; k++) {
-            if (optional_taken(c, NAMES[k])) {
+            if (has_choice_starting(c, "Optional feature", NAMES[k])) {
                 /* Only the one matching this class can be taken by it. */
                 const ClassData *cd = &CLASSES[class_id];
                 char expect[MAX_NAME];
                 snprintf(expect, sizeof expect, "Additional %s Spells",
                          cd->name);
-                if (optional_taken(c, expect)) return ADDITIONAL_SPELLS[i].spells;
+                if (has_choice_starting(c, "Optional feature", expect)) return ADDITIONAL_SPELLS[i].spells;
             }
         }
         return NULL;
@@ -1030,27 +1001,6 @@ void manage_spells(Character *c, int class_id)
 
 /* ------------------------------------------------- class option lists */
 
-/* How many entries with this label the character has already recorded. */
-static int options_recorded(const Character *c, const char *label)
-{
-    int i, n = 0;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, label) == 0) n++;
-    }
-    return n;
-}
-
-static int option_already_taken(const Character *c, const char *label,
-                                const char *name)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, label) == 0
-            && strcmp(c->choices[i].value, name) == 0) return 1;
-    }
-    return 0;
-}
-
 /* Offer everything this class and subclass draw from, at this class level.
  * Each list says how many are known by now; the difference from what has
  * already been recorded is what is still owed, so a character who levels up
@@ -1087,9 +1037,9 @@ static void pick_from_option_list(Character *c, const OptionList *ol,
             if (!allow_prereq && (o->prereq[0] || o->min_level > 0)) continue;
             if (o->min_level > class_level) continue;
             if (!ol->repeatable
-                && (option_already_taken(c, label, o->name)
+                && (has_choice_exactly(c, label, o->name)
                     || (alt_label
-                        && option_already_taken(c, alt_label, o->name))))
+                        && has_choice_exactly(c, alt_label, o->name))))
                 continue;
 
             if (o->prereq[0]) {
@@ -1122,9 +1072,9 @@ static void pick_from_option_list(Character *c, const OptionList *ol,
         if (pick >= 0) {
             add_choice(c, label, ol->options[map[pick]].name);
         } else if (!ol->repeatable
-                   && (option_already_taken(c, label, answer)
+                   && (has_choice_exactly(c, label, answer)
                        || (alt_label
-                           && option_already_taken(c, alt_label, answer)))) {
+                           && has_choice_exactly(c, alt_label, answer)))) {
             printf("    You already have that; choose again.\n");
             count++;
         } else {
@@ -1164,7 +1114,7 @@ static void offer_class_options(Character *c, int slot, int class_level)
             if (sub < 0 || !subclass_is(sub, ol->subclass_name)) continue;
         }
 
-        want = (int)ol->known[class_level] - options_recorded(c, ol->label);
+        want = (int)ol->known[class_level] - count_choices(c, ol->label);
         if (want <= 0) continue;
 
         printf("\n  %s knows %d %s at level %d.\n", cd->name,
@@ -1342,27 +1292,6 @@ static void feat_extras(Character *c, int feat_id)
     }
 }
 
-/* Has this character already recorded a choice under this label? */
-static int has_choice(const Character *c, const char *label)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, label) == 0) return 1;
-    }
-    return 0;
-}
-
-static int has_choice_value(const Character *c, const char *label,
-                            const char *value)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, label) == 0
-            && strcmp(c->choices[i].value, value) == 0) return 1;
-    }
-    return 0;
-}
-
 /* ----------------------------------------------------------- beast forms */
 
 /* Renders a challenge rating held in eighths. */
@@ -1492,7 +1421,7 @@ static void offer_beast_choices(Character *c, int slot, int class_level)
     /* A Beast Master's companion is a beast of CR 1/4 or lower with no
        flying speed. */
     if (subclass_is(sub, "Beast Master") && class_level == 3
-        && !has_choice(c, "Animal Companion")) {
+        && !count_choices(c, "Animal Companion")) {
         printf("\n  Your animal companion is a beast of challenge 1/4 or "
                "lower, no larger than Medium and with no flying speed.\n");
         choose_beast(c, "Animal Companion", "  Animal companion:", 2,
@@ -1501,8 +1430,8 @@ static void offer_beast_choices(Character *c, int slot, int class_level)
 
     /* Pact of the Chain names its own familiar forms on top of the usual
        ones; the base list is offered to anyone who has find familiar. */
-    if (has_choice_value(c, "Pact Boon", "Pact of the Chain")
-        && !has_choice(c, "Familiar")) {
+    if (has_choice_exactly(c, "Pact Boon", "Pact of the Chain")
+        && !count_choices(c, "Familiar")) {
         static const char *const chain[] = {
             "Imp", "Pseudodragon", "Quasit", "Sprite"
         };

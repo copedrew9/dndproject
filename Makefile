@@ -60,6 +60,10 @@ verify:
 	python3 tools/verify_spells.py
 	python3 tools/verify_magic_items.py
 	python3 tools/verify_beasts.py
+	python3 tools/verify_classes.py
+	python3 tools/verify_backgrounds.py
+	python3 tools/verify_feats.py
+	python3 tools/verify_races_phb.py
 	python3 tools/verify_coverage.py
 
 # Assertions on the rules engine.

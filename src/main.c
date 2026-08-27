@@ -135,43 +135,19 @@ static void do_view(void)
     print_sheet(&c);
 }
 
-static void do_details(void)
+/* The three screens that work on a character already saved -- its notes,
+   its sidekicks, its gear -- differ only in their heading and in what they
+   then open, so they share the loading, the report and the offer to save. */
+static void edit_saved(const char *heading, void (*screen)(Character *))
 {
     Character c;
 
-    ui_header("Notes and Character Details");
+    ui_header(heading);
     if (load_by_name("  Character name (or a path to the .txt file)", &c))
         return;
     printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
 
-    edit_details(&c);
-    if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
-}
-
-static void do_sidekicks(void)
-{
-    Character c;
-
-    ui_header("Manage a Character's Sidekicks");
-    if (load_by_name("  Character name (or a path to the .txt file)", &c))
-        return;
-    printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
-
-    manage_sidekicks(&c);
-    if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
-}
-
-/* Loading a character purely to change what they carry, then saving. */
-static void do_inventory(void)
-{
-    Character c;
-
-    ui_header("Manage a Character's Gear");
-    if (load_by_name("  Character name (or a path to the .txt file)", &c))
-        return;
-    printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
-
-    manage_inventory(&c);
+    screen(&c);
     if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
 }
 
@@ -232,10 +208,13 @@ int main(int argc, char **argv)
         case 2: do_view(); break;
         case 3: settings_menu(&SETTINGS); break;
         case 4: reference_menu(); break;
-        case 5: do_inventory(); break;
-        case 6: do_sidekicks(); break;
+        case 5: edit_saved("Manage a Character's Gear", manage_inventory);
+                break;
+        case 6: edit_saved("Manage a Character's Sidekicks", manage_sidekicks);
+                break;
         case 7: homebrew_menu(); break;
-        case 8: do_details(); break;
+        case 8: edit_saved("Notes and Character Details", edit_details);
+                break;
         default: return 0;
         }
     }

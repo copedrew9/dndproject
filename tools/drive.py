@@ -35,18 +35,22 @@ def read_prompt(proc, transcript):
     a prompt. The program flushes and then blocks, so a real prompt is a
     ': ' after which nothing more arrives.
     """
-    buf = []
+    buf = bytearray()
     fd = proc.stdout.fileno()
     while True:
-        ch = proc.stdout.read(1)
-        if not ch:
+        chunk = os.read(fd, 65536)
+        if not chunk:
             return None
-        buf.append(ch.decode("utf-8", "replace"))
-        text = "".join(buf)
-        if text.endswith(": "):
-            # Nothing further within the grace period means it is waiting.
+        buf += chunk
+        # The program flushes and then blocks, so a prompt is a ': ' that
+        # nothing follows. Reading in blocks rather than a byte at a time
+        # makes no difference to that test -- a ': ' with more text behind it
+        # is not at the end of the buffer -- and saves a syscall per byte,
+        # which is most of what a run used to spend its time on.
+        if buf.endswith(b": "):
             ready, _, _ = select.select([fd], [], [], 0.05)
             if not ready:
+                text = buf.decode("utf-8", "replace")
                 transcript.append(text)
                 return text.rsplit("\n", 1)[-1]
         if len(buf) > 4_000_000:

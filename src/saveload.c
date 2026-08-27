@@ -307,7 +307,7 @@ static void write_sheet(FILE *f, const Character *c)
            the advancement table is what tells a player how far off the
            next one is. */
         int lv = total_level(c);
-        if (SETTINGS.experience) {
+        if (SETTINGS.experience && lv >= 0 && lv <= MAX_LEVEL) {
             fprintf(f, "  Experience       %d needed for level %d",
                     XP_FOR_LEVEL[lv], lv);
             if (lv < MAX_LEVEL) {
@@ -1042,8 +1042,14 @@ int load_character(const char *path, Character *c)
                 int id = class_by_name(fields[1]);
                 if (id >= 0) {
                     int k = c->class_count++;
+                    int lvl = atoi(fields[2]);
                     c->classes[k].class_id = id;
-                    c->classes[k].level = atoi(fields[2]);
+                    /* Every table shaped like a level runs 0 to MAX_LEVEL,
+                       and several are read with a class level as the index.
+                       A hand-edited file claiming level 99 read past the end
+                       of the experience table. */
+                    c->classes[k].level = lvl < 0 ? 0
+                                        : lvl > MAX_LEVEL ? MAX_LEVEL : lvl;
                     c->classes[k].subclass_id =
                         strcmp(fields[3], "-") ? subclass_by_name(fields[3]) : -1;
                     c->classes[k].subclass_option = atoi(fields[4]);
@@ -1095,7 +1101,12 @@ int load_character(const char *path, Character *c)
                 for (k = 0; k < SK_CLASS_COUNT; k++) {
                     if (!strcmp(SIDEKICK_CLASS_NAME[k], fields[3])) sk->cls = k;
                 }
-                sk->level = atoi(fields[4]);
+                {   /* Bounded for the same reason: the sidekick's spells
+                       known are read out of tables indexed by its level. */
+                    int lvl = atoi(fields[4]);
+                    sk->level = lvl < 0 ? 0
+                              : lvl > MAX_LEVEL ? MAX_LEVEL : lvl;
+                }
                 sk->role  = atoi(fields[5]);
                 for (k = 0; k < 6; k++) sk->abilities[k] = atoi(fields[6 + k]);
                 sk->hp = atoi(fields[12]);

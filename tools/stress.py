@@ -55,6 +55,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import roundtrip                                     # noqa: E402
@@ -89,24 +90,31 @@ NASTY = [
 ]
 
 
-def read_prompt(proc, transcript, limit):
+def read_prompt(proc, transcript, limit, deadline):
     """Reads stdout until the program blocks on input, or EOF.
 
     Descriptive text is full of colons, so ending in ': ' is not on its own a
     prompt; the program flushes and then blocks, so a real prompt is a ': '
     after which nothing more arrives. Same test drive.py makes.
     """
-    buf = []
+    buf = bytearray()
     fd = proc.stdout.fileno()
     while True:
-        ch = proc.stdout.read(1)
-        if not ch:
+        if deadline and time.time() > deadline:
+            raise RuntimeError("session ran past its deadline")
+        chunk = os.read(fd, 65536)
+        if not chunk:
             return None
-        buf.append(ch.decode("utf-8", "replace"))
-        text = "".join(buf)
-        if text.endswith(": "):
+        buf += chunk
+        # The program flushes and then blocks, so a prompt is a ': ' that
+        # nothing follows. Reading in blocks rather than a byte at a time
+        # makes no difference to that test -- a ': ' with more text behind it
+        # is not at the end of the buffer -- and saves a syscall per byte,
+        # which is most of what a run used to spend its time on.
+        if buf.endswith(b": "):
             ready, _, _ = select.select([fd], [], [], 0.05)
             if not ready:
+                text = buf.decode("utf-8", "replace")
                 transcript.append(text)
                 return text.rsplit("\n", 1)[-1]
         if len(buf) > limit:
@@ -192,7 +200,7 @@ class Session:
 
 
 def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
-             max_prompts, limit):
+             max_prompts, limit, seconds):
     cmd = [binary, "--seed", str(seed)]
     if use_valgrind:
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
@@ -206,10 +214,15 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
     transcript = []
     replies = []
     steps = 0
+    # A session that wanders into the longest menus can take a while,
+    # especially under the sanitizers; one that has stopped making progress
+    # takes forever. The deadline turns the second into a reported failure
+    # rather than a suite that never returns.
+    deadline = time.time() + seconds if seconds else 0
 
     try:
         while True:
-            prompt = read_prompt(proc, transcript, limit)
+            prompt = read_prompt(proc, transcript, limit, deadline)
             if prompt is None:
                 break
             steps += 1
@@ -226,6 +239,10 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
             proc.stdin.flush()
     except BrokenPipeError:
         pass
+    except RuntimeError:
+        proc.kill()
+        proc.communicate()
+        raise
 
     out, err = proc.communicate(timeout=600)
     transcript.append(out.decode("utf-8", "replace"))
@@ -290,6 +307,8 @@ def main():
                     help="share of free-text answers chosen to break the "
                          "save format")
     ap.add_argument("--max-prompts", type=int, default=20000)
+    ap.add_argument("--seconds", type=int, default=300,
+                    help="give up on a session after this long; 0 waits")
     ap.add_argument("--output-limit", type=int, default=40_000_000)
     ap.add_argument("--hash", action="store_true",
                     help="print a digest of each transcript, for comparing "
@@ -310,7 +329,8 @@ def main():
             try:
                 rc, transcript, err, replies = run_once(
                     binary, seed, args.ops, args.nasty, args.valgrind,
-                    workdir, args.max_prompts, args.output_limit)
+                    workdir, args.max_prompts, args.output_limit,
+                    args.seconds)
             except Exception as exc:            # noqa: BLE001
                 print("seed %d: harness error: %s" % (seed, exc))
                 failures += 1

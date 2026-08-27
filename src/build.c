@@ -241,6 +241,42 @@ void add_choice(Character *c, const char *label, const char *value)
     c->choice_count++;
 }
 
+/* The choices list is scanned in exactly three ways: how many entries carry
+   a label, whether one of them starts with a given value, and whether one of
+   them is exactly that value. The prefix form is what the two lists that
+   record more than a name need -- an infusion is stored as "Replicate Magic
+   Item (Bag of Holding)" and an optional feature as "Name (replaces X)". */
+int count_choices(const Character *c, const char *label)
+{
+    int i, n = 0;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) n++;
+    }
+    return n;
+}
+
+int has_choice_starting(const Character *c, const char *label,
+                        const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) != 0) continue;
+        if (strncmp(c->choices[i].value, value, strlen(value)) == 0) return 1;
+    }
+    return 0;
+}
+
+int has_choice_exactly(const Character *c, const char *label,
+                       const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, value) == 0) return 1;
+    }
+    return 0;
+}
+
 void add_item(Character *c, int item_id, int qty, int equipped)
 {
     int i;
