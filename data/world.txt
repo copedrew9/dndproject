@@ -1,0 +1,466 @@
+# world.txt -- gods, beasts, sidekicks and the background tables
+#
+# One record per line: a tag, then '|' separated fields. A '#' at the
+# start of a line is a comment, and blank lines are ignored. The comment
+# above each block names the columns.
+#
+# A field that needs a literal '|' or '\' writes it as '\|' or '\\'.
+# A line ending in '\' continues on the next line.
+#
+# tools/build_data.py turns this file into C. Run `make data` after an
+# edit; it checks every cross-reference and refuses to write on an error.
+
+# DEITY | name | title | pantheon | alignment | domains | symbol
+DEITY|Auril|goddess of winter|Forgotten Realms|NE|Nature, Tempest|Six-pointed snowflake
+DEITY|Azuth|god of wizards|Forgotten Realms|LN|Knowledge|Left hand pointing upward, outlined in fire
+DEITY|Bane|god of tyranny|Forgotten Realms|LE|War|Upright black right hand, thumb and fingers together
+DEITY|Beshaba|goddess of misfortune|Forgotten Realms|CE|Trickery|Black antlers
+DEITY|Bhaal|god of murder|Forgotten Realms|NE|Death|Skull surrounded by a ring of blood droplets
+DEITY|Chauntea|goddess of agriculture|Forgotten Realms|NG|Life|Sheaf of grain or a blooming rose over grain
+DEITY|Cyric|god of lies|Forgotten Realms|CE|Trickery|White jawless skull on black or purple sunburst
+DEITY|Deneir|god of writing|Forgotten Realms|NG|Knowledge|Lit candle above an open eye
+DEITY|Eldath|goddess of peace|Forgotten Realms|NG|Life, Nature|Waterfall plunging into a still pool
+DEITY|Gond|god of craft|Forgotten Realms|N|Knowledge|Toothed cog with four spokes
+DEITY|Helm|god of protection|Forgotten Realms|LN|Life, Light|Staring eye on upright left gauntlet
+DEITY|Ilmater|god of endurance|Forgotten Realms|LG|Life|Hands bound at the wrist with red cord
+DEITY|Kelemvor|god of the dead|Forgotten Realms|LN|Death|Upright skeletal arm holding balanced scales
+DEITY|Lathander|god of birth and renewal|Forgotten Realms|NG|Life, Light|Road travelling into a sunrise
+DEITY|Leira|goddess of illusion|Forgotten Realms|CN|Trickery|Point-down triangle containing a swirl of mist
+DEITY|Lliira|goddess of joy|Forgotten Realms|CG|Life|Triangle of three six-pointed stars
+DEITY|Loviatar|goddess of pain|Forgotten Realms|LE|Death|Nine-tailed barbed scourge
+DEITY|Malar|god of the hunt|Forgotten Realms|CE|Nature|Clawed paw
+DEITY|Mask|god of thieves|Forgotten Realms|CN|Trickery|Black mask
+DEITY|Mielikki|goddess of forests|Forgotten Realms|NG|Nature|Unicorn's head
+DEITY|Milil|god of poetry and song|Forgotten Realms|NG|Light|Five-stringed harp made of leaves
+DEITY|Myrkul|god of death|Forgotten Realms|NE|Death|White human skull
+DEITY|Mystra|goddess of magic|Forgotten Realms|NG|Knowledge|Circle of seven stars, or nine stars encircling a flowing red mist, or a single star
+DEITY|Oghma|god of knowledge|Forgotten Realms|N|Knowledge|Blank scroll
+DEITY|Savras|god of divination and fate|Forgotten Realms|LN|Knowledge|Crystal ball containing many kinds of eyes
+DEITY|Selune|goddess of the moon|Forgotten Realms|CG|Knowledge, Life|Pair of eyes surrounded by seven stars
+DEITY|Shar|goddess of darkness and loss|Forgotten Realms|NE|Death, Trickery|Black disk encircled with a purple border
+DEITY|Silvanus|god of wild nature|Forgotten Realms|N|Nature|Oak leaf
+DEITY|Sune|goddess of love and beauty|Forgotten Realms|CG|Life, Light|Face of a beautiful red-haired woman
+DEITY|Talona|goddess of disease and poison|Forgotten Realms|CE|Death|Three teardrops on a triangle
+DEITY|Talos|god of storms|Forgotten Realms|CE|Tempest|Three lightning bolts radiating from a point
+DEITY|Tempus|god of war|Forgotten Realms|N|War|Upright flaming sword
+DEITY|Torm|god of courage and self-sacrifice|Forgotten Realms|LG|War|White right gauntlet
+DEITY|Tymora|goddess of good fortune|Forgotten Realms|CG|Trickery|Face-up coin
+DEITY|Tyr|god of justice|Forgotten Realms|LG|War|Balanced scales resting on a warhammer
+DEITY|Umberlee|goddess of the sea|Forgotten Realms|CE|Tempest|Wave curling left and right
+DEITY|Waukeen|goddess of trade|Forgotten Realms|N|Knowledge, Trickery|Upright coin with Waukeen's profile facing left
+DEITY|Beory|goddess of nature|Greyhawk|N|Nature|Green disk
+DEITY|Boccob|god of magic|Greyhawk|N|Knowledge|Eye within a pentagram
+DEITY|Celestian|god of stars and wanderers|Greyhawk|N|Knowledge|Arc of seven stars inside a circle
+DEITY|Ehlonna|goddess of woodlands|Greyhawk|NG|Life, Nature|Unicorn horn
+DEITY|Erythnul|god of envy and slaughter|Greyhawk|CE|War|Blood drop
+DEITY|Fharlanghn|god of horizons and travel|Greyhawk|NG|Knowledge, Trickery|Circle crossed by a curved horizon line
+DEITY|Heironeous|god of chivalry and valour|Greyhawk|LG|War|Hand holding a lightning bolt
+DEITY|Hextor|god of war and discord|Greyhawk|LE|War|Six arrows facing downward in a fan
+DEITY|Kord|god of athletics and sport|Greyhawk|CG|Tempest, War|Four spears and four maces radiating from a point
+DEITY|Incabulos|god of plague and famine|Greyhawk|NE|Death|Green triangle with a black border
+DEITY|Istus|goddess of fate and destiny|Greyhawk|N|Knowledge|Weaving spindle
+DEITY|Iuz|god of pain and oppression|Greyhawk|CE|Death, Trickery|Grinning human skull
+DEITY|Nerull|god of death|Greyhawk|NE|Death|Skull and scythe
+DEITY|Obad-Hai|god of nature|Greyhawk|N|Nature|Oak leaf and acorn
+DEITY|Olidammara|god of revelry|Greyhawk|CN|Trickery|Laughing mask
+DEITY|Pelor|god of the sun and healing|Greyhawk|NG|Life, Light|Sun
+DEITY|Pholtus|god of light and law|Greyhawk|LG|Light|Silver sun partially eclipsed by a crescent moon
+DEITY|Ralishaz|god of ill luck and insanity|Greyhawk|CN|Trickery|Three bone fate-casting sticks
+DEITY|Rao|god of peace and reason|Greyhawk|LG|Knowledge|White heart
+DEITY|St. Cuthbert|god of common sense and zeal|Greyhawk|LN|Knowledge|Circle at the centre of a starburst of lines
+DEITY|Tharizdun|god of eternal darkness|Greyhawk|CE|Trickery|Dark spiral or inverted ziggurat
+DEITY|Trithereon|god of liberty and retribution|Greyhawk|CG|War|Triskelion
+DEITY|Ulaa|goddess of hills and mountains|Greyhawk|LG|Life, War|Mountain with a circle at its heart
+DEITY|Vecna|god of evil secrets|Greyhawk|NE|Knowledge|Partly shattered one-eyed skull
+DEITY|Wee Jas|goddess of magic and death|Greyhawk|LN|Death, Knowledge|Red skull in front of a fireball
+DEITY|Paladine|god of rulers and guardians|Dragonlance|LG|War|Silver triangle
+DEITY|Branchala|god of music|Dragonlance|NG|Light|Bard's harp
+DEITY|Habbakuk|god of animal life and the sea|Dragonlance|NG|Nature, Tempest|Blue bird
+DEITY|Kiri-Jolith|god of honour and war|Dragonlance|LG|War|Bison's horns
+DEITY|Majere|god of meditation and order|Dragonlance|LG|Knowledge|Copper spider
+DEITY|Mishakal|goddess of healing|Dragonlance|LG|Knowledge, Life|Blue infinity sign
+DEITY|Solinari|god of good magic|Dragonlance|LG|None|White circle or sphere
+DEITY|Gilean|god of knowledge|Dragonlance|N|Knowledge|Open book
+DEITY|Chislev|goddess of nature|Dragonlance|N|Nature|Feather
+DEITY|Reorx|god of craft|Dragonlance|N|Knowledge|Forging hammer
+DEITY|Shinare|goddess of wealth and trade|Dragonlance|N|Knowledge, Trickery|Griffon's wing
+DEITY|Sirrion|god of fire and change|Dragonlance|N|Nature|Multi-coloured fire
+DEITY|Zivilyn|god of wisdom|Dragonlance|N|Knowledge|Great green or gold tree
+DEITY|Lunitari|goddess of neutral magic|Dragonlance|N|None|Red circle or sphere
+DEITY|Takhisis|goddess of night and hatred|Dragonlance|LE|Death|Black crescent
+DEITY|Chemosh|god of the undead|Dragonlance|LE|Death|Yellow skull
+DEITY|Hiddukel|god of lies and greed|Dragonlance|CE|Trickery|Broken merchant's scales
+DEITY|Morgion|god of disease and secrecy|Dragonlance|NE|Death|Hood with two red eyes
+DEITY|Sargonnas|god of vengeance and fire|Dragonlance|LE|War|Stylised red condor
+DEITY|Zeboim|goddess of the sea and storms|Dragonlance|CE|Tempest|Turtle shell
+DEITY|Nuitari|god of evil magic|Dragonlance|LE|None|Black circle or sphere
+DEITY|Arawai|goddess of fertility|Eberron|NG|Life, Nature|Sheaf of wheat tied with green ribbon
+DEITY|Aureon|god of law and knowledge|Eberron|LN|Knowledge|Open tome
+DEITY|Balinor|god of beasts and the hunt|Eberron|N|Life, Nature|Pair of antlers
+DEITY|Boldrei|goddess of community and home|Eberron|LG|Life|Fire in a stone hearth
+DEITY|Dol Arrah|goddess of sunlight and honour|Eberron|LG|Light, War|Rising sun
+DEITY|Dol Dorn|god of strength at arms|Eberron|CG|War|Longsword crossed over a shield
+DEITY|Kol Korran|god of trade and wealth|Eberron|N|Trickery|Nine-sided gold coin
+DEITY|Olladra|goddess of good fortune|Eberron|NG|Life, Trickery|Domino
+DEITY|Onatar|god of craft|Eberron|NG|Knowledge|Crossed hammer and tongs
+DEITY|The Devourer|god of nature's wrath|Eberron|NE|Tempest|Bundle of five sharpened bones
+DEITY|The Fury|goddess of passion|Eberron|NE|War|Winged serpent with a woman's head
+DEITY|The Keeper|god of greed and death|Eberron|NE|Death|Dragonshard stone in the shape of a fang
+DEITY|The Mockery|god of violence and treachery|Eberron|NE|War|Five bloody tools
+DEITY|The Shadow|god of dark magic|Eberron|CE|Knowledge|Obsidian tower
+DEITY|The Traveller|deity of chaos and change|Eberron|CN|Knowledge, Trickery|Four crossed, forking paths
+DEITY|The Blood of Vol|belief in divinity of blood and undeath|Eberron|LE|Death, Life|Stylised red teardrop
+DEITY|The Silver Flame|devotion to good|Eberron|LG|Life, Light, War|Flame drawn on silver or contained in silver
+DEITY|The Undying Court|elven ancestors|Eberron|NG|Knowledge, Life|Varies by ancestor
+DEITY|The Daghdha|god of weather and crops|Celtic|CG|Nature, Trickery|Bubbling cauldron or shield
+DEITY|Arawn|god of life and death|Celtic|NE|Life, Death|Black star on grey background
+DEITY|Belenus|god of sun, light and warmth|Celtic|NG|Light|Solar disk and standing stones
+DEITY|Brigantia|goddess of rivers and livestock|Celtic|NG|Life|Footbridge
+DEITY|Diancecht|god of medicine and healing|Celtic|LG|Life|Crossed oak and mistletoe branches
+DEITY|Dunatis|god of mountains and peaks|Celtic|N|Nature|Red sun-capped mountain peak
+DEITY|Goibhniu|god of smiths and healing|Celtic|NG|Knowledge, Life|Giant mallet over sword
+DEITY|Lugh|god of arts, travel and commerce|Celtic|CN|Knowledge, Life|Pair of long hands
+DEITY|Manannan mac Lir|god of oceans and sea creatures|Celtic|LN|Nature, Tempest|Wave of white water on green
+DEITY|Math Mathonwy|god of magic|Celtic|NE|Knowledge|Staff
+DEITY|Morrigan|goddess of battle|Celtic|CE|War|Two crossed spears
+DEITY|Nuada|god of war and warriors|Celtic|N|War|Silver hand on black background
+DEITY|Oghma|god of speech and writing|Celtic|NG|Knowledge|Unfurled scroll
+DEITY|Silvanus|god of nature and forests|Celtic|N|Nature|Summer oak tree
+DEITY|Zeus|god of the sky, ruler of the gods|Greek|N|Tempest|Fist full of lightning bolts
+DEITY|Aphrodite|goddess of love and beauty|Greek|CG|Light|Sea shell
+DEITY|Apollo|god of light, music and healing|Greek|CG|Knowledge, Life, Light|Lyre
+DEITY|Ares|god of war and strife|Greek|CE|War|Spear
+DEITY|Artemis|goddess of hunting and childbirth|Greek|NG|Life, Nature|Bow and arrow on lunar disk
+DEITY|Athena|goddess of wisdom and civilization|Greek|LG|Knowledge, War|Owl
+DEITY|Demeter|goddess of agriculture|Greek|NG|Life|Mare's head
+DEITY|Dionysus|god of mirth and wine|Greek|CN|Life|Thyrsus (staff tipped with pine cone)
+DEITY|Hades|god of the underworld|Greek|LE|Death|Black ram
+DEITY|Hecate|goddess of magic and the moon|Greek|CE|Knowledge, Trickery|Setting moon
+DEITY|Hephaestus|god of smithing and craft|Greek|NG|Knowledge|Hammer and anvil
+DEITY|Hera|goddess of marriage and intrigue|Greek|CN|Trickery|Fan of peacock feathers
+DEITY|Hercules|god of strength and adventure|Greek|CG|Tempest, War|Lion's head
+DEITY|Hermes|god of travel and commerce|Greek|CG|Trickery|Caduceus (winged staff and serpents)
+DEITY|Hestia|goddess of home and family|Greek|NG|Life|Hearth
+DEITY|Nike|goddess of victory|Greek|LN|War|Winged woman
+DEITY|Pan|god of nature and the wild|Greek|CN|Nature|Syrinx (pan pipes)
+DEITY|Poseidon|god of the sea and earthquakes|Greek|CN|Tempest|Trident
+DEITY|Tyche|goddess of good fortune|Greek|N|Trickery|Red pentagram
+DEITY|Re-Horakhty|god of the sun, ruler of the gods|Egyptian|LG|Life, Light|Solar disk encircled by serpent
+DEITY|Anubis|god of judgment and death|Egyptian|LN|Death|Black jackal
+DEITY|Apep|god of evil, fire and serpents|Egyptian|NE|Trickery|Flaming snake
+DEITY|Bast|goddess of cats and vengeance|Egyptian|CG|War|Cat
+DEITY|Bes|god of luck and music|Egyptian|CN|Trickery|Image of the misshapen dwarf himself
+DEITY|Hathor|goddess of love, music and motherhood|Egyptian|NG|Life, Light|Horned cow's head with lunar disk
+DEITY|Imhotep|god of craft and medicine|Egyptian|NG|Knowledge|Step pyramid
+DEITY|Isis|goddess of fertility and magic|Egyptian|NG|Knowledge, Life|Ankh and star
+DEITY|Nephthys|goddess of death and grief|Egyptian|CG|Death|Horns around a lunar disk
+DEITY|Osiris|god of nature and the underworld|Egyptian|LG|Life, Nature|Crook and flail
+DEITY|Ptah|god of crafts, knowledge and secrets|Egyptian|LN|Knowledge|Bull
+DEITY|Set|god of darkness and desert storms|Egyptian|CE|Death, Tempest, Trickery|Coiled cobra
+DEITY|Sobek|god of water and crocodiles|Egyptian|LE|Nature, Tempest|Crocodile head with horns and plumes
+DEITY|Thoth|god of knowledge and wisdom|Egyptian|N|Knowledge|Ibis
+DEITY|Odin|god of knowledge and war|Norse|NG|Knowledge, War|Watching blue eye
+DEITY|Aegir|god of the sea and storms|Norse|NE|Tempest|Rough ocean waves
+DEITY|Balder|god of beauty and poetry|Norse|NG|Life, Light|Gem-encrusted silver chalice
+DEITY|Forseti|god of justice and law|Norse|N|Light|Head of a bearded man
+DEITY|Frey|god of fertility and the sun|Norse|NG|Life, Light|Ice-blue greatsword
+DEITY|Freya|goddess of fertility and love|Norse|NG|Life|Cat
+DEITY|Frigga|goddess of birth and fertility|Norse|N|Life, Light|Cat
+DEITY|Heimdall|god of watchfulness and loyalty|Norse|LG|Light, War|Curling musical horn
+DEITY|Hel|goddess of the underworld|Norse|NE|Death|Woman's face, rotting on one side
+DEITY|Hermod|god of luck|Norse|CN|Trickery|Winged scroll
+DEITY|Loki|god of thieves and trickery|Norse|CE|Trickery|Flame
+DEITY|Njord|god of sea and wind|Norse|NG|Nature, Tempest|Gold coin
+DEITY|Odur|god of light and the sun|Norse|CG|Light|Solar disk
+DEITY|Sif|goddess of war|Norse|CG|War|Upraised sword
+DEITY|Skadi|god of earth and mountains|Norse|N|Nature|Mountain peak
+DEITY|Surtur|god of fire giants and war|Norse|LE|War|Flaming sword
+DEITY|Thrym|god of frost giants and cold|Norse|CE|War|White double-bladed axe
+DEITY|Thor|god of storms and thunder|Norse|CG|Tempest, War|Hammer
+DEITY|Tyr|god of courage and strategy|Norse|LN|Knowledge, War|Sword
+DEITY|Uller|god of hunting and winter|Norse|CN|Nature|Longbow
+DEITY|Corellon Larethian|elf deity of art and magic|Nonhuman|CG|Light|Quarter moon or starburst
+DEITY|Moradin|dwarf deity of creation|Nonhuman|LG|Knowledge|Hammer and anvil
+DEITY|Garl Glittergold|gnome deity of trickery and wiles|Nonhuman|LG|Trickery|Gold nugget
+DEITY|Yondalla|halfling deity of fertility and protection|Nonhuman|LG|Life|Cornucopia on a shield
+DEITY|Gruumsh|orc deity of storms and war|Nonhuman|CE|Tempest, War|Unblinking eye
+DEITY|Bahamut|dragon deity of good dragonkind|Nonhuman|LG|Life, War|Dragon's head in profile
+DEITY|Tiamat|dragon deity of evil dragonkind|Nonhuman|LE|Trickery|Dragon head with five claw marks
+DEITY|Lolth|drow deity of spiders|Nonhuman|CE|Trickery|Spider
+DEITY|Sehanine Moonbow|elf deity of the moon|Nonhuman|CG|Knowledge|Crescent moon
+DEITY|Sekolah|sahuagin deity of the hunt|Nonhuman|LE|Nature, Tempest|Shark
+DEITY|Semuanya|lizardfolk deity of survival|Nonhuman|N|Life|Egg
+DEITY|Skerrit|centaur and satyr deity of nature|Nonhuman|N|Nature|Oak growing from acorn
+DEITY|Surtur|giant deity of craft and fire|Nonhuman|LE|Knowledge, War|Flaming sword
+DEITY|Thryn|giant deity of frost and strength|Nonhuman|CE|War|White double-bladed axe
+DEITY|Grolantor|hill giant deity of war|Nonhuman|CE|War|Wooden club
+DEITY|Hruggek|bugbear deity of violence|Nonhuman|CE|War|Morningstar
+DEITY|Maglubiyet|goblinoid deity of war|Nonhuman|LE|War|Bloody axe
+DEITY|Kurtulmak|kobold deity of war and mining|Nonhuman|LE|War|Gnome skull
+
+# BEASTSIZE | name, smallest first
+BEASTSIZE|Tiny
+BEASTSIZE|Small
+BEASTSIZE|Medium
+BEASTSIZE|Large
+BEASTSIZE|Huge
+BEASTSIZE|Gargantuan
+
+# BEAST | name | size | ac | hp | challenge in eighths | speed | STR | DEX | CON | INT | WIS | CHA | challenge | senses
+BEAST|Allosaurus|Large|13|51|16|60 ft|19|13|17|2|12|5|2|passive Perception 15
+BEAST|Ankylosaurus|Huge|15|68|24|30 ft|19|11|15|2|12|5|3|passive Perception 11
+BEAST|Ape|Medium|12|19|4|30 ft., climb 30 ft|16|14|14|6|12|7|1/2|passive Perception 13
+BEAST|Axe Beak|Large|11|19|2|50 ft|14|12|12|2|10|5|1/4|passive Perception 10
+BEAST|Baboon|Small|12|3|0|30 ft., climb 30 ft|8|14|11|4|12|6|0|passive Perception 11
+BEAST|Badger|Tiny|10|3|0|20 ft., burrow 5 ft|4|11|12|2|12|5|0|darkvision 30 ft., passive Perception 11
+BEAST|Bat|Tiny|12|1|0|5 ft., fly 30 ft|2|15|8|2|12|4|0|blindsight 60 ft., passive Perception 11
+BEAST|Black Bear|Medium|11|19|4|40 ft., climb 30 ft|15|10|14|2|12|7|1/2|passive Perception 13
+BEAST|Blood Hawk|Small|12|7|1|10 ft., fly 60 ft|6|14|10|3|14|5|1/8|passive Perception 14
+BEAST|Boar|Medium|11|11|2|40 ft|13|11|12|2|9|5|1/4|passive Perception 9
+BEAST|Brown Bear|Large|11|34|8|40 ft., climb 30 ft|19|10|16|2|13|7|1|passive Perception 13
+BEAST|Camel|Large|9|15|1|50 ft|16|8|14|2|8|5|1/8|passive Perception 9
+BEAST|Cat|Tiny|12|2|0|40 ft., climb 30 ft|3|15|10|3|12|7|0|passive Perception 13
+BEAST|Constrictor Snake|Large|12|13|2|30 ft., swim 30 ft|15|14|12|1|10|3|1/4|blindsight 10 ft., passive Perception 10
+BEAST|Crab|Tiny|11|2|0|20 ft., swim 20 ft|2|11|10|1|8|2|0|bitndsight 30 ft., passive Perception 9
+BEAST|Crocodile|Large|12|19|4|20 ft., swim 30 ft|15|10|13|2|10|5|1/2|passive Perception 10
+BEAST|Deer|Medium|13|4|0|50 ft|11|16|11|2|14|5|0|passive Perception 12
+BEAST|Dire Wolf|Large|14|37|8|50 ft|17|15|15|3|12|7|1|passive Perception 13
+BEAST|Draft Horse|Large|10|19|2|40 ft|18|10|12|2|11|7|1/4|passive Perception 10
+BEAST|Eagle|Small|12|3|0|10 ft., fly 60 ft|6|15|10|2|14|7|0|passive Perception 14
+BEAST|Elephant|Huge|12|76|32|40 ft|22|9|17|3|11|6|4|passive Perception 10
+BEAST|Elk|Large|10|13|2|50 ft|16|10|12|2|10|6|1/4|passive Perception 10
+BEAST|Flying Snake|Tiny|14|5|1|30 ft., fly 60 ft., swim 30 ft|4|18|11|2|12|5|1/8|blindsight 10 ft., passive Perception 11
+BEAST|Frog|Tiny|11|1|0|20 ft., swim 20 ft|1|13|8|1|3|3|0|darkvision 30 ft., passive Perception 11
+BEAST|Giant Ape|Huge|12|157|56|40 ft., climb 40 ft|23|14|18|7|12|7|7|passive Perception 14
+BEAST|Giant Badger|Medium|10|13|2|30 ft., burrow 10 ft|13|10|15|2|12|5|1/4|darkvision 30 ft., passive Perception 11
+BEAST|Giant Bat|Large|13|22|2|10 ft., fly 60 ft|15|16|11|2|12|6|1/4|blindsight 60 ft., passive Perception 11
+BEAST|Giant Boar|Large|12|42|16|40 ft|17|10|16|2|7|5|2|passive Perception 8
+BEAST|Giant Centipede|Small|13|4|2|30 ft., climb 30 ft|5|14|12|1|7|3|1/4|blindsight 30 ft., passive Perception 8
+BEAST|Giant Constrictor Snake|Huge|12|60|16|30 ft., swim 30 ft|19|14|12|1|10|3|2|blindsight 10 ft., passive Perception 12
+BEAST|Giant Crab|Medium|15|13|1|30 ft., swim 30 ft|13|15|11|1|9|3|1/8|blindsight 30 ft., passive Perception 9
+BEAST|Giant Crocodile|Huge|14|85|40|30 ft., swim 50 ft|21|9|17|2|10|7|5|passive Perception 10
+BEAST|Giant Eagle|Large|13|26|8|10 ft., fly 80 ft|16|17|13|8|14|10|1|passive Perception 14
+BEAST|Giant Elk|Huge|14|42|16|60 ft|19|16|14|7|14|10|2|passive Perception 14
+BEAST|Giant Fire Beetle|Small|13|4|0|30 ft|8|10|12|1|7|3|0|blindsight 30 ft., passive Perception 8
+BEAST|Giant Frog|Medium|11|18|2|30 ft., swim|19|16|14|7|14|10|1/4|darkvision 30 ft., passive Perception 12
+BEAST|Giant Goat|Large|11|19|4|40 ft|17|11|12|3|12|6|1/2|passive Perception 11
+BEAST|Giant Hyena|Large|12|45|8|50 ft|16|14|14|2|12|7|1|passive Perception 13
+BEAST|Giant Lizard|Large|12|19|2|30 ft., climb 30 ft|15|12|13|2|10|5|1/4|darkvision 30 ft., passive Perception 10
+BEAST|Giant Octopus|Large|11|52|8|10 ft., swim 60 ft|17|13|13|4|10|4|1|darkvision 60 ft., passive Perception 14
+BEAST|Giant Owl|Large|12|19|2|5 ft., fly 60 ft|13|15|12|13|10|10|1/4|darkvision 120 ft., passive Perception 15
+BEAST|Giant Poisonous Snake|Medium|14|11|2|30 ft., swim 30 ft|10|18|13|2|10|3|1/4|blindsight 10 ft., passive Perception 12
+BEAST|Giant Rat|Small|12|7|1|30 ft|7|15|11|2|10|4|1/8|darkvision 60 ft., passive Perception 10
+BEAST|Giant Scorpion|Large|15|52|24|40 ft|15|13|15|1|9|3|3|blindsight 60 ft., passive Perception 9
+BEAST|Giant Sea Horse|Large|13|16|4|0 ft., swim 40 ft|12|15|2|12|5|5|1/2|passive Perception 11
+BEAST|Giant Shark|Huge|13|126|40|0 ft., swim 50 ft|23|11|21|1|10|5|5|blindsight 60 ft., passive Perception 13
+BEAST|Giant Spider|Large|14|26|8|30 ft., climb 30 ft|14|16|12|2|11|4|1|Hindsight 10 ft., darkvision 60 ft., passive Perception 10
+BEAST|Giant Toad|Large|11|39|8|20 ft., swim 40 ft|15|13|13|2|10|3|1|darkvision 30 ft., passive Perception 10
+BEAST|Giant Vulture|Large|10|22|8|10 ft., fly 60 ft|15|10|15|6|12|7|1|passive Perception 13
+BEAST|Giant Wasp|Medium|12|13|4|10 ft., fly 50 ft|10|14|10|1|10|3|1/2|passive Perception 10
+BEAST|Giant Weasel|Medium|13|9|1|40 ft|11|16|10|4|12|5|1/8|darkvision 60 ft., passive Perception 13
+BEAST|Giant Wolf Spider|Medium|13|11|2|40 ft., climb 40 ft|12|16|13|3|12|4|1/4|blindsight 10 ft., darkvision 60 ft., passive Perception 13
+BEAST|Goat|Medium|10|4|0|40 ft|12|10|11|2|10|5|0|passive Perception 10
+BEAST|Hawk|Tiny|13|1|0|10 ft., fly 60 ft|5|16|8|2|14|6|0|passive Perception 14
+BEAST|Hunter Shark|Large|12|45|16|0 ft., swim 40 ft|18|13|15|1|10|4|2|blindsight 30 ft., passive Perception 12
+BEAST|Hyena|Medium|11|5|0|50 ft|11|13|12|2|12|5|0|passive Perception 13
+BEAST|Jackal|Small|12|3|0|40 ft|8|15|11|3|12|6|0|passive Perception 13
+BEAST|Killer Whale|Huge|12|90|24|0 ft., swim 60 ft|19|10|13|3|12|7|3|blindsight 120 ft., passive Perception 13^
+BEAST|Lion|Large|12|26|8|50 ft|17|15|13|3|12|8|1|passive Perception 13
+BEAST|Lizard|Tiny|10|2|0|20 ft., climb 20 ft|2|11|10|1|3|5|0|darkvision 30 ft., passive Perception 9
+BEAST|Mammoth|Huge|13|126|48|40 ft|24|9|21|3|11|6|6|passive Perception 10
+BEAST|Mastiff|Medium|12|5|1|40 ft|13|14|12|3|12|7|1/8|passive Perception 13
+BEAST|Mule|Medium|10|11|1|40 ft|14|10|13|2|10|5|1/8|passive Perception 10
+BEAST|Octopus|Small|12|3|0|5 ft., swim 30 ft|4|15|11|3|10|4|0|darkvision 30 ft., passive Perception 12
+BEAST|Owl|Tiny|11|1|0|5 ft., fly 60 ft|3|13|8|2|12|7|0|darkvision 120 ft., passive Perception 13
+BEAST|Panther|Medium|12|13|2|50 ft., climb 40 ft|14|15|10|3|14|7|1/4|passive Perception 14
+BEAST|Plesiosaurus|Large|13|68|16|20 ft., swim 40 ft|18|15|16|2|12|5|2|passive Perception 13
+BEAST|Poisonous Snake|Tiny|13|2|1|30 ft., swim 30 ft|2|16|11|1|10|3|1/8|blindsight 10 ft., passive Perception 10
+BEAST|Polar Bear|Large|12|42|16|40 ft., swim 30 ft|20|10|16|2|13|7|2|passive Perception 13
+BEAST|Pony|Medium|10|11|1|40 ft|15|10|13|2|11|7|1/8|passive Perception 10
+BEAST|Pteranodon|Medium|13|13|2|10 ft., fly 60 ft|12|15|10|2|9|5|1/4|passive Perception 11
+BEAST|Quipper|Tiny|13|1|0|0 ft., swim 40 ft|2|16|9|1|7|2|0|darkvision 60 ft., passive Perception 8
+BEAST|Rat|Tiny|10|1|0|20 ft|2|11|9|2|10|4|0|darkvision 30 ft., passive Perception 10
+BEAST|Raven|Tiny|12|1|0|10 ft., fly 50 ft|2|14|8|2|12|6|0|passive Perception 13
+BEAST|Reef Shark|Medium|12|22|4|0 ft., swim 40 ft|14|13|13|1|10|4|1/2|blindsight 30 ft., passive Perception 12
+BEAST|Rhinoceros|Large|11|45|16|40 ft|21|8|15|2|12|6|2|passive Perception 11
+BEAST|Riding Horse|Large|10|13|2|60 ft|16|10|12|2|11|7|1/4|passive Perception 10
+BEAST|Saber-Toothed Tiger|Large|12|52|16|40 ft|18|14|15|3|12|8|2|passive Perception 13
+BEAST|Scorpion|Tiny|11|1|0|10 ft|2|11|8|1|8|2|0|blindsight 10 ft., passive Perception 9
+BEAST|Sea Horse|Tiny|11|1|0|0 ft., swim 20 ft|1|12|8|1|10|2|0|passive Perception 10
+BEAST|Spider|Tiny|12|1|0|20 ft., climb 20 ft|2|14|8|1|10|2|0|darkvision 30 ft., passive Perception 10
+BEAST|Tiger|Large|12|37|8|40 ft|17|15|14|3|12|8|1|darkvision 60 ft., passive Perception 13
+BEAST|Triceratops|Huge|13|95|2|50 ft|22|9|17|2|11|5|1/4|passive Perception 10
+BEAST|Tyrannosaurus Rex|Huge|13|136|64|50 ft|25|10|19|2|12|9|8|passive Perception 14
+BEAST|Vulture|Medium|10|5|0|10 ft., fly 50 ft|7|10|13|2|12|4|0|passive Perception 13
+BEAST|Warhorse|Large|11|19|4|60 ft|18|12|13|2|12|7|1/2|passive Perception 11
+BEAST|Weasel|Tiny|13|1|0|30 ft|3|16|8|2|12|3|0|passive Perception 13
+BEAST|Wolf|Medium|13|11|2|40 ft|12|15|12|3|12|6|1/4|passive Perception 13
+
+# SIDEKICKCLASS | name | blurb
+SIDEKICKCLASS|Expert|A master of certain tasks or knowledge, favouring cunning over brawn: a scout, a musician, a librarian, a clever street kid or a burglar. Needs a language it can speak.
+SIDEKICKCLASS|Spellcaster|Walks the paths of magic: a hedge wizard, a priest, a soothsayer or a magical performer. Needs a language it can speak.
+SIDEKICKCLASS|Warrior|Grows in martial prowess: a soldier, a town guard, a battle-trained beast or anything else honed for combat.
+
+# SIDEKICKROLE | name | description
+SIDEKICKROLE|Mage|Wizard spell list, Intelligence, an arcane focus
+SIDEKICKROLE|Healer|Cleric and druid spell lists, Wisdom, a holy symbol
+SIDEKICKROLE|Prodigy|Bard and warlock spell lists, Charisma, an arcane focus or instrument
+
+# SIDEKICKFEATURE | sidekick class | level | name | summary
+SIDEKICKFEATURE|Expert|1|Bonus Proficiencies|Proficiency in one saving throw of Dexterity, Intelligence or Charisma; five skills; light armor; and, if a humanoid or armed, all simple weapons and two tools.
+SIDEKICKFEATURE|Expert|1|Helpful|The sidekick can take the Help action as a bonus action.
+SIDEKICKFEATURE|Expert|2|Cunning Action|On its turn it can take the Dash, Disengage or Hide action as a bonus action.
+SIDEKICKFEATURE|Expert|3|Expertise|Choose two of its skill proficiencies; its proficiency bonus is doubled for any ability check using them.
+SIDEKICKFEATURE|Expert|4|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|6|Coordinated Strike|When it uses Helpful to aid an ally attacking a creature, the target can be up to 30 feet away, and it deals an extra 2d6 damage the next time it hits that target before the end of the turn.
+SIDEKICKFEATURE|Expert|7|Evasion|On a Dexterity save for half damage it takes none on a success and half on a failure. Not while incapacitated.
+SIDEKICKFEATURE|Expert|8|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|10|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|11|Inspiring Help|When it takes the Help action, the creature helped adds 1d6 to the d20 roll, or to the damage of a hit if it forgoes the bonus to the attack.
+SIDEKICKFEATURE|Expert|12|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|14|Reliable Talent|On any ability check that includes its whole proficiency bonus, treat a d20 roll of 9 or lower as a 10.
+SIDEKICKFEATURE|Expert|15|Expertise|Choose two more skill proficiencies to gain the doubled bonus.
+SIDEKICKFEATURE|Expert|16|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|18|Sharp Mind|Proficiency in one saving throw of Intelligence, Wisdom or Charisma.
+SIDEKICKFEATURE|Expert|19|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Expert|20|Inspiring Help improves|The Inspiring Help bonus increases to 2d6.
+SIDEKICKFEATURE|Spellcaster|1|Bonus Proficiencies|Proficiency in one saving throw of Wisdom, Intelligence or Charisma; two skills from Arcana, History, Insight, Investigation, Medicine, Performance, Persuasion and Religion; light armor; and, if a humanoid or armed, all simple weapons.
+SIDEKICKFEATURE|Spellcaster|1|Spellcasting|Choose a role -- Mage (wizard list, Intelligence), Healer (cleric and druid, Wisdom) or Prodigy (bard and warlock, Charisma). Spell save DC is 8 + proficiency + the ability modifier.
+SIDEKICKFEATURE|Spellcaster|4|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|6|Potent Cantrips|Add its spellcasting ability modifier to the damage of any cantrip.
+SIDEKICKFEATURE|Spellcaster|8|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|12|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|14|Empowered Spells|Choose a school of magic; add its spellcasting ability modifier to the damage or healing of any spell of that school cast with a slot.
+SIDEKICKFEATURE|Spellcaster|16|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|19|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|20|Focused Casting|Taking damage cannot break its concentration on a spell.
+SIDEKICKFEATURE|Warrior|1|Bonus Proficiencies|Proficiency in one saving throw of Strength, Dexterity or Constitution; two skills from Acrobatics, Animal Handling, Athletics, Intimidation, Nature, Perception and Survival; all armor; and, if a humanoid or armed, shields and all simple and martial weapons.
+SIDEKICKFEATURE|Warrior|1|Martial Role|Attacker: +2 to all attack rolls. Defender: use its reaction to impose disadvantage on an attack by a creature within 5 feet aimed at someone else.
+SIDEKICKFEATURE|Warrior|2|Second Wind|As a bonus action, regain 1d10 + its class level hit points, once per short or long rest.
+SIDEKICKFEATURE|Warrior|3|Improved Critical|Its attack rolls score a critical hit on a 19 or 20.
+SIDEKICKFEATURE|Warrior|4|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|6|Extra Attack|Attack twice instead of once when it takes the Attack action. It can use Extra Attack or Multiattack on a turn, not both.
+SIDEKICKFEATURE|Warrior|7|Battle Readiness|Advantage on initiative rolls.
+SIDEKICKFEATURE|Warrior|8|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|10|Improved Defense|Its Armor Class increases by 1.
+SIDEKICKFEATURE|Warrior|11|Indomitable|Reroll a failed saving throw, using the new roll, once per long rest.
+SIDEKICKFEATURE|Warrior|12|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|14|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|15|Extra Attack improves|The number of attacks increases to three.
+SIDEKICKFEATURE|Warrior|16|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|18|Indomitable improves|Indomitable can be used twice between long rests.
+SIDEKICKFEATURE|Warrior|19|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Warrior|20|Second Wind improves|Second Wind can be used twice between rests.
+
+# PROGRESSION | key | one number per level, 0 through 20
+PROGRESSION|sidekick spellcaster cantrips|0,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4
+PROGRESSION|sidekick spellcaster spells known|0,1,2,3,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12
+
+# LIFETABLE | name | die
+
+# LIFEROW | table | lowest roll | highest roll | text
+LIFETABLE|Birthplace|d100
+LIFEROW|Birthplace|1|50|Home
+LIFEROW|Birthplace|51|55|Home of a family friend
+LIFEROW|Birthplace|56|63|Home of a healer or midwife
+LIFEROW|Birthplace|64|65|Carriage, cart, or wagon
+LIFEROW|Birthplace|66|68|Barn, shed, or other outbuilding
+LIFEROW|Birthplace|69|70|Cave
+LIFEROW|Birthplace|71|72|Field
+LIFEROW|Birthplace|73|74|Forest
+LIFEROW|Birthplace|75|77|Temple
+LIFEROW|Birthplace|78|78|Battlefield
+LIFEROW|Birthplace|79|80|Alley or street
+LIFEROW|Birthplace|81|82|Brothel, tavern, or inn
+LIFEROW|Birthplace|83|84|Castle, keep, tower, or palace
+LIFEROW|Birthplace|85|85|Sewer or rubbish heap
+LIFEROW|Birthplace|86|88|Among people of a different race
+LIFEROW|Birthplace|89|91|On board a boat or a ship
+LIFEROW|Birthplace|92|93|In a prison or in the headquarters of a secret organization
+LIFEROW|Birthplace|94|95|In a sages laboratory
+LIFEROW|Birthplace|96|96|In the Feywild
+LIFEROW|Birthplace|97|97|In the Shadowfell
+LIFEROW|Birthplace|98|98|On the Astral Plane or the Ethereal Plane
+LIFEROW|Birthplace|99|99|On an Inner Plane of your choice
+LIFEROW|Birthplace|100|100|On an Outer Plane of your choice
+LIFETABLE|Number of siblings|d10
+LIFEROW|Number of siblings|1|2|None
+LIFEROW|Number of siblings|3|4|1d3
+LIFEROW|Number of siblings|5|6|1d4+1
+LIFEROW|Number of siblings|7|8|1d6+2
+LIFEROW|Number of siblings|9|10|1d8 +3
+LIFETABLE|Birth order|2d6
+LIFEROW|Birth order|2|2|Twin, triplet, or quadruplet
+LIFEROW|Birth order|3|7|Older
+LIFEROW|Birth order|8|12|Younger
+LIFETABLE|Who raised you|d100
+LIFEROW|Who raised you|1|1|None
+LIFEROW|Who raised you|2|2|Institution, such as an asylum
+LIFEROW|Who raised you|3|3|Temple
+LIFEROW|Who raised you|4|5|Orphanage
+LIFEROW|Who raised you|6|7|Guardian
+LIFEROW|Who raised you|8|15|Paternal or maternal aunt, uncle, or both; or extended family such as a tribe or clan
+LIFEROW|Who raised you|16|25|Paternal or maternal grandparent(s)
+LIFEROW|Who raised you|26|35|Adoptive family (same or different race)
+LIFEROW|Who raised you|36|55|Single father or stepfather
+LIFEROW|Who raised you|56|75|Single mother or stepmother
+LIFEROW|Who raised you|76|100|Mother and father
+LIFETABLE|The absent parent|d4
+LIFEROW|The absent parent|1|1|Your parent died (roll on the Cause of Death supplemental table)
+LIFEROW|The absent parent|2|2|Your parent was imprisoned, enslaved, or otherwise taken away
+LIFEROW|The absent parent|3|3|Your parent abandoned you
+LIFEROW|The absent parent|4|4|Your parent disappeared to an unknown fate
+LIFETABLE|Family lifestyle|3d6
+LIFEROW|Family lifestyle|3|3|Wretched (-40)
+LIFEROW|Family lifestyle|4|5|Squalid (-20)
+LIFEROW|Family lifestyle|6|8|Poor (-10)
+LIFEROW|Family lifestyle|9|12|Modest (+0)
+LIFEROW|Family lifestyle|13|15|Comfortable (+10)
+LIFEROW|Family lifestyle|16|17|Wealthy (+20)
+LIFEROW|Family lifestyle|18|18|Aristocratic (+40)
+LIFETABLE|Childhood home|3d6
+LIFEROW|Childhood home|1|20|Rundown shack
+LIFEROW|Childhood home|21|30|No permanent residence; you moved around a lot
+LIFEROW|Childhood home|31|40|Encampment or village in the wilderness
+LIFEROW|Childhood home|41|50|Apartment in a rundown neighborhood
+LIFEROW|Childhood home|51|70|Small house
+LIFEROW|Childhood home|71|90|Large house
+LIFEROW|Childhood home|91|110|Mansion ll orhigher Palace or castle style table to arrive at the result
+LIFETABLE|Childhood memories|3d6
+LIFEROW|Childhood memories|3|3|I amstill haunted by my childhood, when I was treated badly by my peers
+LIFEROW|Childhood memories|4|5|I spent most of my childhood alone, with no close friends
+LIFEROW|Childhood memories|6|8|Others saw me as being different or strange, and so I had few companions
+LIFEROW|Childhood memories|9|12|I had a few close friends and lived an ordinary childhood jah
+LIFEROW|Childhood memories|13|15|I had several friends, and my childhood was generally a happy one
+LIFEROW|Childhood memories|16|17|I always found it easy to make friends, and I loved being around people
+LIFEROW|Childhood memories|18|18|Everyone knew who I was, and I had friends everywhere I went
+LIFEROW|Childhood memories|64|64|NX CHAPTER 1 I'CHARACTER OPTIONS
+LIFETABLE|Occupation|d100
+LIFEROW|Occupation|1|5|Academic
+LIFEROW|Occupation|6|10|Adventurer (roll on the Class table) an Aristocrat
+LIFEROW|Occupation|11|11|Aristocrat
+LIFEROW|Occupation|12|26|Artisan or guild member
+LIFEROW|Occupation|27|31|Criminal
+LIFEROW|Occupation|32|36|Entertainer
+LIFEROW|Occupation|37|38|Exile, hermit, or refugee
+LIFEROW|Occupation|39|43|Explorer or wanderer
+LIFEROW|Occupation|44|55|Farmer or herder
+LIFEROW|Occupation|56|60|Hunter or trapper
+LIFEROW|Occupation|61|75|Laborer
+LIFEROW|Occupation|76|80|Merchant
+LIFEROW|Occupation|81|85|Politician or bureaucrat
+LIFEROW|Occupation|86|90|Priest
+LIFEROW|Occupation|91|95|Sailor
+LIFEROW|Occupation|96|100|Soldier es
+LIFETABLE|Status|3d6
+LIFEROW|Status|3|3|Dead (roll on the Cause of Death table)
+LIFEROW|Status|4|5|Missing or unknown
+LIFEROW|Status|6|8|Alive, but doing poorly due to injury, financial trouble, or relationship difficulties
+LIFEROW|Status|9|12|Alive and well
+LIFEROW|Status|13|15|Alive and quite successful
+LIFEROW|Status|16|17|Alive and infamous
+LIFEROW|Status|18|18|Alive and famous collection of facts and notes that-at a minimum-encapsulate what your character has been doing in the world
+LIFETABLE|Relationship|3d4
+LIFEROW|Relationship|3|4|Hostile
+LIFEROW|Relationship|5|10|Friendly
+LIFEROW|Relationship|11|12|Indifferent

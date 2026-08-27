@@ -24,23 +24,32 @@ $(OBJDIR):
 
 -include $(DEPS)
 
-# Regenerate the spell tables from the sourcebook text dump.
-spells:
-	python3 tools/extract_spells.py
+DUMPBIN  = dumpdata
+TESTOBJS = $(filter-out $(OBJDIR)/main.o,$(OBJECTS))
 
-beasts:
-	python3 tools/extract_beasts.py
+$(DUMPBIN): tools/dump_data.c $(TESTOBJS)
+	$(CC) $(CFLAGS) -I$(SRCDIR) -MMD -MP -o $@ tools/dump_data.c $(TESTOBJS)
 
-life:
-	python3 tools/extract_life.py
+# The game data lives in data/*.txt, hand-written. This turns it into the
+# src/gen_*.c tables the program compiles. Those are checked in, so building
+# the program needs no Python; run this after editing a data file.
+data:
+	python3 tools/build_data.py
 
-# Checks the hand-encoded tables against the book dumps.
+# The data files and the compiled tables have to say the same thing. This
+# dumps what was built from data/ into a scratch directory and compares:
+# any difference means a row was dropped or changed in translation.
+dataverify: $(DUMPBIN)
+	@tmp=`mktemp -d` && ./$(DUMPBIN) $$tmp && \
+	  if diff -r $$tmp data; then echo "data/ and the compiled tables agree"; \
+	  else rm -rf $$tmp; exit 1; fi; rm -rf $$tmp
+
+# Checks every name in data/ against the book dumps in TextFiles/.
 audit:
 	python3 tools/audit.py
 
 # Assertions on the rules engine.
 TESTBIN  = selftest
-TESTOBJS = $(filter-out $(OBJDIR)/main.o,$(OBJECTS))
 
 $(TESTBIN): tools/selftest.c $(TESTOBJS)
 	$(CC) $(CFLAGS) -I$(SRCDIR) -MMD -MP -o $@ tools/selftest.c $(TESTOBJS)
@@ -50,13 +59,13 @@ test: $(TESTBIN)
 
 # Build many characters at random and check none of them crash, that a saved
 # character reloads unchanged, and that it all holds under valgrind.
-check: test $(BIN)
+check: test dataverify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 clean:
-	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d
+	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) $(DUMPBIN).d
 
-.PHONY: all clean spells check test beasts life audit
+.PHONY: all clean check test data dataverify audit

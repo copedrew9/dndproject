@@ -209,99 +209,104 @@ it silently.
 
 ## Where the data comes from
 
-`TextFiles/` holds OCR'd text of the sourcebooks.
+Every table the program uses is hand-written, in four files under `data/`:
 
-The spell tables are **extracted** from all three books by
-`tools/extract_spells.py`, which parses every spell stat block and each
-book's class spell lists into `src/data_spells.{c,h}`:
-
-```sh
-make spells     # regenerate src/data_spells.{c,h}
+```
+data/character.txt   races, subraces, classes, subclasses, features,
+                     backgrounds, feats, invocations and the rest
+data/equipment.txt   armour, weapons, gear, tools, packs, magic items,
+                     trinkets, lifestyles and prices
+data/spells.txt      every spell
+data/world.txt       gods, beasts, sidekicks, the background tables
 ```
 
-The OCR is lossy, so the extractor cleans up after it: it folds the C/G and
-I/L confusions and lost spaces when matching list entries to descriptions,
-resolves the level of spells whose stat line reads "Sth-level" (the glyph is
-ambiguous between 3, 5 and 8) from the class lists, which state levels
-explicitly, and locates each class list by heading rather than by line number
-because one of them reads "Sorc erer Sp ells". A short, documented repair
-table in the script fixes the handful of pages the OCR damaged beyond
-matching; every entry in it was checked against the surrounding text. The
-script refuses to write output unless all 361 spells parse completely, every
-class-list entry matches a spell, and each class's cantrip count is exactly
-what the PHB gives it.
+They are line-oriented and `|` separated, the same shape as the character
+files, with a comment above each block naming its columns:
 
-Xanathar's and Tasha's set their spell names in small capitals, which the OCR
-turns into mixed case and sometimes garbles outright ("Cuaos BoLt" for *Chaos
-Bolt*). Their own class lists and summary tables carry clean names and each
-spell's school, so those supply the name and the description block supplies
-only the stat lines — and the school has to agree before the two are joined.
-Tasha's prints its new spells as one table of levels and schools followed by a
-second of ritual flags and classes, which are zipped back together.
-
-Three quirks are preserved rather than papered over. *Trap the Soul* appears
-on the PHB's wizard spell list but has no spell description anywhere in the
-book, so it is excluded and the script says so. A single 7th-level entry in
-Tasha's "Additional Druid Spells" table is destroyed in the OCR, so it is
-omitted rather than guessed, and `src/data_optional.c` says so where the list
-lives. And the *Spells Known* column of Tasha's Spellcaster sidekick table is
-unreadable in both the OCR and the PDF's own text layer — that layer is a
-subset-font encoding with no ToUnicode map, so its glyphs cannot be turned
-back into characters. The value in `src/data_sidekicks.c` is a reconstruction
-anchored on the two things the surrounding prose does state, it is labelled as
-one in the code, and the program tells the player so on screen when it uses
-it, so the DM can overrule it.
-
-Xanathar's "This Is Your Life" tables are **extracted** by
-`tools/extract_life.py`:
-
-```sh
-make life       # regenerate src/data_life.c
+```
+RACE|Dwarf|PHB|0|0|2|0|0|0|25|Medium|60|Common, Dwarvish|...
+ITEM|Longsword|PHB|martial-melee|1500|30|0|0|0|0|1d8|slashing|Versatile (1d10)|
+SPELL|Fireball|PHB|3|Evocation|0|0|1 action|150 feet|V, S, M (...)|...
 ```
 
-Those tables are the cleanest thing in that dump, so the work is all in
-knowing when a table has *not* come out whole. Each one is checked by
-whether its rows tile its die exactly: a gap would leave a roll with no
-answer and an overlap would make the result ambiguous. That check found
-things a row count never would — a table bleeding into the one after it, a
-row whose number the OCR ate, a continuation that ran on into the paragraph
-below the table. Two tables (Alignment, and Life Events) are split across
-columns in a way the script cannot read back, so they are left out and the
-script says which, rather than shipping a table with a hole in it.
+Cross-references are by name — a feature names its class, a subrace names its
+race, a magic item rule names its item — so a row can be added anywhere in a
+file without renumbering anything.
 
-The beast stat blocks are **extracted** from the *Monster Manual* by
-`tools/extract_beasts.py`:
+`tools/build_data.py` turns those files into the `src/gen_*.c` tables the
+program compiles:
 
 ```sh
-make beasts     # regenerate src/data_beasts.{c,h}
+make data       # regenerate src/gen_*.c from data/
 ```
 
-That dump is much cleaner than the others, but its appendix pages set two
-stat blocks side by side and the OCR reads them column by column: both names,
-then both Armor Class lines, then both Hit Points lines. So the script groups
-the headers on a page first and takes each field N at a time, and it bounds
-each block at the next header rather than a fixed number of lines — a wider
-window silently picks up the *following* beast's challenge rating, which is
-how the black bear came out as CR 0. Ability scores are matched to their
-column heading rather than counted off in order, so a destroyed score (a
-charisma that reads as "m", a heading split as "I NT") cannot shift its
-neighbours along. Twelve known-correct stat blocks are checked on every run,
-and the script refuses to write output if any of them disagrees. The handful
-of blocks the dump carries incompletely are typed out in the script and
-flagged if they ever start parsing.
+The generated files are checked in, so building the program needs nothing but
+a C compiler. The generator resolves every cross-reference and refuses to
+write anything if a name does not resolve, quoting the file and line — that is
+the checking the compiler used to do when the tables themselves were C.
 
-The remaining tables — races, classes, subclasses, features, backgrounds,
-feats, equipment, magic items and deities — are **hand-encoded** in
-`src/data_*.c`. The OCR shreds the book's tables (columns get separated from
-their labels, so the armour table's AC values end up detached from the armour
-names), which makes extraction unreliable for exactly the data that must be
-exact. The *Dungeon Master's Guide* is the worst of them: its magic item
-entries interleave across columns so that an item's name sits above another
-item's description. Appendix B is the same — the dump carries complete
-alignment, domain and symbol columns for the Forgotten Realms table and for
-no other pantheon. Those were written out and checked against the text
-instead; the OCR was used to cross-check the roster for completeness rather
-than to supply the values.
+Because the tables are generated, the reverse is possible too, and is worth
+doing: `tools/dump_data.c` links against the compiled tables and prints them
+back out in the same format. `make dataverify` dumps into a scratch directory
+and compares. If the two ever disagree, a row was lost or changed in
+translation.
+
+```sh
+make dataverify # data/ and the compiled tables must match byte for byte
+```
+
+That round trip is also how the data got here. It used to live in nineteen
+hand-written C files; retyping thirteen hundred verified rows would have
+introduced errors, so the first dump produced `data/` from the tables as they
+stood, and the round trip proved nothing was lost.
+
+`homebrew.txt` is the one data file read at run time rather than compiled in,
+because what a DM invents cannot be a `const` table. It uses the same record
+format and the same names for a category, a school and a class list, and it
+ships with a commented example of an item, a magic item and a spell —
+uncomment a line to bring it into play. The explanation is rewritten every
+time the file is saved, so it survives whatever the Homebrew menu does to the
+entries below it.
+
+### Checking it against the books
+
+`TextFiles/` holds OCR'd text of the sourcebooks. Nothing is built from it;
+it is kept so the data can be checked against it. `tools/audit.py`
+(`make audit`) looks up every name in `data/` in the dump of the book it
+claims to come from and reports what it cannot find:
+
+```sh
+make audit      # 2618 names checked against six book dumps
+```
+
+Matching is deliberately tolerant, because the dumps are lossy in known ways:
+they confuse C with G and I with L, lose spaces inside words, and render small
+capitals as mixed case. So names are compared on their letters alone with
+those pairs folded together. That is enough to find real mistakes — it caught
+*Undying Servitude* tagged to Xanathar's when it is Tasha's, which meant the
+feature was hidden with the wrong book switched off.
+
+What the audit reports as missing is worth stating plainly, because it is
+where the data is weakest:
+
+- **The PHB equipment table** is absent from that dump altogether — not just
+  the numbers, the names. Every cost, weight, damage die and armour value in
+  `data/equipment.txt` was typed from the book and cannot be cross-checked
+  against `TextFiles/`.
+- **Appendix B's deity columns** survive for the Forgotten Realms table and
+  for no other pantheon, so the alignment, domain and symbol columns of the
+  other eight were written from the book.
+- **Two "This Is Your Life" tables** (Alignment, and Life Events) are split
+  across columns in a way that cannot be read back, so they are absent rather
+  than guessed at.
+- **The Spellcaster sidekick's *Spells Known* column** is unreadable in the
+  OCR *and* in the PDF's own text layer, which is a subset-font encoding with
+  no ToUnicode map. The numbers in `data/world.txt` are a reconstruction
+  anchored on what the surrounding prose does state; the program says so on
+  screen when it uses them, so the DM can overrule it.
+- ***Trap the Soul*** appears on the PHB's wizard list with no description
+  anywhere in the book, and one 7th-level entry in Tasha's "Additional Druid
+  Spells" is destroyed in the dump. Both are left out rather than invented.
 
 ## Testing
 
@@ -339,34 +344,30 @@ half-caster slots and specialist spells.
 ## Layout
 
 ```
+data/character.txt     races, classes, subclasses, features, backgrounds
+data/equipment.txt     gear, weapons, armour, magic items, prices
+data/spells.txt        every spell
+data/world.txt         gods, beasts, sidekicks, background tables
+homebrew.txt           the DM's own entries, read at run time
+tools/build_data.py    data/ -> src/gen_*.c
+tools/dump_data.c      src/gen_*.c -> data/, for `make dataverify`
+tools/audit.py         checks every name in data/ against TextFiles/
+
 src/dnd.h              core types and the Character struct
 src/data.h             game data table types
+src/data_spells.h      the spell record and its enums
+src/gen_character.c    generated from data/character.txt
+src/gen_equipment.c    generated from data/equipment.txt
+src/gen_spells.c       generated from data/spells.txt
+src/gen_world.c        generated from data/world.txt
+src/data_lookup.c      the searches over those tables
 src/character.c        derived statistics
-src/data_races.c       races and subraces
-src/data_classes.c     classes, spell slot and spells-known tables
-src/data_subclasses.c  all 101 subclasses and their granted spells
-src/data_optional.c    Tasha's optional class features and added spell lists
-src/data_infusions.c   artificer infusions
-src/data_features.c    class and subclass features by level
-src/data_backgrounds.c backgrounds
-src/data_feats.c       feats
-src/data_equipment.c   armour, weapons, gear, tools, packs, mounts, vehicles
-src/data_itemtext.c    what each item does, and the weapon properties
-src/data_magicitems.c  the DMG magic item catalogue
-src/data_gearlists.c   trinkets, lifestyles, services, sizes
-src/data_classoptions.c invocations, metamagic, maneuvers, runes and the rest
-src/data_deities.c     the gods of appendix B
-src/data_spells.c/.h   generated by tools/extract_spells.py
-src/data_beasts.c/.h   generated by tools/extract_beasts.py
-src/data_sidekicks.c   the three sidekick classes and their features
-src/data_life.c        generated by tools/extract_life.py
 src/backstory.c        the This Is Your Life tables, rolled or chosen
 src/details.c          notes, personality and the other prose
 src/settings.c         which books and optional rules are in play
 src/reference.c        the item lookup browser
 src/inventory.c        adding, dropping, wearing and attuning
 src/sidekick.c         creating and levelling sidekicks
-src/data_magicrules.c  the magic items that change a computed number
 src/homebrew.c         the DM's own items and spells, and the banks
 src/build.c            creation wizard, steps 1-4
 src/progression.c      levels, subclasses, ASIs, feats, spells, level-up
@@ -398,7 +399,8 @@ grants, and which magic item an artificer's Replicate Magic Item infusion
 copies.
 
 Magic items that change a computed number flatly and unconditionally are
-computed. `src/data_magicrules.c` holds those, keyed by name:
+computed. The `MAGICRULE` lines in `data/equipment.txt` hold those, keyed by
+the item's name:
 
 - **Armor Class and saving throws** — a ring or cloak of protection, bracers
   of defense, a staff of power, magic armour and shields, and the +1/+2/+3

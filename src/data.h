@@ -547,4 +547,17 @@ extern const int WEAPON_PROPERTY_COUNT;
 extern const char *const LANGUAGES[];
 extern const int LANGUAGE_COUNT;
 
+/* The names the data files use for an item's category, a spell's school and
+ * the classes a spell belongs to. homebrew.txt is written in the same terms,
+ * so a DM editing it by hand writes "martial-melee" rather than a 6. */
+extern const char *const ITEM_CATEGORY_NAME[];
+extern const int ITEM_CATEGORY_COUNT;
+extern const char *const SPELL_CLASS_NAME[];
+extern const int SPELL_CLASS_NAME_COUNT;
+
+int item_category_by_name(const char *s);       /* -1 when unknown */
+int school_by_name(const char *s);              /* -1 when unknown */
+unsigned spell_classes_by_name(const char *csv);
+void spell_classes_text(unsigned mask, char *out, size_t n);
+
 #endif /* DATA_H */

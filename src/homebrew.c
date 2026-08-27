@@ -51,6 +51,60 @@ int homebrew_spell_count(void) { return n_spells; }
 
 int homebrew_total(void) { return n_items + n_magic + n_spells; }
 
+/* Written at the top of homebrew.txt every time it is saved, and shipped as
+   the file's initial contents, so the format is documented where a DM will
+   actually look for it. The example is commented out: uncomment a line to
+   add that entry. */
+static const char HOMEBREW_HEADER[] =
+"# homebrew.txt -- your own items and spells.\n"
+"#\n"
+"# This is the one data file the program reads while it is running. Add a\n"
+"# line here and the entry appears everywhere a printed one does: in the\n"
+"# shops, in the lookup browser, in a spell list, on a sheet. Entries made\n"
+"# through the Homebrew menu are written back here, so you can start\n"
+"# either way.\n"
+"#\n"
+"# One record per line: a tag, then '|' separated fields. A line starting\n"
+"# with '#' is a comment. Everything here is tagged as Homebrew, so the\n"
+"# settings menu can switch it all off at once.\n"
+"#\n"
+"# ITEM|name|category|cost_cp|weight_tenths|base_ac|dex_cap|str_req|\n"
+"#      stealth|damage|damage_type|properties|contents\n"
+"#   category is one of: light-armour, medium-armour, heavy-armour,\n"
+"#      shield, simple-melee, simple-ranged, martial-melee,\n"
+"#      martial-ranged, gear, tool, pack, mount\n"
+"#   cost is in copper, so 25 gp is 2500. Weight is in tenths of a pound,\n"
+"#      so 3 lb is 30.\n"
+"#   base_ac, dex_cap, str_req and stealth are for armour and are 0 on\n"
+"#      anything else. dex_cap of -1 adds the whole Dexterity modifier.\n"
+"#   damage and properties are for weapons; contents is for a pack.\n"
+"#\n"
+"# MAGICITEM|name|type|rarity|attunement|text\n"
+"#   attunement is blank when none is needed, otherwise the wording, e.g.\n"
+"#      'requires attunement by a druid'.\n"
+"#\n"
+"# SPELL|name|level|school|ritual|concentration|casting_time|range|\n"
+"#       components|duration|classes\n"
+"#   level 0 is a cantrip. school is one of: Abjuration, Conjuration,\n"
+"#      Divination, Enchantment, Evocation, Illusion, Necromancy,\n"
+"#      Transmutation.\n"
+"#   ritual and concentration are 1 or 0.\n"
+"#   classes is a comma separated list of the classes whose list it is on:\n"
+"#      bard, cleric, druid, paladin, ranger, sorcerer, warlock, wizard,\n"
+"#      artificer. A spell nobody can learn is one nobody will see.\n"
+"#\n"
+"# An example of each. Delete the '#' from a line to bring it into play.\n"
+"#\n"
+"#ITEM|Dwarven Repeating Crossbow|martial-ranged|7500|180|0|0|0|0|1d10|"
+"piercing|Ammunition (range 100/400), heavy, loading, two-handed|\n"
+"#MAGICITEM|Lantern of the Long Road|Wondrous item|uncommon|requires "
+"attunement|While lit, the lantern sheds bright light in a 30-foot radius "
+"and dim light for another 30 feet. Creatures of your choice within the "
+"bright light ignore difficult terrain caused by mud, snow or undergrowth.\n"
+"#SPELL|Mendicant's Warning|1|Divination|1|0|1 action|Self|V, S|"
+"1 hour|bard,cleric,warlock\n"
+"#\n";
+
 /* ------------------------------------------------------- rebuilding a bank */
 
 /* Points a bank at a fresh array of the book's entries plus the custom ones.
@@ -98,6 +152,38 @@ static void strip_newline(char *s)
     while (n && (s[n - 1] == '\n' || s[n - 1] == '\r')) s[--n] = '\0';
 }
 
+
+/* The file names a category, a school and a list of classes the way the
+   data files do, so a DM editing it by hand writes "martial-melee" rather
+   than a 6. A bare number is still read, so a file written by an earlier
+   build still loads. */
+static int all_digits(const char *s)
+{
+    if (!*s) return 0;
+    for (; *s; s++) if (*s < '0' || *s > '9') return 0;
+    return 1;
+}
+
+static int category_of(const char *s)
+{
+    int n = item_category_by_name(s);
+    if (n >= 0) return n;
+    return all_digits(s) ? atoi(s) : ITEM_GEAR;
+}
+
+static int school_of(const char *s)
+{
+    int n = school_by_name(s);
+    if (n >= 0) return n;
+    return all_digits(s) ? atoi(s) : SCHOOL_EVOCATION;
+}
+
+static unsigned classes_of(const char *s)
+{
+    if (all_digits(s)) return (unsigned)atoi(s);
+    return spell_classes_by_name(s);
+}
+
 int homebrew_load(void)
 {
     char line[1024];
@@ -119,7 +205,7 @@ int homebrew_load(void)
             memset(it, 0, sizeof *it);
             it->name = keep(fields[1]);
             it->book = BOOK_HOMEBREW;
-            it->category = (ItemCategory)atoi(fields[2]);
+            it->category = (ItemCategory)category_of(fields[2]);
             it->cost_cp = atoi(fields[3]);
             it->weight_tenths = atoi(fields[4]);
             it->base_ac = atoi(fields[5]);
@@ -139,20 +225,20 @@ int homebrew_load(void)
             m->rarity = keep(fields[3]);
             m->attunement = fields[4][0] ? keep(fields[4]) : NULL;
             m->text = keep(fields[5]);
-        } else if (!strcmp(fields[0], "SPELL") && n >= 12
+        } else if (!strcmp(fields[0], "SPELL") && n >= 11
                    && n_spells < MAX_CUSTOM) {
             SpellData *sp = &custom_spells[n_spells++];
             sp->name = keep(fields[1]);
             sp->book = BOOK_HOMEBREW;
             sp->level = (unsigned char)atoi(fields[2]);
-            sp->school = (unsigned char)atoi(fields[3]);
+            sp->school = (unsigned char)school_of(fields[3]);
             sp->ritual = (unsigned char)atoi(fields[4]);
             sp->concentration = (unsigned char)atoi(fields[5]);
             sp->casting_time = keep(fields[6]);
             sp->range = keep(fields[7]);
             sp->components = keep(fields[8]);
             sp->duration = keep(fields[9]);
-            sp->classes = (unsigned short)atoi(fields[10]);
+            sp->classes = (unsigned short)classes_of(fields[10]);
         }
     }
     fclose(f);
@@ -166,24 +252,19 @@ int homebrew_save(void)
     FILE *f;
     int i;
 
-    if (homebrew_total() == 0) {
-        remove(HOMEBREW_FILE);
-        return 0;
-    }
     f = fopen(HOMEBREW_FILE, "w");
     if (!f) return -1;
 
-    fprintf(f, "# Homebrew items and spells, read at startup.\n"
-               "# ITEM|name|category|cost_cp|weight_tenths|base_ac|dex_cap|"
-               "str_req|stealth|damage|damage_type|properties|contents\n"
-               "# MAGICITEM|name|type|rarity|attunement|text\n"
-               "# SPELL|name|level|school|ritual|concentration|casting_time|"
-               "range|components|duration|classes|\n");
+    /* The explanation is written every time, even when there is nothing to
+       write under it, so a DM who empties the list is not left with a blank
+       file and no idea what goes in it. */
+    fputs(HOMEBREW_HEADER, f);
 
     for (i = 0; i < n_items; i++) {
         const ItemData *it = &custom_items[i];
-        fprintf(f, "ITEM|%s|%d|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", it->name,
-                (int)it->category, it->cost_cp, it->weight_tenths,
+        fprintf(f, "ITEM|%s|%s|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", it->name,
+                ITEM_CATEGORY_NAME[it->category], it->cost_cp,
+                it->weight_tenths,
                 it->base_ac, it->dex_cap, it->str_req,
                 it->stealth_disadvantage, it->damage, it->damage_type,
                 it->properties, it->contents);
@@ -195,10 +276,12 @@ int homebrew_save(void)
     }
     for (i = 0; i < n_spells; i++) {
         const SpellData *sp = &custom_spells[i];
-        fprintf(f, "SPELL|%s|%d|%d|%d|%d|%s|%s|%s|%s|%d|\n", sp->name,
-                sp->level, sp->school, sp->ritual, sp->concentration,
-                sp->casting_time, sp->range, sp->components, sp->duration,
-                sp->classes);
+        char classes[160];
+        spell_classes_text(sp->classes, classes, sizeof classes);
+        fprintf(f, "SPELL|%s|%d|%s|%d|%d|%s|%s|%s|%s|%s\n", sp->name,
+                sp->level, SCHOOL_NAMES[sp->school], sp->ritual,
+                sp->concentration, sp->casting_time, sp->range,
+                sp->components, sp->duration, classes);
     }
     fclose(f);
     return 0;
