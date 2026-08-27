@@ -268,7 +268,13 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     if (item_id < 0 || item_id >= ITEM_COUNT || qty <= 0) return;
 
     for (i = 0; i < c->item_count; i++) {
-        if (c->inventory[i].item_id == item_id
+        /* item_id indexes ITEMS here and MAGIC_ITEMS in a magic entry, so
+           the two have to be told apart before the indices are compared:
+           without this, buying the scale mail whose row happens to sit at
+           the same index as the amulet already carried added a second
+           amulet instead. */
+        if (!c->inventory[i].is_magic
+            && c->inventory[i].item_id == item_id
             && c->inventory[i].equipped == equipped) {
             c->inventory[i].quantity += qty;
             return;

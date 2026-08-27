@@ -168,14 +168,28 @@ static int category_of(const char *s)
 {
     int n = item_category_by_name(s);
     if (n >= 0) return n;
-    return all_digits(s) ? atoi(s) : ITEM_GEAR;
+    /* A number is taken as the category index it names, but only one that
+       exists: CATEGORY_LABEL is indexed by this wherever an item is
+       printed, and a hand-written file naming category 999 read past the
+       end of it. */
+    if (all_digits(s)) {
+        n = atoi(s);
+        if (n >= 0 && n <= ITEM_MOUNT) return n;
+    }
+    return ITEM_GEAR;
 }
 
 static int school_of(const char *s)
 {
     int n = school_by_name(s);
     if (n >= 0) return n;
-    return all_digits(s) ? atoi(s) : SCHOOL_EVOCATION;
+    /* Bounded for the same reason as the category: SCHOOL_NAMES is indexed
+       by it on every sheet the spell appears on. */
+    if (all_digits(s)) {
+        n = atoi(s);
+        if (n >= 0 && n < SCHOOL_COUNT) return n;
+    }
+    return SCHOOL_EVOCATION;
 }
 
 static unsigned classes_of(const char *s)
@@ -230,7 +244,12 @@ int homebrew_load(void)
             SpellData *sp = &custom_spells[n_spells++];
             sp->name = keep(fields[1]);
             sp->book = BOOK_HOMEBREW;
-            sp->level = (unsigned char)atoi(fields[2]);
+            {   /* Spell levels run 0 (a cantrip) to 9; a level outside
+                    that belongs to no slot and no list, so it would be a
+                    spell that could be written down but never cast. */
+                int lv = atoi(fields[2]);
+                sp->level = (unsigned char)(lv < 0 ? 0 : lv > 9 ? 9 : lv);
+            }
             sp->school = (unsigned char)school_of(fields[3]);
             sp->ritual = (unsigned char)atoi(fields[4]);
             sp->concentration = (unsigned char)atoi(fields[5]);

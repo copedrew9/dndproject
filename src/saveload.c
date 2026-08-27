@@ -629,6 +629,49 @@ static void write_sheet(FILE *f, const Character *c)
 
 /* -------------------------------------------------------- the data block */
 
+/* The block is one record per line and '|' separated, so any text the player
+   typed has to be written with those two characters escaped, and with the
+   escape itself escaped. Notes did this from the start, a note being the one
+   field expected to run to paragraphs. Everything else was written raw, and
+   a single '|' in a name, an appearance or a tool a table invented shifted
+   every field after it: the character came back as whatever was left before
+   the stray separator, silently, with the rest dropped. */
+static void put_text(FILE *f, const char *s)
+{
+    for (; s && *s; s++) {
+        if (*s == '\n')      fputs("\\n", f);
+        else if (*s == '|')  fputs("\\p", f);
+        else if (*s == '\\') fputs("\\\\", f);
+        else                 fputc(*s, f);
+    }
+}
+
+/* A record of one text field, which is most of them. */
+static void put_line(FILE *f, const char *tag, const char *text)
+{
+    fprintf(f, "%s|", tag);
+    put_text(f, text);
+    fputc('\n', f);
+}
+
+/* Reverses put_text() in place; the result is never longer than the input.
+   An escape the writer never emits keeps the character and loses the
+   backslash, which is what notes have always done. */
+static void unescape(char *s)
+{
+    char *out = s;
+
+    for (; *s; s++) {
+        if (*s == '\\' && s[1]) {
+            s++;
+            *out++ = (*s == 'n') ? '\n' : (*s == 'p') ? '|' : *s;
+        } else {
+            *out++ = *s;
+        }
+    }
+    *out = '\0';
+}
+
 static void write_data(FILE *f, const Character *c)
 {
     int i;
@@ -655,8 +698,8 @@ static void write_data(FILE *f, const Character *c)
     fprintf(f, "|%d|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
             SETTINGS.optional_features, SETTINGS.multiclassing,
             SETTINGS.feats, SETTINGS.experience, SETTINGS.manual_dice);
-    fprintf(f, "NAME|%s\n", c->name);
-    fprintf(f, "PLAYER|%s\n", c->player);
+    put_line(f, "NAME", c->name);
+    put_line(f, "PLAYER", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
     if (c->subrace_id >= 0) {
         fprintf(f, "SUBRACE|%s\n", SUBRACES[c->subrace_id].name);
@@ -666,9 +709,15 @@ static void write_data(FILE *f, const Character *c)
     } else if (c->background_name[0]) {
         /* A background built with the customization rules has no table row
            to point at, so everything it granted is written out. */
-        fprintf(f, "CUSTOMBG|%s|%s|%s|%s\n", c->background_name,
-                c->background_feature, c->background_feature_text,
-                c->background_equipment);
+        fputs("CUSTOMBG|", f);
+        put_text(f, c->background_name);
+        fputc('|', f);
+        put_text(f, c->background_feature);
+        fputc('|', f);
+        put_text(f, c->background_feature_text);
+        fputc('|', f);
+        put_text(f, c->background_equipment);
+        fputc('\n', f);
     }
     fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
     if (c->ancestry_id >= 0) {
@@ -702,31 +751,38 @@ static void write_data(FILE *f, const Character *c)
     }
 
     for (i = 0; i < c->language_count; i++) {
-        fprintf(f, "LANG|%s\n", c->languages[i]);
+        put_line(f, "LANG", c->languages[i]);
     }
     for (i = 0; i < c->tool_prof_count; i++) {
-        fprintf(f, "TOOL|%s\n", c->tool_profs[i]);
+        put_line(f, "TOOL", c->tool_profs[i]);
     }
     for (i = 0; i < c->other_prof_count; i++) {
-        fprintf(f, "PROF|%s\n", c->other_profs[i]);
+        put_line(f, "PROF", c->other_profs[i]);
     }
     for (i = 0; i < c->feat_count; i++) {
         fprintf(f, "FEAT|%s\n", FEATS[c->feats[i]].name);
     }
     for (i = 0; i < c->choice_count; i++) {
-        fprintf(f, "CHOICE|%s|%s\n", c->choices[i].label, c->choices[i].value);
+        fprintf(f, "CHOICE|");
+        put_text(f, c->choices[i].label);
+        fputc('|', f);
+        put_text(f, c->choices[i].value);
+        fputc('\n', f);
     }
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic) {
-            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d|%s\n",
-                    c->inventory[i].quantity, c->inventory[i].attuned,
-                    MAGIC_ITEMS[c->inventory[i].item_id].name,
-                    c->inventory[i].plus, c->inventory[i].equipped,
-                    c->inventory[i].variant);
+            fprintf(f, "MAGICITEM|%d|%d|", c->inventory[i].quantity,
+                    c->inventory[i].attuned);
+            put_text(f, MAGIC_ITEMS[c->inventory[i].item_id].name);
+            fprintf(f, "|%d|%d|", c->inventory[i].plus,
+                    c->inventory[i].equipped);
+            put_text(f, c->inventory[i].variant);
+            fputc('\n', f);
         } else {
-            fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
-                    c->inventory[i].equipped,
-                    ITEMS[c->inventory[i].item_id].name);
+            fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
+                    c->inventory[i].equipped);
+            put_text(f, ITEMS[c->inventory[i].item_id].name);
+            fputc('\n', f);
         }
     }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
@@ -734,19 +790,35 @@ static void write_data(FILE *f, const Character *c)
     for (i = 0; i < c->sidekick_count; i++) {
         const Sidekick *sk = &c->sidekicks[i];
         int k;
-        fprintf(f, "SIDEKICK|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s\n",
-                sk->name, sk->creature, SIDEKICK_CLASS_NAME[sk->cls],
+        fputs("SIDEKICK|", f);
+        put_text(f, sk->name);
+        fputc('|', f);
+        put_text(f, sk->creature);
+        fprintf(f, "|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|",
+                SIDEKICK_CLASS_NAME[sk->cls],
                 sk->level, sk->role, sk->abilities[0], sk->abilities[1],
                 sk->abilities[2], sk->abilities[3], sk->abilities[4],
-                sk->abilities[5], sk->hp, sk->speed);
-        fprintf(f, "SKAC|%s|%d\n", sk->name, sk->ac);
+                sk->abilities[5], sk->hp);
+        put_text(f, sk->speed);
+        fputc('\n', f);
+        fputs("SKAC|", f);
+        put_text(f, sk->name);
+        fprintf(f, "|%d\n", sk->ac);
         for (k = 0; k < sk->choice_count; k++) {
-            fprintf(f, "SKCHOICE|%s|%s|%s\n", sk->name,
-                    sk->choices[k].label, sk->choices[k].value);
+            fputs("SKCHOICE|", f);
+            put_text(f, sk->name);
+            fputc('|', f);
+            put_text(f, sk->choices[k].label);
+            fputc('|', f);
+            put_text(f, sk->choices[k].value);
+            fputc('\n', f);
         }
         for (k = 0; k < sk->spell_count; k++) {
-            fprintf(f, "SKSPELL|%s|%s\n", sk->name,
-                    SPELLS[sk->spells[k]].name);
+            fputs("SKSPELL|", f);
+            put_text(f, sk->name);
+            fputc('|', f);
+            put_text(f, SPELLS[sk->spells[k]].name);
+            fputc('\n', f);
         }
     }
     for (i = 0; i < c->spell_count; i++) {
@@ -763,31 +835,29 @@ static void write_data(FILE *f, const Character *c)
     for (i = 0; i < c->hp_roll_count; i++) fprintf(f, "|%d", c->hp_rolls[i]);
     fprintf(f, "\n");
 
-    fprintf(f, "BODY|%d|%d|%d|%s|%s|%s\n", c->age, c->height_in, c->weight_lb,
-            c->eyes, c->skin, c->hair);
-    fprintf(f, "TRAIT|%s\n", c->trait);
-    fprintf(f, "IDEAL|%s\n", c->ideal);
-    fprintf(f, "BOND|%s\n", c->bond);
-    fprintf(f, "FLAW|%s\n", c->flaw);
-    fprintf(f, "APPEARANCE|%s\n", c->appearance);
+    fprintf(f, "BODY|%d|%d|%d|", c->age, c->height_in, c->weight_lb);
+    put_text(f, c->eyes);
+    fputc('|', f);
+    put_text(f, c->skin);
+    fputc('|', f);
+    put_text(f, c->hair);
+    fputc('\n', f);
+    put_line(f, "TRAIT", c->trait);
+    put_line(f, "IDEAL", c->ideal);
+    put_line(f, "BOND", c->bond);
+    put_line(f, "FLAW", c->flaw);
+    put_line(f, "APPEARANCE", c->appearance);
     {
         int k;
         for (k = 0; k < c->note_count; k++) {
-            const char *p;
-            fprintf(f, "NOTE|%s|", c->notes[k].title);
-            /* The format is one record per line and '|' separated, so a
-               note's own newlines and pipes are escaped rather than
-               allowed to break it. */
-            for (p = c->notes[k].body; *p; p++) {
-                if (*p == '\n')      fputs("\\n", f);
-                else if (*p == '|')  fputs("\\p", f);
-                else if (*p == '\\') fputs("\\\\", f);
-                else                 fputc(*p, f);
-            }
+            fputs("NOTE|", f);
+            put_text(f, c->notes[k].title);
+            fputc('|', f);
+            put_text(f, c->notes[k].body);
             fputc('\n', f);
         }
     }
-    fprintf(f, "BACKSTORY|%s\n", c->backstory);
+    put_line(f, "BACKSTORY", c->backstory);
 
     fprintf(f, "%s\n", DATA_END);
 }
@@ -859,7 +929,12 @@ static void copy_field(char *dst, size_t n, const char *src)
 int load_character(const char *path, Character *c)
 {
     FILE *f = fopen(path, "r");
-    char line[1024];
+    /* Long enough for the longest record the writer can produce: a note,
+       whose title and body are both escaped and so can double in length.
+       At 1024 a note of more than about a thousand characters was cut in
+       half, and the half that was left over was read as a record of its
+       own. */
+    char line[2 * MAX_LORE + 2 * MAX_NAME + 64];
     int in_data = 0;
 
     if (!f) return -1;
@@ -869,8 +944,19 @@ int load_character(const char *path, Character *c)
 
     while (fgets(line, sizeof line, f)) {
         char *fields[32];
-        int n;
+        int n, k;
 
+        /* A hand-edited record longer than the buffer would arrive as two,
+           and its tail would be read as a record of its own. Drop the tail
+           and say so rather than inventing a record out of it. */
+        if (!strchr(line, '\n')) {
+            int ch, dropped = 0;
+            while ((ch = fgetc(f)) != EOF && ch != '\n') dropped++;
+            if (dropped) {
+                fprintf(stderr, "  note: a line in %s was too long to read; "
+                                "%d characters were dropped.\n", path, dropped);
+            }
+        }
         line[strcspn(line, "\r\n")] = '\0';
 
         if (!in_data) {
@@ -882,6 +968,10 @@ int load_character(const char *path, Character *c)
 
         n = split_fields(line, fields, 32);
         if (n < 1) continue;
+        /* Every field is written escaped, so every field is read unescaped.
+           One that carries no escape is unchanged, which is what makes a
+           file written before this still read correctly. */
+        for (k = 0; k < n; k++) unescape(fields[k]);
 
         if (!strcmp(fields[0], "SETTINGS") && n >= 2) {
             /* Two shapes. Files written now name the books they allow. Older
@@ -954,23 +1044,10 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "NOTE") && n >= 2) {
             if (c->note_count < MAX_NOTES) {
                 Note *nt = &c->notes[c->note_count++];
-                char *out = nt->body;
-                const char *p = (n >= 3) ? fields[2] : "";
-                size_t room = sizeof nt->body - 1;
 
                 snprintf(nt->title, sizeof nt->title, "%s", fields[1]);
-                while (*p && room) {
-                    if (*p == '\\' && p[1]) {
-                        p++;
-                        *out++ = (*p == 'n') ? '\n'
-                               : (*p == 'p') ? '|' : *p;
-                        p++;
-                    } else {
-                        *out++ = *p++;
-                    }
-                    room--;
-                }
-                *out = '\0';
+                snprintf(nt->body, sizeof nt->body, "%s",
+                         (n >= 3) ? fields[2] : "");
                 /* Notes written before they had a title and a body of
                    their own are a single line; keep it as both. */
                 if (!nt->body[0]) {
@@ -1084,15 +1161,21 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
             int id = find_magic_item(fields[3]);
             if (id >= 0) {
+                int before = c->item_count;
                 /* Older files have no plus or worn column; both read as 0. */
                 add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]),
                                n >= 5 ? atoi(fields[4]) : 0);
-                if (n >= 6 && atoi(fields[5])) {
-                    c->inventory[c->item_count - 1].equipped = 1;
-                }
-                if (n >= 7) {
-                    snprintf(c->inventory[c->item_count - 1].variant,
-                             sizeof c->inventory[0].variant, "%s", fields[6]);
+                /* A row the bank declines -- a quantity of zero or less, or
+                   an inventory already full -- adds nothing, and the columns
+                   after the name then have no entry of their own to land on.
+                   Writing them anyway indexed one before the array. */
+                if (c->item_count > before) {
+                    InventoryEntry *e = &c->inventory[c->item_count - 1];
+                    if (n >= 6 && atoi(fields[5])) e->equipped = 1;
+                    if (n >= 7) {
+                        snprintf(e->variant, sizeof e->variant, "%s",
+                                 fields[6]);
+                    }
                 }
             } else {
                 warn_unknown("magic item", fields[3]);
