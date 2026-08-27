@@ -5,11 +5,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 
-/* Subclasses are referenced by name so the tables can grow freely. */
-static int is_third_caster(int sub)
+/* Subclasses are referenced by name so the tables can grow freely. Shared
+   with character.c, which needs it for the multiclass caster level. */
+int is_third_caster(int sub)
 {
     return subclass_is(sub, "Eldritch Knight")
         || subclass_is(sub, "Arcane Trickster");
@@ -271,8 +271,6 @@ void apply_asi_or_feat(Character *c, const char *reason)
         int any = 0;
 
         for (a = 0; a < ABL_COUNT; a++) {
-            char label[64];
-            (void)label;
             opts[a] = ABILITY_NAME[a];
             avail[a] = (ability_score(c, (Ability)a) + step) <= 20;
             if (avail[a]) any++;
@@ -727,18 +725,8 @@ static int recorded_for(const Character *c, int class_id, int cantrips_only)
 static int find_spell_by_name(const char *name)
 {
     int i;
-    size_t j;
     for (i = 0; i < SPELL_COUNT; i++) {
-        const char *a = SPELLS[i].name, *b = name;
-        size_t la = strlen(a), lb = strlen(b);
-        if (la != lb) continue;
-        for (j = 0; j < la; j++) {
-            int ca = a[j], cb = b[j];
-            if (ca >= 'A' && ca <= 'Z') ca += 32;
-            if (cb >= 'A' && cb <= 'Z') cb += 32;
-            if (ca != cb) break;
-        }
-        if (j == la) return i;
+        if (same_fold(SPELLS[i].name, name)) return i;
     }
     return -1;
 }
@@ -831,22 +819,14 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 static void grant_spell_group(Character *c, const char *group, int class_id,
                               int always)
 {
-    char names[256], *p, *start;
+    char names[256], *cursor = names, *piece;
 
     strncpy(names, group, sizeof names - 1);
     names[sizeof names - 1] = '\0';
-    start = names;
-    for (p = names;; p++) {
-        if (*p == ',' || *p == '\0') {
-            int end = (*p == '\0');
-            *p = '\0';
-            while (*start == ' ') start++;
-            if (*start) {
-                int sid = find_spell_by_name(start);
-                if (sid >= 0) add_spell(c, sid, class_id, 1, always);
-            }
-            if (end) break;
-            start = p + 1;
+    while ((piece = next_csv(&cursor)) != NULL) {
+        if (*piece) {
+            int sid = find_spell_by_name(piece);
+            if (sid >= 0) add_spell(c, sid, class_id, 1, always);
         }
     }
 }
@@ -1048,17 +1028,6 @@ void manage_spells(Character *c, int class_id)
     }
 }
 
-int class_of_spell(const Character *c, int spell_id)
-{
-    int i;
-    for (i = 0; i < c->class_count; i++) {
-        int bit = spell_class_bit(c->classes[i].class_id,
-                                  c->classes[i].subclass_id);
-        if (SPELLS[spell_id].classes & bit) return c->classes[i].class_id;
-    }
-    return c->class_count ? c->classes[0].class_id : 0;
-}
-
 /* ------------------------------------------------- class option lists */
 
 /* How many entries with this label the character has already recorded. */
@@ -1215,15 +1184,6 @@ static void offer_class_options(Character *c, int slot, int class_level)
  * the save file the way anything else does.
  */
 
-static int levels_in_class(const Character *c, int class_id)
-{
-    int i;
-    for (i = 0; i < c->class_count; i++) {
-        if (c->classes[i].class_id == class_id) return c->classes[i].level;
-    }
-    return 0;
-}
-
 /* A spell a feat grants outright. It is filed under no class, so it never
    counts against a class's cantrips or spells known. */
 static void grant_feat_spell(Character *c, const char *name)
@@ -1315,7 +1275,7 @@ static void feat_extras(Character *c, int feat_id)
     if (!strcmp(name, "Eldritch Adept")) {
         /* Tasha's, p.79: an invocation with a prerequisite is open only to
            a warlock who meets it. */
-        int wl = levels_in_class(c, CLS_WARLOCK);
+        int wl = class_level_of(c, CLS_WARLOCK);
         ol = option_list_named("eldritch invocations");
         if (ol) pick_from_option_list(c, ol, "Eldritch Adept invocation",
                                       "Eldritch Invocation", wl, wl > 0, 1);

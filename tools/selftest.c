@@ -9,6 +9,7 @@
 #include "build.h"
 #include "data_spells.h"
 #include "saveload.h"
+#include "homebrew.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1833,7 +1834,6 @@ static void test_sweep_content(void)
         snprintf(sk->name, sizeof sk->name, "Companion");
         snprintf(sk->creature, sizeof sk->creature, "%s", BEASTS[i].name);
         snprintf(sk->speed, sizeof sk->speed, "%s", BEASTS[i].speed);
-        sk->beast_id = i;
         sk->cls = SK_WARRIOR;
         sk->level = 1;
         sk->role = -1;
@@ -1957,6 +1957,68 @@ static void test_inventory_id_spaces(void)
     EQ(c.item_count, 0, "a quantity of zero adds nothing");
 }
 
+
+/* homebrew.txt is the one file read while the program runs, and a DM types
+   its contents. It shares the character file's record format, so a name with
+   a separator in it has to survive being written and read the same way. */
+static void test_homebrew_file(void)
+{
+    static char before[200000], after[200000];
+    size_t n_before;
+    FILE *f;
+    int i, found;
+
+    printf("the homebrew file keeps what the DM typed\n");
+
+    /* The DM's own file is put back exactly as it was found. */
+    n_before = slurp("homebrew.txt", before, sizeof before);
+
+    f = fopen("homebrew.txt", "w");
+    if (!f) {
+        printf("  FAIL could not write a homebrew file to test with\n");
+        failures++;
+        return;
+    }
+    fputs("MAGICITEM|Hammer\\pof Dawn|wondrous item|rare|"
+          "requires attunement|It shines a\\pbit, and costs 5\\\\10 gp.\n", f);
+    fputs("ITEM|Pole\\parm|martial-melee|2000|60|0|0|0|0|1d10|slashing|"
+          "Heavy, reach|\n", f);
+    fclose(f);
+
+    EQ(homebrew_load(), 2, "both homebrew entries load");
+
+    for (i = 0, found = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (!strcmp(MAGIC_ITEMS[i].name, "Hammer|of Dawn")) found = 1;
+    }
+    check(found, "a '|' in a magic item's name comes back", 0, 0);
+    for (i = 0, found = 0; i < ITEM_COUNT; i++) {
+        if (!strcmp(ITEMS[i].name, "Pole|arm")) found = 1;
+    }
+    check(found, "a '|' in an item's name comes back", 0, 0);
+
+    /* Written back out, the separator must be escaped again rather than
+       breaking the line it is written on. */
+    EQ(homebrew_save(), 0, "the homebrew file is written");
+    slurp("homebrew.txt", after, sizeof after);
+    check(strstr(after, "Hammer\\pof Dawn") != NULL,
+          "the name is written back escaped", 0, 0);
+    check(strstr(after, "5\\\\10 gp") != NULL,
+          "a backslash is written back escaped", 0, 0);
+
+    EQ(homebrew_load(), 2, "and the file it wrote reads back");
+    for (i = 0, found = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (!strcmp(MAGIC_ITEMS[i].name, "Hammer|of Dawn")) found = 1;
+    }
+    check(found, "the name survives a second trip through the file", 0, 0);
+
+    if (n_before) {
+        f = fopen("homebrew.txt", "w");
+        if (f) { fwrite(before, 1, n_before, f); fclose(f); }
+    } else {
+        remove("homebrew.txt");
+    }
+}
+
 int main(void)
 {
     printf("dndcreator self-test\n\n");
@@ -1991,6 +2053,9 @@ int main(void)
     test_awkward_text();
     test_sweep_characters();
     test_sweep_content();
+    /* Last: it repoints the banks, which the checks above compare
+       against the books' own tables. */
+    test_homebrew_file();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");
     return failures ? 1 : 0;

@@ -14,7 +14,6 @@
 #include "reference.h"
 #include "saveload.h"
 #include "ui.h"
-#include "data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,24 +108,6 @@ static void do_level_up(void)
     save_and_report(&c);
 }
 
-static void do_view(void)
-{
-    Character c;
-    char name[MAX_NAME], path[MAX_NAME + 8];
-
-    ui_line("  Character name (or a path to the .txt file)", name, sizeof name);
-    if (!name[0]) return;
-
-    if (strstr(name, ".txt")) snprintf(path, sizeof path, "%s", name);
-    else snprintf(path, sizeof path, "%s.txt", name);
-
-    if (load_character(path, &c) != 0) {
-        printf("  Could not read %s\n", path);
-        return;
-    }
-    print_sheet(&c);
-}
-
 /* Loads a saved character by name or path. Returns 0 on success. */
 static int load_by_name(const char *prompt, Character *c)
 {
@@ -143,6 +124,15 @@ static int load_by_name(const char *prompt, Character *c)
         return -1;
     }
     return 0;
+}
+
+static void do_view(void)
+{
+    Character c;
+
+    if (load_by_name("  Character name (or a path to the .txt file)", &c))
+        return;
+    print_sheet(&c);
 }
 
 static void do_details(void)

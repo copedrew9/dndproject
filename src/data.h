@@ -411,7 +411,6 @@ typedef struct {
 
 extern const Deity DEITIES[];
 extern const int DEITY_COUNT;
-int find_deity(const char *name);
 
 /* Tasha's sidekicks: a creature of challenge 1/2 or lower given levels in
  * one of three simple classes. */
@@ -629,6 +628,10 @@ extern const char *const ITEM_CATEGORY_NAME[];
 extern const int ITEM_CATEGORY_COUNT;
 extern const char *const SPELL_CLASS_NAME[];
 extern const int SPELL_CLASS_NAME_COUNT;
+
+/* Case-insensitive equality; strcasecmp is not in C99, and the tables are
+   searched by names that saved sheets may capitalise differently. */
+int same_fold(const char *a, const char *b);
 
 int item_category_by_name(const char *s);       /* -1 when unknown */
 int school_by_name(const char *s);              /* -1 when unknown */

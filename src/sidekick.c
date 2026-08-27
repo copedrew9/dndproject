@@ -71,7 +71,6 @@ static int choose_creature(Sidekick *sk)
         {
             const BeastData *b = &BEASTS[map[pick]];
             int a;
-            sk->beast_id = map[pick];
             snprintf(sk->creature, sizeof sk->creature, "%s", b->name);
             for (a = 0; a < 6; a++) sk->abilities[a] = b->abilities[a];
             sk->hp = b->hp;
@@ -82,7 +81,6 @@ static int choose_creature(Sidekick *sk)
     }
     case 1: {
         int a;
-        sk->beast_id = -1;
         ui_line("  Creature name", sk->creature, sizeof sk->creature);
         if (!sk->creature[0]) return 0;
         printf("  Its stat block must be challenge 1/2 or lower.\n");
@@ -335,7 +333,6 @@ int create_sidekick(Sidekick *sk, int party_level)
     int i, lvl;
 
     memset(sk, 0, sizeof *sk);
-    sk->beast_id = -1;
     sk->role = -1;
 
     ui_header("Add a Sidekick");

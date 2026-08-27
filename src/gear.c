@@ -24,13 +24,6 @@ static void print_price(int cp, char *out, size_t n)
     else                            snprintf(out, n, "%d cp", cp);
 }
 
-static void print_weight(int tenths, char *out, size_t n)
-{
-    if (tenths == 0)          snprintf(out, n, "--");
-    else if (tenths % 10 == 0) snprintf(out, n, "%d lb", tenths / 10);
-    else                       snprintf(out, n, "%d.%d lb", tenths / 10, tenths % 10);
-}
-
 /* Equips the best armour and a shield if the character owns any. */
 static void auto_equip(Character *c)
 {
@@ -419,7 +412,6 @@ static void shop(Character *c)
 {
     for (;;) {
         const char *cats[16];
-        char catlabel[16][48];
         int i, cat, purse_cp;
 
         purse_cp = c->gold * 100 + c->silver * 10 + c->copper
@@ -432,13 +424,10 @@ static void shop(Character *c)
 
         if (!ui_yesno("  Buy or add equipment?", 0)) return;
 
-        for (i = 0; i < 12; i++) {
-            snprintf(catlabel[i], sizeof catlabel[i], "%s", CATEGORY_NAME[i]);
-            cats[i] = catlabel[i];
-        }
-        cats[12] = "Done shopping";
-        cat = ui_menu("  Category:", cats, NULL, 13);
-        if (cat == 12) return;
+        for (i = 0; i < ITEM_CATEGORY_COUNT; i++) cats[i] = CATEGORY_NAME[i];
+        cats[ITEM_CATEGORY_COUNT] = "Done shopping";
+        cat = ui_menu("  Category:", cats, NULL, ITEM_CATEGORY_COUNT + 1);
+        if (cat == ITEM_CATEGORY_COUNT) return;
 
         {
             const char *opts[256];
@@ -450,7 +439,7 @@ static void shop(Character *c)
                 if ((int)ITEMS[i].category != cat) continue;
                 if (!book_enabled(ITEMS[i].book)) continue;
                 print_price(ITEMS[i].cost_cp, price, sizeof price);
-                print_weight(ITEMS[i].weight_tenths, weight, sizeof weight);
+                format_weight(ITEMS[i].weight_tenths, weight, sizeof weight);
 
                 if (ITEMS[i].damage[0]) {
                     snprintf(lines[n], sizeof lines[n],

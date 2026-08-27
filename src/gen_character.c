@@ -1991,9 +1991,9 @@ const FeatureData FEATURES[] = {
       "you." },
     { 4, 14, 10, "Improved Combat Superiority",
       "Your superiority dice become d10s." },
-    { 4, 14, 15, "Improved Combat Superiority",
+    { 4, 14, 18, "Improved Combat Superiority",
       "Your superiority dice become d12s." },
-    { 4, 14, 18, "Relentless",
+    { 4, 14, 15, "Relentless",
       "Regain one superiority die when you roll initiative with "
       "none left." },
     { 4, 15, 3, "Spellcasting",
@@ -3192,10 +3192,10 @@ const FeatureData FEATURES[] = {
     { 0, 76, 3, "Wild Surge",
       "Rolling for rage triggers a random magical effect around "
       "you." },
-    { 0, 76, 3, "Bolstering Magic",
+    { 0, 76, 6, "Bolstering Magic",
       "Grant an ally a bonus to attacks and checks, or restore a "
       "spell slot." },
-    { 0, 76, 6, "Magic Awareness",
+    { 0, 76, 3, "Magic Awareness",
       "Detect spells and magic items within 60 feet." },
     { 0, 76, 10, "Unstable Backlash",
       "Reroll your Wild Surge as a reaction when you are hit or "
@@ -3223,7 +3223,7 @@ const FeatureData FEATURES[] = {
       "A Bardic Inspiration die that fails to help is not spent." },
     { 1, 78, 14, "Infectious Inspiration",
       "When an inspiration die helps, grant another as a reaction." },
-    { 1, 78, 14, "Universal Speech",
+    { 1, 78, 6, "Universal Speech",
       "Make yourself understood by creatures of your choice for an "
       "hour." },
     { 2, 79, 1, "Bonus Proficiencies",
@@ -4768,7 +4768,7 @@ const BackgroundData BACKGROUNDS[] = {
       "The people who knew me when I was young know my shameful "
         "secret.",
       "I have a weakness for the vices of the city.",
-      "I am inflexible in my thinking.",
+      "I have trouble trusting in my allies.",
       NULL
     }
     },
@@ -4785,7 +4785,8 @@ const BackgroundData BACKGROUNDS[] = {
       "I believe that anything worth doing is worth doing right.",
       "I am well known for my work, and I want to make sure "
         "everyone appreciates it.",
-      "I have a one-track mind and pursue my goals relentlessly.",
+      "I always want to know how things work and what makes people "
+        "tick.",
       "I am full of witty aphorisms and have a proverb for every "
         "occasion.",
       "I am rude to people who lack my commitment to hard work.",
@@ -4810,7 +4811,7 @@ const BackgroundData BACKGROUNDS[] = {
         "still want it.",
       "I owe my guild a great debt for forging me into the person I "
         "am.",
-      "I pay an exorbitant sum to support my family.",
+      "I pursue wealth to secure someone's love.",
       "I will get revenge on the evil forces that destroyed my "
         "business.",
       NULL

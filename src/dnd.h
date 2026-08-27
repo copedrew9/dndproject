@@ -110,7 +110,6 @@ typedef struct {
 typedef struct {
     char name[MAX_NAME];
     char creature[MAX_NAME];    /* the stat block it is built on */
-    int  beast_id;              /* index into BEASTS, or -1 when typed in */
     int  cls;                   /* SidekickClass */
     int  level;
     int  role;                  /* SpellcasterRole, -1 when not a caster */

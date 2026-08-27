@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #define DATA_BEGIN "#BEGIN-DNDDATA v1"
 #define DATA_END   "#END-DNDDATA"
@@ -42,20 +41,6 @@ static int index_of_background(const char *n)
     }
     return -1;
 }
-static int index_of_class(const char *n)
-{
-    int i;
-    for (i = 0; i < CLASS_COUNT; i++) if (!strcmp(CLASSES[i].name, n)) return i;
-    return -1;
-}
-static int index_of_subclass(const char *n)
-{
-    int i;
-    for (i = 0; i < SUBCLASS_COUNT; i++) {
-        if (!strcmp(SUBCLASSES[i].name, n)) return i;
-    }
-    return -1;
-}
 static int index_of_feat(const char *n)
 {
     int i;
@@ -66,12 +51,6 @@ static int index_of_spell(const char *n)
 {
     int i;
     for (i = 0; i < SPELL_COUNT; i++) if (!strcmp(SPELLS[i].name, n)) return i;
-    return -1;
-}
-static int index_of_skill(const char *n)
-{
-    int i;
-    for (i = 0; i < SKL_COUNT; i++) if (!strcmp(SKILL_NAME[i], n)) return i;
     return -1;
 }
 static int index_of_alignment(const char *n)
@@ -110,10 +89,10 @@ static void warn_unknown(const char *kind, const char *name)
                     "current data; it was left out.\n", kind, name);
 }
 
-static void wrap_from(FILE *f, const char *text, int indent, int start_col)
+static void wrap_to(FILE *f, const char *text, int indent)
 {
     const int width = 76;
-    int col = start_col;
+    int col = 0;
     const char *p = text;
 
     while (*p) {
@@ -137,11 +116,6 @@ static void wrap_from(FILE *f, const char *text, int indent, int start_col)
         col += len;
     }
     if (col) fputc('\n', f);
-}
-
-static void wrap_to(FILE *f, const char *text, int indent)
-{
-    wrap_from(f, text, indent, 0);
 }
 
 
@@ -252,8 +226,7 @@ static void write_spells(FILE *f, const Character *c)
             fprintf(f, "        Casting Time: %-18s Range: %s\n",
                     s->casting_time, s->range);
             fprintf(f, "        Components:   %s\n", s->components);
-            fprintf(f, "        Duration:     %s%s\n", s->duration,
-                    s->concentration ? "" : "");
+            fprintf(f, "        Duration:     %s\n", s->duration);
         }
     }
 }
@@ -636,7 +609,7 @@ static void write_sheet(FILE *f, const Character *c)
    a single '|' in a name, an appearance or a tool a table invented shifted
    every field after it: the character came back as whatever was left before
    the stray separator, silently, with the rest dropped. */
-static void put_text(FILE *f, const char *s)
+void record_put(FILE *f, const char *s)
 {
     for (; s && *s; s++) {
         if (*s == '\n')      fputs("\\n", f);
@@ -650,14 +623,14 @@ static void put_text(FILE *f, const char *s)
 static void put_line(FILE *f, const char *tag, const char *text)
 {
     fprintf(f, "%s|", tag);
-    put_text(f, text);
+    record_put(f, text);
     fputc('\n', f);
 }
 
 /* Reverses put_text() in place; the result is never longer than the input.
    An escape the writer never emits keeps the character and loses the
    backslash, which is what notes have always done. */
-static void unescape(char *s)
+void record_unescape(char *s)
 {
     char *out = s;
 
@@ -710,13 +683,13 @@ static void write_data(FILE *f, const Character *c)
         /* A background built with the customization rules has no table row
            to point at, so everything it granted is written out. */
         fputs("CUSTOMBG|", f);
-        put_text(f, c->background_name);
+        record_put(f, c->background_name);
         fputc('|', f);
-        put_text(f, c->background_feature);
+        record_put(f, c->background_feature);
         fputc('|', f);
-        put_text(f, c->background_feature_text);
+        record_put(f, c->background_feature_text);
         fputc('|', f);
-        put_text(f, c->background_equipment);
+        record_put(f, c->background_equipment);
         fputc('\n', f);
     }
     fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
@@ -764,24 +737,24 @@ static void write_data(FILE *f, const Character *c)
     }
     for (i = 0; i < c->choice_count; i++) {
         fprintf(f, "CHOICE|");
-        put_text(f, c->choices[i].label);
+        record_put(f, c->choices[i].label);
         fputc('|', f);
-        put_text(f, c->choices[i].value);
+        record_put(f, c->choices[i].value);
         fputc('\n', f);
     }
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic) {
             fprintf(f, "MAGICITEM|%d|%d|", c->inventory[i].quantity,
                     c->inventory[i].attuned);
-            put_text(f, MAGIC_ITEMS[c->inventory[i].item_id].name);
+            record_put(f, MAGIC_ITEMS[c->inventory[i].item_id].name);
             fprintf(f, "|%d|%d|", c->inventory[i].plus,
                     c->inventory[i].equipped);
-            put_text(f, c->inventory[i].variant);
+            record_put(f, c->inventory[i].variant);
             fputc('\n', f);
         } else {
             fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
                     c->inventory[i].equipped);
-            put_text(f, ITEMS[c->inventory[i].item_id].name);
+            record_put(f, ITEMS[c->inventory[i].item_id].name);
             fputc('\n', f);
         }
     }
@@ -791,33 +764,33 @@ static void write_data(FILE *f, const Character *c)
         const Sidekick *sk = &c->sidekicks[i];
         int k;
         fputs("SIDEKICK|", f);
-        put_text(f, sk->name);
+        record_put(f, sk->name);
         fputc('|', f);
-        put_text(f, sk->creature);
+        record_put(f, sk->creature);
         fprintf(f, "|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|",
                 SIDEKICK_CLASS_NAME[sk->cls],
                 sk->level, sk->role, sk->abilities[0], sk->abilities[1],
                 sk->abilities[2], sk->abilities[3], sk->abilities[4],
                 sk->abilities[5], sk->hp);
-        put_text(f, sk->speed);
+        record_put(f, sk->speed);
         fputc('\n', f);
         fputs("SKAC|", f);
-        put_text(f, sk->name);
+        record_put(f, sk->name);
         fprintf(f, "|%d\n", sk->ac);
         for (k = 0; k < sk->choice_count; k++) {
             fputs("SKCHOICE|", f);
-            put_text(f, sk->name);
+            record_put(f, sk->name);
             fputc('|', f);
-            put_text(f, sk->choices[k].label);
+            record_put(f, sk->choices[k].label);
             fputc('|', f);
-            put_text(f, sk->choices[k].value);
+            record_put(f, sk->choices[k].value);
             fputc('\n', f);
         }
         for (k = 0; k < sk->spell_count; k++) {
             fputs("SKSPELL|", f);
-            put_text(f, sk->name);
+            record_put(f, sk->name);
             fputc('|', f);
-            put_text(f, SPELLS[sk->spells[k]].name);
+            record_put(f, SPELLS[sk->spells[k]].name);
             fputc('\n', f);
         }
     }
@@ -836,11 +809,11 @@ static void write_data(FILE *f, const Character *c)
     fprintf(f, "\n");
 
     fprintf(f, "BODY|%d|%d|%d|", c->age, c->height_in, c->weight_lb);
-    put_text(f, c->eyes);
+    record_put(f, c->eyes);
     fputc('|', f);
-    put_text(f, c->skin);
+    record_put(f, c->skin);
     fputc('|', f);
-    put_text(f, c->hair);
+    record_put(f, c->hair);
     fputc('\n', f);
     put_line(f, "TRAIT", c->trait);
     put_line(f, "IDEAL", c->ideal);
@@ -851,9 +824,9 @@ static void write_data(FILE *f, const Character *c)
         int k;
         for (k = 0; k < c->note_count; k++) {
             fputs("NOTE|", f);
-            put_text(f, c->notes[k].title);
+            record_put(f, c->notes[k].title);
             fputc('|', f);
-            put_text(f, c->notes[k].body);
+            record_put(f, c->notes[k].body);
             fputc('\n', f);
         }
     }
@@ -907,7 +880,7 @@ void print_sheet(const Character *c)
 /* ----------------------------------------------------------------- loading */
 
 /* Splits a '|' separated record in place. Returns the field count. */
-static int split_fields(char *line, char **out, int max)
+int record_split(char *line, char **out, int max)
 {
     int n = 0;
     char *p = line;
@@ -966,12 +939,12 @@ int load_character(const char *path, Character *c)
         if (!strcmp(line, DATA_END)) break;
         if (line[0] == '\0') continue;
 
-        n = split_fields(line, fields, 32);
+        n = record_split(line, fields, 32);
         if (n < 1) continue;
         /* Every field is written escaped, so every field is read unescaped.
            One that carries no escape is unchanged, which is what makes a
            file written before this still read correctly. */
-        for (k = 0; k < n; k++) unescape(fields[k]);
+        for (k = 0; k < n; k++) record_unescape(fields[k]);
 
         if (!strcmp(fields[0], "SETTINGS") && n >= 2) {
             /* Two shapes. Files written now name the books they allow. Older
@@ -1066,13 +1039,13 @@ int load_character(const char *path, Character *c)
             }
         } else if (!strcmp(fields[0], "CLASS") && n >= 5) {
             if (c->class_count < MAX_CLASSES) {
-                int id = index_of_class(fields[1]);
+                int id = class_by_name(fields[1]);
                 if (id >= 0) {
                     int k = c->class_count++;
                     c->classes[k].class_id = id;
                     c->classes[k].level = atoi(fields[2]);
                     c->classes[k].subclass_id =
-                        strcmp(fields[3], "-") ? index_of_subclass(fields[3]) : -1;
+                        strcmp(fields[3], "-") ? subclass_by_name(fields[3]) : -1;
                     c->classes[k].subclass_option = atoi(fields[4]);
                 }
             }
@@ -1089,7 +1062,7 @@ int load_character(const char *path, Character *c)
             int i;
             for (i = 0; i < ABL_COUNT; i++) c->save_prof[i] = atoi(fields[i + 1]);
         } else if (!strcmp(fields[0], "SKILL") && n >= 4) {
-            int s = index_of_skill(fields[1]);
+            int s = skill_by_name(fields[1]);
             if (s >= 0) {
                 c->skill_prof[s] = atoi(fields[2]);
                 c->skill_expertise[s] = atoi(fields[3]);
@@ -1118,8 +1091,7 @@ int load_character(const char *path, Character *c)
                 memset(sk, 0, sizeof *sk);
                 snprintf(sk->name, sizeof sk->name, "%s", fields[1]);
                 snprintf(sk->creature, sizeof sk->creature, "%s", fields[2]);
-                sk->beast_id = find_beast(fields[2]);
-                sk->cls = SK_EXPERT;
+                        sk->cls = SK_EXPERT;
                 for (k = 0; k < SK_CLASS_COUNT; k++) {
                     if (!strcmp(SIDEKICK_CLASS_NAME[k], fields[3])) sk->cls = k;
                 }
@@ -1189,7 +1161,7 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
             int from_feat = !strcmp(fields[3], "-");
-            int owner = from_feat ? -1 : index_of_class(fields[3]);
+            int owner = from_feat ? -1 : class_by_name(fields[3]);
             if (id < 0) warn_unknown("spell", fields[4]);
             if (id >= 0 && c->spell_count < MAX_SPELLS) {
                 c->spells[c->spell_count].spell_id = id;

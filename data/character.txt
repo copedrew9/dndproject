@@ -527,8 +527,8 @@ FEATURE|Fighter|Battle Master|3|Combat Superiority|Learn three manoeuvres and ga
 FEATURE|Fighter|Battle Master|3|Student of War|Gain proficiency with one type of artisan's tools.
 FEATURE|Fighter|Battle Master|7|Know Your Enemy|Study a creature for 1 minute to learn how it compares to you.
 FEATURE|Fighter|Battle Master|10|Improved Combat Superiority|Your superiority dice become d10s.
-FEATURE|Fighter|Battle Master|15|Improved Combat Superiority|Your superiority dice become d12s.
-FEATURE|Fighter|Battle Master|18|Relentless|Regain one superiority die when you roll initiative with none left.
+FEATURE|Fighter|Battle Master|18|Improved Combat Superiority|Your superiority dice become d12s.
+FEATURE|Fighter|Battle Master|15|Relentless|Regain one superiority die when you roll initiative with none left.
 FEATURE|Fighter|Eldritch Knight|3|Spellcasting|You learn wizard spells, cast with Intelligence, as a third-caster.
 FEATURE|Fighter|Eldritch Knight|3|Weapon Bond|Bond with a weapon; you can summon it to your hand as a bonus action.
 FEATURE|Fighter|Eldritch Knight|7|War Magic|After casting a cantrip, make one weapon attack as a bonus action.
@@ -963,8 +963,8 @@ FEATURE|Barbarian|Path of the Beast|6|Bestial Soul|Your natural weapons count as
 FEATURE|Barbarian|Path of the Beast|10|Infectious Fury|Force a creature you hit to attack an ally or take psychic damage.
 FEATURE|Barbarian|Path of the Beast|14|Call the Hunt|Grant several allies extra damage while you gain temporary hit points.
 FEATURE|Barbarian|Path of Wild Magic|3|Wild Surge|Rolling for rage triggers a random magical effect around you.
-FEATURE|Barbarian|Path of Wild Magic|3|Bolstering Magic|Grant an ally a bonus to attacks and checks, or restore a spell slot.
-FEATURE|Barbarian|Path of Wild Magic|6|Magic Awareness|Detect spells and magic items within 60 feet.
+FEATURE|Barbarian|Path of Wild Magic|6|Bolstering Magic|Grant an ally a bonus to attacks and checks, or restore a spell slot.
+FEATURE|Barbarian|Path of Wild Magic|3|Magic Awareness|Detect spells and magic items within 60 feet.
 FEATURE|Barbarian|Path of Wild Magic|10|Unstable Backlash|Reroll your Wild Surge as a reaction when you are hit or fail a save.
 FEATURE|Barbarian|Path of Wild Magic|14|Controlled Surge|Roll twice on the Wild Magic table and choose the effect.
 FEATURE|Bard|College of Creation|3|Mote of Potential|Your Bardic Inspiration die also damages, heals or shields nearby creatures.
@@ -975,7 +975,7 @@ FEATURE|Bard|College of Eloquence|3|Silver Tongue|Treat a Persuasion or Deceptio
 FEATURE|Bard|College of Eloquence|3|Unsettling Words|Spend Bardic Inspiration to subtract the die from a creature's next saving throw.
 FEATURE|Bard|College of Eloquence|6|Unfailing Inspiration|A Bardic Inspiration die that fails to help is not spent.
 FEATURE|Bard|College of Eloquence|14|Infectious Inspiration|When an inspiration die helps, grant another as a reaction.
-FEATURE|Bard|College of Eloquence|14|Universal Speech|Make yourself understood by creatures of your choice for an hour.
+FEATURE|Bard|College of Eloquence|6|Universal Speech|Make yourself understood by creatures of your choice for an hour.
 FEATURE|Cleric|Order Domain|1|Bonus Proficiencies|Gain heavy armor and proficiency in Intimidation or Persuasion.
 FEATURE|Cleric|Order Domain|1|Voice of Authority|When you cast a spell on an ally, it can attack as a reaction.
 FEATURE|Cleric|Order Domain|2|Channel Divinity: Order's Demand|Charm creatures within 30 feet and force them to drop what they hold.
@@ -1483,11 +1483,11 @@ BGFLAW|Folk Hero|The tyrant who rules my land will stop at nothing to see me kil
 BGFLAW|Folk Hero|I am convinced of the significance of my destiny and blind to my shortcomings.
 BGFLAW|Folk Hero|The people who knew me when I was young know my shameful secret.
 BGFLAW|Folk Hero|I have a weakness for the vices of the city.
-BGFLAW|Folk Hero|I am inflexible in my thinking.
+BGFLAW|Folk Hero|I have trouble trusting in my allies.
 BACKGROUND|Guild Artisan|PHB|Insight|Persuasion|0||One type of artisan's tools|1|A set of artisan's tools, a letter of introduction from your guild, traveller's clothes|15|Guild Membership|Your guild provides lodging and food, supports you politically, and its members will aid you; dues are 5 gp per month.
 BGTRAIT|Guild Artisan|I believe that anything worth doing is worth doing right.
 BGTRAIT|Guild Artisan|I am well known for my work, and I want to make sure everyone appreciates it.
-BGTRAIT|Guild Artisan|I have a one-track mind and pursue my goals relentlessly.
+BGTRAIT|Guild Artisan|I always want to know how things work and what makes people tick.
 BGTRAIT|Guild Artisan|I am full of witty aphorisms and have a proverb for every occasion.
 BGTRAIT|Guild Artisan|I am rude to people who lack my commitment to hard work.
 BGIDEAL|Guild Artisan|Community: it is the duty of all civilised people to strengthen society.
@@ -1498,7 +1498,7 @@ BGIDEAL|Guild Artisan|Greed: I am only in it for the money.
 BGBOND|Guild Artisan|The workshop where I learned my trade is the most important place to me.
 BGBOND|Guild Artisan|I created a great work for someone and they didn't pay; I still want it.
 BGBOND|Guild Artisan|I owe my guild a great debt for forging me into the person I am.
-BGBOND|Guild Artisan|I pay an exorbitant sum to support my family.
+BGBOND|Guild Artisan|I pursue wealth to secure someone's love.
 BGBOND|Guild Artisan|I will get revenge on the evil forces that destroyed my business.
 BGFLAW|Guild Artisan|I will do anything to get my hands on something rare or priceless.
 BGFLAW|Guild Artisan|I am quick to assume that someone is trying to cheat me.

@@ -53,11 +53,13 @@ void choose_personality(Character *c);
 void add_prof_list(Character *c, const char *csv, const char *source);
 
 /* Spellcasting helpers. */
+/* True for the two subclasses that cast off a third of their level. */
+int  is_third_caster(int subclass_id);
+
 int  spell_slots_for(const Character *c, int out[10]);
 int  pact_slots_for(const Character *c, int *count, int *level);
 int  spells_prepared_count(const Character *c, int class_id);
 int  known_spell_count(const Character *c, int class_id, int cantrips);
-int  class_of_spell(const Character *c, int spell_id);
 
 /* True when the character meets the PHB multiclassing prerequisites. */
 int  multiclass_ok_public(const Character *c, int class_id, int *why);

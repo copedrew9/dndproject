@@ -91,11 +91,11 @@ static void add_from_catalogue(Character *c)
         const char *cats[16];
         int i, cat;
 
-        for (i = 0; i < 12; i++) cats[i] = CATEGORY_LABEL[i];
-        cats[12] = "Back";
+        for (i = 0; i < ITEM_CATEGORY_COUNT; i++) cats[i] = CATEGORY_LABEL[i];
+        cats[ITEM_CATEGORY_COUNT] = "Back";
 
-        cat = ui_menu("  Category:", cats, NULL, 13);
-        if (cat == 12) return;
+        cat = ui_menu("  Category:", cats, NULL, ITEM_CATEGORY_COUNT + 1);
+        if (cat == ITEM_CATEGORY_COUNT) return;
 
         {
             const char *opts[REF_MAX + 1];

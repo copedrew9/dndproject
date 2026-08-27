@@ -89,14 +89,7 @@ int find_item(const char *name)
     /* Fall back to a case-insensitive match so saved sheets survive small
        differences in capitalisation. */
     for (i = 0; i < ITEM_COUNT; i++) {
-        const char *a = ITEMS[i].name, *b = name;
-        while (*a && *b) {
-            int ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;
-            int cb = (*b >= 'A' && *b <= 'Z') ? *b + 32 : *b;
-            if (ca != cb) break;
-            a++; b++;
-        }
-        if (!*a && !*b) return i;
+        if (same_fold(ITEMS[i].name, name)) return i;
     }
     return -1;
 }
@@ -128,14 +121,6 @@ const MagicRule *magic_rule_for(const char *name)
 }
 
 /* ----------------------------------------------------------------- world */
-
-int find_deity(const char *name)
-{
-    int i;
-    for (i = 0; i < DEITY_COUNT; i++)
-        if (strcmp(DEITIES[i].name, name) == 0) return i;
-    return -1;
-}
 
 int find_beast(const char *name)
 {
@@ -174,7 +159,7 @@ const char *const SPELL_CLASS_NAME[] = {
 const int SPELL_CLASS_NAME_COUNT =
     (int)(sizeof(SPELL_CLASS_NAME) / sizeof(SPELL_CLASS_NAME[0]));
 
-static int same_fold(const char *a, const char *b)
+int same_fold(const char *a, const char *b)
 {
     while (*a && *b) {
         int ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;

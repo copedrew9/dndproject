@@ -459,6 +459,22 @@ int ui_toggle_list(const char *prompt, const char *const *options,
     }
 }
 
+char *next_csv(char **cursor)
+{
+    char *start = *cursor, *p;
+
+    if (!start) return NULL;
+    while (*start == ' ') start++;
+    for (p = start; *p && *p != ','; p++) { }
+    if (*p == ',') {
+        *p = '\0';
+        *cursor = p + 1;
+    } else {
+        *cursor = NULL;
+    }
+    return start;
+}
+
 int split_pipe(const char *src, char *buf, size_t bufsz,
                const char **out, int max)
 {

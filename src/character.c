@@ -1,6 +1,7 @@
 /* character.c -- derived statistics (PHB chapters 1, 5 and 7). */
 #include "dnd.h"
 #include "data.h"
+#include "build.h"
 #include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,13 +49,6 @@ const char *const ALIGNMENT_NAME[ALIGN_COUNT] = {
 };
 
 
-/* Subclasses are referenced by name so the tables can grow freely. */
-static int is_third_caster(int sub)
-{
-    return subclass_is(sub, "Eldritch Knight")
-        || subclass_is(sub, "Arcane Trickster");
-}
-
 int total_level(const Character *c)
 {
     int i, n = 0;
@@ -95,19 +89,13 @@ int has_feat(const Character *c, int feat_id)
     return 0;
 }
 
-static int feat_id_by_name(const char *name)
+static int has_named_feat(const Character *c, const char *name)
 {
     int i;
     for (i = 0; i < FEAT_COUNT; i++) {
-        if (strcmp(FEATS[i].name, name) == 0) return i;
+        if (strcmp(FEATS[i].name, name) == 0) return has_feat(c, i);
     }
-    return -1;
-}
-
-static int has_named_feat(const Character *c, const char *name)
-{
-    int id = feat_id_by_name(name);
-    return id >= 0 && has_feat(c, id);
+    return 0;
 }
 
 /* The rule a carried magic item brings, if it brings one and it is actually
@@ -129,24 +117,22 @@ static const MagicRule *rule_in_effect(const Character *c, int i)
     return r;
 }
 
-/* The magic armour a character is wearing, if any. */
-static const InventoryEntry *worn_magic_armour(const Character *c)
+/* The magic armour, or the magic shield, a character is wearing. The two
+   differ only in which column of the rule has to be set, and both callers
+   want the rule as well as the entry, so it is handed back rather than
+   looked up a second time. */
+static const InventoryEntry *worn_magic(const Character *c, int shield,
+                                        const MagicRule **rule)
 {
     int i;
     for (i = 0; i < c->item_count; i++) {
         const MagicRule *r = rule_in_effect(c, i);
-        if (r && r->armor_base) return &c->inventory[i];
+        if (r && (shield ? r->shield : r->armor_base)) {
+            if (rule) *rule = r;
+            return &c->inventory[i];
+        }
     }
-    return NULL;
-}
-
-static const InventoryEntry *worn_magic_shield(const Character *c)
-{
-    int i;
-    for (i = 0; i < c->item_count; i++) {
-        const MagicRule *r = rule_in_effect(c, i);
-        if (r && r->shield) return &c->inventory[i];
-    }
+    if (rule) *rule = NULL;
     return NULL;
 }
 
@@ -242,8 +228,9 @@ int armour_class(const Character *c)
 {
     const InventoryEntry *armour = NULL;
     const InventoryEntry *shield = equipped_of(c, ITEM_SHIELD);
-    const InventoryEntry *magic_armour = worn_magic_armour(c);
-    const InventoryEntry *magic_shield = worn_magic_shield(c);
+    const MagicRule *armour_rule, *shield_rule;
+    const InventoryEntry *magic_armour = worn_magic(c, 0, &armour_rule);
+    const InventoryEntry *magic_shield = worn_magic(c, 1, &shield_rule);
     int dex = ability_mod(c, ABL_DEX);
     int best, cat, i;
     int wearing_armour, using_shield;
@@ -256,8 +243,7 @@ int armour_class(const Character *c)
     using_shield = (shield != NULL) || (magic_shield != NULL);
 
     if (magic_armour) {
-        const MagicRule *r =
-            magic_rule_for(MAGIC_ITEMS[magic_armour->item_id].name);
+        const MagicRule *r = armour_rule;
         int add = (r->armor_dex < 0) ? dex
                 : (r->armor_dex == 0) ? 0
                 : (dex < r->armor_dex ? dex : r->armor_dex);
@@ -300,8 +286,7 @@ int armour_class(const Character *c)
     }
 
     if (magic_shield) {
-        const MagicRule *r =
-            magic_rule_for(MAGIC_ITEMS[magic_shield->item_id].name);
+        const MagicRule *r = shield_rule;
         best += r->shield + (r->variable ? magic_shield->plus : 0);
     } else if (shield) {
         best += ITEMS[shield->item_id].base_ac;
@@ -576,44 +561,31 @@ int speed_of(const Character *c)
 /* Movement a magic item grants that the character would not otherwise have.
  * A speed of -1 in the table means "the same as your walking speed". Returns
  * 0 when the character has none of that kind. */
-int magic_fly_speed(const Character *c)
+/* The three kinds differ only in which column of the rule they read, so
+   they share the walk: `which` names the column. */
+static int best_magic_speed(const Character *c,
+                            int (*column)(const MagicRule *))
 {
     int i, best = 0;
     for (i = 0; i < c->item_count; i++) {
         const MagicRule *r = rule_in_effect(c, i);
-        int v;
-        if (!r || !r->fly_speed) continue;
-        v = (r->fly_speed < 0) ? speed_of(c) : r->fly_speed;
+        int v, listed;
+        if (!r) continue;
+        listed = column(r);
+        if (!listed) continue;
+        v = (listed < 0) ? speed_of(c) : listed;
         if (v > best) best = v;
     }
     return best;
 }
 
-int magic_swim_speed(const Character *c)
-{
-    int i, best = 0;
-    for (i = 0; i < c->item_count; i++) {
-        const MagicRule *r = rule_in_effect(c, i);
-        int v;
-        if (!r || !r->swim_speed) continue;
-        v = (r->swim_speed < 0) ? speed_of(c) : r->swim_speed;
-        if (v > best) best = v;
-    }
-    return best;
-}
+static int rule_fly(const MagicRule *r)   { return r->fly_speed; }
+static int rule_swim(const MagicRule *r)  { return r->swim_speed; }
+static int rule_climb(const MagicRule *r) { return r->climb_speed; }
 
-int magic_climb_speed(const Character *c)
-{
-    int i, best = 0;
-    for (i = 0; i < c->item_count; i++) {
-        const MagicRule *r = rule_in_effect(c, i);
-        int v;
-        if (!r || !r->climb_speed) continue;
-        v = (r->climb_speed < 0) ? speed_of(c) : r->climb_speed;
-        if (v > best) best = v;
-    }
-    return best;
-}
+int magic_fly_speed(const Character *c)   { return best_magic_speed(c, rule_fly); }
+int magic_swim_speed(const Character *c)  { return best_magic_speed(c, rule_swim); }
+int magic_climb_speed(const Character *c) { return best_magic_speed(c, rule_climb); }
 
 /* Collects what the character's worn magic items make them resist or ignore
  * into one line, so the sheet can state it rather than leaving it buried in
