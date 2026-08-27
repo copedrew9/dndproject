@@ -158,14 +158,32 @@ int ui_menu(const char *prompt, const char *const *options,
     return ui_int("  Choose", 1, count) - 1;
 }
 
-void ui_multi(const char *prompt, const char *const *options,
-              const int *available, int count, int n, int *picks)
+int ui_multi(const char *prompt, const char *const *options,
+             const int *available, int count, int n, int *picks)
 {
     int chosen = 0;
     int taken[256];
+    int usable_total = 0;
     int i;
 
     memset(taken, 0, sizeof taken);
+    for (i = 0; i < n; i++) picks[i] = -1;
+
+    /* Never ask for more than can be given. A character who already has
+       every proficiency on offer would otherwise be asked forever. */
+    for (i = 0; i < count; i++) {
+        if (!available || available[i]) usable_total++;
+    }
+    if (usable_total < n) {
+        if (usable_total == 0) {
+            printf("\n%s\n  Nothing on this list is still available to "
+                   "you.\n", prompt);
+            return 0;
+        }
+        printf("\n%s\n  Only %d of these are still available to you.\n",
+               prompt, usable_total);
+        n = usable_total;
+    }
 
     printf("\n%s (choose %d)\n", prompt, n);
     while (chosen < n) {
@@ -195,6 +213,7 @@ void ui_multi(const char *prompt, const char *const *options,
         taken[pick] = 1;
         picks[chosen++] = pick;
     }
+    return chosen;
 }
 
 /* Dice --------------------------------------------------------------------- */
@@ -243,6 +262,148 @@ int roll_4d6_drop_lowest(void)
 }
 
 /* Utility ------------------------------------------------------------------ */
+
+/* Case-insensitive substring test. */
+int contains_ci(const char *haystack, const char *needle)
+{
+    size_t nl = strlen(needle);
+    const char *h;
+
+    if (!nl) return 1;
+    for (h = haystack; *h; h++) {
+        size_t k;
+        for (k = 0; k < nl; k++) {
+            int a = (unsigned char)h[k], b = (unsigned char)needle[k];
+            if (a >= 'A' && a <= 'Z') a += 32;
+            if (b >= 'A' && b <= 'Z') b += 32;
+            if (!h[k] || a != b) break;
+        }
+        if (k == nl) return 1;
+    }
+    return 0;
+}
+
+/* A menu with a way out: the last entry lets the answer be typed instead.
+   Used wherever the books have a usual set of answers but not a closed one --
+   a spell's range, a magic item's type -- so the common case is one keypress
+   and the unusual case is still possible. */
+/* Reads a block of text: lines until a blank one. Paragraph breaks are kept
+   as newlines, which is what makes this usable for something longer than an
+   answer to a question -- a character's history, a patron's demands. */
+int ui_text_block(const char *prompt, char *out, size_t n)
+{
+    char line[512];
+    size_t used = 0;
+
+    printf("%s\n", prompt);
+    printf("  Type as many lines as you like. A blank line ends it.\n");
+
+    out[0] = '\0';
+    for (;;) {
+        printf("  > ");
+        fflush(stdout);
+        if (!read_line(line, sizeof line)) break;
+        if (line[0] == '\0') break;
+
+        {
+            size_t len = strlen(line);
+            if (used + len + 2 >= n) {
+                printf("  (that is as much as this note holds)\n");
+                break;
+            }
+            if (used) out[used++] = '\n';
+            memcpy(out + used, line, len);
+            used += len;
+            out[used] = '\0';
+        }
+    }
+    return (int)used;
+}
+
+void ui_pick_or_type(const char *prompt, const char *const *options,
+                     int count, char *out, size_t n)
+{
+    const char *opts[64];
+    int i, pick;
+
+    if (count > 63) count = 63;
+    for (i = 0; i < count; i++) opts[i] = options[i];
+    opts[count] = "Something else";
+
+    pick = ui_menu(prompt, opts, NULL, count + 1);
+    if (pick == count) {
+        ui_line("  Type it", out, n);
+    } else {
+        snprintf(out, n, "%s", options[pick]);
+    }
+}
+
+/* The same idea as ui_pick_or_type, for the menus that carry a line of
+   explanation beside each entry: the book's list, and below it one more
+   entry for whatever the table has agreed on instead. Every list a class
+   chooses from goes through this, because a DM who writes a new eldritch
+   invocation should be able to put it on the sheet without waiting for the
+   program to learn about it.
+
+   Fills out[] with the answer either way, and returns the index chosen, or
+   -1 when it was typed. An empty answer re-asks rather than recording a
+   blank, since the choice is one the character is owed. */
+int ui_menu_custom(const char *prompt, const char *const *options,
+                   const char *const *details, int count,
+                   const char *custom_label, char *out, size_t n)
+{
+    const char *opts[257];
+    const char *det[257];
+    int i;
+
+    if (count > 256) count = 256;
+    for (i = 0; i < count; i++) {
+        opts[i] = options[i];
+        det[i] = details ? details[i] : NULL;
+    }
+    opts[count] = custom_label;
+    det[count] = "Something your table uses that is not printed above";
+
+    for (;;) {
+        int pick = ui_menu(prompt, opts, det, count + 1);
+        if (pick < count) {
+            snprintf(out, n, "%s", options[pick]);
+            return pick;
+        }
+        ui_line("  Type it", out, n);
+        if (out[0]) return -1;
+        printf("  Nothing entered; choose again.\n");
+    }
+}
+
+/* A list of things that can each be on or off, shown with checkboxes and
+   toggled until the reader is done. flags[] is both the starting state and
+   the answer. Returns how many ended up set. */
+int ui_toggle_list(const char *prompt, const char *const *options,
+                   int count, int *flags)
+{
+    if (count > 63) count = 63;
+
+    for (;;) {
+        const char *opts[65];
+        static char labels[65][96];
+        int i, pick, set = 0;
+
+        for (i = 0; i < count; i++) {
+            snprintf(labels[i], sizeof labels[i], "[%c] %s",
+                     flags[i] ? 'x' : ' ', options[i]);
+            opts[i] = labels[i];
+            if (flags[i]) set++;
+        }
+        snprintf(labels[count], sizeof labels[count],
+                 "Done (%d chosen)", set);
+        opts[count] = labels[count];
+
+        pick = ui_menu(prompt, opts, NULL, count + 1);
+        if (pick == count) return set;
+        flags[pick] = !flags[pick];
+    }
+}
 
 int split_pipe(const char *src, char *buf, size_t bufsz,
                const char **out, int max)

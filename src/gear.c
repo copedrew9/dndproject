@@ -1,5 +1,8 @@
 /* gear.c -- starting equipment, the shop, and personality (PHB chapters 4-5). */
+#include "backstory.h"
+#include "details.h"
 #include "build.h"
+#include "reference.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -34,8 +37,11 @@ static void auto_equip(Character *c)
     int i, best = -1, best_ac = -1;
 
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
         int ac;
+
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         if (it->category > ITEM_HEAVY_ARMOR) continue;
 
         ac = it->base_ac
@@ -46,7 +52,9 @@ static void auto_equip(Character *c)
         if (ac > best_ac) { best_ac = ac; best = i; }
     }
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         if (it->category <= ITEM_HEAVY_ARMOR) {
             c->inventory[i].equipped = (i == best);
         } else if (it->category == ITEM_SHIELD) {
@@ -151,6 +159,7 @@ static void pick_from_category(Character *c, int cat_a, int cat_b,
     for (i = 0; i < ITEM_COUNT && n < 128; i++) {
         if ((int)ITEMS[i].category != cat_a
             && (cat_b < 0 || (int)ITEMS[i].category != cat_b)) continue;
+        if (!book_enabled(ITEMS[i].book)) continue;
         snprintf(lines[n], sizeof lines[n], "%-20s %s %s", ITEMS[i].name,
                  ITEMS[i].damage, ITEMS[i].damage_type);
         opts[n] = lines[n];
@@ -435,9 +444,10 @@ static void shop(Character *c)
             static char lines[256][160];
             int map[256], n = 0, pick, qty;
 
-            for (i = 0; i < ITEM_COUNT && n < 256; i++) {
+            for (i = 0; i < ITEM_COUNT && n < 254; i++) {
                 char price[32], weight[32];
                 if ((int)ITEMS[i].category != cat) continue;
+                if (!book_enabled(ITEMS[i].book)) continue;
                 print_price(ITEMS[i].cost_cp, price, sizeof price);
                 print_weight(ITEMS[i].weight_tenths, weight, sizeof weight);
 
@@ -478,7 +488,17 @@ static void shop(Character *c)
             }
             if (n == 0) continue;
 
-            pick = ui_menu("  Item:", opts, NULL, n);
+            opts[n] = "Look an item up without buying";
+            opts[n + 1] = "Back to the categories";
+            pick = ui_menu("  Item:", opts, NULL, n + 2);
+            if (pick == n + 1) continue;
+            if (pick == n) {
+                int look = ui_menu("  Look up:", opts, NULL, n);
+                show_item_detail(map[look]);
+                continue;
+            }
+            show_item_detail(map[pick]);
+            if (!ui_yesno("  Buy it?", 1)) continue;
             qty = ui_int("  Quantity", 1, 99);
 
             {
@@ -522,6 +542,10 @@ void choose_equipment(Character *c)
     shop(c);
     auto_equip(c);
 
+    if (c->item_count && ui_yesno("\n  Look over what you are carrying?", 0)) {
+        inventory_reference(c);
+    }
+
     printf("\n  Armor Class %d, carrying %d.%d lb of a %d lb capacity.\n",
            armour_class(c), current_weight_tenths(c) / 10,
            current_weight_tenths(c) % 10, carrying_capacity(c));
@@ -530,30 +554,150 @@ void choose_equipment(Character *c)
     }
 }
 
+
+/* "2d10" -> a roll of it; "1" -> 1. The weight column of the Random Height
+   and Weight table is a flat multiplier for the halfling and the gnome. */
+static int roll_notation(const char *dice)
+{
+    const char *d = strchr(dice, 'd');
+    if (!d) return atoi(dice);
+    return roll_dice(d == dice ? 1 : atoi(dice), atoi(d + 1));
+}
+
+/* Offers the PHB's Random Height and Weight table where the books give a
+   row for the race, and falls back to asking outright where they do not:
+   the newer races describe their build in prose instead. */
+static void choose_body(Character *c)
+{
+    const BodyData *b = body_for(RACES[c->race_id].name,
+                                 c->subrace_id >= 0
+                                     ? SUBRACES[c->subrace_id].name : NULL);
+
+    c->age = ui_int("  Age", 1, 900);
+
+    if (b && ui_yesno("  Roll height and weight on the book's table?", 1)) {
+        /* The same roll that gives the inches above the base height also
+           multiplies the weight dice, which is what keeps a tall character
+           heavy and a short one light. */
+        int modifier = roll_notation(b->height_dice);
+        int extra = modifier * roll_notation(b->weight_dice);
+
+        c->height_in = b->base_height + modifier;
+        c->weight_lb = b->base_weight + extra;
+        printf("    %d ft %d in, %d lb (base %d in + %d, base %d lb + %d)\n",
+               c->height_in / 12, c->height_in % 12, c->weight_lb,
+               b->base_height, modifier, b->base_weight, extra);
+        return;
+    }
+
+    if (b) {
+        printf("    The table gives %d ft %d in + %s inches, and %d lb plus"
+               " that roll times %s lb.\n", b->base_height / 12,
+               b->base_height % 12, b->height_dice, b->base_weight,
+               b->weight_dice);
+    }
+    c->height_in = ui_int("  Height in inches", 20, 120);
+    c->weight_lb = ui_int("  Weight in pounds", 10, 1500);
+}
 /* ------------------------------------------------------------- personality */
 
+/* The background's suggestions are a NULL-terminated array; the shared
+   helper wants a count, so this counts and hands over. */
 static void pick_or_type(const char *label, const char *const *suggestions,
                          char *out, size_t n)
 {
-    const char *opts[10];
-    int count = 0, pick;
+    char prompt[128];
+    int count = 0;
 
-    while (count < 9 && suggestions[count]) {
-        opts[count] = suggestions[count];
-        count++;
+    snprintf(prompt, sizeof prompt, "  %s:", label);
+    if (!suggestions) {                 /* nothing to suggest; just ask */
+        ui_line(prompt, out, n);
+        return;
     }
-    opts[count] = "Write my own";
+    while (count < 9 && suggestions[count]) count++;
+    ui_pick_or_type(prompt, suggestions, count, out, n);
+}
+
+/* ------------------------------------------------------------------ faith */
+
+/* Does this deity suggest the given domain? The domain list is text so that
+ * it reads well on the sheet, so the match is a substring test against the
+ * subclass name with its "Domain" suffix removed. */
+static int deity_suggests(const Deity *d, const char *domain_subclass)
+{
+    char bare[MAX_NAME];
+    char *space;
+
+    snprintf(bare, sizeof bare, "%s", domain_subclass);
+    space = strstr(bare, " Domain");
+    if (space) *space = '\0';
+    return contains_ci(d->domains, bare);
+}
+
+/* Which domain, if any, this character has already taken. */
+static const char *chosen_domain(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->class_count; i++) {
+        if (c->classes[i].class_id != CLS_CLERIC) continue;
+        if (c->classes[i].subclass_id < 0) continue;
+        return SUBCLASSES[c->classes[i].subclass_id].name;
+    }
+    return NULL;
+}
+
+static void choose_deity(Character *c)
+{
+    const char *pantheons[16];
+    int pn = 0, i, pick;
+    const char *domain = chosen_domain(c);
+
+    /* Pantheons in the order they appear in the table, without repeats. */
+    for (i = 0; i < DEITY_COUNT && pn < 15; i++) {
+        int j, seen = 0;
+        for (j = 0; j < pn; j++) {
+            if (strcmp(pantheons[j], DEITIES[i].pantheon) == 0) seen = 1;
+        }
+        if (!seen) pantheons[pn++] = DEITIES[i].pantheon;
+    }
+    pantheons[pn] = "No deity in particular";
+
+    if (domain) {
+        printf("\n  Deities marked with a star suggest the %s.\n", domain);
+    }
+    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + 1);
+    if (pick == pn) return;
 
     {
-        char prompt[128];
-        snprintf(prompt, sizeof prompt, "  %s:", label);
-        pick = ui_menu(prompt, opts, NULL, count + 1);
-    }
-    if (pick == count) {
-        ui_line("  Enter your own", out, n);
-    } else {
-        strncpy(out, opts[pick], n - 1);
-        out[n - 1] = '\0';
+        const char *opts[128];
+        const char *det[128];
+        static char labels[128][120];
+        static char details[128][160];
+        int map[128], n = 0, choice;
+
+        for (i = 0; i < DEITY_COUNT && n < 128; i++) {
+            const Deity *d = &DEITIES[i];
+            if (strcmp(d->pantheon, pantheons[pick]) != 0) continue;
+
+            snprintf(labels[n], sizeof labels[n], "%s%s, %s",
+                     (domain && deity_suggests(d, domain)) ? "* " : "",
+                     d->name, d->title);
+            snprintf(details[n], sizeof details[n], "%s -- %s. Symbol: %s",
+                     d->alignment, d->domains, d->symbol);
+            opts[n] = labels[n];
+            det[n] = details[n];
+            map[n] = i;
+            n++;
+        }
+        if (n == 0) return;
+
+        choice = ui_menu("  Your deity:", opts, det, n);
+        add_choice(c, "Deity", DEITIES[map[choice]].name);
+
+        if (domain && !deity_suggests(&DEITIES[map[choice]], domain)) {
+            printf("  %s does not suggest the %s, which is worth agreeing "
+                   "with your DM.\n", DEITIES[map[choice]].name, domain);
+        }
     }
 }
 
@@ -568,24 +712,58 @@ void choose_personality(Character *c)
     for (i = 0; i < ALIGN_COUNT; i++) aligns[i] = ALIGNMENT_NAME[i];
     c->alignment = (Alignment)ui_menu("  Alignment:", aligns, NULL, ALIGN_COUNT);
 
-    c->age = ui_int("  Age", 1, 900);
-    c->height_in = ui_int("  Height in inches", 20, 100);
-    c->weight_lb = ui_int("  Weight in pounds", 10, 600);
+    choose_body(c);
     ui_line_default("  Eyes", "brown", c->eyes, sizeof c->eyes);
     ui_line_default("  Skin", "tan", c->skin, sizeof c->skin);
     ui_line_default("  Hair", "black", c->hair, sizeof c->hair);
 
-    if (c->background_id < 0) return;
-    bg = &BACKGROUNDS[c->background_id];
+    /* A character with a background of their own has no table to draw
+       suggestions from, but still has a personality; the step used to be
+       skipped entirely in that case. */
+    bg = (c->background_id >= 0) ? &BACKGROUNDS[c->background_id] : NULL;
 
-    printf("\n  Suggested characteristics for the %s background:\n", bg->name);
-    pick_or_type("Personality trait", bg->traits, c->trait, sizeof c->trait);
-    pick_or_type("Ideal", bg->ideals, c->ideal, sizeof c->ideal);
-    pick_or_type("Bond", bg->bonds, c->bond, sizeof c->bond);
-    pick_or_type("Flaw", bg->flaws, c->flaw, sizeof c->flaw);
+    if (bg) {
+        printf("\n  Suggested characteristics for the %s background:\n",
+               bg->name);
+    } else {
+        printf("\n  Your background is your own, so these are yours to "
+               "write.\n");
+    }
+    pick_or_type("Personality trait", bg ? bg->traits : NULL, c->trait,
+                 sizeof c->trait);
+    pick_or_type("Ideal", bg ? bg->ideals : NULL, c->ideal, sizeof c->ideal);
+    pick_or_type("Bond", bg ? bg->bonds : NULL, c->bond, sizeof c->bond);
+    pick_or_type("Flaw", bg ? bg->flaws : NULL, c->flaw, sizeof c->flaw);
+
+    /* A cleric or paladin serves someone in particular; everyone else may
+       still keep a faith. */
+    {
+        int devout = 0;
+        for (i = 0; i < c->class_count; i++) {
+            int id = c->classes[i].class_id;
+            if (id == CLS_CLERIC || id == CLS_PALADIN) devout = 1;
+        }
+        if (ui_yesno("\n  Choose a deity for your character?", devout)) {
+            choose_deity(c);
+        }
+    }
 
     ui_line("  Appearance (one line, optional)", c->appearance,
             sizeof c->appearance);
-    ui_line("  Backstory (one line, optional)", c->backstory,
-            sizeof c->backstory);
+
+    /* Xanathar's tables, for a player who would rather build a past than
+       write one. Either way the answer lands in the same line. */
+    if (book_enabled(BOOK_XGE)
+        && ui_yesno("\n  Work out where you came from, from Xanathar's "
+                    "tables?", 0)) {
+        build_backstory(c);
+    }
+    if (!c->backstory[0]) {
+        ui_line("  Backstory (one line, optional)", c->backstory,
+                sizeof c->backstory);
+    }
+
+    if (ui_yesno("\n  Add any notes about this character?", 0)) {
+        edit_details(c);
+    }
 }

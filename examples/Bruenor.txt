@@ -5,6 +5,7 @@
  Player: Bob                      Race: Dwarf / Mountain Dwarf
  Background: Folk Hero            Alignment: Lawful Good
  Level: 1                         Proficiency Bonus: +2
+ Sources: PHB, XGE, TCE, DMG, MPMM, MM, Homebrew; origins PHB, optional features on, multiclassing on, feats on
 
 ----------------------------------------------------------------
  ABILITY SCORES
@@ -25,6 +26,20 @@
   Hit Points       13
   Hit Dice         1d10
   Passive Perception 13
+  Experience       0 needed for level 1, 300 for level 2
+
+----------------------------------------------------------------
+ ATTACKS
+----------------------------------------------------------------
+  Battleaxe                 +5 to hit   1d8+3 slashing
+        Versatile (1d10)
+  Light crossbow            +2 to hit   1d8 piercing
+        Ammunition (range 80/320), loading, two-handed
+  Unarmed strike            +5 to hit   4 bludgeoning
+
+  A fighting style or a feature that adds to one of these -- Dueling,
+  Great Weapon Fighting, Sneak Attack, Rage -- is listed under class
+  features and applies on top.
 
 ----------------------------------------------------------------
  SKILLS
@@ -101,7 +116,8 @@
         contains: Backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50 feet of hempen rope
 
   Coins: 0 pp, 10 gp, 0 ep, 0 sp, 0 cp
-  Carried weight: 144.2 lb of a 255 lb capacity
+  Carried weight: 130.7 lb of a 255 lb capacity
+  Encumbered above 85 lb, heavily encumbered above 170 lb (variant rule) -- you are encumbered
 
 ----------------------------------------------------------------
  PERSONALITY
@@ -120,6 +136,7 @@
  but keep the field names and the '|' separators intact.
 ================================================================
 #BEGIN-DNDDATA v1
+SETTINGS|1|1|1|1|1|1|1|0|1|1|1
 NAME|Bruenor
 PLAYER|Bob
 RACE|Dwarf

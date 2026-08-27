@@ -4,10 +4,45 @@
 
 #include "dnd.h"
 
+/* ------------------------------------------------------------- source books */
+
+typedef enum {
+    BOOK_PHB,       /* Player's Handbook */
+    BOOK_XGE,       /* Xanathar's Guide to Everything */
+    BOOK_TCE,       /* Tasha's Cauldron of Everything */
+    BOOK_DMG,       /* Dungeon Master's Guide */
+    BOOK_MPMM,      /* Mordenkainen Presents: Monsters of the Multiverse */
+    BOOK_MM,        /* Monster Manual */
+    BOOK_HOMEBREW,  /* whatever the DM has added */
+    BOOK_COUNT
+} SourceBook;
+
+extern const char *const BOOK_NAME[BOOK_COUNT];
+extern const char *const BOOK_ABBREV[BOOK_COUNT];
+
+/* Which books and optional rules a build may draw on. Chosen from the
+   settings menu and stored with the character so a reload offers the same
+   content. */
+typedef struct {
+    int book[BOOK_COUNT];       /* 1 = enabled */
+    int custom_origins;         /* Tasha's Customizing Your Origin */
+    int optional_features;      /* Tasha's optional class features */
+    int multiclassing;          /* PHB chapter 6 variant rule */
+    int feats;                  /* PHB feats variant rule */
+} Settings;
+
+extern Settings SETTINGS;
+
+void settings_defaults(Settings *s);
+int  book_enabled(SourceBook b);
+void settings_menu(Settings *s);
+void settings_summary(const Settings *s, char *out, size_t n);
+
 /* ------------------------------------------------------------------- races */
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int ability[ABL_COUNT];
     int speed;
     CreatureSize size;
@@ -21,10 +56,16 @@ typedef struct {
     int has_ancestry;           /* dragonborn */
     int first_subrace, subrace_count;
     const char *traits;         /* '|' separated trait summaries */
+    /* Races from Monsters of the Multiverse have no fixed ability
+       increases at all: the spread is always chosen, whatever the custom
+       origins setting says. Appended last so the older rows, which leave it
+       out, are zero-filled. */
+    int origin_choice;
 } RaceData;
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int ability[ABL_COUNT];
     int speed_override;         /* 0 = inherit from race (wood elf: 35) */
     int darkvision_override;    /* 0 = inherit (drow: 120) */
@@ -40,6 +81,25 @@ extern const RaceData RACES[];
 extern const int RACE_COUNT;
 extern const SubraceData SUBRACES[];
 extern const int SUBRACE_COUNT;
+
+/* The PHB's Random Height and Weight table. The height modifier dice give
+ * the inches above the base height, and that same roll multiplied by the
+ * weight dice gives the pounds above the base weight. */
+typedef struct {
+    const char *race;
+    const char *subrace;        /* "" when the whole race shares a row */
+    int base_height;            /* inches */
+    const char *height_dice;
+    int base_weight;            /* pounds */
+    const char *weight_dice;    /* "1" for the halfling and the gnome */
+} BodyData;
+
+extern const BodyData BODIES[];
+extern const int BODY_COUNT;
+
+/* The row for a race, preferring the one that names the subrace. NULL when
+   the books give no row, as they do not for the newer races. */
+const BodyData *body_for(const char *race, const char *subrace);
 
 typedef struct {
     const char *dragon;
@@ -68,6 +128,7 @@ typedef enum {
 
 typedef struct {
     const char *name;
+    SourceBook book;
     int hit_die;
     Ability save_prof[2];
     const char *armour_profs;
@@ -105,6 +166,7 @@ typedef struct {
 
 typedef struct {
     int class_id;
+    SourceBook book;
     const char *name;
     const char *summary;
     /* Domain/oath/circle spells always prepared, "" when none. Groups are
@@ -144,6 +206,7 @@ extern const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2];  /* {count, level} */
 /* Tasha's optional class features. */
 typedef struct {
     int class_id;
+    SourceBook book;
     int level;                  /* class level at which it becomes available */
     const char *name;
     const char *replaces;       /* "" when it adds rather than replaces */
@@ -186,6 +249,10 @@ extern const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1];
 extern const unsigned char *const THIRD_CANTRIPS;
 extern const unsigned char *const THIRD_SPELLS_KNOWN;
 
+/* The experience needed for each character level (PHB p.15). Indexed by
+   level, so XP_FOR_LEVEL[1] is 0 and XP_FOR_LEVEL[20] is 355,000. */
+extern const int XP_FOR_LEVEL[MAX_LEVEL + 1];
+
 /* Levels at which a class grants an Ability Score Improvement. */
 int asi_levels_for(int class_id, int out[], int max);
 
@@ -193,6 +260,7 @@ int asi_levels_for(int class_id, int out[], int max);
 
 typedef struct {
     const char *name;
+    SourceBook book;
     Skill skills[2];
     const char *tool_profs;
     int extra_languages;
@@ -213,6 +281,7 @@ extern const int BACKGROUND_COUNT;
 
 typedef struct {
     const char *name;
+    SourceBook book;
     const char *prereq;         /* human readable, "" when none */
     /* Machine-checkable prerequisites. */
     Ability req_ability;        /* ABL_COUNT = none */
@@ -224,6 +293,10 @@ typedef struct {
     int asi_choice_count;       /* half-feats that raise a chosen score */
     const char *asi_choices;    /* "STR,DEX"; "" means any ability */
     const char *summary;
+    /* Race the feat is limited to, matched against the character's race and
+       subrace names. "" means anyone may take it. Several of Xanathar's
+       racial feats accept more than one, separated by '|'. */
+    const char *req_race;
 } FeatData;
 
 extern const FeatData FEATS[];
@@ -239,6 +312,7 @@ typedef enum {
 
 typedef struct {
     const char *name;
+    SourceBook book;
     ItemCategory category;
     int cost_cp;                /* in copper pieces */
     int weight_tenths;          /* pounds x 10, so 0.5 lb is 5 */
@@ -254,14 +328,291 @@ typedef struct {
     const char *contents;       /* for packs */
 } ItemData;
 
-extern const ItemData ITEMS[];
-extern const int ITEM_COUNT;
+/* The banks are pointers, not arrays, so homebrew.c can replace them with
+   larger ones holding the book's entries plus whatever the DM has added.
+   ITEMS[i] reads the same either way; BOOK_ITEMS is what the books give. */
+extern const ItemData *ITEMS;
+extern int ITEM_COUNT;
+extern const ItemData BOOK_ITEMS[];
+extern const int BOOK_ITEM_COUNT;
 
 int find_item(const char *name);
+
+/* Item detail: descriptions, and what an item does when it has no stat line.
+ * data_itemtext.c carries the prose; data_equipment.c carries the numbers. */
+typedef struct {
+    const char *item;
+    const char *text;
+} ItemNote;
+
+extern const ItemNote ITEM_NOTES[];
+extern const int ITEM_NOTE_COUNT;
+const char *item_notes(const char *name);
+
+/* Class indexes into CLASSES; they must match the order in
+ * data_classes.c. */
+enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
+       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
+       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
+       CLS_ARTIFICER = 12 };
+
+/* Xanathar's "This Is Your Life" tables. Each row carries the range of
+ * results that produce it, so a table can be rolled on or read down and
+ * picked from. */
+typedef struct {
+    int lo, hi;
+    const char *text;
+} LifeEntry;
+
+typedef struct {
+    const char *name;
+    const char *die;
+    const LifeEntry *rows;
+    int count;
+} LifeTable;
+
+extern const LifeTable LIFE_TABLES[];
+extern const int LIFE_TABLE_COUNT;
+
+/* The conditions of appendix A. The effects are '|' separated, one to a
+ * line on screen, because that is how they are read: down a list, mid-turn,
+ * to settle what a creature can still do. */
+typedef struct {
+    const char *name;
+    const char *effects;
+} ConditionData;
+
+extern const ConditionData CONDITIONS[];
+extern const int CONDITION_COUNT;
+
+/* The gods of appendix B. A cleric or paladin names one, and the suggested
+ * domains connect that choice to the Divine Domain menu. */
+typedef struct {
+    const char *name;
+    const char *title;          /* "goddess of winter" */
+    const char *pantheon;
+    const char *alignment;
+    const char *domains;        /* comma separated, "None" when none */
+    const char *symbol;
+} Deity;
+
+extern const Deity DEITIES[];
+extern const int DEITY_COUNT;
+int find_deity(const char *name);
+
+/* Tasha's sidekicks: a creature of challenge 1/2 or lower given levels in
+ * one of three simple classes. */
+typedef enum { SK_EXPERT, SK_SPELLCASTER, SK_WARRIOR, SK_CLASS_COUNT }
+    SidekickClass;
+typedef enum { SK_MAGE, SK_HEALER, SK_PRODIGY, SK_ROLE_COUNT }
+    SpellcasterRole;
+
+extern const char *const SIDEKICK_CLASS_NAME[SK_CLASS_COUNT];
+extern const char *const SIDEKICK_CLASS_BLURB[SK_CLASS_COUNT];
+extern const char *const SPELLCASTER_ROLE_NAME[SK_ROLE_COUNT];
+extern const char *const SPELLCASTER_ROLE_DESC[SK_ROLE_COUNT];
+
+typedef struct {
+    SidekickClass cls;
+    int level;
+    const char *name;
+    const char *summary;
+} SidekickFeature;
+
+extern const SidekickFeature SIDEKICK_FEATURES[];
+extern const int SIDEKICK_FEATURE_COUNT;
+
+extern const unsigned char SPELLCASTER_CANTRIPS[MAX_LEVEL + 1];
+extern const unsigned char SPELLCASTER_SPELLS_KNOWN[MAX_LEVEL + 1];
+
+/* Beasts, from the Monster Manual: what Wild Shape, a Beast Master
+ * companion and find familiar draw on. Challenge is stored in eighths, so
+ * 1/8 is 1, 1/4 is 2, 1/2 is 4 and 1 is 8; the druid's limits are then
+ * integer comparisons. */
+typedef enum {
+    BSIZE_TINY, BSIZE_SMALL, BSIZE_MEDIUM, BSIZE_LARGE, BSIZE_HUGE,
+    BSIZE_GARGANTUAN
+} BeastSize;
+
+extern const char *const BEAST_SIZE_NAME[];
+
+typedef struct {
+    const char *name;
+    BeastSize size;
+    int ac;
+    int hp;
+    int cr_eighths;
+    const char *speed;
+    int abilities[6];           /* STR DEX CON INT WIS CHA */
+    const char *cr_text;
+    const char *senses;
+} BeastData;
+
+extern const BeastData BEASTS[];
+extern const int BEAST_COUNT_ACTUAL;
+int find_beast(const char *name);
+
+/* Does the beast's speed line mention a swimming or flying speed? Wild
+ * Shape withholds those until 4th and 8th level. */
+int beast_swims(const BeastData *b);
+int beast_flies(const BeastData *b);
+
+/* The lists a class picks from as it levels: eldritch invocations,
+ * metamagic, maneuvers, pact boons, arcane shots, elemental disciplines,
+ * runes, and the ranger's favoured enemies and terrains. */
+typedef struct {
+    const char *name;
+    SourceBook book;
+    int min_level;              /* class level required; 0 = none */
+    const char *prereq;         /* other requirement, "" when none */
+    const char *summary;
+} ClassOption;
+
+typedef struct {
+    const char *class_name;
+    const char *subclass_name;  /* "" means the whole class */
+    const char *label;          /* singular, e.g. "Eldritch Invocation" */
+    const char *plural;
+    const ClassOption *options;
+    int count;
+    const unsigned char *known; /* known[level], indexed by class level */
+    int repeatable;             /* the same entry may be chosen twice */
+} OptionList;
+
+/* Extra spells that depend on a subclass option rather than the subclass:
+ * the Circle of the Land's terrain and the Genie warlock's patron kind.
+ * "levels" is a comma-separated list matching the '|' separated groups. */
+typedef struct {
+    const char *subclass;
+    const char *option;
+    const char *levels;
+    const char *spells;
+} OptionSpells;
+
+extern const OptionSpells OPTION_SPELLS[];
+extern const int OPTION_SPELLS_COUNT;
+
+extern const OptionList OPTION_LISTS[];
+extern const int OPTION_LIST_COUNT;
+
+/* Trinkets, lifestyles and the price of things that are not equipment. */
+extern const char *const TRINKETS[];
+extern const int TRINKET_COUNT;
+
+typedef struct {
+    const char *name;
+    int cost_cp_per_day;        /* 0 for wretched, which costs nothing */
+    const char *text;
+} Lifestyle;
+
+extern const Lifestyle LIFESTYLES[];
+extern const int LIFESTYLE_COUNT;
+
+typedef struct {
+    const char *name;
+    int cost_cp;
+} PriceEntry;
+
+extern const PriceEntry SERVICES[];
+extern const int SERVICE_COUNT;
+extern const PriceEntry SPELLCASTING_SERVICES[];
+extern const int SPELLCASTING_SERVICE_COUNT;
+
+/* Magic items, from the Dungeon Master's Guide. Attunement is separate from
+ * the rarity line because a character may attune to only three at once. */
+typedef struct {
+    const char *name;
+    SourceBook book;
+    const char *type;
+    const char *rarity;
+    const char *attunement;     /* NULL when no attunement is required */
+    const char *text;
+} MagicItem;
+
+extern const MagicItem *MAGIC_ITEMS;
+extern int MAGIC_ITEM_COUNT;
+extern const MagicItem BOOK_MAGIC_ITEMS[];
+extern const int BOOK_MAGIC_ITEM_COUNT;
+int find_magic_item(const char *name);
+
+/* The handful of magic items that change a number the sheet computes.
+ * Kept beside MAGIC_ITEMS rather than inside it, because it describes about
+ * twenty of the two hundred and seventy entries. Only unconditional effects
+ * live here; anything situational stays prose. */
+typedef struct {
+    const char *item;           /* names a MAGIC_ITEMS entry */
+    int ac_bonus;               /* flat, added to Armor Class */
+    int save_bonus;             /* flat, added to every saving throw */
+    int armor_base;             /* >0 when the item is itself armour */
+    int armor_dex;              /* -1 full modifier, 0 none, N a cap */
+    int armor_str;              /* Strength needed to avoid being slowed */
+    int armor_stealth;          /* disadvantage on Stealth */
+    int shield;                 /* the whole shield bonus, its own +2 too */
+    int only_unarmored;         /* applies only with no armour or shield */
+    int unarmored_base;         /* sets the unarmoured base AC instead */
+    int variable;               /* the bonus is the copy's own +N */
+    /* The bonus goes on attack and damage rolls rather than Armor Class.
+       The inventory entry's variant names the weapon it is, since the
+       book's entry covers every weapon at once. */
+    int weapon;
+
+    /* Scores an item sets outright, rather than adding to. sets_ability is
+       the ability plus one, so zero means none; sets_to of 0 means the copy
+       carries the score, as a belt of giant strength does. */
+    int sets_ability;
+    int sets_to;
+
+    int sets_speed;             /* walking speed becomes this, if higher */
+    int fly_speed;              /* -1 means "equal to your walking speed" */
+    int swim_speed;
+    int climb_speed;
+
+    /* Damage the wearer resists or ignores. "*" means the copy carries the
+       type, as armour and a ring of resistance do. */
+    const char *resist;
+    const char *immune;
+} MagicRule;
+
+extern const MagicRule MAGIC_RULES[];
+extern const int MAGIC_RULE_COUNT;
+const MagicRule *magic_rule_for(const char *name);
+
+extern const ItemNote WEAPON_PROPERTIES[];
+extern const int WEAPON_PROPERTY_COUNT;
+
+/* Which of the PHB's tool groups an item belongs to. A background that
+ * grants "one type of artisan's tools" needs that list, and the item rows
+ * themselves do not say: nothing about smith's tools distinguishes them
+ * from a herbalism kit except which table they were printed in. */
+typedef struct {
+    const char *group;
+    const char *item;
+} ToolGroup;
+
+extern const ToolGroup TOOL_GROUPS[];
+extern const int TOOL_GROUP_COUNT;
+
+/* Fills out[] with the items in a group, and returns how many there are.
+   A group name that matches nothing gives every tool, which is what a
+   proficiency worded some other way should offer. */
+int tools_in_group(const char *group, const char **out, int max);
 
 /* ------------------------------------------------------------------ lookups */
 
 extern const char *const LANGUAGES[];
 extern const int LANGUAGE_COUNT;
+
+/* The names the data files use for an item's category, a spell's school and
+ * the classes a spell belongs to. homebrew.txt is written in the same terms,
+ * so a DM editing it by hand writes "martial-melee" rather than a 6. */
+extern const char *const ITEM_CATEGORY_NAME[];
+extern const int ITEM_CATEGORY_COUNT;
+extern const char *const SPELL_CLASS_NAME[];
+extern const int SPELL_CLASS_NAME_COUNT;
+
+int item_category_by_name(const char *s);       /* -1 when unknown */
+int school_by_name(const char *s);              /* -1 when unknown */
+unsigned spell_classes_by_name(const char *csv);
+void spell_classes_text(unsigned mask, char *out, size_t n);
 
 #endif /* DATA_H */

@@ -5,16 +5,12 @@
  */
 #include "dnd.h"
 #include "data.h"
+#include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
 
 #include <stdio.h>
 #include <string.h>
-
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
 
 
 
@@ -401,10 +397,75 @@ static void test_data_integrity(void)
     int i;
 
     printf("data table integrity\n");
-    EQ(RACE_COUNT, 9, "PHB races");
+    {
+        int phb = 0, mtf = 0, k;
+        for (k = 0; k < RACE_COUNT; k++) {
+            if (RACES[k].book == BOOK_PHB) phb++;
+            if (RACES[k].book == BOOK_MPMM) mtf++;
+        }
+        EQ(phb, 9, "PHB races");
+        EQ(mtf, 33, "Monsters of the Multiverse races");
+        EQ(RACE_COUNT, phb + mtf, "every race is from the PHB or Multiverse");
+
+        /* The Multiverse races have no fixed increases at all; the spread
+           is always chosen, so each must say so. */
+        for (k = 0; k < RACE_COUNT; k++) {
+            int a, total = 0;
+            for (a = 0; a < ABL_COUNT; a++) total += RACES[k].ability[a];
+            if (RACES[k].book == BOOK_MPMM) {
+                if (total != 0 || !RACES[k].origin_choice) {
+                    printf("  FAIL %s should have no fixed increases\n",
+                           RACES[k].name);
+                    failures++;
+                }
+            } else if (RACES[k].origin_choice) {
+                printf("  FAIL %s should not choose its own spread\n",
+                       RACES[k].name);
+                failures++;
+            }
+        }
+    }
     EQ(CLASS_COUNT, 13, "classes (12 PHB + the artificer)");
     EQ(BACKGROUND_COUNT, 13, "PHB backgrounds");
-    EQ(FEAT_COUNT, 42, "PHB feats");
+    {
+        int phb = 0, tce = 0, k;
+        for (k = 0; k < FEAT_COUNT; k++) {
+            if (FEATS[k].book == BOOK_PHB) phb++;
+            if (FEATS[k].book == BOOK_TCE) tce++;
+        }
+        int xge = 0;
+        for (k = 0; k < FEAT_COUNT; k++) {
+            if (FEATS[k].book == BOOK_XGE) xge++;
+        }
+        EQ(phb, 42, "PHB feats");
+        EQ(tce, 15, "Tasha's feats");
+        EQ(xge, 15, "Xanathar's racial feats");
+        EQ(FEAT_COUNT, phb + tce + xge, "every feat comes from a book");
+
+        /* Every racial feat must name races that exist, or it could never
+           be offered to anyone. */
+        for (k = 0; k < FEAT_COUNT; k++) {
+            char buf[128];
+            const char *parts[8];
+            int np, q;
+            if (!FEATS[k].req_race[0]) continue;
+            np = split_pipe(FEATS[k].req_race, buf, sizeof buf, parts, 8);
+            for (q = 0; q < np; q++) {
+                int found = 0, r;
+                for (r = 0; r < RACE_COUNT; r++) {
+                    if (!strcmp(RACES[r].name, parts[q])) found = 1;
+                }
+                for (r = 0; r < SUBRACE_COUNT; r++) {
+                    if (!strcmp(SUBRACES[r].name, parts[q])) found = 1;
+                }
+                if (!found) {
+                    printf("  FAIL feat \"%s\" needs race \"%s\", which "
+                           "does not exist\n", FEATS[k].name, parts[q]);
+                    failures++;
+                }
+            }
+        }
+    }
 
     /* Every class must offer at least one subclass, and every subclass must
      * point back at a real class. */
@@ -549,6 +610,895 @@ static void test_expansion_data(void)
     }
 }
 
+/* -------------------------------------------------- items and option lists */
+
+static void test_item_reference(void)
+{
+    int i, notes_matched = 0;
+
+    printf("item reference\n");
+
+    /* Every note must name a real catalogue item, or the lookup silently
+       never fires. */
+    for (i = 0; i < ITEM_NOTE_COUNT; i++) {
+        if (find_item(ITEM_NOTES[i].item) >= 0) {
+            notes_matched++;
+        } else {
+            printf("  FAIL item note names no catalogue item: \"%s\"\n",
+                   ITEM_NOTES[i].item);
+            failures++;
+        }
+        if (!ITEM_NOTES[i].text || !ITEM_NOTES[i].text[0]) {
+            printf("  FAIL item note is empty: \"%s\"\n", ITEM_NOTES[i].item);
+            failures++;
+        }
+    }
+    EQ(notes_matched, ITEM_NOTE_COUNT, "item notes resolve to catalogue items");
+
+    /* Armour, weapons and tools should all have something to say. */
+    check(item_notes("Plate armor") != NULL, "plate armor has a note", 1, 1);
+    check(item_notes("Thieves' tools") != NULL, "thieves' tools have a note",
+          1, 1);
+    check(item_notes("Healer's kit") != NULL, "healer's kit has a note", 1, 1);
+
+    EQ(WEAPON_PROPERTY_COUNT, 11, "weapon properties explained");
+    EQ(TRINKET_COUNT, 100, "trinkets");
+    EQ(LIFESTYLE_COUNT, 7, "lifestyles");
+    check(SERVICE_COUNT > 20, "food, lodging and services priced",
+          SERVICE_COUNT, 21);
+
+    /* Magic items: every one needs a type, a rarity and a description, and
+       the artifacts must all be present. */
+    check(MAGIC_ITEM_COUNT > 250, "magic items", MAGIC_ITEM_COUNT, 251);
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        const MagicItem *m = &MAGIC_ITEMS[i];
+        if (!m->type[0] || !m->rarity[0] || !m->text[0]) {
+            printf("  FAIL magic item is incomplete: \"%s\"\n", m->name);
+            failures++;
+        }
+        if (i > 0 && strcmp(MAGIC_ITEMS[i - 1].name, m->name) == 0) {
+            printf("  FAIL magic item listed twice: \"%s\"\n", m->name);
+            failures++;
+        }
+    }
+    check(find_magic_item("Deck of Many Things") >= 0, "find a magic item by "
+          "name", 1, 1);
+    check(find_magic_item("Bag of Holding") >= 0, "find bag of holding", 1, 1);
+    check(find_magic_item("No Such Item") < 0, "unknown magic item is not "
+          "found", 1, 1);
+}
+
+static void test_option_lists(void)
+{
+    int i, j;
+
+    printf("class option lists\n");
+    check(OPTION_LIST_COUNT >= 9, "class option lists", OPTION_LIST_COUNT, 9);
+
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        int cls = -1, prev = 0;
+
+        for (j = 0; j < CLASS_COUNT; j++) {
+            if (strcmp(CLASSES[j].name, ol->class_name) == 0) cls = j;
+        }
+        if (cls < 0) {
+            printf("  FAIL option list names no class: \"%s\"\n",
+                   ol->class_name);
+            failures++;
+        }
+        if (ol->subclass_name[0]) {
+            int found = 0;
+            for (j = 0; j < SUBCLASS_COUNT; j++) {
+                if (strcmp(SUBCLASSES[j].name, ol->subclass_name) == 0) found = 1;
+            }
+            if (!found) {
+                printf("  FAIL option list names no subclass: \"%s\"\n",
+                       ol->subclass_name);
+                failures++;
+            }
+        }
+
+        /* A class never forgets an option, and never knows more than exist. */
+        for (j = 0; j <= MAX_LEVEL; j++) {
+            if (ol->known[j] < prev) {
+                printf("  FAIL %s known count falls at level %d\n",
+                       ol->label, j);
+                failures++;
+            }
+            if (ol->known[j] > ol->count) {
+                printf("  FAIL %s knows %d of only %d at level %d\n",
+                       ol->label, (int)ol->known[j], ol->count, j);
+                failures++;
+            }
+            prev = ol->known[j];
+        }
+
+        for (j = 0; j < ol->count; j++) {
+            if (!ol->options[j].name[0]) {
+                printf("  FAIL %s has an unnamed entry\n", ol->label);
+                failures++;
+            }
+            if (ol->options[j].min_level > MAX_LEVEL) {
+                printf("  FAIL %s entry \"%s\" is never reachable\n",
+                       ol->label, ol->options[j].name);
+                failures++;
+            }
+        }
+    }
+
+    /* The counts a player would notice. */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        if (strcmp(ol->label, "Eldritch Invocation") == 0) {
+            EQ(ol->known[2], 2, "warlock knows 2 invocations at 2nd level");
+            EQ(ol->known[20], 8, "warlock knows 8 invocations at 20th level");
+        }
+        if (strcmp(ol->label, "Metamagic option") == 0) {
+            EQ(ol->known[3], 2, "sorcerer knows 2 metamagic at 3rd level");
+            EQ(ol->known[17], 4, "sorcerer knows 4 metamagic at 17th level");
+        }
+        if (strcmp(ol->label, "Maneuver") == 0) {
+            EQ(ol->known[3], 3, "battle master knows 3 maneuvers at 3rd");
+            EQ(ol->known[15], 9, "battle master knows 9 maneuvers at 15th");
+        }
+    }
+}
+
+static void test_option_spells(void)
+{
+    int i, j;
+
+    printf("option-dependent spells\n");
+    EQ(OPTION_SPELLS_COUNT, 12, "subclass options that grant spells");
+
+    for (i = 0; i < OPTION_SPELLS_COUNT; i++) {
+        const OptionSpells *os = &OPTION_SPELLS[i];
+        int sub = -1, found_option = 0;
+        char buf[512];
+        const char *parts[16];
+        int n;
+
+        for (j = 0; j < SUBCLASS_COUNT; j++) {
+            if (strcmp(SUBCLASSES[j].name, os->subclass) == 0) sub = j;
+        }
+        if (sub < 0) {
+            printf("  FAIL option spells name no subclass: \"%s\"\n",
+                   os->subclass);
+            failures++;
+            continue;
+        }
+
+        /* The option must be spelled exactly as the subclass lists it, or
+           the match at level-up silently never fires. */
+        n = split_pipe(SUBCLASSES[sub].options, buf, sizeof buf, parts, 16);
+        for (j = 0; j < n; j++) {
+            if (strcmp(parts[j], os->option) == 0) found_option = 1;
+        }
+        if (!found_option) {
+            printf("  FAIL \"%s\" is not an option of %s\n", os->option,
+                   os->subclass);
+            failures++;
+        }
+
+        {
+            char sbuf[1024];
+            const char *groups[8];
+            int ng = split_pipe(os->spells, sbuf, sizeof sbuf, groups, 8);
+            int nlevels = 1, k;
+            for (k = 0; os->levels[k]; k++) {
+                if (os->levels[k] == ',') nlevels++;
+            }
+            if (ng != nlevels) {
+                printf("  FAIL %s has %d spell groups but %d levels\n",
+                       os->option, ng, nlevels);
+                failures++;
+            }
+            for (k = 0; k < ng; k++) check_spell_list(groups[k], os->option);
+        }
+    }
+}
+
+static void test_beasts(void)
+{
+    int i, cr_quarter = 0, moon_cr1 = 0;
+
+    printf("beast stat blocks\n");
+    check(BEAST_COUNT_ACTUAL >= 85, "beasts from the Monster Manual",
+          BEAST_COUNT_ACTUAL, 85);
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        const BeastData *b = &BEASTS[i];
+        int a;
+        if (b->ac < 5 || b->ac > 25) {
+            printf("  FAIL %s has AC %d\n", b->name, b->ac);
+            failures++;
+        }
+        if (b->hp < 1 || b->hp > 400) {
+            printf("  FAIL %s has %d hit points\n", b->name, b->hp);
+            failures++;
+        }
+        if (!b->speed[0] || !b->cr_text[0]) {
+            printf("  FAIL %s is missing its speed or challenge\n", b->name);
+            failures++;
+        }
+        for (a = 0; a < 6; a++) {
+            if (b->abilities[a] < 1 || b->abilities[a] > 30) {
+                printf("  FAIL %s has an ability score of %d\n", b->name,
+                       b->abilities[a]);
+                failures++;
+            }
+        }
+        if (i > 0 && strcmp(BEASTS[i - 1].name, b->name) >= 0) {
+            printf("  FAIL beasts are not in order at \"%s\"\n", b->name);
+            failures++;
+        }
+        if (b->cr_eighths <= 2) cr_quarter++;
+        if (b->cr_eighths <= 8) moon_cr1++;
+    }
+
+    /* The stat blocks a druid or ranger reaches for first. */
+    {
+        int wolf = find_beast("Wolf");
+        int bear = find_beast("Brown Bear");
+        int eagle = find_beast("Giant Eagle");
+        check(wolf >= 0 && bear >= 0 && eagle >= 0,
+              "the common beasts are present", 1, 1);
+        if (wolf >= 0) {
+            EQ(BEASTS[wolf].ac, 13, "wolf armor class");
+            EQ(BEASTS[wolf].hp, 11, "wolf hit points");
+            EQ(BEASTS[wolf].cr_eighths, 2, "wolf is CR 1/4");
+        }
+        if (bear >= 0) {
+            EQ(BEASTS[bear].hp, 34, "brown bear hit points");
+            EQ(BEASTS[bear].cr_eighths, 8, "brown bear is CR 1");
+            check(!beast_flies(&BEASTS[bear]), "brown bear cannot fly", 1, 1);
+        }
+        if (eagle >= 0) {
+            check(beast_flies(&BEASTS[eagle]), "giant eagle flies", 1, 1);
+            EQ(BEASTS[eagle].abilities[3], 8, "giant eagle Intelligence");
+        }
+        check(beast_swims(&BEASTS[find_beast("Giant Octopus")]),
+              "giant octopus swims", 1, 1);
+    }
+
+    /* A 2nd-level druid needs something to turn into. */
+    check(cr_quarter > 20, "beasts of CR 1/4 or lower", cr_quarter, 21);
+    check(moon_cr1 > 40, "beasts of CR 1 or lower", moon_cr1, 41);
+    check(find_beast("No Such Beast") < 0, "unknown beast is not found", 1, 1);
+}
+
+static void test_sidekicks(void)
+{
+    int i, expert = 0, caster = 0, warrior = 0;
+
+    printf("sidekicks\n");
+
+    for (i = 0; i < SIDEKICK_FEATURE_COUNT; i++) {
+        const SidekickFeature *f = &SIDEKICK_FEATURES[i];
+        if (f->level < 1 || f->level > MAX_LEVEL) {
+            printf("  FAIL %s sits at level %d\n", f->name, f->level);
+            failures++;
+        }
+        if (!f->name[0] || !f->summary[0]) {
+            printf("  FAIL a sidekick feature is incomplete\n");
+            failures++;
+        }
+        if (f->cls == SK_EXPERT) expert++;
+        else if (f->cls == SK_SPELLCASTER) caster++;
+        else warrior++;
+    }
+    check(expert > 0 && caster > 0 && warrior > 0,
+          "all three sidekick classes have features", 1, 1);
+
+    /* The Expert's table survived the dump intact, so it is checked exactly:
+       six ability score improvements, expertise twice, and the 20th-level
+       upgrade to Inspiring Help. */
+    {
+        int asi = 0, expertise = 0;
+        for (i = 0; i < SIDEKICK_FEATURE_COUNT; i++) {
+            if (SIDEKICK_FEATURES[i].cls != SK_EXPERT) continue;
+            if (!strcmp(SIDEKICK_FEATURES[i].name,
+                        "Ability Score Improvement")) asi++;
+            if (!strcmp(SIDEKICK_FEATURES[i].name, "Expertise")) expertise++;
+        }
+        EQ(asi, 6, "Expert ability score improvements");
+        EQ(expertise, 2, "Expert gains Expertise twice");
+    }
+
+    /* Proficiency follows class level exactly as a character's does. */
+    {
+        Sidekick sk;
+        memset(&sk, 0, sizeof sk);
+        for (i = 1; i <= MAX_LEVEL; i++) {
+            sk.level = i;
+            if (sidekick_proficiency(&sk) != 2 + (i - 1) / 4) {
+                printf("  FAIL sidekick proficiency at level %d\n", i);
+                failures++;
+            }
+        }
+        sk.abilities[ABL_STR] = 18;
+        EQ(sidekick_ability_mod(&sk, ABL_STR), 4, "sidekick ability modifier");
+    }
+
+    /* Cantrips known is the one Spellcaster column that could be read. */
+    EQ(SPELLCASTER_CANTRIPS[1], 2, "Spellcaster cantrips at 1st level");
+    EQ(SPELLCASTER_CANTRIPS[4], 3, "Spellcaster cantrips at 4th level");
+    EQ(SPELLCASTER_CANTRIPS[10], 4, "Spellcaster cantrips at 10th level");
+    EQ(SPELLCASTER_SPELLS_KNOWN[1], 1, "Spellcaster knows one spell at 1st");
+
+    /* Whatever the reconstruction says, it must never go backwards. */
+    for (i = 2; i <= MAX_LEVEL; i++) {
+        if (SPELLCASTER_SPELLS_KNOWN[i] < SPELLCASTER_SPELLS_KNOWN[i - 1]
+            || SPELLCASTER_CANTRIPS[i] < SPELLCASTER_CANTRIPS[i - 1]) {
+            printf("  FAIL Spellcaster forgets something at level %d\n", i);
+            failures++;
+        }
+    }
+
+    /* A sidekick must be buildable: there have to be creatures that qualify. */
+    {
+        int eligible = 0;
+        for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+            if (BEASTS[i].cr_eighths <= 4) eligible++;
+        }
+        check(eligible > 30, "beasts of CR 1/2 or lower for a sidekick",
+              eligible, 31);
+    }
+}
+
+static void test_homebrew_banks(void)
+{
+    printf("homebrew banks\n");
+
+    /* With no homebrew loaded, each bank must be exactly what the books
+       give. If these ever drift, something has repointed a bank without
+       going through homebrew.c. */
+    check(ITEMS == BOOK_ITEMS, "item bank starts as the book's", 1, 1);
+    check(SPELLS == BOOK_SPELLS, "spell bank starts as the book's", 1, 1);
+    check(MAGIC_ITEMS == BOOK_MAGIC_ITEMS,
+          "magic item bank starts as the book's", 1, 1);
+    EQ(ITEM_COUNT, BOOK_ITEM_COUNT, "item count");
+    EQ(SPELL_COUNT, BOOK_SPELL_COUNT, "spell count");
+    EQ(MAGIC_ITEM_COUNT, BOOK_MAGIC_ITEM_COUNT, "magic item count");
+
+    /* Homebrew is a source book like any other, so it can be switched off. */
+    EQ(BOOK_HOMEBREW, BOOK_COUNT - 1, "homebrew is the last source");
+    check(book_enabled(BOOK_HOMEBREW), "homebrew is on by default", 1, 1);
+    {
+        Settings s;
+        settings_defaults(&s);
+        EQ(s.book[BOOK_HOMEBREW], 1, "homebrew defaults on");
+    }
+    check(BOOK_NAME[BOOK_HOMEBREW] != NULL && BOOK_NAME[BOOK_HOMEBREW][0],
+          "homebrew has a name", 1, 1);
+    check(BOOK_ABBREV[BOOK_HOMEBREW] != NULL
+          && BOOK_ABBREV[BOOK_HOMEBREW][0], "homebrew has an abbreviation",
+          1, 1);
+
+    /* Nothing in the books should claim to be homebrew. */
+    {
+        int i, stray = 0;
+        for (i = 0; i < BOOK_ITEM_COUNT; i++) {
+            if (BOOK_ITEMS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        for (i = 0; i < BOOK_MAGIC_ITEM_COUNT; i++) {
+            if (BOOK_MAGIC_ITEMS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        for (i = 0; i < BOOK_SPELL_COUNT; i++) {
+            if (BOOK_SPELLS[i].book == BOOK_HOMEBREW) stray++;
+        }
+        EQ(stray, 0, "no printed entry is tagged homebrew");
+    }
+}
+
+/* Adds a magic item by name and returns whether it landed. */
+static int give_magic(Character *c, const char *name, int attuned, int plus,
+                      int equipped)
+{
+    int id = find_magic_item(name);
+    if (id < 0) return 0;
+    add_magic_item(c, id, 1, attuned, plus);
+    c->inventory[c->item_count - 1].equipped = equipped;
+    return 1;
+}
+
+static void test_magic_armour_class(void)
+{
+    Character c;
+
+    printf("magic items in Armor Class\n");
+
+    /* Every rule must name a magic item that exists, or it silently never
+       fires. */
+    {
+        int i;
+        for (i = 0; i < MAGIC_RULE_COUNT; i++) {
+            if (find_magic_item(MAGIC_RULES[i].item) < 0) {
+                printf("  FAIL magic rule names no item: \"%s\"\n",
+                       MAGIC_RULES[i].item);
+                failures++;
+            }
+        }
+    }
+
+    /* A ring of protection is +1 AC and +1 to every save -- but only once
+       attuned. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    c.base_score[ABL_CON] = 10;
+    c.base_score[ABL_STR] = 10;
+    EQ(armour_class(&c), 10, "unarmoured, no magic");
+    check(give_magic(&c, "Ring of Protection", 0, 0, 0),
+          "ring of protection exists", 1, 1);
+    EQ(armour_class(&c), 10, "unattuned ring does nothing");
+    c.inventory[c.item_count - 1].attuned = 1;
+    EQ(armour_class(&c), 11, "attuned ring is +1 AC");
+    EQ(save_bonus(&c, ABL_STR), 1, "attuned ring is +1 to saves");
+
+    /* Bracers of Defense are +2, but only with no armour and no shield. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Bracers of Defense", 1, 0, 0);
+    EQ(armour_class(&c), 12, "bracers of defense unarmoured");
+    add_item_by_name(&c, "Chain mail", 1, 1);
+    EQ(armour_class(&c), 16, "bracers do nothing in armour");
+
+    /* Magic armour replaces the base, and only counts once worn. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Dwarven Plate", 0, 0, 0);
+    EQ(armour_class(&c), 10, "dwarven plate carried, not worn");
+    c.inventory[c.item_count - 1].equipped = 1;
+    EQ(armour_class(&c), 20, "dwarven plate worn is AC 20");
+
+    /* Elven chain caps Dexterity at +2 like the chain shirt it is. */
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_DEX] = 20;                   /* +5, capped to +2 */
+    give_magic(&c, "Elven Chain", 0, 0, 1);
+    EQ(armour_class(&c), 16, "elven chain with high Dexterity");
+
+    /* A +2 shield is the shield's own +2 plus the enchantment. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Shield, +1, +2, or +3", 0, 2, 1);
+    EQ(armour_class(&c), 14, "a +2 shield is +4 in total");
+
+    /* Bonuses stack: magic armour, a magic shield and a worn ring. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Dwarven Plate", 0, 0, 1);
+    give_magic(&c, "Shield, +1, +2, or +3", 0, 1, 1);
+    give_magic(&c, "Cloak of Protection", 1, 0, 0);
+    c.base_score[ABL_WIS] = 10;
+    EQ(armour_class(&c), 24, "plate 20, shield +3, cloak +1");
+    EQ(save_bonus(&c, ABL_WIS), 1, "cloak raises saves too");
+
+    /* Magic armour still switches off a barbarian's Unarmored Defense. */
+    reset(&c);
+    add_class(&c, CLS_BARBARIAN, 1, -1);
+    c.base_score[ABL_DEX] = 16;                   /* +3 */
+    c.base_score[ABL_CON] = 16;                   /* +3 */
+    EQ(armour_class(&c), 16, "barbarian unarmoured");
+    give_magic(&c, "Dwarven Plate", 0, 0, 1);
+    EQ(armour_class(&c), 20, "plate replaces Unarmored Defense");
+
+    /* The robe sets the unarmoured base rather than adding to it. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 1, -1);
+    c.base_score[ABL_DEX] = 14;                   /* +2 */
+    give_magic(&c, "Robe of the Archmagi", 1, 0, 0);
+    EQ(armour_class(&c), 17, "robe of the archmagi is 15 + Dexterity");
+}
+
+static void test_magic_scores_and_speeds(void)
+{
+    Character c;
+    char buf[256];
+
+    printf("magic items in scores, speeds and defences\n");
+
+    /* An amulet of health sets Constitution to 19, and only helps if the
+       score is not already higher. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_CON] = 12;
+    EQ(ability_score(&c, ABL_CON), 12, "constitution before the amulet");
+    give_magic(&c, "Amulet of Health", 1, 0, 0);
+    EQ(ability_score(&c, ABL_CON), 19, "amulet of health sets it to 19");
+    c.base_score[ABL_CON] = 20;
+    EQ(ability_score(&c, ABL_CON), 20, "a higher score is left alone");
+
+    /* Unattuned, it does nothing at all. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_INT] = 8;
+    give_magic(&c, "Headband of Intellect", 0, 0, 0);
+    EQ(ability_score(&c, ABL_INT), 8, "unattuned headband does nothing");
+
+    /* A belt of giant strength carries the score of its own giant. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 10;
+    give_magic(&c, "Belt of Giant Strength", 1, 27, 0);
+    EQ(ability_score(&c, ABL_STR), 27, "cloud giant belt");
+    EQ(carrying_capacity(&c), 27 * 15, "and it changes what you can carry");
+
+    /* Boots of striding and springing set a floor under the walking speed. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.race_id = 0;
+    {
+        int bare = speed_of(&c);
+        give_magic(&c, "Boots of Striding and Springing", 1, 0, 0);
+        check(speed_of(&c) >= 30 && speed_of(&c) >= bare,
+              "boots set a floor of 30 feet", speed_of(&c), 30);
+    }
+
+    /* Movement a magic item grants shows up separately. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    EQ(magic_fly_speed(&c), 0, "no flying without an item");
+    give_magic(&c, "Wings of Flying", 1, 0, 0);
+    EQ(magic_fly_speed(&c), 60, "wings of flying");
+    give_magic(&c, "Ring of Swimming", 0, 0, 0);
+    EQ(magic_swim_speed(&c), 40, "ring of swimming needs no attunement");
+
+    /* Winged boots grant a flying speed equal to the walking speed. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Winged Boots", 1, 0, 0);
+    EQ(magic_fly_speed(&c), speed_of(&c), "winged boots match your speed");
+
+    /* Resistances are collected, including the one the copy names. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    EQ(magic_defences(&c, buf, sizeof buf), 0, "nothing granted yet");
+    give_magic(&c, "Brooch of Shielding", 1, 0, 0);
+    EQ(magic_defences(&c, buf, sizeof buf), 1, "brooch grants one");
+    check(strstr(buf, "force") != NULL, "and it is force damage", 1, 1);
+
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Ring of Resistance", 1, 0, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "lightning");
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "lightning") != NULL,
+          "a ring of resistance names its own damage", 1, 1);
+
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Periapt of Proof against Poison", 0, 0, 0);
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "immune to poison") != NULL, "immunity reads as one",
+          1, 1);
+}
+
+static void test_life_tables(void)
+{
+    int i, j;
+
+    printf("backstory tables\n");
+    check(LIFE_TABLE_COUNT >= 10, "tables read from Xanathar's",
+          LIFE_TABLE_COUNT, 10);
+
+    for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+        const LifeTable *t = &LIFE_TABLES[i];
+        int n = 1, sides = 20, lo, hi, v;
+        const char *d = strchr(t->die, 'd');
+
+        if (!t->name[0] || !t->die[0] || t->count <= 0) {
+            printf("  FAIL a backstory table is incomplete\n");
+            failures++;
+            continue;
+        }
+        if (d && d != t->die) n = t->die[0] - '0';
+        if (d) sides = atoi(d + 1);
+        lo = n;
+        hi = n * sides;
+
+        /* Every result the die can give must land on exactly one row --
+           a gap would leave a roll with no answer, an overlap would make
+           the table ambiguous. */
+        for (v = lo; v <= hi; v++) {
+            int hits = 0;
+            for (j = 0; j < t->count; j++) {
+                if (v >= t->rows[j].lo && v <= t->rows[j].hi) hits++;
+            }
+            if (hits != 1) {
+                printf("  FAIL %s: rolling %d hits %d rows\n", t->name, v,
+                       hits);
+                failures++;
+                break;
+            }
+        }
+
+        /* Rows should read as text, not as leftover OCR marks. */
+        for (j = 0; j < t->count; j++) {
+            const char *txt = t->rows[j].text;
+            size_t len = strlen(txt);
+            if (len < 2 || len > 200) {
+                printf("  FAIL %s has a row of %d characters\n", t->name,
+                       (int)len);
+                failures++;
+                break;
+            }
+            if (strstr(txt, "  ") || txt[len - 1] == '-') {
+                printf("  FAIL %s row reads badly: \"%s\"\n", t->name, txt);
+                failures++;
+                break;
+            }
+        }
+    }
+}
+
+static void test_notes_and_custom_background(void)
+{
+    Character c;
+    int i;
+
+    printf("notes and a background of your own\n");
+
+    reset(&c);
+    EQ(c.note_count, 0, "a new character has no notes");
+    EQ(c.background_id, -1, "a fresh character has no background yet");
+
+    /* Notes hold what they are given, up to the limit. */
+    for (i = 0; i < MAX_NOTES + 4; i++) {
+        if (c.note_count >= MAX_NOTES) break;
+        snprintf(c.notes[c.note_count].title, MAX_NAME, "note %d", i);
+        snprintf(c.notes[c.note_count].body, MAX_LORE, "body %d", i);
+        c.note_count++;
+    }
+    EQ(c.note_count, MAX_NOTES, "notes fill to the limit and stop");
+    check(strcmp(c.notes[0].title, "note 0") == 0, "the first note is kept",
+          1, 1);
+    check(strcmp(c.notes[MAX_NOTES - 1].title, "note 15") == 0,
+          "and so is the last", 1, 1);
+
+    /* A note's body holds far more than the other text on a character, so
+       lore fits without being cut short. */
+    check(MAX_LORE >= 2048, "a note holds paragraphs, not a line",
+          MAX_LORE, 2048);
+    {
+        char big[MAX_LORE];
+        memset(big, 'x', sizeof big - 1);
+        big[sizeof big - 1] = '\0';
+        snprintf(c.notes[0].body, MAX_LORE, "%s", big);
+        EQ((int)strlen(c.notes[0].body), MAX_LORE - 1,
+           "and it keeps all of it");
+    }
+    {
+        /* Newlines survive, because a note is written as paragraphs. */
+        snprintf(c.notes[1].body, MAX_LORE, "first\nsecond\n\nfourth");
+        check(strchr(c.notes[1].body, '\n') != NULL,
+              "paragraph breaks are kept", 1, 1);
+    }
+
+    /* Removing one closes the gap, as the screen does. */
+    {
+        int k;
+        for (k = 0; k < c.note_count - 1; k++) {
+            c.notes[k] = c.notes[k + 1];
+        }
+        c.note_count--;
+        EQ(c.note_count, MAX_NOTES - 1, "removing a note shortens the list");
+        check(strcmp(c.notes[0].title, "note 1") == 0,
+              "and the rest move up", 1, 1);
+    }
+
+    /* A background of your own is marked by an id of -1 and carries its own
+       name and feature, so nothing indexes the table. */
+    reset(&c);
+    c.background_id = -1;
+    snprintf(c.background_name, sizeof c.background_name, "Sky Pilgrim");
+    snprintf(c.background_feature, sizeof c.background_feature,
+             "Reader of Winds");
+    check(c.background_id < 0, "a custom background has no table row", 1, 1);
+    check(c.background_name[0] != '\0', "but it does have a name", 1, 1);
+
+    /* The two skills it grants are ordinary skill proficiencies. */
+    c.skill_prof[SKL_SURVIVAL] = 1;
+    c.skill_prof[SKL_INSIGHT] = 1;
+    EQ(skill_bonus(&c, SKL_SURVIVAL) - ability_mod(&c, ABL_WIS),
+       proficiency_bonus(&c), "a custom background's skill is proficient");
+}
+
+/* The lists the builder offers, and the room it leaves beside them. */
+/* The attacks block: what a weapon hits at and what it does. */
+static void test_attacks(void)
+{
+    Character c;
+    Attack a[MAX_ATTACKS];
+    int n, i;
+
+    printf("attacks\n");
+
+    /* A mountain dwarf fighter, as in chapter 1: Strength 17, proficiency
+       +2, proficient with martial weapons. */
+    reset(&c);
+    c.race_id = find_race("Dwarf");
+    c.subrace_id = find_subrace("Mountain Dwarf");
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 15;
+    c.base_score[ABL_DEX] = 10;
+    c.racial_bonus[ABL_STR] = 2;
+    add_prof(&c, "Simple weapons");
+    add_prof(&c, "Martial weapons");
+    add_item_by_name(&c, "Battleaxe", 1, 0);
+    add_item_by_name(&c, "Light crossbow", 1, 0);   /* a simple weapon */
+
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    EQ(n, 3, "two weapons and an unarmed strike");
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Battleaxe")) {
+            EQ(a[i].bonus, 5, "battleaxe to hit (Str 3 + prof 2)");
+            check(!strcmp(a[i].damage, "1d8+3 slashing"),
+                  "battleaxe damage", 0, 0);
+        } else if (!strcmp(a[i].name, "Light crossbow")) {
+            EQ(a[i].bonus, 2, "light crossbow to hit (Dex 0 + prof 2)");
+        } else if (!strcmp(a[i].name, "Unarmed strike")) {
+            check(!strcmp(a[i].damage, "4 bludgeoning"),
+                  "unarmed strike damage (1 + Str 3)", 0, 0);
+        }
+    }
+
+    /* Finesse takes the better of Strength and Dexterity, and a weapon the
+       character has no proficiency with says so. */
+    reset(&c);
+    c.race_id = find_race("Human");
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_STR] = 8;
+    c.base_score[ABL_DEX] = 16;
+    add_prof(&c, "Simple weapons");
+    add_item_by_name(&c, "Dagger", 1, 0);       /* finesse, simple */
+    add_item_by_name(&c, "Greataxe", 1, 0);     /* martial, no proficiency */
+
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Dagger")) {
+            EQ(a[i].bonus, 5, "dagger to hit (finesse: Dex 3 + prof 2)");
+            check(!strcmp(a[i].damage, "1d4+3 piercing"),
+                  "dagger damage takes Dexterity", 0, 0);
+        } else if (!strcmp(a[i].name, "Greataxe")) {
+            EQ(a[i].bonus, -1, "greataxe to hit (Str -1, no proficiency)");
+            EQ(a[i].proficient, 0, "not proficient with a greataxe");
+        }
+    }
+
+    /* A monk's unarmed strike uses the Martial Arts die, and Dexterity
+       when it is the better modifier. */
+    reset(&c);
+    c.race_id = find_race("Human");
+    add_class(&c, CLS_MONK, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_DEX] = 18;
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Unarmed strike")) {
+            EQ(a[i].bonus, 7, "monk unarmed to hit (Dex 4 + prof 3)");
+            check(!strcmp(a[i].damage, "1d6+4 bludgeoning"),
+                  "5th-level Martial Arts die", 0, 0);
+        }
+    }
+
+    /* The experience table, and the height and weight rows. */
+    EQ(XP_FOR_LEVEL[1], 0, "level 1 costs nothing");
+    EQ(XP_FOR_LEVEL[5], 6500, "level 5 experience");
+    EQ(XP_FOR_LEVEL[20], 355000, "level 20 experience");
+    for (i = 2; i <= MAX_LEVEL; i++) {
+        if (XP_FOR_LEVEL[i] <= XP_FOR_LEVEL[i - 1]) {
+            printf("  FAIL experience does not rise at level %d\n", i);
+            failures++;
+        }
+    }
+
+    check(body_for("Dwarf", "Hill Dwarf") != NULL,
+          "the height and weight table covers the hill dwarf", 1, 1);
+    check(body_for("Halfling", NULL) != NULL,
+          "and a race with no subrace row", 1, 1);
+    check(body_for("Aarakocra", NULL) == NULL,
+          "and not a race the table never listed", 1, 1);
+    for (i = 0; i < BODY_COUNT; i++) {
+        if (find_race(BODIES[i].race) < 0) {
+            printf("  FAIL height and weight row names no race: \"%s\"\n",
+                   BODIES[i].race);
+            failures++;
+        }
+    }
+
+    EQ(CONDITION_COUNT, 15, "conditions, appendix A plus exhaustion");
+}
+
+static void test_choice_lists(void)
+{
+    const char *tools[64];
+    int i, j, n;
+
+    printf("tool groups and feat choices\n");
+
+    n = tools_in_group("Artisan's tools", tools, 64);
+    check(n == 17, "artisan's tools", n, 17);
+    n = tools_in_group("Musical instrument", tools, 64);
+    check(n == 10, "musical instruments", n, 10);
+    n = tools_in_group("Gaming set", tools, 64);
+    check(n == 2, "gaming sets", n, 2);
+
+    /* A group nobody has heard of yields every tool, so a proficiency the
+       books word some other way still gets a list rather than a blank. */
+    n = tools_in_group("Siege engines", tools, 64);
+    check(n > 30, "an unknown group falls back to every tool", n, 31);
+
+    for (i = 0; i < TOOL_GROUP_COUNT; i++) {
+        int id = find_item(TOOL_GROUPS[i].item);
+        if (id < 0) {
+            printf("  FAIL tool group names no item: \"%s\"\n",
+                   TOOL_GROUPS[i].item);
+            failures++;
+        } else if (ITEMS[id].category != ITEM_TOOL) {
+            printf("  FAIL \"%s\" is in a tool group but is not a tool\n",
+                   TOOL_GROUPS[i].item);
+            failures++;
+        }
+    }
+
+    /* Every tool a background or class can be asked to choose has to come
+       from a group the builder knows how to offer. */
+    for (i = 0; i < BACKGROUND_COUNT; i++) {
+        const char *t = BACKGROUNDS[i].tool_profs;
+        if (!contains_ci(t, "one type of")) continue;
+        if (contains_ci(t, "artisan") || contains_ci(t, "gaming set")
+            || contains_ci(t, "musical instrument")) continue;
+        printf("  FAIL %s grants an open tool choice with no group: \"%s\"\n",
+               BACKGROUNDS[i].name, t);
+        failures++;
+    }
+
+    /* Each feat the builder asks a follow-up question for must still exist,
+       since the questions are keyed on the printed name. */
+    for (i = 0; i < FEATS_WITH_CHOICES_COUNT; i++) {
+        int found = 0;
+        for (j = 0; j < FEAT_COUNT; j++) {
+            if (strcmp(FEATS[j].name, FEATS_WITH_CHOICES[i]) == 0) found = 1;
+        }
+        if (!found) {
+            printf("  FAIL no feat named \"%s\"\n", FEATS_WITH_CHOICES[i]);
+            failures++;
+        }
+    }
+
+    /* The two lists a feat can draw on are found by their plural name. */
+    {
+        int inv = 0, meta = 0;
+        for (i = 0; i < OPTION_LIST_COUNT; i++) {
+            if (!strcmp(OPTION_LISTS[i].plural, "eldritch invocations")) inv = 1;
+            if (!strcmp(OPTION_LISTS[i].plural, "metamagic options")) meta = 1;
+        }
+        check(inv, "Eldritch Adept can find the invocation list", inv, 1);
+        check(meta, "Metamagic Adept can find the metamagic list", meta, 1);
+    }
+
+    /* Eldritch Adept on a non-warlock is limited to invocations with no
+       prerequisite at all; there have to be some. */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        int open = 0;
+        if (strcmp(ol->plural, "eldritch invocations") != 0) continue;
+        for (j = 0; j < ol->count; j++) {
+            if (!ol->options[j].prereq[0] && ol->options[j].min_level == 0)
+                open++;
+        }
+        check(open >= 8, "invocations open to Eldritch Adept", open, 8);
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -569,6 +1519,7 @@ static void test_carrying_and_coins(void)
 int main(void)
 {
     printf("dndcreator self-test\n\n");
+    settings_defaults(&SETTINGS);
 
     test_modifiers();
     test_proficiency();
@@ -582,6 +1533,18 @@ int main(void)
     test_spell_data();
     test_data_integrity();
     test_expansion_data();
+    test_item_reference();
+    test_option_lists();
+    test_option_spells();
+    test_beasts();
+    test_sidekicks();
+    test_homebrew_banks();
+    test_magic_armour_class();
+    test_magic_scores_and_speeds();
+    test_life_tables();
+    test_notes_and_custom_background();
+    test_attacks();
+    test_choice_lists();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

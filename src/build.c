@@ -7,9 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11 };
 
 /* ------------------------------------------------------------- list helpers */
 
@@ -58,25 +55,112 @@ void add_tool(Character *c, const char *tool)
     c->tool_prof_count++;
 }
 
-/* Case-insensitive substring test. */
-static int contains_ci(const char *haystack, const char *needle)
-{
-    size_t nl = strlen(needle);
-    const char *h;
 
-    if (!nl) return 1;
-    for (h = haystack; *h; h++) {
-        size_t k;
-        for (k = 0; k < nl; k++) {
-            int a = (unsigned char)h[k], b = (unsigned char)needle[k];
-            if (a >= 'A' && a <= 'Z') a += 32;
-            if (b >= 'A' && b <= 'Z') b += 32;
-            if (!h[k] || a != b) break;
-        }
-        if (k == nl) return 1;
-    }
-    return 0;
+/* ------------------------------------------------- tool proficiency phrases */
+
+/* Backgrounds and classes word tool proficiencies as prose: "Herbalism kit",
+ * "One type of gaming set", "Three musical instruments of your choice".
+ * A phrase that names a definite tool is simply granted; one that leaves the
+ * choice open turns into a menu of that group, taken from the equipment
+ * tables, with room at the bottom for something the books do not print.
+ */
+
+/* How many the phrase asks for. Only the bard's three instruments and the
+   monk's one go above one, but the words are cheap to read. */
+static int tool_phrase_count(const char *phrase)
+{
+    if (contains_ci(phrase, "three")) return 3;
+    if (contains_ci(phrase, "two")) return 2;
+    return 1;
 }
+
+/* Does the phrase leave the choice to the player? */
+static int tool_phrase_is_choice(const char *phrase)
+{
+    return contains_ci(phrase, "your choice")
+        || contains_ci(phrase, "one type of")
+        || contains_ci(phrase, "artisan")
+        || contains_ci(phrase, "gaming set")
+        || contains_ci(phrase, "musical instrument");
+}
+
+/* The tools a phrase may be satisfied with. The monk's line names two
+   groups at once, so the groups are gathered rather than matched one of. */
+static int tool_phrase_options(const char *phrase, const char **out, int max)
+{
+    static const struct { const char *word; const char *group; } GROUPS[] = {
+        { "artisan",           "Artisan's tools" },
+        { "gaming set",        "Gaming set" },
+        { "musical instrument", "Musical instrument" }
+    };
+    int n = 0;
+    size_t g;
+
+    for (g = 0; g < sizeof GROUPS / sizeof GROUPS[0]; g++) {
+        if (!contains_ci(phrase, GROUPS[g].word)) continue;
+        n += tools_in_group(GROUPS[g].group, out + n, max - n);
+    }
+    if (n == 0) n = tools_in_group("", out, max);   /* every tool */
+    return n;
+}
+
+/* Grants one comma-separated piece of a tool proficiency line. */
+static void grant_tool_phrase(Character *c, const char *phrase,
+                              const char *source)
+{
+    const char *all[64];
+    const char *opts[64];
+    int total, i, want, n;
+
+    if (!phrase || !*phrase) return;
+    if (!tool_phrase_is_choice(phrase)) { add_tool(c, phrase); return; }
+
+    total = tool_phrase_options(phrase, all, 64);
+    want = tool_phrase_count(phrase);
+
+    printf("\n  %s grants \"%s\".\n", source, phrase);
+    while (want-- > 0) {
+        char answer[MAX_NAME];
+
+        n = 0;
+        for (i = 0; i < total; i++) {
+            if (!has_tool(c, all[i])) opts[n++] = all[i];
+        }
+        if (n == 0) {
+            ui_line("  Name a tool you are not already proficient with",
+                    answer, sizeof answer);
+            if (!answer[0]) return;
+            add_tool(c, answer);
+            continue;
+        }
+        ui_menu_custom("  Which one?", opts, NULL, n,
+                       "Another tool (type it in)", answer, sizeof answer);
+        add_tool(c, answer);
+    }
+}
+
+/* Splits a tool proficiency line on commas and grants each piece. */
+static void grant_tool_line(Character *c, const char *line, const char *source)
+{
+    char buf[256], *p, *start;
+
+    if (!line || !*line) return;
+    strncpy(buf, line, sizeof buf - 1);
+    buf[sizeof buf - 1] = '\0';
+    start = buf;
+    for (p = buf;; p++) {
+        if (*p != ',' && *p != '\0') continue;
+        {
+            int end = (*p == '\0');
+            *p = '\0';
+            while (*start == ' ') start++;
+            grant_tool_phrase(c, start, source);
+            if (end) break;
+            start = p + 1;
+        }
+    }
+}
+
 
 int has_prof(const Character *c, const char *prof)
 {
@@ -115,7 +199,38 @@ void add_prof(Character *c, const char *prof)
     c->other_prof_count++;
 }
 
-void add_prof_list(Character *c, const char *csv)
+/* One comma-separated piece of a class's proficiency line.
+ *
+ * Those lines mix three things the sheet keeps apart. A bard multiclassed
+ * into reads "Light armor, one skill of your choice, one musical
+ * instrument": the skill is granted by the skill picker, the instrument is a
+ * tool to be chosen, and only the armour belongs where the whole line used
+ * to go verbatim.
+ */
+static void grant_prof_piece(Character *c, const char *piece,
+                             const char *source)
+{
+    int id;
+
+    /* choose_class_skills() grants the skill; saying so again here would
+       leave "one skill of your choice" sitting among the armour. */
+    if (contains_ci(piece, "skill")) return;
+
+    if (contains_ci(piece, "artisan") || contains_ci(piece, "gaming set")
+        || contains_ci(piece, "musical instrument")) {
+        grant_tool_phrase(c, piece, source);
+        return;
+    }
+
+    id = find_item(piece);
+    if (id >= 0 && ITEMS[id].category == ITEM_TOOL) {
+        add_tool(c, ITEMS[id].name);
+        return;
+    }
+    add_prof(c, piece);
+}
+
+void add_prof_list(Character *c, const char *csv, const char *source)
 {
     char buf[512], *p, *start;
 
@@ -129,7 +244,7 @@ void add_prof_list(Character *c, const char *csv)
             int end = (*p == '\0');
             *p = '\0';
             while (*start == ' ') start++;
-            if (*start) add_prof(c, start);
+            if (*start) grant_prof_piece(c, start, source);
             if (end) break;
             start = p + 1;
         }
@@ -162,7 +277,57 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     c->inventory[c->item_count].item_id = item_id;
     c->inventory[c->item_count].quantity = qty;
     c->inventory[c->item_count].equipped = equipped;
+    c->inventory[c->item_count].is_magic = 0;
+    c->inventory[c->item_count].attuned = 0;
+    c->inventory[c->item_count].plus = 0;
     c->item_count++;
+}
+
+void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
+{
+    int i;
+    if (magic_id < 0 || magic_id >= MAGIC_ITEM_COUNT || qty <= 0) return;
+
+    for (i = 0; i < c->item_count; i++) {
+        if (c->inventory[i].is_magic && c->inventory[i].item_id == magic_id
+            && c->inventory[i].attuned == attuned
+            && c->inventory[i].plus == plus) {
+            c->inventory[i].quantity += qty;
+            return;
+        }
+    }
+    if (c->item_count >= MAX_ITEMS) return;
+    c->inventory[c->item_count].item_id = magic_id;
+    c->inventory[c->item_count].quantity = qty;
+    c->inventory[c->item_count].equipped = 0;
+    c->inventory[c->item_count].is_magic = 1;
+    c->inventory[c->item_count].attuned = attuned;
+    c->inventory[c->item_count].plus = plus;
+    c->item_count++;
+}
+
+/* Drops qty of one entry, closing the gap when nothing is left. */
+void remove_inventory_entry(Character *c, int index, int qty)
+{
+    int i;
+    if (index < 0 || index >= c->item_count || qty <= 0) return;
+
+    c->inventory[index].quantity -= qty;
+    if (c->inventory[index].quantity > 0) return;
+
+    for (i = index; i < c->item_count - 1; i++) {
+        c->inventory[i] = c->inventory[i + 1];
+    }
+    c->item_count--;
+}
+
+int attuned_count(const Character *c)
+{
+    int i, n = 0;
+    for (i = 0; i < c->item_count; i++) {
+        if (c->inventory[i].is_magic && c->inventory[i].attuned) n++;
+    }
+    return n;
 }
 
 void add_item_by_name(Character *c, const char *name, int qty, int equipped)
@@ -183,11 +348,17 @@ static void choose_race(Character *c)
             "talents you gain from ancestry, and increases one or more "
             "ability scores.");
 
-    for (i = 0; i < RACE_COUNT; i++) {
-        names[i] = RACES[i].name;
-        details[i] = NULL;
+    {
+        int map[64], n = 0;
+        for (i = 0; i < RACE_COUNT && n < 64; i++) {
+            if (!book_enabled(RACES[i].book)) continue;
+            names[n] = RACES[i].name;
+            details[n] = NULL;
+            map[n] = i;
+            n++;
+        }
+        pick = map[ui_menu("Races:", names, details, n)];
     }
-    pick = ui_menu("Races:", names, details, RACE_COUNT);
     c->race_id = pick;
 
     printf("\n%s traits:\n", RACES[pick].name);
@@ -205,12 +376,16 @@ static void choose_race(Character *c)
     c->subrace_id = -1;
     if (RACES[pick].subrace_count > 0) {
         int first = RACES[pick].first_subrace;
-        int n = RACES[pick].subrace_count;
-        for (i = 0; i < n; i++) {
-            names[i] = SUBRACES[first + i].name;
-            details[i] = SUBRACES[first + i].traits;
+        int total = RACES[pick].subrace_count;
+        int map[32], n = 0;
+        for (i = 0; i < total && n < 32; i++) {
+            if (!book_enabled(SUBRACES[first + i].book)) continue;
+            names[n] = SUBRACES[first + i].name;
+            details[n] = SUBRACES[first + i].traits;
+            map[n] = first + i;
+            n++;
         }
-        c->subrace_id = first + ui_menu("Subraces:", names, details, n);
+        if (n > 0) c->subrace_id = map[ui_menu("Subraces:", names, details, n)];
     }
 
     /* Draconic ancestry. */
@@ -315,6 +490,7 @@ static void choose_classes(Character *c, int *target_level)
 {
     const char *names[16];
     const char *details[16];
+    int class_map[16], class_n;
     int i, remaining;
 
     ui_header("Step 2: Choose a Class");
@@ -324,19 +500,37 @@ static void choose_classes(Character *c, int *target_level)
     *target_level = ui_int("\nWhat total character level are you building to",
                            1, MAX_LEVEL);
 
-    for (i = 0; i < CLASS_COUNT; i++) {
-        names[i] = CLASSES[i].name;
-        details[i] = CLASSES[i].quick_build;
+    {
+        int n = 0;
+        for (i = 0; i < CLASS_COUNT && n < 16; i++) {
+            if (!book_enabled(CLASSES[i].book)) continue;
+            names[n] = CLASSES[i].name;
+            details[n] = CLASSES[i].quick_build;
+            class_map[n] = i;
+            n++;
+        }
+        class_n = n;
     }
 
     c->class_count = 0;
     remaining = *target_level;
 
     while (remaining > 0) {
-        int pick = ui_menu(c->class_count == 0 ? "Classes:"
-                                               : "Add levels in which class?",
-                           names, details, CLASS_COUNT);
-        int slot = find_class_slot(c, pick);
+        int pick;
+        int slot;
+
+        /* Without the multiclassing rule the whole build is one class. */
+        if (!SETTINGS.multiclassing && c->class_count == 1) {
+            c->classes[0].level += remaining;
+            remaining = 0;
+            break;
+        }
+
+        pick = class_map[ui_menu(c->class_count == 0
+                                     ? "Classes:"
+                                     : "Add levels in which class?",
+                                 names, details, class_n)];
+        slot = find_class_slot(c, pick);
         int levels, maxlev;
 
         if (slot < 0) {
@@ -395,12 +589,12 @@ static void grant_class_proficiencies(Character *c)
     for (i = 0; i < c->class_count; i++) {
         const ClassData *cd = &CLASSES[c->classes[i].class_id];
         if (i == 0) {
-            add_prof_list(c, cd->armour_profs);
-            add_prof_list(c, cd->weapon_profs);
+            add_prof_list(c, cd->armour_profs, cd->name);
+            add_prof_list(c, cd->weapon_profs, cd->name);
             c->save_prof[cd->save_prof[0]] = 1;
             c->save_prof[cd->save_prof[1]] = 1;
         } else {
-            add_prof_list(c, cd->mc_profs);
+            add_prof_list(c, cd->mc_profs, cd->name);
         }
     }
 }
@@ -525,7 +719,92 @@ static void choose_abilities(Character *c)
     }
 }
 
-/* Applies racial increases, including the ones the player chooses. */
+/* Applies racial increases, including the ones the player chooses.
+ *
+ * With Tasha's Customizing Your Origin switched on, the fixed increases a
+ * race grants become a pool the player may place anywhere, the granted
+ * languages may be swapped, and a fixed racial proficiency may be traded.
+ */
+static void custom_origin_abilities(Character *c, int total,
+                                    const char *why)
+{
+    static const char *const modes[] = {
+        "+2 to one ability and +1 to another",
+        "+1 to each of three abilities"
+    };
+    const char *opts[ABL_COUNT];
+    int avail[ABL_COUNT], picks[3], a, m;
+
+    for (a = 0; a < ABL_COUNT; a++) {
+        opts[a] = ABILITY_NAME[a];
+        avail[a] = 1;
+    }
+
+    printf("\n  %s: %d points of ability increase to place as you "
+           "like.\n", why, total);
+
+    if (total == 3) {
+        m = ui_menu("  How would you like to spread them?", modes, NULL, 2);
+        if (m == 0) {
+            ui_multi("  +2 to which ability?", opts, avail, ABL_COUNT, 1, picks);
+            if (picks[0] >= 0) {
+                c->racial_bonus[picks[0]] += 2;
+                avail[picks[0]] = 0;
+            }
+            ui_multi("  +1 to which ability?", opts, avail, ABL_COUNT, 1, picks);
+            if (picks[0] >= 0) c->racial_bonus[picks[0]] += 1;
+        } else {
+            ui_multi("  +1 to which three abilities?", opts, avail,
+                     ABL_COUNT, 3, picks);
+            for (a = 0; a < 3; a++) {
+                if (picks[a] >= 0) c->racial_bonus[picks[a]] += 1;
+            }
+        }
+        return;
+    }
+
+    /* Any other total is spread one point at a time. */
+    for (a = 0; a < total; a++) {
+        char prompt[64];
+        snprintf(prompt, sizeof prompt, "  Place +1 (%d of %d):", a + 1, total);
+        ui_multi(prompt, opts, NULL, ABL_COUNT, 1, picks);
+        if (picks[0] >= 0) c->racial_bonus[picks[0]] += 1;
+    }
+}
+
+static void custom_origin_languages(Character *c)
+{
+    ui_para("Customizing Your Origin also lets you swap the languages your "
+            "race grants. Common is always kept.");
+    if (!ui_yesno("  Replace your racial languages?", 0)) return;
+
+    /* Keep Common, drop the rest, then choose replacements. */
+    {
+        int kept = 0, i, dropped;
+        char keep[MAX_LANGS][MAX_NAME];
+        for (i = 0; i < c->language_count; i++) {
+            if (strcmp(c->languages[i], "Common") == 0) {
+                strcpy(keep[kept++], c->languages[i]);
+            }
+        }
+        dropped = c->language_count - kept;
+        c->language_count = kept;
+        for (i = 0; i < kept; i++) strcpy(c->languages[i], keep[i]);
+
+        for (i = 0; i < dropped; i++) {
+            const char *opts[32];
+            int avail[32], picks[1], k;
+            for (k = 0; k < LANGUAGE_COUNT; k++) {
+                opts[k] = LANGUAGES[k];
+                avail[k] = !has_language(c, LANGUAGES[k]);
+            }
+            ui_multi("  Replacement language:", opts, avail, LANGUAGE_COUNT,
+                     1, picks);
+            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
+        }
+    }
+}
+
 static void apply_racial_bonuses(Character *c)
 {
     const RaceData *r = &RACES[c->race_id];
@@ -536,29 +815,53 @@ static void apply_racial_bonuses(Character *c)
 
     memset(c->racial_bonus, 0, sizeof c->racial_bonus);
 
-    if (!(s && s->replaces_race_asi)) {
-        for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += r->ability[a];
-    }
-    if (s) {
-        for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += s->ability[a];
-        if (s->choice_asi_count) choice_count = s->choice_asi_count;
-    }
-
-    /* The half-elf's two free points may not go into Charisma. */
-    if (strcmp(r->name, "Half-Elf") == 0) exclude_cha = 1;
-
-    if (choice_count > 0) {
-        const char *opts[ABL_COUNT];
-        int avail[ABL_COUNT], picks[4], i, n = 0;
-
-        for (a = 0; a < ABL_COUNT; a++) {
-            opts[n] = ABILITY_NAME[a];
-            avail[n] = !(exclude_cha && a == ABL_CHA);
-            n++;
+    /* Monsters of the Multiverse races carry no fixed increases by design,
+       so they use the choose-your-own spread even under the PHB rules. */
+    if (r->origin_choice) {
+        custom_origin_abilities(c, 3, "This race has no fixed ability "
+                                "increases");
+        add_choice(c, "Origin", "Chosen (no fixed increases)");
+    } else if (SETTINGS.custom_origins) {
+        /* Total the points the race and subrace would have granted, then let
+           the player place them wherever they like. */
+        int total = 0;
+        if (!(s && s->replaces_race_asi)) {
+            for (a = 0; a < ABL_COUNT; a++) total += r->ability[a];
         }
-        ui_multi("Racial ability increase: +1 to which abilities?",
-                 opts, avail, n, choice_count, picks);
-        for (i = 0; i < choice_count; i++) c->racial_bonus[picks[i]] += 1;
+        if (s) for (a = 0; a < ABL_COUNT; a++) total += s->ability[a];
+        total += r->choice_asi_count * (r->choice_asi_amount ? r->choice_asi_amount : 1);
+        if (s && s->choice_asi_count) total += s->choice_asi_count;
+        if (total < 1) total = 3;
+
+        custom_origin_abilities(c, total, "Customizing Your Origin");
+        add_choice(c, "Origin", "Customized (Tasha's)");
+    } else {
+        if (!(s && s->replaces_race_asi)) {
+            for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += r->ability[a];
+        }
+        if (s) {
+            for (a = 0; a < ABL_COUNT; a++) c->racial_bonus[a] += s->ability[a];
+            if (s->choice_asi_count) choice_count = s->choice_asi_count;
+        }
+
+        /* The half-elf's two free points may not go into Charisma. */
+        if (strcmp(r->name, "Half-Elf") == 0) exclude_cha = 1;
+
+        if (choice_count > 0) {
+            const char *opts[ABL_COUNT];
+            int avail[ABL_COUNT], picks[4], i, n = 0;
+
+            for (a = 0; a < ABL_COUNT; a++) {
+                opts[n] = ABILITY_NAME[a];
+                avail[n] = !(exclude_cha && a == ABL_CHA);
+                n++;
+            }
+            ui_multi("Racial ability increase: +1 to which abilities?",
+                     opts, avail, n, choice_count, picks);
+            for (i = 0; i < choice_count; i++) {
+                if (picks[i] >= 0) c->racial_bonus[picks[i]] += 1;
+            }
+        }
     }
 
     /* Extra languages from race and subrace. */
@@ -573,9 +876,11 @@ static void apply_racial_bonuses(Character *c)
             }
             ui_multi("Extra language from your race:", opts, avail,
                      LANGUAGE_COUNT, 1, picks);
-            add_language(c, LANGUAGES[picks[0]]);
+            if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
         }
     }
+
+    if (SETTINGS.custom_origins) custom_origin_languages(c);
 
     /* Half-elf skill versatility and the variant human's free skill. */
     {
@@ -589,7 +894,9 @@ static void apply_racial_bonuses(Character *c)
             }
             ui_multi("Racial skill proficiency:", opts, avail, SKL_COUNT,
                      extra, picks);
-            for (i = 0; i < extra; i++) c->skill_prof[picks[i]] = 1;
+            for (i = 0; i < extra; i++) {
+                if (picks[i] >= 0) c->skill_prof[picks[i]] = 1;
+            }
         }
     }
 }
@@ -636,6 +943,108 @@ static void check_multiclass_requirements(Character *c)
 
 /* ------------------------------------------------------------------- step 4 */
 
+/* The PHB's own rules for building a background instead of taking one:
+ * choose any two skills, a total of two tools or languages, keep or replace
+ * the feature, and pick the equipment or take coin for it. */
+static void custom_background(Character *c)
+{
+    char buf[MAX_NAME];
+    int picks[2], i;
+
+    ui_header("A Background of Your Own");
+    ui_para("The Player's Handbook lets you build a background rather than "
+            "take one: any two skills, two tools or languages between them, "
+            "and any feature you like -- one from another background, or one "
+            "you write yourself.");
+
+    ui_line_default("  What is it called", "Custom Background", buf,
+                    sizeof c->background_name);
+    snprintf(c->background_name, sizeof c->background_name, "%s", buf);
+    c->background_id = -1;
+
+    /* Any two skills. */
+    {
+        const char *opts[SKL_COUNT];
+        int avail[SKL_COUNT];
+        for (i = 0; i < SKL_COUNT; i++) {
+            opts[i] = SKILL_NAME[i];
+            avail[i] = !c->skill_prof[i];
+        }
+        ui_multi("  Which two skills?", opts, avail, SKL_COUNT, 2, picks);
+        for (i = 0; i < 2; i++) {
+            if (picks[i] >= 0) c->skill_prof[picks[i]] = 1;
+        }
+    }
+
+    /* Two tools or languages, in any mix. */
+    for (i = 0; i < 2; i++) {
+        static const char *const kinds[] = {
+            "A tool proficiency", "A language"
+        };
+        char prompt[64];
+
+        snprintf(prompt, sizeof prompt, "  Choice %d of 2:", i + 1);
+        if (ui_menu(prompt, kinds, NULL, 2) == 0) {
+            ui_line("    Which tool", buf, sizeof buf);
+            if (buf[0]) add_tool(c, buf);
+        } else {
+            const char *opts[32];
+            int avail[32], lang[1], k;
+            for (k = 0; k < LANGUAGE_COUNT; k++) {
+                opts[k] = LANGUAGES[k];
+                avail[k] = !has_language(c, LANGUAGES[k]);
+            }
+            ui_multi("    Which language?", opts, avail, LANGUAGE_COUNT, 1,
+                     lang);
+            if (lang[0] >= 0) add_language(c, LANGUAGES[lang[0]]);
+        }
+    }
+
+    /* A feature: one from the printed backgrounds, or your own. */
+    {
+        const char *opts[32];
+        const char *det[32];
+        int map[32], n = 0, pick;
+
+        for (i = 0; i < BACKGROUND_COUNT && n < 31; i++) {
+            if (!book_enabled(BACKGROUNDS[i].book)) continue;
+            opts[n] = BACKGROUNDS[i].feature_name;
+            det[n] = BACKGROUNDS[i].feature_summary;
+            map[n] = i;
+            n++;
+        }
+        opts[n] = "Write my own";
+        det[n] = NULL;
+
+        pick = ui_menu("  Which feature?", opts, det, n + 1);
+        if (pick == n) {
+            ui_line("    What is the feature called", c->background_feature,
+                    sizeof c->background_feature);
+            ui_line("    What does it do", c->background_feature_text,
+                    sizeof c->background_feature_text);
+        } else {
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", BACKGROUNDS[map[pick]].feature_name);
+            snprintf(c->background_feature_text,
+                     sizeof c->background_feature_text, "%s",
+                     BACKGROUNDS[map[pick]].feature_summary);
+        }
+        if (!c->background_feature[0]) {
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", "Background Feature");
+        }
+    }
+
+    /* Equipment and starting coin. The gear step still offers to take gold
+       instead of a package, so this is only what the background itself
+       hands over. */
+    ui_line("  What equipment does it come with (blank for none)",
+            c->background_equipment, sizeof c->background_equipment);
+    c->gold += ui_int("  Starting gold from the background", 0, 1000);
+
+    printf("\n  %s: %s\n", c->background_name, c->background_feature);
+}
+
 static void choose_background(Character *c)
 {
     const char *names[16];
@@ -647,11 +1056,28 @@ static void choose_background(Character *c)
             "the world. It grants two skills, sometimes tools or languages, "
             "and a feature.");
 
-    for (i = 0; i < BACKGROUND_COUNT; i++) {
-        names[i] = BACKGROUNDS[i].name;
-        details[i] = BACKGROUNDS[i].feature_summary;
+    {
+        int map[32], n = 0;
+        for (i = 0; i < BACKGROUND_COUNT && n < 32; i++) {
+            if (!book_enabled(BACKGROUNDS[i].book)) continue;
+            names[n] = BACKGROUNDS[i].name;
+            details[n] = BACKGROUNDS[i].feature_summary;
+            map[n] = i;
+            n++;
+        }
+        names[n] = "Build one of my own";
+        details[n] = "Choose any two skills, two tools or languages, and "
+                     "any feature -- the Player's Handbook's own rules for "
+                     "customizing a background";
+        map[n] = -1;
+        n++;
+
+        pick = map[ui_menu("Backgrounds:", names, details, n)];
     }
-    pick = ui_menu("Backgrounds:", names, details, BACKGROUND_COUNT);
+    if (pick < 0) {
+        custom_background(c);
+        return;
+    }
     c->background_id = pick;
 
     c->skill_prof[BACKGROUNDS[pick].skills[0]] = 1;
@@ -661,36 +1087,7 @@ static void choose_background(Character *c)
            SKILL_NAME[BACKGROUNDS[pick].skills[0]],
            SKILL_NAME[BACKGROUNDS[pick].skills[1]]);
 
-    /* Tool proficiencies: recorded verbatim, since several are "one type of
-       ..." and the specific choice is the player's. */
-    if (BACKGROUNDS[pick].tool_profs[0]) {
-        char buf[256], *p, *start;
-        strncpy(buf, BACKGROUNDS[pick].tool_profs, sizeof buf - 1);
-        buf[sizeof buf - 1] = '\0';
-        start = buf;
-        for (p = buf;; p++) {
-            if (*p == ',' || *p == '\0') {
-                int end = (*p == '\0');
-                *p = '\0';
-                while (*start == ' ') start++;
-                if (*start) {
-                    if (strstr(start, "One type of")) {
-                        char answer[MAX_NAME];
-                        char prompt[MAX_NAME + 320];
-                        snprintf(prompt, sizeof prompt,
-                                 "  Your background grants \"%s\" -- name it",
-                                 start);
-                        ui_line(prompt, answer, sizeof answer);
-                        add_tool(c, answer[0] ? answer : start);
-                    } else {
-                        add_tool(c, start);
-                    }
-                }
-                if (end) break;
-                start = p + 1;
-            }
-        }
-    }
+    grant_tool_line(c, BACKGROUNDS[pick].tool_profs, "Your background");
 
     for (i = 0; i < BACKGROUNDS[pick].extra_languages; i++) {
         const char *opts[32];
@@ -701,7 +1098,7 @@ static void choose_background(Character *c)
         }
         ui_multi("Language from your background:", opts, avail,
                  LANGUAGE_COUNT, 1, picks);
-        add_language(c, LANGUAGES[picks[0]]);
+        if (picks[0] >= 0) add_language(c, LANGUAGES[picks[0]]);
     }
 }
 
@@ -740,7 +1137,7 @@ static void choose_class_skills(Character *c)
         snprintf(prompt, sizeof prompt, "%s skill proficiencies:", cd->name);
         ui_multi(prompt, opts, avail, n, picks_wanted, picks);
         for (k = 0; k < picks_wanted; k++) {
-            c->skill_prof[cd->skill_options[picks[k]]] = 1;
+            if (picks[k] >= 0) c->skill_prof[cd->skill_options[picks[k]]] = 1;
         }
     }
 }
@@ -751,17 +1148,7 @@ static void grant_class_tools(Character *c)
     for (i = 0; i < c->class_count; i++) {
         const ClassData *cd = &CLASSES[c->classes[i].class_id];
         if (i > 0) continue;                    /* multiclass tools vary */
-        if (!cd->tool_profs[0]) continue;
-
-        if (strstr(cd->tool_profs, "of your choice")) {
-            char answer[MAX_NAME], prompt[200];
-            snprintf(prompt, sizeof prompt, "  %s grants \"%s\" -- name it",
-                     cd->name, cd->tool_profs);
-            ui_line(prompt, answer, sizeof answer);
-            add_tool(c, answer[0] ? answer : cd->tool_profs);
-        } else {
-            add_tool(c, cd->tool_profs);
-        }
+        grant_tool_line(c, cd->tool_profs, cd->name);
     }
     /* Rogues gain thieves' tools when multiclassing in as well. */
     for (i = 1; i < c->class_count; i++) {

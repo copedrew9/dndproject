@@ -1,0 +1,43 @@
+# homebrew.txt -- your own items and spells.
+#
+# This is the one data file the program reads while it is running. Add a
+# line here and the entry appears everywhere a printed one does: in the
+# shops, in the lookup browser, in a spell list, on a sheet. Entries made
+# through the Homebrew menu are written back here, so you can start
+# either way.
+#
+# One record per line: a tag, then '|' separated fields. A line starting
+# with '#' is a comment. Everything here is tagged as Homebrew, so the
+# settings menu can switch it all off at once.
+#
+# ITEM|name|category|cost_cp|weight_tenths|base_ac|dex_cap|str_req|
+#      stealth|damage|damage_type|properties|contents
+#   category is one of: light-armour, medium-armour, heavy-armour,
+#      shield, simple-melee, simple-ranged, martial-melee,
+#      martial-ranged, gear, tool, pack, mount
+#   cost is in copper, so 25 gp is 2500. Weight is in tenths of a pound,
+#      so 3 lb is 30.
+#   base_ac, dex_cap, str_req and stealth are for armour and are 0 on
+#      anything else. dex_cap of -1 adds the whole Dexterity modifier.
+#   damage and properties are for weapons; contents is for a pack.
+#
+# MAGICITEM|name|type|rarity|attunement|text
+#   attunement is blank when none is needed, otherwise the wording, e.g.
+#      'requires attunement by a druid'.
+#
+# SPELL|name|level|school|ritual|concentration|casting_time|range|
+#       components|duration|classes
+#   level 0 is a cantrip. school is one of: Abjuration, Conjuration,
+#      Divination, Enchantment, Evocation, Illusion, Necromancy,
+#      Transmutation.
+#   ritual and concentration are 1 or 0.
+#   classes is a comma separated list of the classes whose list it is on:
+#      bard, cleric, druid, paladin, ranger, sorcerer, warlock, wizard,
+#      artificer. A spell nobody can learn is one nobody will see.
+#
+# An example of each. Delete the '#' from a line to bring it into play.
+#
+#ITEM|Dwarven Repeating Crossbow|martial-ranged|7500|180|0|0|0|0|1d10|piercing|Ammunition (range 100/400), heavy, loading, two-handed|
+#MAGICITEM|Lantern of the Long Road|Wondrous item|uncommon|requires attunement|While lit, the lantern sheds bright light in a 30-foot radius and dim light for another 30 feet. Creatures of your choice within the bright light ignore difficult terrain caused by mud, snow or undergrowth.
+#SPELL|Mendicant's Warning|1|Divination|1|0|1 action|Self|V, S|1 hour|bard,cleric,warlock
+#

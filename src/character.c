@@ -1,6 +1,9 @@
 /* character.c -- derived statistics (PHB chapters 1, 5 and 7). */
 #include "dnd.h"
 #include "data.h"
+#include "ui.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 const char *const ABILITY_NAME[ABL_COUNT] = {
@@ -32,11 +35,6 @@ const char *const ALIGNMENT_NAME[ALIGN_COUNT] = {
     "Lawful Evil", "Neutral Evil", "Chaotic Evil"
 };
 
-/* Class ids used by the rules below; they must match data_classes.c. */
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
 
 /* Subclasses are referenced by name so the tables can grow freely. */
 static int is_third_caster(int sub)
@@ -100,9 +98,62 @@ static int has_named_feat(const Character *c, const char *name)
     return id >= 0 && has_feat(c, id);
 }
 
+/* The rule a carried magic item brings, if it brings one and it is actually
+ * in effect: an item needing attunement does nothing until attuned, and
+ * armour or a shield does nothing until worn. */
+static const MagicRule *rule_in_effect(const Character *c, int i)
+{
+    const InventoryEntry *e = &c->inventory[i];
+    const MagicItem *m;
+    const MagicRule *r;
+
+    if (!e->is_magic) return NULL;
+    m = &MAGIC_ITEMS[e->item_id];
+    r = magic_rule_for(m->name);
+    if (!r) return NULL;
+
+    if (m->attunement && !e->attuned) return NULL;
+    if ((r->armor_base || r->shield) && !e->equipped) return NULL;
+    return r;
+}
+
+/* The magic armour a character is wearing, if any. */
+static const InventoryEntry *worn_magic_armour(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r && r->armor_base) return &c->inventory[i];
+    }
+    return NULL;
+}
+
+static const InventoryEntry *worn_magic_shield(const Character *c)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r && r->shield) return &c->inventory[i];
+    }
+    return NULL;
+}
+
 int ability_score(const Character *c, Ability a)
 {
-    return c->base_score[a] + c->racial_bonus[a] + c->asi_bonus[a];
+    int score = c->base_score[a] + c->racial_bonus[a] + c->asi_bonus[a];
+    int i;
+
+    /* An amulet of health or gauntlets of ogre power set a score outright,
+       and only help if the score is not already higher. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int set;
+        if (!r || r->sets_ability != (int)a + 1) continue;
+        /* A belt of giant strength carries its own score. */
+        set = r->sets_to ? r->sets_to : c->inventory[i].plus;
+        if (set > score) score = set;
+    }
+    return score;
 }
 
 int ability_mod_of(int score)
@@ -141,9 +192,16 @@ int skill_bonus(const Character *c, Skill s)
 int save_bonus(const Character *c, Ability a)
 {
     int bonus = ability_mod(c, a);
+    int i;
+
     /* A monk of 14th level is proficient in every saving throw. */
     if (c->save_prof[a] || class_level_of(c, CLS_MONK) >= 14) {
         bonus += proficiency_bonus(c);
+    }
+    /* A ring or cloak of protection raises every save, not just one. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r) bonus += r->save_bonus;
     }
     return bonus;
 }
@@ -160,6 +218,7 @@ static const InventoryEntry *equipped_of(const Character *c, ItemCategory cat)
     int i;
     for (i = 0; i < c->item_count; i++) {
         if (!c->inventory[i].equipped) continue;
+        if (c->inventory[i].is_magic) continue;
         if (ITEMS[c->inventory[i].item_id].category == cat) {
             return &c->inventory[i];
         }
@@ -171,14 +230,27 @@ int armour_class(const Character *c)
 {
     const InventoryEntry *armour = NULL;
     const InventoryEntry *shield = equipped_of(c, ITEM_SHIELD);
+    const InventoryEntry *magic_armour = worn_magic_armour(c);
+    const InventoryEntry *magic_shield = worn_magic_shield(c);
     int dex = ability_mod(c, ABL_DEX);
-    int best, cat;
+    int best, cat, i;
+    int wearing_armour, using_shield;
 
     for (cat = ITEM_LIGHT_ARMOR; cat <= ITEM_HEAVY_ARMOR && !armour; cat++) {
         armour = equipped_of(c, (ItemCategory)cat);
     }
 
-    if (armour) {
+    wearing_armour = (armour != NULL) || (magic_armour != NULL);
+    using_shield = (shield != NULL) || (magic_shield != NULL);
+
+    if (magic_armour) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[magic_armour->item_id].name);
+        int add = (r->armor_dex < 0) ? dex
+                : (r->armor_dex == 0) ? 0
+                : (dex < r->armor_dex ? dex : r->armor_dex);
+        best = r->armor_base + add;
+    } else if (armour) {
         const ItemData *it = &ITEMS[armour->item_id];
         int add = (it->dex_cap < 0) ? dex
                 : (it->dex_cap == 0) ? 0
@@ -190,7 +262,7 @@ int armour_class(const Character *c)
 
     /* Unarmored Defense and Draconic Resilience apply only without armour;
        the monk's version also forbids a shield. */
-    if (!armour) {
+    if (!wearing_armour) {
         int alt;
         if (class_level_of(c, CLS_BARBARIAN) >= 1) {
             alt = 10 + dex + ability_mod(c, ABL_CON);
@@ -200,18 +272,251 @@ int armour_class(const Character *c)
             alt = 13 + dex;
             if (alt > best) best = alt;
         }
-        if (class_level_of(c, CLS_MONK) >= 1 && !shield) {
+        if (class_level_of(c, CLS_MONK) >= 1 && !using_shield) {
             alt = 10 + dex + ability_mod(c, ABL_WIS);
             if (alt > best) best = alt;
         }
+
+        /* A robe that sets the base outright, rather than adding to it. */
+        for (i = 0; i < c->item_count; i++) {
+            const MagicRule *r = rule_in_effect(c, i);
+            if (r && r->unarmored_base) {
+                alt = r->unarmored_base + dex;
+                if (alt > best) best = alt;
+            }
+        }
     }
 
-    if (shield) best += ITEMS[shield->item_id].base_ac;
-    if (has_named_feat(c, "Dual Wielder") && !shield) {
+    if (magic_shield) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[magic_shield->item_id].name);
+        best += r->shield + (r->variable ? magic_shield->plus : 0);
+    } else if (shield) {
+        best += ITEMS[shield->item_id].base_ac;
+    }
+
+    /* Everything else worn or attuned that adds flatly. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (!r) continue;
+        if (r->armor_base || r->shield) continue;      /* already counted */
+        if (r->only_unarmored && (wearing_armour || using_shield)) continue;
+        if (r->unarmored_base) continue;               /* handled above */
+        best += r->ac_bonus;
+        if (r->variable) best += c->inventory[i].plus;
+    }
+
+    if (has_named_feat(c, "Dual Wielder") && !using_shield) {
         /* +1 only while wielding two weapons; recorded here as the best case. */
         best += 1;
     }
     return best;
+}
+
+/* ------------------------------------------------------------- attacks */
+
+/* A character sheet's attack lines: for each weapon carried, what it hits
+ * at and what it does. The arithmetic is small but it is the arithmetic a
+ * player redoes at the table more often than any other, and getting it from
+ * the sheet rather than from memory is the point of writing one.
+ */
+
+/* Proficiency is granted three ways: by name, by category, or by "All
+ * weapons". A class grants a plural ("longswords") where the equipment
+ * table has the singular, so a trailing s is ignored on both sides. */
+static int same_weapon(const char *a, const char *b)
+{
+    size_t la = strlen(a), lb = strlen(b);
+
+    if (la && (a[la - 1] == 's' || a[la - 1] == 'S')) la--;
+    if (lb && (b[lb - 1] == 's' || b[lb - 1] == 'S')) lb--;
+    if (la != lb) return 0;
+    while (la--) {
+        int ca = a[la], cb = b[la];
+        if (ca >= 'A' && ca <= 'Z') ca += 32;
+        if (cb >= 'A' && cb <= 'Z') cb += 32;
+        if (ca != cb) return 0;
+    }
+    return 1;
+}
+
+static int weapon_proficient(const Character *c, const ItemData *it)
+{
+    int simple = (it->category == ITEM_SIMPLE_MELEE
+                  || it->category == ITEM_SIMPLE_RANGED);
+    int i;
+
+    for (i = 0; i < c->other_prof_count; i++) {
+        const char *p = c->other_profs[i];
+        if (same_weapon(p, it->name)) return 1;
+        if (!strcmp(p, "All weapons")) return 1;
+        if (simple && !strcmp(p, "Simple weapons")) return 1;
+        if (!simple && !strcmp(p, "Martial weapons")) return 1;
+    }
+    /* A monk is proficient with shortswords through Martial Arts, and a
+       druid's list is worded as a set of names, both already covered above. */
+    return 0;
+}
+
+/* The +N of a magic weapon the character has said this one is. The book's
+   entry covers every weapon at once, so the copy names which. */
+static int magic_weapon_bonus(const Character *c, const char *weapon)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r;
+        if (!c->inventory[i].is_magic) continue;
+        r = magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+        if (!r || !r->weapon) continue;
+        if (!c->inventory[i].variant[0]) continue;
+        if (same_weapon(c->inventory[i].variant, weapon)) {
+            return c->inventory[i].plus;
+        }
+    }
+    return 0;
+}
+
+/* The monk's Martial Arts die, which replaces an unarmed strike's damage
+   and that of any monk weapon. Zero for anyone else. */
+static int martial_arts_die(const Character *c)
+{
+    int lv = class_level_of(c, CLS_MONK);
+    if (lv <= 0) return 0;
+    if (lv >= 17) return 10;
+    if (lv >= 11) return 8;
+    if (lv >= 5) return 6;
+    return 4;
+}
+
+static int has_choice_containing(const Character *c, const char *label,
+                                 const char *needle)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) != 0) continue;
+        if (strstr(c->choices[i].value, needle)) return 1;
+    }
+    return 0;
+}
+
+/* "1d8" -> 8. Zero when the damage is a flat number or absent. */
+static int die_of(const char *damage)
+{
+    const char *d = strchr(damage, 'd');
+    return d ? atoi(d + 1) : 0;
+}
+
+static void add_note(char *note, size_t n, const char *text)
+{
+    size_t used = strlen(note);
+    snprintf(note + used, n - used, "%s%s", used ? ", " : "", text);
+}
+
+int attacks_of(const Character *c, Attack *out, int max)
+{
+    int prof = proficiency_bonus(c);
+    int str = ability_mod(c, ABL_STR);
+    int dex = ability_mod(c, ABL_DEX);
+    int monk_die = martial_arts_die(c);
+    int archery = has_choice_containing(c, "Fighting Style", "Archery");
+    int i, n = 0;
+
+    for (i = 0; i < c->item_count && n < max; i++) {
+        const ItemData *it;
+        const char *props;
+        int ranged, finesse, ability, plus, hit, dmg, die;
+        Attack *a;
+
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
+        if (it->category < ITEM_SIMPLE_MELEE
+            || it->category > ITEM_MARTIAL_RANGED) continue;
+        if (!it->damage[0]) continue;              /* a net does none */
+
+        props = it->properties;
+        ranged = (it->category == ITEM_SIMPLE_RANGED
+                  || it->category == ITEM_MARTIAL_RANGED);
+        finesse = contains_ci(props, "finesse");
+
+        /* Finesse lets either modifier be used, so the sheet shows the
+           better one; a ranged weapon uses Dexterity and everything else
+           Strength. */
+        ability = ranged ? dex : str;
+        if (finesse && dex > ability) ability = dex;
+        if (finesse && str > ability) ability = str;
+
+        plus = magic_weapon_bonus(c, it->name);
+        hit = ability + plus;
+        if (weapon_proficient(c, it)) hit += prof;
+        if (archery && ranged) hit += 2;
+
+        a = &out[n++];
+        snprintf(a->name, sizeof a->name, "%s", it->name);
+        a->bonus = hit;
+        a->proficient = weapon_proficient(c, it);
+
+        die = die_of(it->damage);
+        dmg = ability + plus;
+        {
+            /* A monk weapon -- a simple melee weapon that is neither
+               two-handed nor heavy, and the shortsword -- may use the
+               Martial Arts die when it is the larger one. */
+            const char *dice = it->damage;
+            char monk[8];
+            if (monk_die && die && die < monk_die
+                && (it->category == ITEM_SIMPLE_MELEE
+                    || same_weapon(it->name, "Shortsword"))
+                && !contains_ci(props, "two-handed")
+                && !contains_ci(props, "heavy")) {
+                snprintf(monk, sizeof monk, "1d%d", monk_die);
+                dice = monk;
+            }
+            if (dmg) {
+                snprintf(a->damage, sizeof a->damage, "%s%+d %s",
+                         dice, dmg, it->damage_type);
+            } else {
+                snprintf(a->damage, sizeof a->damage, "%s %s",
+                         dice, it->damage_type);
+            }
+        }
+
+        a->note[0] = '\0';
+        if (props[0]) add_note(a->note, sizeof a->note, props);
+        if (!a->proficient) {
+            add_note(a->note, sizeof a->note,
+                     "you are not proficient with it");
+        }
+        if (plus) {
+            char buf[32];
+            snprintf(buf, sizeof buf, "+%d weapon", plus);
+            add_note(a->note, sizeof a->note, buf);
+        }
+    }
+
+    /* Everyone can punch, and for a monk it is a real attack. */
+    if (n < max) {
+        Attack *a = &out[n++];
+        int ability = str;
+        if (monk_die && dex > str) ability = dex;
+        snprintf(a->name, sizeof a->name, "Unarmed strike");
+        a->bonus = ability + prof;
+        a->proficient = 1;
+        if (monk_die) {
+            snprintf(a->damage, sizeof a->damage, "1d%d%+d bludgeoning",
+                     monk_die, ability);
+            snprintf(a->note, sizeof a->note,
+                     "Martial Arts; a bonus-action strike after the Attack "
+                     "action");
+        } else {
+            /* An unarmed strike deals 1 plus the Strength modifier, and
+               never less than nothing. */
+            int hurt = 1 + ability;
+            snprintf(a->damage, sizeof a->damage, "%d bludgeoning",
+                     hurt > 0 ? hurt : 0);
+            a->note[0] = '\0';
+        }
+    }
+    return n;
 }
 
 int initiative_bonus(const Character *c)
@@ -244,7 +549,93 @@ int speed_of(const Character *c)
     if (barb >= 5) speed += 10;         /* Fast Movement, unarmoured or light */
 
     if (has_named_feat(c, "Mobile")) speed += 10;
+
+    /* Boots of striding and springing set a floor rather than adding. */
+    {
+        int i;
+        for (i = 0; i < c->item_count; i++) {
+            const MagicRule *r = rule_in_effect(c, i);
+            if (r && r->sets_speed > speed) speed = r->sets_speed;
+        }
+    }
     return speed;
+}
+
+/* Movement a magic item grants that the character would not otherwise have.
+ * A speed of -1 in the table means "the same as your walking speed". Returns
+ * 0 when the character has none of that kind. */
+int magic_fly_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->fly_speed) continue;
+        v = (r->fly_speed < 0) ? speed_of(c) : r->fly_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+int magic_swim_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->swim_speed) continue;
+        v = (r->swim_speed < 0) ? speed_of(c) : r->swim_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+int magic_climb_speed(const Character *c)
+{
+    int i, best = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int v;
+        if (!r || !r->climb_speed) continue;
+        v = (r->climb_speed < 0) ? speed_of(c) : r->climb_speed;
+        if (v > best) best = v;
+    }
+    return best;
+}
+
+/* Collects what the character's worn magic items make them resist or ignore
+ * into one line, so the sheet can state it rather than leaving it buried in
+ * each item's description. Returns the number of entries written. */
+int magic_defences(const Character *c, char *out, size_t n)
+{
+    int i, found = 0;
+    size_t used = 0;
+
+    out[0] = '\0';
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        int k;
+
+        if (!r) continue;
+        for (k = 0; k < 2; k++) {
+            const char *what = k ? r->immune : r->resist;
+            const char *how = k ? "immune to" : "resistant to";
+            int w;
+
+            if (!what) continue;
+            /* A "*" means the copy carries the type it was made against. */
+            if (!strcmp(what, "*")) {
+                what = c->inventory[i].variant[0]
+                     ? c->inventory[i].variant : "a chosen damage type";
+            }
+            w = snprintf(out + used, n - used, "%s%s %s", used ? "; " : "",
+                         how, what);
+            if (w < 0 || (size_t)w >= n - used) return found;
+            used += (size_t)w;
+            found++;
+        }
+    }
+    return found;
 }
 
 int carrying_capacity(const Character *c)
@@ -256,6 +647,9 @@ int current_weight_tenths(const Character *c)
 {
     int i, w = 0;
     for (i = 0; i < c->item_count; i++) {
+        /* Magic items index a different table and carry no listed weight;
+           their bulk is the DM's call. */
+        if (c->inventory[i].is_magic) continue;
         w += ITEMS[c->inventory[i].item_id].weight_tenths
              * c->inventory[i].quantity;
     }

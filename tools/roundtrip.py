@@ -61,7 +61,7 @@ def main():
 
                 # Menu option 3 views a saved character, then 4 quits.
                 proc = subprocess.run(
-                    [binary], input="3\n%s\n4\n" % fn,
+                    [binary], input="3\n%s\n5\n" % fn,
                     capture_output=True, text=True, cwd=wd, errors="replace")
                 start = proc.stdout.find("=" * 20)
                 reloaded = sheet_of(proc.stdout[start:] if start >= 0 else "")

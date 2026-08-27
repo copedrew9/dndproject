@@ -7,10 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-enum { CLS_BARBARIAN = 0, CLS_BARD = 1, CLS_CLERIC = 2, CLS_DRUID = 3,
-       CLS_FIGHTER = 4, CLS_MONK = 5, CLS_PALADIN = 6, CLS_RANGER = 7,
-       CLS_ROGUE = 8, CLS_SORCERER = 9, CLS_WARLOCK = 10, CLS_WIZARD = 11,
-       CLS_ARTIFICER = 12 };
 
 /* Subclasses are referenced by name so the tables can grow freely. */
 static int is_third_caster(int sub)
@@ -186,6 +182,23 @@ static int feat_available(const Character *c, int f)
         if (!ok) return 0;
     }
     if (fd->req_prof[0] && !has_prof(c, fd->req_prof)) return 0;
+
+    /* Xanathar's racial feats are limited to a race, sometimes a subrace.
+       The requirement lists every race that qualifies, separated by '|'. */
+    if (fd->req_race[0]) {
+        char buf[128];
+        const char *parts[8];
+        int n, k, ok = 0;
+        const char *race = (c->race_id >= 0) ? RACES[c->race_id].name : "";
+        const char *sub = (c->subrace_id >= 0) ? SUBRACES[c->subrace_id].name
+                                               : "";
+
+        n = split_pipe(fd->req_race, buf, sizeof buf, parts, 8);
+        for (k = 0; k < n; k++) {
+            if (!strcmp(parts[k], race) || !strcmp(parts[k], sub)) ok = 1;
+        }
+        if (!ok) return 0;
+    }
     if (fd->req_spellcasting) {
         int casts = 0;
         for (i = 0; i < c->class_count; i++) {
@@ -198,6 +211,8 @@ static int feat_available(const Character *c, int f)
 }
 
 /* Applies a feat's own ability increase, asking when the feat allows a choice. */
+static void feat_extras(Character *c, int feat_id);
+
 static void apply_feat_asi(Character *c, int f)
 {
     const FeatData *fd = &FEATS[f];
@@ -224,6 +239,7 @@ static void apply_feat_asi(Character *c, int f)
         ui_multi("  This feat also raises an ability by 1:", opts, avail,
                  n, fd->asi_choice_count, picks);
         for (i = 0; i < fd->asi_choice_count; i++) {
+            if (picks[i] < 0) continue;
             c->asi_bonus[picks[i]] += 1;
             if (strcmp(fd->name, "Resilient") == 0) {
                 c->save_prof[picks[i]] = 1;
@@ -242,7 +258,9 @@ void apply_asi_or_feat(Character *c, const char *reason)
     int m;
 
     printf("\n  %s\n", reason);
-    m = ui_menu("  Ability Score Improvement:", modes, NULL, 3);
+    /* Feats are an optional rule; without them only the two increases apply. */
+    m = ui_menu("  Ability Score Improvement:", modes, NULL,
+                SETTINGS.feats ? 3 : 2);
 
     if (m == 0 || m == 1) {
         const char *opts[ABL_COUNT];
@@ -264,7 +282,9 @@ void apply_asi_or_feat(Character *c, const char *reason)
         } else {
             ui_multi("  Which ability score(s)?", opts, avail, ABL_COUNT,
                      want, picks);
-            for (a = 0; a < want; a++) c->asi_bonus[picks[a]] += step;
+            for (a = 0; a < want; a++) {
+                if (picks[a] >= 0) c->asi_bonus[picks[a]] += step;
+            }
             return;
         }
     }
@@ -275,6 +295,7 @@ void apply_asi_or_feat(Character *c, const char *reason)
         int map[64], n = 0, i, pick;
 
         for (i = 0; i < FEAT_COUNT; i++) {
+            if (!book_enabled(FEATS[i].book)) continue;
             if (!feat_available(c, i)) continue;
             opts[n] = FEATS[i].name;
             det[n] = FEATS[i].summary;
@@ -291,6 +312,7 @@ void apply_asi_or_feat(Character *c, const char *reason)
         pick = ui_menu("  Feats you qualify for:", opts, det, n);
         if (c->feat_count < MAX_FEATS) c->feats[c->feat_count++] = map[pick];
         apply_feat_asi(c, map[pick]);
+        feat_extras(c, map[pick]);
 
         /* Feats that grant proficiencies. */
         if (strcmp(FEATS[map[pick]].name, "Heavily Armored") == 0) {
@@ -362,17 +384,28 @@ static void choose_infusions(Character *c, int artificer_level)
             return;
         }
 
-        pick = ui_menu("  Choose an artificer infusion:", opts, det, n);
+        {
+            char answer[MAX_TEXT];
 
-        if (strcmp(INFUSIONS[map[pick]].name, "Replicate Magic Item") == 0) {
-            char item[MAX_NAME];
-            char value[MAX_TEXT];
-            ui_line("    Which magic item does it replicate", item, sizeof item);
-            snprintf(value, sizeof value, "Replicate Magic Item (%s)",
-                     item[0] ? item : "to be chosen");
-            add_choice(c, "Infusion", value);
-        } else {
-            add_choice(c, "Infusion", INFUSIONS[map[pick]].name);
+            pick = ui_menu_custom("  Choose an artificer infusion:", opts, det,
+                                  n, "Another infusion (type it in)",
+                                  answer, sizeof answer);
+            if (pick < 0) {
+                add_choice(c, "Infusion", answer);
+            } else if (strcmp(INFUSIONS[map[pick]].name,
+                              "Replicate Magic Item") == 0) {
+                /* Which items may be replicated is its own table, by
+                   artificer level, so the item is named rather than picked
+                   from the magic item bank. */
+                char item[MAX_NAME], value[MAX_TEXT];
+                ui_line("    Which magic item does it replicate", item,
+                        sizeof item);
+                snprintf(value, sizeof value, "Replicate Magic Item (%s)",
+                         item[0] ? item : "to be chosen");
+                add_choice(c, "Infusion", value);
+            } else {
+                add_choice(c, "Infusion", INFUSIONS[map[pick]].name);
+            }
         }
     }
 }
@@ -389,6 +422,16 @@ void choose_subclass_for(Character *c, int slot)
 
     n = subclasses_of(c->classes[slot].class_id, ids, 64);
     if (n <= 0) return;
+
+    /* Hide subclasses from books this character is not using. */
+    {
+        int keep = 0;
+        for (i = 0; i < n; i++) {
+            if (book_enabled(SUBCLASSES[ids[i]].book)) ids[keep++] = ids[i];
+        }
+        n = keep;
+        if (n <= 0) return;
+    }
 
     for (i = 0; i < n; i++) {
         opts[i] = SUBCLASSES[ids[i]].name;
@@ -451,7 +494,9 @@ void choose_subclass_for(Character *c, int slot)
         }
         ui_multi("  College of Lore bonus proficiencies:", sopts, avail,
                  SKL_COUNT, 3, picks);
-        for (i2 = 0; i2 < 3; i2++) c->skill_prof[picks[i2]] = 1;
+        for (i2 = 0; i2 < 3; i2++) {
+            if (picks[i2] >= 0) c->skill_prof[picks[i2]] = 1;
+        }
     }
 }
 
@@ -467,7 +512,6 @@ void choose_fighting_style(Character *c, int class_id)
     };
     int allowed[6], n = 0, i;
     const char *opts[16];
-    int map[16], pick;
     char extra_buf[1024];
     const char *extra_parts[8];
     int extra_n = 0;
@@ -480,9 +524,7 @@ void choose_fighting_style(Character *c, int class_id)
 
     for (i = 0; i < 6; i++) {
         if (!allowed[i]) continue;
-        opts[n] = all[i];
-        map[n] = i;
-        n++;
+        opts[n++] = all[i];
     }
 
     /* Tasha's Fighting Style Options widens the list. */
@@ -491,16 +533,18 @@ void choose_fighting_style(Character *c, int class_id)
                         : (class_id == CLS_RANGER)  ? TASHA_RANGER_STYLES
                         : TASHA_FIGHTER_STYLES;
         extra_n = split_pipe(src, extra_buf, sizeof extra_buf, extra_parts, 8);
-        for (i = 0; i < extra_n && n < 16; i++) {
-            opts[n] = extra_parts[i];
-            map[n] = -1 - i;                /* negative marks a Tasha's style */
-            n++;
-        }
+        for (i = 0; i < extra_n && n < 16; i++) opts[n++] = extra_parts[i];
     }
 
-    pick = ui_menu("  Fighting Style:", opts, NULL, n);
-    add_choice(c, "Fighting Style",
-               map[pick] >= 0 ? all[map[pick]] : extra_parts[-1 - map[pick]]);
+    {
+        /* ui_menu_custom copies the label it was shown, so a Tasha's style
+           and a typed one are recorded the same way a PHB one is. */
+        char answer[MAX_TEXT];
+        ui_menu_custom("  Fighting Style:", opts, NULL, n,
+                       "Another fighting style (type it in)",
+                       answer, sizeof answer);
+        add_choice(c, "Fighting Style", answer);
+    }
 }
 
 void choose_expertise(Character *c, int count)
@@ -521,7 +565,9 @@ void choose_expertise(Character *c, int count)
 
     ui_multi("  Expertise -- double your proficiency bonus for:",
              opts, avail, n, count, picks);
-    for (i = 0; i < count; i++) c->skill_expertise[map[picks[i]]] = 1;
+    for (i = 0; i < count; i++) {
+        if (picks[i] >= 0) c->skill_expertise[map[picks[i]]] = 1;
+    }
 }
 
 
@@ -552,6 +598,7 @@ static void offer_optional_features(Character *c, int class_id, int class_level)
         char prompt[MAX_NAME + 64];
 
         if (of->class_id != class_id || of->level != class_level) continue;
+        if (!SETTINGS.optional_features || !book_enabled(of->book)) continue;
         if (optional_taken(c, of->name)) continue;
 
         printf("\n  Optional class feature (Tasha's): %s\n", of->name);
@@ -719,6 +766,7 @@ static int available_count(const Character *c, int bit, int level,
     int i, n = 0;
     for (i = 0; i < SPELL_COUNT; i++) {
         if (!spell_offered(i, bit, extra)) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
         n++;
@@ -738,6 +786,7 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 
     for (i = 0; i < SPELL_COUNT && n < 400; i++) {
         if (!spell_offered(i, bit, extra)) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
         if (SPELLS[i].level != level) continue;
         if (already_known(c, i)) continue;
 
@@ -776,6 +825,80 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
     }
 }
 
+/* Grants one group of comma-separated spell names. */
+static void grant_spell_group(Character *c, const char *group, int class_id,
+                              int always)
+{
+    char names[256], *p, *start;
+
+    strncpy(names, group, sizeof names - 1);
+    names[sizeof names - 1] = '\0';
+    start = names;
+    for (p = names;; p++) {
+        if (*p == ',' || *p == '\0') {
+            int end = (*p == '\0');
+            *p = '\0';
+            while (*start == ' ') start++;
+            if (*start) {
+                int sid = find_spell_by_name(start);
+                if (sid >= 0) add_spell(c, sid, class_id, 1, always);
+            }
+            if (end) break;
+            start = p + 1;
+        }
+    }
+}
+
+/* Circle of the Land terrain spells and Genie kind spells hang off the
+ * option the player chose, not the subclass, so they need their own pass. */
+static void add_option_spells(Character *c, int slot)
+{
+    int sub = c->classes[slot].subclass_id;
+    int opt = c->classes[slot].subclass_option;
+    int id = c->classes[slot].class_id;
+    int lvl = c->classes[slot].level;
+    int i;
+
+    if (sub < 0 || opt < 0) return;
+
+    for (i = 0; i < OPTION_SPELLS_COUNT; i++) {
+        char obuf[512], sbuf[1024], lbuf[64];
+        const char *onames[16], *groups[8];
+        int no, ng, g, at[8], nat = 0;
+        const char *q;
+
+        if (!subclass_is(sub, OPTION_SPELLS[i].subclass)) continue;
+
+        /* Match by the option's name rather than its index, so the option
+           lists in data_subclasses.c can be reordered safely. */
+        no = split_pipe(SUBCLASSES[sub].options, obuf, sizeof obuf, onames, 16);
+        if (opt >= no) continue;
+        if (strcmp(onames[opt], OPTION_SPELLS[i].option) != 0) continue;
+
+        strncpy(lbuf, OPTION_SPELLS[i].levels, sizeof lbuf - 1);
+        lbuf[sizeof lbuf - 1] = '\0';
+        for (q = lbuf; *q && nat < 8; ) {
+            while (*q == ' ' || *q == ',') q++;
+            if (*q >= '0' && *q <= '9') {
+                int v = 0;
+                while (*q >= '0' && *q <= '9') v = v * 10 + (*q++ - '0');
+                at[nat++] = v;
+            } else if (*q) {
+                q++;
+            }
+        }
+
+        ng = split_pipe(OPTION_SPELLS[i].spells, sbuf, sizeof sbuf, groups, 8);
+        for (g = 0; g < ng && g < nat; g++) {
+            if (lvl < at[g]) break;
+            /* A warlock's expanded list is a menu, not a grant; everyone
+               else has these always prepared. */
+            grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
+        }
+        return;
+    }
+}
+
 /* Adds the always-prepared domain, oath, circle or patron spells earned so far. */
 static void add_bonus_spells(Character *c, int slot)
 {
@@ -809,28 +932,9 @@ static void add_bonus_spells(Character *c, int slot)
 
     n = split_pipe(sc->bonus_spells, buf, sizeof buf, groups, 8);
     for (g = 0; g < n && g < 5; g++) {
-        char names[256], *p, *start;
         if (lvl < at[g]) break;
-
-        strncpy(names, groups[g], sizeof names - 1);
-        names[sizeof names - 1] = '\0';
-        start = names;
-        for (p = names;; p++) {
-            if (*p == ',' || *p == '\0') {
-                int end = (*p == '\0');
-                *p = '\0';
-                while (*start == ' ') start++;
-                if (*start) {
-                    int sid = find_spell_by_name(start);
-                    if (sid >= 0) {
-                        /* Warlock expanded lists are options, not grants. */
-                        add_spell(c, sid, id, 1, id != CLS_WARLOCK);
-                    }
-                }
-                if (end) break;
-                start = p + 1;
-            }
-        }
+        /* Warlock expanded lists are options, not grants. */
+        grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
     }
 }
 
@@ -860,6 +964,7 @@ void manage_spells(Character *c, int class_id)
            spell_save_dc(c, class_id), spell_attack_bonus(c, class_id));
 
     add_bonus_spells(c, slot);
+    add_option_spells(c, slot);
 
     cantrips = known_spell_count(c, class_id, 1);
     if (cantrips > 0) {
@@ -952,6 +1057,508 @@ int class_of_spell(const Character *c, int spell_id)
     return c->class_count ? c->classes[0].class_id : 0;
 }
 
+/* ------------------------------------------------- class option lists */
+
+/* How many entries with this label the character has already recorded. */
+static int options_recorded(const Character *c, const char *label)
+{
+    int i, n = 0;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) n++;
+    }
+    return n;
+}
+
+static int option_already_taken(const Character *c, const char *label,
+                                const char *name)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, name) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Offer everything this class and subclass draw from, at this class level.
+ * Each list says how many are known by now; the difference from what has
+ * already been recorded is what is still owed, so a character who levels up
+ * in stages is asked exactly once for each. */
+/* Records `count` choices from one option list.
+ *
+ * `label` is what they are filed under, and `alt_label` a second label whose
+ * entries also count as already taken -- an eldritch invocation is an
+ * eldritch invocation whether the warlock class or the Eldritch Adept feat
+ * supplied it, and the same one cannot be had twice.
+ *
+ * `allow_prereq` is 0 when the list is being drawn on from outside the class
+ * that owns it: Tasha's lets a non-warlock take an invocation through a feat
+ * only if it has no prerequisite at all.
+ *
+ * Below the book's entries there is always one more, for whatever the table
+ * has agreed on instead.
+ */
+static void pick_from_option_list(Character *c, const OptionList *ol,
+                                  const char *label, const char *alt_label,
+                                  int class_level, int allow_prereq,
+                                  int count)
+{
+    while (count-- > 0) {
+        const char *opts[256];
+        const char *det[256];
+        static char labels[256][128];
+        int map[256], n = 0, i, pick;
+        char prompt[96], custom[128], answer[MAX_TEXT];
+
+        for (i = 0; i < ol->count && n < 256; i++) {
+            const ClassOption *o = &ol->options[i];
+            if (!book_enabled(o->book)) continue;
+            if (!allow_prereq && (o->prereq[0] || o->min_level > 0)) continue;
+            if (o->min_level > class_level) continue;
+            if (!ol->repeatable
+                && (option_already_taken(c, label, o->name)
+                    || (alt_label
+                        && option_already_taken(c, alt_label, o->name))))
+                continue;
+
+            if (o->prereq[0]) {
+                snprintf(labels[n], sizeof labels[n], "%s (needs %s)",
+                         o->name, o->prereq);
+            } else {
+                snprintf(labels[n], sizeof labels[n], "%s", o->name);
+            }
+            opts[n] = labels[n];
+            det[n] = o->summary[0] ? o->summary : NULL;
+            map[n] = i;
+            n++;
+        }
+
+        snprintf(prompt, sizeof prompt, "  Choose a %s:", ol->label);
+        snprintf(custom, sizeof custom, "Another %s (type it in)", ol->label);
+
+        if (n == 0) {
+            /* Every printed entry is taken or out of reach. The choice is
+               still owed, so ask for it rather than dropping it silently. */
+            printf("    Nothing further is printed for you to take.\n");
+            ui_line("  Name one your table uses", answer, sizeof answer);
+            if (!answer[0]) return;
+            add_choice(c, label, answer);
+            continue;
+        }
+
+        pick = ui_menu_custom(prompt, opts, det, n, custom,
+                              answer, sizeof answer);
+        if (pick >= 0) {
+            add_choice(c, label, ol->options[map[pick]].name);
+        } else if (!ol->repeatable
+                   && (option_already_taken(c, label, answer)
+                       || (alt_label
+                           && option_already_taken(c, alt_label, answer)))) {
+            printf("    You already have that; choose again.\n");
+            count++;
+        } else {
+            add_choice(c, label, answer);
+        }
+    }
+}
+
+/* The list a class or a feat draws on, found by the plural name its registry
+   entry carries. */
+static const OptionList *option_list_named(const char *plural)
+{
+    int i;
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        if (strcmp(OPTION_LISTS[i].plural, plural) == 0)
+            return &OPTION_LISTS[i];
+    }
+    return NULL;
+}
+
+/* Offer everything this class and subclass draw from, at this class level.
+ * Each list says how many are known by now; the difference from what has
+ * already been recorded is what is still owed, so a character who levels up
+ * in stages is asked exactly once for each. */
+static void offer_class_options(Character *c, int slot, int class_level)
+{
+    const ClassData *cd = &CLASSES[c->classes[slot].class_id];
+    int sub = c->classes[slot].subclass_id;
+    int li;
+
+    for (li = 0; li < OPTION_LIST_COUNT; li++) {
+        const OptionList *ol = &OPTION_LISTS[li];
+        int want;
+
+        if (strcmp(ol->class_name, cd->name) != 0) continue;
+        if (ol->subclass_name[0]) {
+            if (sub < 0 || !subclass_is(sub, ol->subclass_name)) continue;
+        }
+
+        want = (int)ol->known[class_level] - options_recorded(c, ol->label);
+        if (want <= 0) continue;
+
+        printf("\n  %s knows %d %s at level %d.\n", cd->name,
+               (int)ol->known[class_level], ol->plural, class_level);
+        pick_from_option_list(c, ol, ol->label, NULL, class_level, 1, want);
+    }
+}
+
+
+/* --------------------------------------------- what a feat then asks for */
+
+/* Several feats hand you a further choice: an eldritch invocation, two
+ * metamagic options, a fighting style, a tool, a spell. Taking the feat used
+ * to record only its name and any ability increase, which left the player to
+ * remember the rest. What a feat grants is now asked for and recorded beside
+ * it -- as a choice, a proficiency or a spell -- so it reaches the sheet and
+ * the save file the way anything else does.
+ */
+
+static int levels_in_class(const Character *c, int class_id)
+{
+    int i;
+    for (i = 0; i < c->class_count; i++) {
+        if (c->classes[i].class_id == class_id) return c->classes[i].level;
+    }
+    return 0;
+}
+
+/* A spell a feat grants outright. It is filed under no class, so it never
+   counts against a class's cantrips or spells known. */
+static void grant_feat_spell(Character *c, const char *name)
+{
+    int id = find_spell_by_name(name);
+
+    if (id < 0) return;
+    if (already_known(c, id)) return;
+    add_spell(c, id, -1, 1, 1);
+    printf("    You learn %s.\n", SPELLS[id].name);
+}
+
+/* One spell of a given level, from a class's list, a pair of schools, or
+   both. A mask of 0 means "no restriction on that axis". */
+static void pick_feat_spell(Character *c, const char *prompt, int level,
+                            unsigned class_mask, unsigned school_mask)
+{
+    const char *opts[256];
+    static char labels[256][96];
+    int map[256], n = 0, i;
+    char answer[MAX_TEXT];
+
+    for (i = 0; i < SPELL_COUNT && n < 256; i++) {
+        if (SPELLS[i].level != level) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
+        if (class_mask && !(SPELLS[i].classes & class_mask)) continue;
+        if (school_mask && !(school_mask & (1u << SPELLS[i].school))) continue;
+        if (already_known(c, i)) continue;
+        snprintf(labels[n], sizeof labels[n], "%s (%s)", SPELLS[i].name,
+                 SCHOOL_NAMES[SPELLS[i].school]);
+        opts[n] = labels[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) {
+        printf("    Nothing is left for you to learn there.\n");
+        return;
+    }
+    i = ui_menu_custom(prompt, opts, NULL, n, "Another spell (type it in)",
+                       answer, sizeof answer);
+    if (i >= 0) {
+        add_spell(c, map[i], -1, 1, 1);
+        printf("    You learn %s.\n", SPELLS[map[i]].name);
+        return;
+    }
+    /* A spell the tables do not carry has no entry to point at, so it is
+       recorded as a note beside the feat instead. */
+    add_choice(c, "Spell from a feat", answer);
+}
+
+/* One proficiency from a group of tools. */
+static void pick_feat_tool(Character *c, const char *prompt, const char *group)
+{
+    const char *all[64];
+    const char *opts[64];
+    int total = tools_in_group(group, all, 64), n = 0, i;
+    char answer[MAX_NAME];
+
+    for (i = 0; i < total; i++) {
+        if (!has_tool(c, all[i])) opts[n++] = all[i];
+    }
+    if (n == 0) {
+        ui_line("  Name a tool you are not already proficient with",
+                answer, sizeof answer);
+    } else {
+        ui_menu_custom(prompt, opts, NULL, n, "Another tool (type it in)",
+                       answer, sizeof answer);
+    }
+    add_tool(c, answer);
+}
+
+/* The feats feat_extras() below asks a further question for. It is a
+   separate list only so the self-test can check that each still names a real
+   feat: the branches match on the printed name, so a rename in the data
+   would otherwise stop the questions being asked without anything failing. */
+const char *const FEATS_WITH_CHOICES[] = {
+    "Artificer Initiate", "Chef", "Eldritch Adept", "Fey Touched",
+    "Fighting Initiate", "Gunner", "Metamagic Adept", "Poisoner",
+    "Shadow Touched", "Skill Expert", "Telekinetic", "Telepathic"
+};
+const int FEATS_WITH_CHOICES_COUNT =
+    (int)(sizeof(FEATS_WITH_CHOICES) / sizeof(FEATS_WITH_CHOICES[0]));
+
+static void feat_extras(Character *c, int feat_id)
+{
+    const char *name = FEATS[feat_id].name;
+    const OptionList *ol;
+
+    if (!strcmp(name, "Eldritch Adept")) {
+        /* Tasha's, p.79: an invocation with a prerequisite is open only to
+           a warlock who meets it. */
+        int wl = levels_in_class(c, CLS_WARLOCK);
+        ol = option_list_named("eldritch invocations");
+        if (ol) pick_from_option_list(c, ol, "Eldritch Adept invocation",
+                                      "Eldritch Invocation", wl, wl > 0, 1);
+
+    } else if (!strcmp(name, "Metamagic Adept")) {
+        ol = option_list_named("metamagic options");
+        if (ol) pick_from_option_list(c, ol, "Metamagic Adept option",
+                                      "Metamagic option", MAX_LEVEL, 1, 2);
+
+    } else if (!strcmp(name, "Fighting Initiate")) {
+        choose_fighting_style(c, CLS_FIGHTER);
+
+    } else if (!strcmp(name, "Skill Expert")) {
+        const char *opts[SKL_COUNT];
+        int avail[SKL_COUNT], picks[1], i;
+        for (i = 0; i < SKL_COUNT; i++) {
+            opts[i] = SKILL_NAME[i];
+            avail[i] = !c->skill_prof[i];
+        }
+        printf("    Skill Expert: a skill to learn, and expertise in one"
+               " you already have.\n");
+        if (ui_multi("  A skill to become proficient in:",
+                     opts, avail, SKL_COUNT, 1, picks) > 0 && picks[0] >= 0) {
+            c->skill_prof[picks[0]] = 1;
+        }
+        choose_expertise(c, 1);
+
+    } else if (!strcmp(name, "Chef")) {
+        add_tool(c, "Cook's utensils");
+        printf("    You gain proficiency with cook's utensils.\n");
+
+    } else if (!strcmp(name, "Poisoner")) {
+        add_tool(c, "Poisoner's kit");
+        printf("    You gain proficiency with a poisoner's kit.\n");
+
+    } else if (!strcmp(name, "Gunner")) {
+        add_prof(c, "Firearms");
+        printf("    You gain proficiency with firearms.\n");
+
+    } else if (!strcmp(name, "Artificer Initiate")) {
+        pick_feat_spell(c, "  An artificer cantrip:", 0, SPL_ARTIFICER, 0);
+        pick_feat_spell(c, "  A 1st-level artificer spell:", 1,
+                        SPL_ARTIFICER, 0);
+        pick_feat_tool(c, "  Artisan's tools to become proficient with:",
+                       "Artisan's tools");
+
+    } else if (!strcmp(name, "Fey Touched")) {
+        grant_feat_spell(c, "Misty Step");
+        pick_feat_spell(c, "  A 1st-level divination or enchantment spell:",
+                        1, 0, (1u << SCHOOL_DIVINATION)
+                            | (1u << SCHOOL_ENCHANTMENT));
+
+    } else if (!strcmp(name, "Shadow Touched")) {
+        grant_feat_spell(c, "Invisibility");
+        pick_feat_spell(c, "  A 1st-level illusion or necromancy spell:",
+                        1, 0, (1u << SCHOOL_ILLUSION)
+                            | (1u << SCHOOL_NECROMANCY));
+
+    } else if (!strcmp(name, "Telekinetic")) {
+        grant_feat_spell(c, "Mage Hand");
+
+    } else if (!strcmp(name, "Telepathic")) {
+        grant_feat_spell(c, "Detect Thoughts");
+    }
+}
+
+/* Has this character already recorded a choice under this label? */
+static int has_choice(const Character *c, const char *label)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) return 1;
+    }
+    return 0;
+}
+
+static int has_choice_value(const Character *c, const char *label,
+                            const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, value) == 0) return 1;
+    }
+    return 0;
+}
+
+/* ----------------------------------------------------------- beast forms */
+
+/* Renders a challenge rating held in eighths. */
+static const char *cr_text(int eighths)
+{
+    static char buf[16];
+    switch (eighths) {
+    case 0: return "0";
+    case 1: return "1/8";
+    case 2: return "1/4";
+    case 4: return "1/2";
+    default: break;
+    }
+    snprintf(buf, sizeof buf, "%d", eighths / 8);
+    return buf;
+}
+
+/* A druid's Wild Shape is limited by challenge rating and by movement:
+ * CR 1/4 and no swimming or flying at 2nd level, CR 1/2 with swimming at
+ * 4th, CR 1 with flying at 8th. A Circle of the Moon druid uses a better
+ * table: CR 1 from 2nd level, then CR equal to a third of the druid level
+ * rounded down, and it may take swimmers and fliers on the same schedule. */
+static int wild_shape_max_cr(const Character *c, int slot, int druid_level)
+{
+    if (subclass_is(c->classes[slot].subclass_id, "Circle of the Moon")) {
+        int third = druid_level / 3;
+        int cr = druid_level >= 6 ? (third > 0 ? third : 1) : 1;
+        return cr * 8;
+    }
+    if (druid_level >= 8) return 8;         /* CR 1  */
+    if (druid_level >= 4) return 4;         /* CR 1/2 */
+    return 2;                               /* CR 1/4 */
+}
+
+/* Shows the forms available now. Wild Shape is used at the table rather than
+ * recorded once, so this lists what the druid can become instead of asking
+ * them to pick one and writing it down. */
+static void show_wild_shape_forms(const Character *c, int slot,
+                                  int druid_level)
+{
+    int max_cr = wild_shape_max_cr(c, slot, druid_level);
+    int allow_swim = druid_level >= 4
+        || subclass_is(c->classes[slot].subclass_id, "Circle of the Moon");
+    int allow_fly = druid_level >= 8;
+    int i, shown = 0;
+
+    printf("\n  Wild Shape: beasts of challenge %s or lower", cr_text(max_cr));
+    if (!allow_swim)     printf(", with no swimming speed");
+    else if (!allow_fly) printf(", with no flying speed");
+    printf(".\n");
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        const BeastData *b = &BEASTS[i];
+        if (b->cr_eighths > max_cr) continue;
+        if (!allow_swim && beast_swims(b)) continue;
+        if (!allow_fly && beast_flies(b)) continue;
+        printf("    %-24s CR %-4s AC %-3d HP %-4d %s\n",
+               b->name, b->cr_text, b->ac, b->hp, b->speed);
+        shown++;
+    }
+    if (!shown) printf("    No beast in the tables fits those limits.\n");
+    printf("  While transformed you keep your Intelligence, Wisdom and "
+           "Charisma, your alignment, personality and skill and saving "
+           "throw proficiencies.\n");
+}
+
+/* Lists the beasts that fit a set of limits and records the one chosen.
+ * Used for the Beast Master's companion; Wild Shape only lists, because it
+ * is used at the table rather than settled once. */
+static void choose_beast(Character *c, const char *label, const char *prompt,
+                         int max_cr_eighths, BeastSize max_size, int allow_fly)
+{
+    const char *opts[96];
+    static char labels[96][96];
+    int map[96], n = 0, i, pick;
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL && n < 96; i++) {
+        const BeastData *b = &BEASTS[i];
+        if (b->cr_eighths > max_cr_eighths) continue;
+        if (b->size > max_size) continue;
+        if (!allow_fly && beast_flies(b)) continue;
+
+        snprintf(labels[n], sizeof labels[n],
+                 "%-22s CR %-4s AC %-3d HP %-4d %s", b->name, b->cr_text,
+                 b->ac, b->hp, b->speed);
+        opts[n] = labels[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) return;
+
+    pick = ui_menu(prompt, opts, NULL, n);
+    add_choice(c, label, BEASTS[map[pick]].name);
+}
+
+/* The forms find familiar offers, plus the extra ones a Pact of the Chain
+ * warlock may take. */
+static const char *const FAMILIAR_FORMS[] = {
+    "Bat", "Cat", "Crab", "Frog", "Hawk", "Lizard", "Octopus", "Owl",
+    "Poisonous Snake", "Fish", "Rat", "Raven", "Sea Horse", "Spider",
+    "Weasel"
+};
+
+static void offer_beast_choices(Character *c, int slot, int class_level)
+{
+    int id = c->classes[slot].class_id;
+    int sub = c->classes[slot].subclass_id;
+
+    /* Only when the limits actually change; otherwise a druid would see the
+       same list at every level. */
+    if (id == CLS_DRUID && class_level >= 2) {
+        int now_cr = wild_shape_max_cr(c, slot, class_level);
+        int was_cr = class_level > 2
+            ? wild_shape_max_cr(c, slot, class_level - 1) : -1;
+        int moon = subclass_is(c->classes[slot].subclass_id,
+                               "Circle of the Moon");
+        int now_swim = class_level >= 4 || moon;
+        int was_swim = class_level > 2 && ((class_level - 1) >= 4 || moon);
+        int now_fly = class_level >= 8;
+        int was_fly = class_level > 2 && (class_level - 1) >= 8;
+
+        if (now_cr != was_cr || now_swim != was_swim || now_fly != was_fly) {
+            show_wild_shape_forms(c, slot, class_level);
+        }
+    }
+
+    /* A Beast Master's companion is a beast of CR 1/4 or lower with no
+       flying speed. */
+    if (subclass_is(sub, "Beast Master") && class_level == 3
+        && !has_choice(c, "Animal Companion")) {
+        printf("\n  Your animal companion is a beast of challenge 1/4 or "
+               "lower, no larger than Medium and with no flying speed.\n");
+        choose_beast(c, "Animal Companion", "  Animal companion:", 2,
+                     BSIZE_MEDIUM, 0);
+    }
+
+    /* Pact of the Chain names its own familiar forms on top of the usual
+       ones; the base list is offered to anyone who has find familiar. */
+    if (has_choice_value(c, "Pact Boon", "Pact of the Chain")
+        && !has_choice(c, "Familiar")) {
+        static const char *const chain[] = {
+            "Imp", "Pseudodragon", "Quasit", "Sprite"
+        };
+        const char *opts[24];
+        int i, n = 0, pick;
+        for (i = 0; i < (int)(sizeof FAMILIAR_FORMS / sizeof FAMILIAR_FORMS[0]);
+             i++) {
+            if (find_beast(FAMILIAR_FORMS[i]) >= 0 ||
+                strcmp(FAMILIAR_FORMS[i], "Fish") == 0) {
+                opts[n++] = FAMILIAR_FORMS[i];
+            }
+        }
+        for (i = 0; i < 4; i++) opts[n++] = chain[i];
+        pick = ui_menu("  Your familiar's form:", opts, NULL, n);
+        add_choice(c, "Familiar", opts[pick]);
+    }
+}
+
 /* --------------------------------------------------------------- the ladder */
 
 /* Applies everything a single class level grants. */
@@ -987,6 +1594,14 @@ static void apply_class_level(Character *c, int slot, int class_level,
     if (id == CLS_ARTIFICER && class_level >= 2) {
         choose_infusions(c, class_level);
     }
+
+    /* Invocations, metamagic, maneuvers, runes, favoured enemies and the
+       rest of the lists a class draws from as it advances. */
+    offer_class_options(c, slot, class_level);
+
+    /* Wild Shape forms, a Beast Master's companion and a chain warlock's
+       familiar all come out of the beast tables. */
+    offer_beast_choices(c, slot, class_level);
 
     /* Expertise. */
     if (id == CLS_ROGUE && (class_level == 1 || class_level == 6)) {
@@ -1103,7 +1718,7 @@ void wizard_level_up(Character *c)
         c->classes[slot].level = 0;
         c->classes[slot].subclass_id = -1;
         c->classes[slot].subclass_option = -1;
-        add_prof_list(c, CLASSES[pick].mc_profs);
+        add_prof_list(c, CLASSES[pick].mc_profs, CLASSES[pick].name);
     }
 
     if (ui_yesno("\n  Roll the hit die for this level?", 0)) hp_use_average = 0;

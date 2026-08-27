@@ -5,6 +5,7 @@
  Player: Nebin11                  Race: Tiefling
  Background: Sailor               Alignment: Neutral Evil
  Level: 8                         Proficiency Bonus: +3
+ Sources: PHB, XGE, TCE, DMG, MPMM, MM, Homebrew; origins PHB, optional features on, multiclassing on, feats on
 
 ----------------------------------------------------------------
  ABILITY SCORES
@@ -25,6 +26,22 @@
   Hit Points       27
   Hit Dice         8d8
   Passive Perception 17
+  Experience       34000 needed for level 8, 48000 for level 9
+
+----------------------------------------------------------------
+ ATTACKS
+----------------------------------------------------------------
+  Spear                     +7 to hit   1d6+4 piercing
+        Thrown (range 20/60), versatile (1d8)
+  Club                      +7 to hit   1d4+4 bludgeoning
+        Light
+  Light crossbow            +7 to hit   1d8+4 piercing
+        Ammunition (range 80/320), loading, two-handed
+  Unarmed strike            +7 to hit   5 bludgeoning
+
+  A fighting style or a feature that adds to one of these -- Dueling,
+  Great Weapon Fighting, Sneak Attack, Rage -- is listed under class
+  features and applies on top.
 
 ----------------------------------------------------------------
  SKILLS
@@ -170,7 +187,8 @@
         contains: Backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50 feet of hempen rope
 
   Coins: 0 pp, 10 gp, 0 ep, 0 sp, 0 cp
-  Carried weight: 132.2 lb of a 270 lb capacity
+  Carried weight: 118.7 lb of a 270 lb capacity
+  Encumbered above 90 lb, heavily encumbered above 180 lb (variant rule) -- you are encumbered
 
 ----------------------------------------------------------------
  PERSONALITY
@@ -188,6 +206,7 @@
  but keep the field names and the '|' separators intact.
 ================================================================
 #BEGIN-DNDDATA v1
+SETTINGS|1|1|1|1|1|1|1|0|1|1|1
 NAME|Nebin11
 PLAYER|Nebin11
 RACE|Tiefling

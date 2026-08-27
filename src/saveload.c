@@ -7,6 +7,7 @@
  */
 #include "saveload.h"
 #include "data.h"
+#include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
 
@@ -94,6 +95,54 @@ static void section(FILE *f, const char *title)
     fprintf(f, " %s\n", title);
     fprintf(f, "----------------------------------------------------------------\n");
 }
+
+/* Wraps a long line of prose to the sheet's width at a given indent. The
+   sheet is compared against itself by tools/roundtrip.py, so this has to be
+   deterministic -- it breaks only at spaces and never rewrites the text. */
+/* A saved character stores names, not table indices, which is what lets the
+   game data grow without invalidating files. The cost is that a name the
+   banks no longer hold -- homebrew the DM has since removed, or a book
+   switched off -- would otherwise vanish from the sheet without a word. */
+static void warn_unknown(const char *kind, const char *name)
+{
+    fprintf(stderr, "  note: this character's %s \"%s\" is not in the "
+                    "current data; it was left out.\n", kind, name);
+}
+
+static void wrap_from(FILE *f, const char *text, int indent, int start_col)
+{
+    const int width = 76;
+    int col = start_col;
+    const char *p = text;
+
+    while (*p) {
+        const char *word = p;
+        int len = 0;
+
+        while (*p && *p != ' ') { p++; len++; }
+        while (*p == ' ') p++;
+
+        if (col == 0) {
+            fprintf(f, "%*s", indent, "");
+            col = indent;
+        } else if (col + 1 + len > width) {
+            fprintf(f, "\n%*s", indent, "");
+            col = indent;
+        } else {
+            fputc(' ', f);
+            col++;
+        }
+        fprintf(f, "%.*s", len, word);
+        col += len;
+    }
+    if (col) fputc('\n', f);
+}
+
+static void wrap_to(FILE *f, const char *text, int indent)
+{
+    wrap_from(f, text, indent, 0);
+}
+
 
 static void class_line(const Character *c, char *out, size_t n)
 {
@@ -195,7 +244,10 @@ static void write_spells(FILE *f, const Character *c)
                     c->spells[i].always_prepared ? ", always prepared" : "",
                     c->class_count > 1 ? " -- " : "",
                     c->class_count > 1
-                        ? CLASSES[c->spells[i].class_id].name : "");
+                        ? (c->spells[i].class_id < 0
+                               ? "from a feat"
+                               : CLASSES[c->spells[i].class_id].name)
+                        : "");
             fprintf(f, "        Casting Time: %-18s Range: %s\n",
                     s->casting_time, s->range);
             fprintf(f, "        Components:   %s\n", s->components);
@@ -222,10 +274,17 @@ static void write_sheet(FILE *f, const Character *c)
             c->subrace_id >= 0 ? " / " : "",
             c->subrace_id >= 0 ? SUBRACES[c->subrace_id].name : "");
     fprintf(f, " Background: %-20s Alignment: %s\n",
-            c->background_id >= 0 ? BACKGROUNDS[c->background_id].name : "-",
+            c->background_id >= 0 ? BACKGROUNDS[c->background_id].name
+                : (c->background_name[0] ? c->background_name : "-"),
             ALIGNMENT_NAME[c->alignment]);
     fprintf(f, " Level: %-25d Proficiency Bonus: +%d\n",
             total_level(c), proficiency_bonus(c));
+    {
+        char sbuf[256];
+        settings_summary(&SETTINGS, sbuf, sizeof sbuf);
+        fprintf(f, " Sources: ");
+        fprintf(f, "%s\n", sbuf);
+    }
     if (c->ancestry_id >= 0) {
         fprintf(f, " Draconic Ancestry: %s (%s, %s)\n",
                 ANCESTRIES[c->ancestry_id].dragon,
@@ -245,7 +304,22 @@ static void write_sheet(FILE *f, const Character *c)
     section(f, "COMBAT");
     fprintf(f, "  Armor Class      %d\n", armour_class(c));
     fprintf(f, "  Initiative       %+d\n", initiative_bonus(c));
-    fprintf(f, "  Speed            %d ft.\n", speed_of(c));
+    fprintf(f, "  Speed            %d ft.", speed_of(c));
+    {
+        /* Movement a magic item grants, alongside the walking speed. */
+        int fly = magic_fly_speed(c), swim = magic_swim_speed(c);
+        int climb = magic_climb_speed(c);
+        if (fly)   fprintf(f, ", fly %d ft.", fly);
+        if (swim)  fprintf(f, ", swim %d ft.", swim);
+        if (climb) fprintf(f, ", climb %d ft.", climb);
+    }
+    fprintf(f, "\n");
+    {
+        char defences[256];
+        if (magic_defences(c, defences, sizeof defences)) {
+            fprintf(f, "  From your gear:  %s\n", defences);
+        }
+    }
     fprintf(f, "  Hit Points       %d\n", hit_points_max(c));
     fprintf(f, "  Hit Dice         ");
     for (i = 0; i < c->class_count; i++) {
@@ -254,6 +328,37 @@ static void write_sheet(FILE *f, const Character *c)
     }
     fprintf(f, "\n");
     fprintf(f, "  Passive Perception %d\n", passive_perception(c));
+    {
+        /* Experience is not tracked, but knowing where the level sits on
+           the advancement table is what tells a player how far off the
+           next one is. */
+        int lv = total_level(c);
+        fprintf(f, "  Experience       %d needed for level %d",
+                XP_FOR_LEVEL[lv], lv);
+        if (lv < MAX_LEVEL) {
+            fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+        }
+        fprintf(f, "\n");
+    }
+
+    {
+        Attack atk[MAX_ATTACKS];
+        int n = attacks_of(c, atk, MAX_ATTACKS);
+        if (n) {
+            section(f, "ATTACKS");
+            for (i = 0; i < n; i++) {
+                fprintf(f, "  %-24s %+3d to hit   %s\n",
+                        atk[i].name, atk[i].bonus, atk[i].damage);
+                if (atk[i].note[0]) {
+                    fprintf(f, "        %s\n", atk[i].note);
+                }
+            }
+            fprintf(f, "\n  A fighting style or a feature that adds to one "
+                       "of these -- Dueling,\n  Great Weapon Fighting, "
+                       "Sneak Attack, Rage -- is listed under class\n"
+                       "  features and applies on top.\n");
+        }
+    }
 
     section(f, "SKILLS");
     for (i = 0; i < SKL_COUNT; i++) {
@@ -322,6 +427,9 @@ static void write_sheet(FILE *f, const Character *c)
         section(f, "BACKGROUND FEATURE");
         fprintf(f, "  %s: %s\n", BACKGROUNDS[c->background_id].feature_name,
                 BACKGROUNDS[c->background_id].feature_summary);
+    } else if (c->background_feature[0]) {
+        fprintf(f, "  %s: %s\n", c->background_feature,
+                c->background_feature_text);
     }
 
     section(f, "CLASS FEATURES");
@@ -385,7 +493,9 @@ static void write_sheet(FILE *f, const Character *c)
 
     section(f, "EQUIPMENT");
     for (i = 0; i < c->item_count; i++) {
-        const ItemData *it = &ITEMS[c->inventory[i].item_id];
+        const ItemData *it;
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
         fprintf(f, "  %3d x %-26s%s", c->inventory[i].quantity, it->name,
                 c->inventory[i].equipped ? " (equipped)" : "");
         if (it->damage[0] && strcmp(it->damage, "-")) {
@@ -399,6 +509,76 @@ static void write_sheet(FILE *f, const Character *c)
     fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
             current_weight_tenths(c) / 10, current_weight_tenths(c) % 10,
             carrying_capacity(c));
+    {
+        /* The PHB's optional encumbrance rule (p.176), which most tables
+           that use it want on the sheet rather than in their heads. */
+        int str = ability_score(c, ABL_STR);
+        int carried = current_weight_tenths(c);
+        fprintf(f, "  Encumbered above %d lb, heavily encumbered above %d lb"
+                   " (variant rule)%s\n",
+                str * 5, str * 10,
+                carried > str * 100 ? " -- you are heavily encumbered"
+                    : carried > str * 50 ? " -- you are encumbered" : "");
+    }
+
+    /* Magic items get their own section with what each one does, since the
+       whole point of carrying one is the rule it brings. */
+    {
+        int magic = 0;
+        for (i = 0; i < c->item_count; i++) {
+            if (c->inventory[i].is_magic) magic++;
+        }
+        if (magic) {
+            section(f, "MAGIC ITEMS");
+            fprintf(f, "  Attuned to %d of %d\n", attuned_count(c),
+                    MAX_ATTUNED);
+            {
+                /* Say which ones the numbers above already account for, so
+                   nobody counts a ring of protection twice. */
+                int counted = 0, k;
+                for (k = 0; k < c->item_count; k++) {
+                    const MagicItem *mm;
+                    const MagicRule *rr;
+                    if (!c->inventory[k].is_magic) continue;
+                    mm = &MAGIC_ITEMS[c->inventory[k].item_id];
+                    rr = magic_rule_for(mm->name);
+                    if (!rr) continue;
+                    if (mm->attunement && !c->inventory[k].attuned) continue;
+                    if ((rr->armor_base || rr->shield)
+                        && !c->inventory[k].equipped) continue;
+                    if (!counted) {
+                        fprintf(f, "\n  Already counted in the Armor Class "
+                                   "and saving throws above:\n");
+                        counted = 1;
+                    }
+                    fprintf(f, "    %s\n", mm->name);
+                }
+            }
+            fprintf(f, "\n  Anything not listed as counted is applied at the "
+                       "table: most of what a magic\n"
+                       "  item grants depends on being worn, charged, or in "
+                       "the right situation.\n");
+            for (i = 0; i < c->item_count; i++) {
+                const MagicItem *m;
+                if (!c->inventory[i].is_magic) continue;
+                m = &MAGIC_ITEMS[c->inventory[i].item_id];
+                fprintf(f, "\n  %d x %s%s\n", c->inventory[i].quantity,
+                        m->name, c->inventory[i].attuned ? " (attuned)" : "");
+                fprintf(f, "    %s, %s%s%s\n", m->type, m->rarity,
+                        m->attunement ? " -- " : "",
+                        m->attunement ? m->attunement : "");
+                wrap_to(f, m->text, 4);
+            }
+        }
+    }
+
+    if (c->sidekick_count) {
+        section(f, "SIDEKICKS");
+        for (i = 0; i < c->sidekick_count; i++) {
+            if (i) fprintf(f, "\n");
+            print_sidekick(f, &c->sidekicks[i], 2);
+        }
+    }
 
     section(f, "PERSONALITY");
     fprintf(f, "  Age %d, %d ft %d in, %d lb, %s eyes, %s skin, %s hair\n",
@@ -408,8 +588,40 @@ static void write_sheet(FILE *f, const Character *c)
     if (c->ideal[0])      fprintf(f, "  Ideal:  %s\n", c->ideal);
     if (c->bond[0])       fprintf(f, "  Bond:   %s\n", c->bond);
     if (c->flaw[0])       fprintf(f, "  Flaw:   %s\n", c->flaw);
-    if (c->appearance[0]) fprintf(f, "\n  Appearance: %s\n", c->appearance);
-    if (c->backstory[0])  fprintf(f, "  Backstory:  %s\n", c->backstory);
+    if (c->appearance[0]) {
+        fprintf(f, "\n  Appearance:\n");
+        wrap_to(f, c->appearance, 4);
+    }
+    if (c->backstory[0]) {
+        fprintf(f, "\n  Backstory:\n");
+        wrap_to(f, c->backstory, 4);
+    }
+
+    if (c->note_count) {
+        int k;
+        section(f, "NOTES");
+        for (k = 0; k < c->note_count; k++) {
+            /* A note may run to paragraphs, so its title heads it and the
+               body keeps the breaks it was typed with. */
+            char buf[MAX_LORE], *start, *p;
+
+            fprintf(f, "\n  %d. %s\n", k + 1, c->notes[k].title);
+            /* A one-line note is its own title; do not print it twice. */
+            if (!strcmp(c->notes[k].title, c->notes[k].body)) continue;
+            snprintf(buf, sizeof buf, "%s", c->notes[k].body);
+            start = buf;
+            for (p = buf;; p++) {
+                if (*p == '\n' || *p == '\0') {
+                    int end = (*p == '\0');
+                    *p = '\0';
+                    if (*start) wrap_to(f, start, 6);
+                    else fprintf(f, "\n");
+                    if (end) break;
+                    start = p + 1;
+                }
+            }
+        }
+    }
 }
 
 /* -------------------------------------------------------- the data block */
@@ -426,6 +638,11 @@ static void write_data(FILE *f, const Character *c)
     hr(f);
     fprintf(f, "%s\n", DATA_BEGIN);
 
+    fprintf(f, "SETTINGS");
+    for (i = 0; i < BOOK_COUNT; i++) fprintf(f, "|%d", SETTINGS.book[i]);
+    fprintf(f, "|%d|%d|%d|%d\n", SETTINGS.custom_origins,
+            SETTINGS.optional_features, SETTINGS.multiclassing,
+            SETTINGS.feats);
     fprintf(f, "NAME|%s\n", c->name);
     fprintf(f, "PLAYER|%s\n", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
@@ -434,6 +651,12 @@ static void write_data(FILE *f, const Character *c)
     }
     if (c->background_id >= 0) {
         fprintf(f, "BACKGROUND|%s\n", BACKGROUNDS[c->background_id].name);
+    } else if (c->background_name[0]) {
+        /* A background built with the customization rules has no table row
+           to point at, so everything it granted is written out. */
+        fprintf(f, "CUSTOMBG|%s|%s|%s|%s\n", c->background_name,
+                c->background_feature, c->background_feature_text,
+                c->background_equipment);
     }
     fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
     if (c->ancestry_id >= 0) {
@@ -482,15 +705,45 @@ static void write_data(FILE *f, const Character *c)
         fprintf(f, "CHOICE|%s|%s\n", c->choices[i].label, c->choices[i].value);
     }
     for (i = 0; i < c->item_count; i++) {
-        fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
-                c->inventory[i].equipped, ITEMS[c->inventory[i].item_id].name);
+        if (c->inventory[i].is_magic) {
+            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d|%s\n",
+                    c->inventory[i].quantity, c->inventory[i].attuned,
+                    MAGIC_ITEMS[c->inventory[i].item_id].name,
+                    c->inventory[i].plus, c->inventory[i].equipped,
+                    c->inventory[i].variant);
+        } else {
+            fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
+                    c->inventory[i].equipped,
+                    ITEMS[c->inventory[i].item_id].name);
+        }
     }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
             c->gold, c->platinum);
+    for (i = 0; i < c->sidekick_count; i++) {
+        const Sidekick *sk = &c->sidekicks[i];
+        int k;
+        fprintf(f, "SIDEKICK|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s\n",
+                sk->name, sk->creature, SIDEKICK_CLASS_NAME[sk->cls],
+                sk->level, sk->role, sk->abilities[0], sk->abilities[1],
+                sk->abilities[2], sk->abilities[3], sk->abilities[4],
+                sk->abilities[5], sk->hp, sk->speed);
+        fprintf(f, "SKAC|%s|%d\n", sk->name, sk->ac);
+        for (k = 0; k < sk->choice_count; k++) {
+            fprintf(f, "SKCHOICE|%s|%s|%s\n", sk->name,
+                    sk->choices[k].label, sk->choices[k].value);
+        }
+        for (k = 0; k < sk->spell_count; k++) {
+            fprintf(f, "SKSPELL|%s|%s\n", sk->name,
+                    SPELLS[sk->spells[k]].name);
+        }
+    }
     for (i = 0; i < c->spell_count; i++) {
+        /* A spell a feat granted belongs to no class, and must not be
+           counted against any class's spells known when it is read back. */
         fprintf(f, "SPELL|%d|%d|%s|%s\n", c->spells[i].prepared,
                 c->spells[i].always_prepared,
-                CLASSES[c->spells[i].class_id].name,
+                c->spells[i].class_id < 0
+                    ? "-" : CLASSES[c->spells[i].class_id].name,
                 SPELLS[c->spells[i].spell_id].name);
     }
 
@@ -505,6 +758,23 @@ static void write_data(FILE *f, const Character *c)
     fprintf(f, "BOND|%s\n", c->bond);
     fprintf(f, "FLAW|%s\n", c->flaw);
     fprintf(f, "APPEARANCE|%s\n", c->appearance);
+    {
+        int k;
+        for (k = 0; k < c->note_count; k++) {
+            const char *p;
+            fprintf(f, "NOTE|%s|", c->notes[k].title);
+            /* The format is one record per line and '|' separated, so a
+               note's own newlines and pipes are escaped rather than
+               allowed to break it. */
+            for (p = c->notes[k].body; *p; p++) {
+                if (*p == '\n')      fputs("\\n", f);
+                else if (*p == '|')  fputs("\\p", f);
+                else if (*p == '\\') fputs("\\\\", f);
+                else                 fputc(*p, f);
+            }
+            fputc('\n', f);
+        }
+    }
     fprintf(f, "BACKSTORY|%s\n", c->backstory);
 
     fprintf(f, "%s\n", DATA_END);
@@ -601,7 +871,16 @@ int load_character(const char *path, Character *c)
         n = split_fields(line, fields, 32);
         if (n < 1) continue;
 
-        if (!strcmp(fields[0], "NAME") && n >= 2) {
+        if (!strcmp(fields[0], "SETTINGS") && n >= BOOK_COUNT + 5) {
+            int k;
+            for (k = 0; k < BOOK_COUNT; k++) {
+                SETTINGS.book[k] = atoi(fields[k + 1]);
+            }
+            SETTINGS.custom_origins    = atoi(fields[BOOK_COUNT + 1]);
+            SETTINGS.optional_features = atoi(fields[BOOK_COUNT + 2]);
+            SETTINGS.multiclassing     = atoi(fields[BOOK_COUNT + 3]);
+            SETTINGS.feats             = atoi(fields[BOOK_COUNT + 4]);
+        } else if (!strcmp(fields[0], "NAME") && n >= 2) {
             copy_field(c->name, sizeof c->name, fields[1]);
         } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {
             copy_field(c->player, sizeof c->player, fields[1]);
@@ -611,6 +890,45 @@ int load_character(const char *path, Character *c)
             c->subrace_id = index_of_subrace(fields[1]);
         } else if (!strcmp(fields[0], "BACKGROUND") && n >= 2) {
             c->background_id = index_of_background(fields[1]);
+        } else if (!strcmp(fields[0], "CUSTOMBG") && n >= 5) {
+            c->background_id = -1;
+            snprintf(c->background_name, sizeof c->background_name, "%s",
+                     fields[1]);
+            snprintf(c->background_feature, sizeof c->background_feature,
+                     "%s", fields[2]);
+            snprintf(c->background_feature_text,
+                     sizeof c->background_feature_text, "%s", fields[3]);
+            snprintf(c->background_equipment,
+                     sizeof c->background_equipment, "%s", fields[4]);
+        } else if (!strcmp(fields[0], "NOTE") && n >= 2) {
+            if (c->note_count < MAX_NOTES) {
+                Note *nt = &c->notes[c->note_count++];
+                char *out = nt->body;
+                const char *p = (n >= 3) ? fields[2] : "";
+                size_t room = sizeof nt->body - 1;
+
+                snprintf(nt->title, sizeof nt->title, "%s", fields[1]);
+                while (*p && room) {
+                    if (*p == '\\' && p[1]) {
+                        p++;
+                        *out++ = (*p == 'n') ? '\n'
+                               : (*p == 'p') ? '|' : *p;
+                        p++;
+                    } else {
+                        *out++ = *p++;
+                    }
+                    room--;
+                }
+                *out = '\0';
+                /* Notes written before they had a title and a body of
+                   their own are a single line; keep it as both. */
+                if (!nt->body[0]) {
+                    size_t tn = strlen(nt->title);
+                    if (tn >= sizeof nt->body) tn = sizeof nt->body - 1;
+                    memcpy(nt->body, nt->title, tn);
+                    nt->body[tn] = '\0';
+                }
+            }
         } else if (!strcmp(fields[0], "ALIGNMENT") && n >= 2) {
             c->alignment = (Alignment)index_of_alignment(fields[1]);
         } else if (!strcmp(fields[0], "ANCESTRY") && n >= 2) {
@@ -664,6 +982,70 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
             if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            else warn_unknown("item", fields[3]);
+        } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
+            if (c->sidekick_count < MAX_SIDEKICKS) {
+                Sidekick *sk = &c->sidekicks[c->sidekick_count++];
+                int k;
+                memset(sk, 0, sizeof *sk);
+                snprintf(sk->name, sizeof sk->name, "%s", fields[1]);
+                snprintf(sk->creature, sizeof sk->creature, "%s", fields[2]);
+                sk->beast_id = find_beast(fields[2]);
+                sk->cls = SK_EXPERT;
+                for (k = 0; k < SK_CLASS_COUNT; k++) {
+                    if (!strcmp(SIDEKICK_CLASS_NAME[k], fields[3])) sk->cls = k;
+                }
+                sk->level = atoi(fields[4]);
+                sk->role  = atoi(fields[5]);
+                for (k = 0; k < 6; k++) sk->abilities[k] = atoi(fields[6 + k]);
+                sk->hp = atoi(fields[12]);
+                snprintf(sk->speed, sizeof sk->speed, "%s", fields[13]);
+            }
+        } else if (!strcmp(fields[0], "SKAC") && n >= 3) {
+            int k;
+            for (k = 0; k < c->sidekick_count; k++) {
+                if (!strcmp(c->sidekicks[k].name, fields[1])) {
+                    c->sidekicks[k].ac = atoi(fields[2]);
+                }
+            }
+        } else if (!strcmp(fields[0], "SKCHOICE") && n >= 4) {
+            int k;
+            for (k = 0; k < c->sidekick_count; k++) {
+                Sidekick *sk = &c->sidekicks[k];
+                if (strcmp(sk->name, fields[1])) continue;
+                if (sk->choice_count >= MAX_SK_CHOICES) break;
+                snprintf(sk->choices[sk->choice_count].label,
+                         sizeof sk->choices[0].label, "%s", fields[2]);
+                snprintf(sk->choices[sk->choice_count].value,
+                         sizeof sk->choices[0].value, "%s", fields[3]);
+                sk->choice_count++;
+            }
+        } else if (!strcmp(fields[0], "SKSPELL") && n >= 3) {
+            int k, id = index_of_spell(fields[2]);
+            if (id < 0) warn_unknown("sidekick spell", fields[2]);
+            for (k = 0; k < c->sidekick_count && id >= 0; k++) {
+                Sidekick *sk = &c->sidekicks[k];
+                if (strcmp(sk->name, fields[1])) continue;
+                if (sk->spell_count >=
+                    (int)(sizeof sk->spells / sizeof sk->spells[0])) break;
+                sk->spells[sk->spell_count++] = id;
+            }
+        } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
+            int id = find_magic_item(fields[3]);
+            if (id >= 0) {
+                /* Older files have no plus or worn column; both read as 0. */
+                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]),
+                               n >= 5 ? atoi(fields[4]) : 0);
+                if (n >= 6 && atoi(fields[5])) {
+                    c->inventory[c->item_count - 1].equipped = 1;
+                }
+                if (n >= 7) {
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s", fields[6]);
+                }
+            } else {
+                warn_unknown("magic item", fields[3]);
+            }
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
             c->copper   = atoi(fields[1]);
             c->silver   = atoi(fields[2]);
@@ -672,10 +1054,13 @@ int load_character(const char *path, Character *c)
             c->platinum = atoi(fields[5]);
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
-            int owner = index_of_class(fields[3]);
+            int from_feat = !strcmp(fields[3], "-");
+            int owner = from_feat ? -1 : index_of_class(fields[3]);
+            if (id < 0) warn_unknown("spell", fields[4]);
             if (id >= 0 && c->spell_count < MAX_SPELLS) {
                 c->spells[c->spell_count].spell_id = id;
-                c->spells[c->spell_count].class_id = owner < 0 ? 0 : owner;
+                c->spells[c->spell_count].class_id =
+                    (owner < 0 && !from_feat) ? 0 : owner;
                 c->spells[c->spell_count].prepared = atoi(fields[1]);
                 c->spells[c->spell_count].always_prepared = atoi(fields[2]);
                 c->spell_count++;

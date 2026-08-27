@@ -19,6 +19,12 @@ void add_prof(Character *c, const char *prof);
 void add_choice(Character *c, const char *label, const char *value);
 void add_item(Character *c, int item_id, int qty, int equipped);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
+
+/* Magic items live in the same list, flagged so they index MAGIC_ITEMS. */
+void add_magic_item(Character *c, int magic_id, int qty, int attuned,
+                    int plus);
+void remove_inventory_entry(Character *c, int index, int qty);
+int  attuned_count(const Character *c);
 int  has_prof(const Character *c, const char *prof);
 int  has_tool(const Character *c, const char *tool);
 int  has_language(const Character *c, const char *lang);
@@ -33,8 +39,10 @@ void manage_spells(Character *c, int class_id);
 void choose_equipment(Character *c);
 void choose_personality(Character *c);
 
-/* Comma separated proficiency strings are recorded verbatim. */
-void add_prof_list(Character *c, const char *csv);
+/* A class's comma separated proficiency line. Each piece is filed where it
+   belongs: armour and weapons as proficiencies, tools as tools, and an open
+   tool choice as a menu. `source` names whatever granted it. */
+void add_prof_list(Character *c, const char *csv, const char *source);
 
 /* Spellcasting helpers. */
 int  spell_slots_for(const Character *c, int out[10]);
@@ -45,6 +53,11 @@ int  class_of_spell(const Character *c, int spell_id);
 
 /* True when the character meets the PHB multiclassing prerequisites. */
 int  multiclass_ok_public(const Character *c, int class_id, int *why);
+
+/* The feats that grant a further choice -- an invocation, a fighting style,
+   a spell -- which the builder asks for when the feat is taken. */
+extern const char *const FEATS_WITH_CHOICES[];
+extern const int FEATS_WITH_CHOICES_COUNT;
 
 /* True when the character took one of Tasha's optional class features. */
 int  has_optional_feature(const Character *c, const char *name);

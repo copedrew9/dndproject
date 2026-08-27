@@ -63,11 +63,29 @@ typedef struct {
     int subclass_option;/* totem animal, land terrain, ...; -1 when N/A */
 } ClassLevel;
 
+/* A carried thing: either a line from the equipment catalogue or one of the
+   Dungeon Master's Guide magic items. Which table item_id indexes depends on
+   is_magic, so the two can sit in one list and be counted, weighed and
+   printed together. */
 typedef struct {
-    int item_id;        /* index into ITEMS */
+    int item_id;        /* index into ITEMS, or MAGIC_ITEMS when is_magic */
     int quantity;
     int equipped;       /* armour/shield actually worn */
+    int is_magic;
+    int attuned;        /* magic items only; at most three at a time */
+    int plus;           /* for a +1/+2/+3 item, which one this copy is */
+    /* For an item whose effect names something -- the damage a ring of
+       resistance resists, the giant a belt draws its Strength from, the
+       weapon a +1 weapon is. */
+    char variant[MAX_NAME];
 } InventoryEntry;
+
+#define MAX_ATTUNED 3
+#define MAX_SIDEKICKS 4
+#define MAX_NOTES 16
+#define MAX_LORE 2048
+#define MAX_SK_CHOICES 12
+
 
 /* Free-form in-class choices: fighting styles, pact boons, metamagic,
    eldritch invocations, battle master maneuvers, expertise notes. */
@@ -76,9 +94,39 @@ typedef struct {
     char value[MAX_TEXT];
 } ChoiceEntry;
 
+/* A note the player keeps on a character: a contact, a debt, a patron's
+   demands, the history behind a family sword. The body may run to
+   paragraphs, so it is far larger than the other text on a character. */
+typedef struct {
+    char title[MAX_NAME];
+    char body[MAX_LORE];
+} Note;
+
+/* A sidekick: a creature from the beast tables (or one typed in by hand)
+   with levels in Expert, Spellcaster or Warrior. The creature supplies the
+   ability scores, hit die, speed and attacks; the class supplies the
+   proficiency bonus, features and any spellcasting. */
+typedef struct {
+    char name[MAX_NAME];
+    char creature[MAX_NAME];    /* the stat block it is built on */
+    int  beast_id;              /* index into BEASTS, or -1 when typed in */
+    int  cls;                   /* SidekickClass */
+    int  level;
+    int  role;                  /* SpellcasterRole, -1 when not a caster */
+    int  abilities[6];          /* after any ability score improvements */
+    int  hp;
+    int  ac;
+    char speed[MAX_NAME];
+    ChoiceEntry choices[MAX_SK_CHOICES];
+    int  choice_count;
+    int  spells[MAX_SPELLS / 4];
+    int  spell_count;
+} Sidekick;
+
 typedef struct {
     int spell_id;       /* index into SPELLS */
-    int class_id;       /* the class this spell was learned as */
+    int class_id;       /* the class this spell was learned as, or -1 when a
+                           feat granted it and no class's limits apply */
     int prepared;       /* for preparation casters */
     int always_prepared;/* domain/oath/circle spells */
 } SpellEntry;
@@ -134,6 +182,25 @@ typedef struct {
     ChoiceEntry choices[MAX_CHOICES];
     int choice_count;
 
+    /* Sidekicks (Tasha's chapter 4). A character may have more than one,
+       though the book warns the table slows down past one each. */
+    Sidekick sidekicks[MAX_SIDEKICKS];
+    int sidekick_count;
+
+    /* A background built with the PHB's customization rules rather than
+       taken from the table. background_id is -1 in that case, and these
+       carry what the player chose instead. */
+    char background_name[MAX_NAME];
+    char background_feature[MAX_NAME];
+    char background_feature_text[MAX_TEXT];
+    char background_equipment[MAX_TEXT];
+
+    /* Anything the player wants to remember, from a one-line reminder to
+       a character's history. Each has a title so a long one can be found
+       again without reading it. */
+    Note notes[MAX_NOTES];
+    int  note_count;
+
     /* Personality (PHB chapter 4). */
     char trait[MAX_TEXT];
     char ideal[MAX_TEXT];
@@ -154,6 +221,12 @@ int  ability_mod(const Character *c, Ability a);
 int  proficiency_bonus(const Character *c);
 int  skill_bonus(const Character *c, Skill s);
 int  save_bonus(const Character *c, Ability a);
+
+/* Movement and defences a character's worn magic items grant. */
+int  magic_fly_speed(const Character *c);
+int  magic_swim_speed(const Character *c);
+int  magic_climb_speed(const Character *c);
+int  magic_defences(const Character *c, char *out, size_t n);
 int  passive_perception(const Character *c);
 int  hit_points_max(const Character *c);
 int  caster_level(const Character *c);
@@ -161,6 +234,20 @@ int  spell_save_dc(const Character *c, int class_id);
 int  spell_attack_bonus(const Character *c, int class_id);
 int  find_class_slot(const Character *c, int class_id);
 int  armour_class(const Character *c);
+
+/* One line of the attacks block: what the character swings, what it hits
+   at, and what it does when it lands. */
+#define MAX_ATTACKS 24
+
+typedef struct {
+    char name[MAX_NAME];
+    int  bonus;                 /* to hit */
+    char damage[48];            /* "1d8 + 3 slashing" */
+    char note[MAX_TEXT];        /* reach, range, versatile, thrown */
+    int  proficient;
+} Attack;
+
+int  attacks_of(const Character *c, Attack *out, int max);
 int  initiative_bonus(const Character *c);
 int  speed_of(const Character *c);
 int  carrying_capacity(const Character *c);

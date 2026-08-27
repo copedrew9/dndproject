@@ -2,13 +2,14 @@
 
 A D&D 5th Edition character creator and builder, written in C.
 
-It walks the six steps of *Player's Handbook* chapter 1, asks for every choice
-those steps require, and writes the finished character to
-`<Charactername>.txt`. A saved character can be loaded again and levelled up.
+It walks the six steps of PHB chapter 1, asks for every choice those steps
+require, and writes the finished character to `<Charactername>.txt`. A saved
+character can be loaded again and levelled up.
 
-Content comes from the *Player's Handbook*, *Xanathar's Guide to Everything*
-and *Tasha's Cauldron of Everything*: 13 classes, 101 subclasses, 477 spells,
-Tasha's optional class features, and the artificer with its infusions.
+Content comes from six sourcebooks -- PHB, XGE, TCE, DMG, MPMM and MM -- and
+covers 42 races, 13 classes, 101 subclasses, 477 spells, 72 feats, 270 magic
+items, 88 beast stat blocks and 195 deities. A settings menu decides which of
+those are in play.
 
 ## Building and running
 
@@ -25,26 +26,43 @@ The main menu offers:
 1. **Create a new character** — the full wizard.
 2. **Load a character and level up** — reads a saved `.txt` and advances it.
 3. **View a saved character** — prints the sheet.
+4. **Content settings** — which books are in play, and whether custom
+   origins, TCE's optional class features, multiclassing and feats are
+   allowed. The settings are written into the character file, so a character
+   loaded to level up offers the content it was built with.
+5. **Reference** — look up any item, magic item, weapon property, trinket,
+   lifestyle, service or condition.
+6. **Manage a character's inventory** — pick things up, put them down,
+   change what is worn, attune to magic items.
+7. **Manage a character's sidekicks** — add one, level it up, or write it
+   out as a sheet of its own.
+8. **Homebrew** — add your own items, magic items and spells to the banks,
+   or take them out again.
+9. **Notes and character details** — notes, personality, appearance and
+   backstory, on a saved character.
 
 ## What it covers
 
-- **Races** — all 9 from the PHB, with their subraces, the dragonborn's
+- **Races** — all 9 from the PHB with their subraces, the dragonborn's
   draconic ancestry, the half-elf's floating ability increases and skill
   versatility, and the variant human's ability increases, skill and bonus
-  feat. Tasha's "Customizing Your Origin" is not used; races keep their PHB
-  ability increases, languages and proficiencies.
-- **Classes** — the 12 PHB classes plus the **artificer** from Tasha's,
-  levels 1–20, with **101 subclasses**: the 40 from the PHB, 31 from
-  Xanathar's, 26 from Tasha's, and the artificer's four specialists. Class
-  and subclass features are listed at every level, along with the sub-choices
-  (totem animal, storm aura, kensei weapons, starry form, rune, genie kind,
-  Circle of the Land terrain, draconic bloodline).
+  feat; plus the **33 races of MPMM**, from aarakocra to yuan-ti. TCE's
+  "Customizing Your Origin" is off by default, so PHB races keep their fixed
+  increases; switching it on pools those points and lets you place them. The
+  MPMM races have no fixed increases at all by design, so they always choose
+  their own spread whatever that setting says.
+- **Classes** — the 12 PHB classes plus the **artificer** from TCE, levels
+  1–20, with **101 subclasses**: the 40 from the PHB, 31 from XGE, 26 from
+  TCE, and the artificer's four specialists. Class and subclass features are
+  listed at every level, along with the sub-choices (totem animal, storm aura,
+  kensei weapons, starry form, rune, genie kind, Circle of the Land terrain,
+  draconic bloodline).
 - **The artificer** — a half-caster that, unusually, has spell slots from
   1st level and counts half its levels **rounded up** towards the multiclass
   spellcaster table. Magical Tinkering, Infuse Item, Flash of Genius,
   Spell-Storing Item and the rest, the four specialists, and all 16 infusions
   with their minimum levels and the known/infused counts per level.
-- **Tasha's optional class features** — all 42, offered as opt-in choices at
+- **TCE's optional class features** — all 42, offered as opt-in choices at
   the class level that grants them, and recorded on the sheet with whatever
   PHB feature they replace. Favored Foe, Deft Explorer, Primal Awareness,
   Wild Companion, Harness Divine Power, Blessed Strikes, Steady Aim,
@@ -59,9 +77,16 @@ The main menu offers:
   spell slots use the multiclass spellcaster table when more than one class
   grants Spellcasting (and that class's own table when only one does).
 - **Ability Score Improvements** — at each ASI level, raise scores or take one
-  of the 42 PHB feats, with prerequisites enforced.
-- **Spellcasting** — **477 spells**: 361 from the PHB, 95 from Xanathar's and
-  21 from Tasha's, each with level, school, ritual flag, casting time, range,
+  of **72 feats** (42 from the PHB, 15 from TCE, 15 racial feats from XGE),
+  with prerequisites enforced — including the racial ones, so a halfling is
+  offered Bountiful Luck and Second Chance and a human is not.
+- **Backstory** — XGE's "This Is Your Life" tables: birthplace, siblings, who
+  raised you, family lifestyle, childhood home and memories, occupation and
+  more. Every table can be rolled on *or* read down and picked from, and any
+  of them skipped, so a player who already knows where their character came
+  from does not have to roll and then argue with the result.
+- **Spellcasting** — **477 spells**: 361 from the PHB, 95 from XGE and 21
+  from TCE, each with level, school, ritual flag, casting time, range,
   components, duration and concentration. Cantrips and spells known/prepared
   are enforced per class, domain, oath, circle, patron and specialist spells
   are granted automatically at the right levels, and Pact Magic is tracked
@@ -69,9 +94,89 @@ The main menu offers:
 - **Equipment** — the class and background starting packages (resolved into
   real items, including "choose any martial weapon" style entries), or roll
   for starting gold and buy from the full PHB catalogue of armour, weapons,
-  gear, tools, packs and mounts, with weight tracked against carrying capacity.
+  gear, tools, packs, tack and vehicles, with weight tracked against carrying
+  capacity. The shop shows an item's full detail before asking you to buy it,
+  and can look items up without buying.
+- **Item information** — every item says what it does, not just what it costs
+  and weighs. Armour carries its AC formula, Strength requirement, Stealth
+  penalty and don/doff times; weapons explain each property they list;
+  and items with no stat line at all — thieves' tools, a healer's kit, a
+  hunting trap — carry what they contain, what they are used for and which
+  ability checks they help with. **270 magic items** from the *Dungeon
+  Master's Guide* are browsable by kind, rarity, attunement or name, and
+  the trinket table, lifestyle expenses and the prices of food, lodging,
+  services and hired spellcasting are all to hand.
+- **Class option lists** — eldritch invocations (with their prerequisites),
+  pact boons, metamagic, Battle Master maneuvers, Arcane Shot options,
+  elemental disciplines, Rune Knight runes, and the ranger's favoured enemies
+  and terrains are all offered as menus and recorded on the sheet. Each list
+  knows how many the class has by each level, so a character levelled in
+  stages is asked exactly once for each.
+- **Beasts** — **88 stat blocks** from the MM. A druid's Wild Shape lists the
+  forms actually available at their level and circle, a Beast Master picks a
+  companion from the beasts that qualify, and a Pact of the Chain warlock
+  picks a familiar.
+- **Deities** — the **195 gods of appendix B** across nine pantheons, with
+  alignment, suggested domains and symbol. A cleric who has already chosen a
+  domain sees which deities suggest it.
+- **Inventory** — the equipment step settles a character's starting gear;
+  after that, gear is managed on its own screen, reachable from the main
+  menu and offered at every level-up. Pick things up from the catalogue or
+  from the magic item list, put things down, choose which armour and shield
+  are actually worn (Armor Class follows), attune to at most three magic
+  items, and set the purse. Nothing is ever sold: haggling over the price of
+  a used breastplate is a conversation with the DM, not a menu.
+- **Sidekicks** — TCE's Expert, Spellcaster and Warrior at levels 1–20, built
+  on any beast of challenge 1/2 or lower from the MM tables or on a stat block
+  typed in by hand. Each level's choices are actually made — saving throw
+  proficiency, martial role, spellcasting role and its spells, and every
+  ability score improvement. A sidekick is saved inside its owner's file and
+  can also be written out as its own sheet for whoever is running it at the
+  table.
+- **Homebrew** — a DM can add items, magic items and spells of their own.
+  Anything added appears wherever a printed entry would — in the shop, the
+  spell picker, the item reference, on the sheet — and is marked as
+  homebrew.
+
+  Every field with a known set of answers is a menu rather than something to
+  type: a spell's level, school, casting time, range and duration; its
+  components, as checkboxes that assemble `V, S, M (a pinch of soot)`; and
+  the class lists it belongs to, as a checklist, because a spell on no list
+  can never be learned. An item's price is asked in gold, silver or copper
+  rather than in the copper it is stored as, and its weight in pounds rather
+  than tenths. Armour asks how Dexterity applies — full modifier, capped at
+  +2, or none — instead of asking for the `-1` the table actually holds. A
+  weapon's properties are ticked off the real list of eleven, and the three
+  that carry a number (ammunition, thrown, versatile) ask for it. A magic
+  item's kind, rarity and attunement clause are all menus, and the two
+  attunement shapes that name a class or an alignment offer those too.
+
+  What is left to type is only what is genuinely free: names, descriptions,
+  a material component, what is inside a pack.
+
+  Entries live in `homebrew.txt` beside the character files, in the same
+  `|`-separated format, so they can be written by hand or shared. Homebrew
+  is a source book like any other in the settings menu, so switching it off
+  hides everything without deleting it.
 - **Backgrounds** — all 13, with their skills, tools, languages, feature, and
-  suggested traits, ideals, bonds and flaws.
+  suggested traits, ideals, bonds and flaws. Or build one of your own by the
+  PHB's own rules (p.125): any two skills, two tools or
+  languages between them, and any feature — one borrowed from a printed
+  background or written yourself.
+- **Notes and prose** — a character carries notes, each with a title and a
+  body that may run to paragraphs: a contact, a debt, a patron's demands,
+  the history behind a family sword. Type as many lines as you like; a blank
+  line ends the note. They can be added, read, extended, rewritten, retitled
+  and removed at any time from the main menu, long after the character was
+  made. Personality, appearance and backstory sit on the same screen, so
+  those can change in play too. Traits, ideals, bonds and flaws offer the
+  background's suggestions and always let you write your own — including for
+  a character whose background is their own, which the wizard used to skip
+  past entirely.
+
+  Notes are stored in the character file as one record each, with their
+  newlines and separators escaped so a note full of paragraphs cannot break
+  the line-oriented format.
 
 Derived numbers are computed rather than typed in: proficiency bonus, ability
 modifiers, saving throws, skills (including expertise and the bard's Jack of
@@ -94,51 +199,138 @@ levelling up a saved character possible. It stores *names* rather than table
 indices, so a file stays valid if the game data is extended, and it can be
 edited by hand as long as the field names and separators survive.
 
+Storing names is also what lets homebrew work at all, since a custom entry's
+position in a bank is not stable between runs. The cost is that a name the
+banks no longer hold — homebrew the DM has since removed, or a book switched
+off — cannot be restored. The loader says so on stderr rather than dropping
+it silently.
+
 ## Where the data comes from
 
-`TextFiles/` holds OCR'd text of the sourcebooks.
+Every table the program uses is hand-written, in four files under `data/`:
 
-The spell tables are **extracted** from all three books by
-`tools/extract_spells.py`, which parses every spell stat block and each
-book's class spell lists into `src/data_spells.{c,h}`:
-
-```sh
-make spells     # regenerate src/data_spells.{c,h}
+```
+data/character.txt   races, subraces, classes, subclasses, features,
+                     backgrounds, feats, invocations, the experience
+                     table and the height and weight table
+data/equipment.txt   armour, weapons, gear, tools, packs, magic items,
+                     trinkets, lifestyles, prices and the tool groups
+data/spells.txt      every spell
+data/world.txt       gods, beasts, sidekicks, conditions, the
+                     background tables
 ```
 
-The OCR is lossy, so the extractor cleans up after it: it folds the C/G and
-I/L confusions and lost spaces when matching list entries to descriptions,
-resolves the level of spells whose stat line reads "Sth-level" (the glyph is
-ambiguous between 3, 5 and 8) from the class lists, which state levels
-explicitly, and locates each class list by heading rather than by line number
-because one of them reads "Sorc erer Sp ells". A short, documented repair
-table in the script fixes the handful of pages the OCR damaged beyond
-matching; every entry in it was checked against the surrounding text. The
-script refuses to write output unless all 361 spells parse completely, every
-class-list entry matches a spell, and each class's cantrip count is exactly
-what the PHB gives it.
+They are line-oriented and `|` separated, the same shape as the character
+files, with a comment above each block naming its columns:
 
-Xanathar's and Tasha's set their spell names in small capitals, which the OCR
-turns into mixed case and sometimes garbles outright ("Cuaos BoLt" for *Chaos
-Bolt*). Their own class lists and summary tables carry clean names and each
-spell's school, so those supply the name and the description block supplies
-only the stat lines — and the school has to agree before the two are joined.
-Tasha's prints its new spells as one table of levels and schools followed by a
-second of ritual flags and classes, which are zipped back together.
+```
+RACE|Dwarf|PHB|0|0|2|0|0|0|25|Medium|60|Common, Dwarvish|...
+ITEM|Longsword|PHB|martial-melee|1500|30|0|0|0|0|1d8|slashing|Versatile (1d10)|
+SPELL|Fireball|PHB|3|Evocation|0|0|1 action|150 feet|V, S, M (...)|...
+```
 
-Two quirks are preserved rather than papered over. *Trap the Soul* appears on
-the PHB's wizard spell list but has no spell description anywhere in the book,
-so it is excluded and the script says so. And a single 7th-level entry in
-Tasha's "Additional Druid Spells" table is destroyed in the OCR — the source
-PDFs are page scans with no recoverable text — so it is omitted rather than
-guessed, and `src/data_optional.c` says so where the list lives.
+Cross-references are by name — a feature names its class, a subrace names its
+race, a magic item rule names its item — so a row can be added anywhere in a
+file without renumbering anything.
 
-The remaining tables — races, classes, subclasses, features, backgrounds,
-feats and equipment — are **hand-encoded** in `src/data_*.c`. The OCR shreds
-the book's tables (columns get separated from their labels, so the armour
-table's AC values end up detached from the armour names), which makes
-extraction unreliable for exactly the data that must be exact. They were
-written out and checked against the text instead.
+`tools/build_data.py` turns those files into the `src/gen_*.c` tables the
+program compiles:
+
+```sh
+make data       # regenerate src/gen_*.c from data/
+```
+
+The generated files are checked in, so building the program needs nothing but
+a C compiler. The generator resolves every cross-reference and refuses to
+write anything if a name does not resolve, quoting the file and line — that is
+the checking the compiler used to do when the tables themselves were C.
+
+Because the tables are generated, the reverse is possible too, and is worth
+doing: `tools/dump_data.c` links against the compiled tables and prints them
+back out in the same format. `make dataverify` dumps into a scratch directory
+and compares. If the two ever disagree, a row was lost or changed in
+translation.
+
+```sh
+make dataverify # data/ and the compiled tables must match byte for byte
+```
+
+That round trip is also how the data got here. It used to live in nineteen
+hand-written C files; retyping thirteen hundred verified rows would have
+introduced errors, so the first dump produced `data/` from the tables as they
+stood, and the round trip proved nothing was lost.
+
+`homebrew.txt` is the one data file read at run time rather than compiled in,
+because what a DM invents cannot be a `const` table. It uses the same record
+format and the same names for a category, a school and a class list, and it
+ships with a commented example of an item, a magic item and a spell —
+uncomment a line to bring it into play. The explanation is rewritten every
+time the file is saved, so it survives whatever the Homebrew menu does to the
+entries below it.
+
+### Checking it against the books
+
+`TextFiles/` holds the text of the six sourcebooks, which is what every check
+below runs against. Nothing is built from it, and no sourcebook is
+distributed here: `tools/pdf_text.py` pulls the text layer out of a PDF you
+supply, once, and its output is what is checked in.
+
+    python3 tools/pdf_text.py /path/to/your/pdfs
+
+That text used to be OCR of scanned pages, and the difference is the
+difference between guessing and knowing. The OCR confused C with G and I with
+L, lost spaces inside words, read two-column stat blocks across the gutter,
+and dropped the PHB equipment table entirely -- not just the numbers, the
+names. Everything below became checkable when it was replaced.
+
+Three checks run over it:
+
+```sh
+make audit      # every name in data/ appears in the book it claims
+make verify     # the numbers beside those names are the book's too
+make check      # the above, plus the test suite
+```
+
+`tools/audit.py` looks up all 2,627 names -- races, classes, subclasses,
+features, feats, equipment, magic items, spells, deities, beasts -- in the
+dump of the book each claims to come from. All of them are found. Matching
+stays tolerant, because the typesetting still gets in the way: words are set
+with a space inside them, small capitals come back as mixed case, and a
+section opening with a decorative initial loses that letter altogether, which
+is why *Quickened Healing* is set as "UICKENED HEALING". Six names are ours
+rather than the book's -- "Standard Human", for a human the PHB prints under
+no heading of its own, and five composite feature names -- and the audit says
+so rather than reporting them as missing.
+
+Names are the cheap check. `tools/verify_equipment.py` and
+`tools/verify_deities.py` do the expensive one, comparing the numbers:
+
+- **All 214 PHB equipment rows** -- cost, weight, damage die and type,
+  armour class, the Dexterity cap, Strength requirement and stealth --
+  against the book's own Armor, Weapons, Adventuring Gear, Tools, Mounts,
+  Tack and Waterborne Vehicles tables, with the packs priced from the prose.
+  This found four items ten times too heavy: crossbow bolts, sling bullets, a
+  steel mirror and an orb, each stored in pounds where the column reads a
+  fraction.
+- **All 195 deities of appendix B** -- title, alignment, suggested domains and
+  symbol, compared pantheon by pantheon so that the two Tyrs, the two Surturs
+  and the two Silvanuses are each checked against the right table. The
+  hand-written rows had Vecna's symbol wrong, Incabulos's wrong, and the Norse
+  Tyr's title, alignment, domains and symbol all four; six nonhuman gods were
+  missing outright. `tools/extract_deities.py` reads the tables and writes the
+  rows now, and the verifier keeps them honest.
+
+What the books themselves do not settle:
+
+- ***Trap the Soul*** appears on the PHB's wizard spell list with no
+  description anywhere in that book, and it is in neither XGE nor TCE. It is
+  left out, and the extractor says so.
+- **The thirteen SCAG backgrounds** are not here, because that book is not
+  among the six.
+- **MPMM** is the one book whose text is still OCR, no clean copy of it
+  having been to hand. Its races are checked against that text like
+  everything else, but the numbers beside them have not had the treatment
+  above.
 
 ## Testing
 
@@ -176,19 +368,35 @@ half-caster slots and specialist spells.
 ## Layout
 
 ```
+data/character.txt     races, classes, subclasses, features, backgrounds
+data/equipment.txt     gear, weapons, armour, magic items, prices, tools
+data/spells.txt        every spell
+data/world.txt         gods, beasts, sidekicks, conditions, tables
+homebrew.txt           the DM's own entries, read at run time
+tools/build_data.py    data/ -> src/gen_*.c
+tools/dump_data.c      src/gen_*.c -> data/, for `make dataverify`
+tools/pdf_text.py      the books' PDFs -> TextFiles/, run once
+tools/audit.py         checks every name in data/ against TextFiles/
+tools/verify_equipment.py  checks the PHB equipment numbers
+tools/verify_deities.py    checks appendix B, column by column
+tools/extract_deities.py   writes the DEITY rows from appendix B
+
 src/dnd.h              core types and the Character struct
 src/data.h             game data table types
+src/data_spells.h      the spell record and its enums
+src/gen_character.c    generated from data/character.txt
+src/gen_equipment.c    generated from data/equipment.txt
+src/gen_spells.c       generated from data/spells.txt
+src/gen_world.c        generated from data/world.txt
+src/data_lookup.c      the searches over those tables
 src/character.c        derived statistics
-src/data_races.c       races and subraces
-src/data_classes.c     classes, spell slot and spells-known tables
-src/data_subclasses.c  all 101 subclasses and their granted spells
-src/data_optional.c    Tasha's optional class features and added spell lists
-src/data_infusions.c   artificer infusions
-src/data_features.c    class and subclass features by level
-src/data_backgrounds.c backgrounds
-src/data_feats.c       feats
-src/data_equipment.c   armour, weapons, gear, tools, packs, mounts
-src/data_spells.c/.h   generated by tools/extract_spells.py
+src/backstory.c        the This Is Your Life tables, rolled or chosen
+src/details.c          notes, personality and the other prose
+src/settings.c         which books and optional rules are in play
+src/reference.c        the item lookup browser
+src/inventory.c        adding, dropping, wearing and attuning
+src/sidekick.c         creating and levelling sidekicks
+src/homebrew.c         the DM's own items and spells, and the banks
 src/build.c            creation wizard, steps 1-4
 src/progression.c      levels, subclasses, ASIs, feats, spells, level-up
 src/gear.c             equipment and personality
@@ -199,12 +407,105 @@ src/main.c             menu and entry point
 
 ## Scope
 
-The *Player's Handbook*, *Xanathar's Guide to Everything* and *Tasha's
-Cauldron of Everything*. The *Mordenkainen's* dump in `TextFiles/` is not
-used, and neither are Tasha's feats or its "Customizing Your Origin" rules.
+Six sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races) and MM
+(beasts), plus whatever the DM adds as homebrew. Any of them except the PHB
+can be switched off in the settings menu, which hides their races, classes,
+subclasses, spells, feats and items everywhere in the wizard.
 
-Choices the books leave to the player and the DM without a fixed list
-(eldritch invocations, Battle Master manoeuvres, metamagic, favoured enemies
-and terrains, the specific artisan's tools a background grants, which magic
-item an artificer replicates) are prompted for and recorded as free text
-rather than enumerated.
+The item, magic item and spell banks are pointers rather than fixed arrays,
+so `src/homebrew.c` can replace each with the book's entries followed by the
+DM's. `ITEMS[i]` reads the same either way, which is why adding homebrew
+touched none of the eighty-odd places that read those tables.
+
+TCE's sidekicks come from that book's chapter 4.
+
+### What the sheet works out for you
+
+The point of writing a sheet is not having to redo arithmetic at the table,
+so the sheet carries the numbers a player reaches for most:
+
+- **An attacks block.** For every weapon carried: what it hits at and what it
+  does. Finesse takes the better of Strength and Dexterity, a ranged weapon
+  takes Dexterity, proficiency is added when the character has it and the
+  line says so when they do not, the Archery fighting style adds its +2, and a
+  monk's unarmed strike and monk weapons use the Martial Arts die for their
+  level. A `+1`, `+2` or `+3` weapon names which weapon it is when you pick it
+  up, and its bonus lands on both rolls. What stays off the block is anything
+  conditional -- Dueling, Great Weapon Fighting, Sneak Attack, Rage -- and the
+  sheet says so rather than quietly leaving it out.
+- **Where the level sits on the advancement table**, so the distance to the
+  next one is on the page rather than in someone's head.
+- **The encumbrance thresholds** from the variant rule, and whether the
+  character is over them.
+
+Height and weight are rolled on the PHB's own table where the books give the
+race a row: the roll that sets the inches above the base height is the one
+that multiplies the weight dice, which is what keeps a tall character heavy.
+The races the table never listed say so and ask instead.
+
+The reference screen carries **appendix A's conditions** alongside the
+equipment, because that is the page a table turns to once play has started.
+
+### Choosing from the books, and beside them
+
+Every list a class draws on as it levels is offered as a menu with the book's
+entries and a line of explanation beside each: eldritch invocations, pact
+boons, metamagic options, Battle Master maneuvers, Arcane Shot options,
+elemental disciplines, rune knight runes, favoured enemies and favoured
+terrains, fighting styles and artificer infusions.
+
+Under each of those, and under the tool lists below, there is one more entry
+for something the books do not print. A DM who has written a new invocation,
+or a table using a maneuver from somewhere else, can put it on the sheet
+without waiting for the program to learn about it; it is recorded, saved and
+printed exactly as a printed one is. Where an entry is out of reach the menu
+says why rather than hiding it, and where every printed entry is already
+taken the question is still asked rather than dropped.
+
+Tool proficiencies are read out of the prose the books use. "One type of
+artisan's tools" offers the seventeen artisan's tools, "one type of gaming
+set" the gaming sets, "three musical instruments of your choice" asks three
+times from the ten instruments; the monk's "one artisan's tool or one
+musical instrument" offers both groups at once. Which items make up a group
+is the `TOOLGROUP` block in `data/equipment.txt`, so a homebrew tool can join
+one. A proficiency line that names a definite tool grants it without asking.
+
+The feats that hand you a further choice ask for it when the feat is taken,
+rather than leaving it to be remembered: Eldritch Adept draws on the
+invocation list (limited to those with no prerequisite unless you are a
+warlock), Metamagic Adept takes two metamagic options, Fighting Initiate a
+fighting style, Skill Expert a skill and an expertise, Artificer Initiate a
+cantrip, a 1st-level spell and a set of artisan's tools, Fey Touched and
+Shadow Touched their spells. A spell a feat grants is filed under no class,
+so it never counts against a class's cantrips or spells known.
+
+One choice is still free text, because the books give no list this program
+holds: which magic item an artificer's Replicate Magic Item infusion copies,
+that being its own table by artificer level.
+
+Magic items that change a computed number flatly and unconditionally are
+computed. The `MAGICRULE` lines in `data/equipment.txt` hold those, keyed by
+the item's name:
+
+- **Armor Class and saving throws** — a ring or cloak of protection, bracers
+  of defense, a staff of power, magic armour and shields, and the +1/+2/+3
+  entries once you say which one a copy is.
+- **Ability scores** — an amulet of health, headband of intellect or
+  gauntlets of ogre power set a score outright, and a belt of giant strength
+  sets it to whatever its giant's is.
+- **Speeds** — boots of striding and springing set a floor under the walking
+  speed, and winged boots, wings of flying, a cloak of the manta ray, a ring
+  of swimming and a cloak of arachnida add a flying, swimming or climbing
+  speed the sheet prints alongside it.
+- **Resistances and immunities** — collected into one line, including the
+  damage type a ring of resistance or armour of resistance was made against,
+  which is asked for when the item is picked up.
+
+The sheet lists exactly which items the numbers above already account for, so
+nothing is counted twice. An item does nothing until it is attuned if it
+needs attunement, and armour and shields do nothing until worn.
+
+Anything situational stays prose and is applied at the table: the Defender's
+bonus is re-split between attack and AC every turn, an arrow-catching
+shield's extra +2 applies only against ranged attacks, a robe of
+scintillating colors imposes disadvantage rather than changing a number.
