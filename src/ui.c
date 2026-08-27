@@ -338,6 +338,44 @@ void ui_pick_or_type(const char *prompt, const char *const *options,
     }
 }
 
+/* The same idea as ui_pick_or_type, for the menus that carry a line of
+   explanation beside each entry: the book's list, and below it one more
+   entry for whatever the table has agreed on instead. Every list a class
+   chooses from goes through this, because a DM who writes a new eldritch
+   invocation should be able to put it on the sheet without waiting for the
+   program to learn about it.
+
+   Fills out[] with the answer either way, and returns the index chosen, or
+   -1 when it was typed. An empty answer re-asks rather than recording a
+   blank, since the choice is one the character is owed. */
+int ui_menu_custom(const char *prompt, const char *const *options,
+                   const char *const *details, int count,
+                   const char *custom_label, char *out, size_t n)
+{
+    const char *opts[257];
+    const char *det[257];
+    int i;
+
+    if (count > 256) count = 256;
+    for (i = 0; i < count; i++) {
+        opts[i] = options[i];
+        det[i] = details ? details[i] : NULL;
+    }
+    opts[count] = custom_label;
+    det[count] = "Something your table uses that is not printed above";
+
+    for (;;) {
+        int pick = ui_menu(prompt, opts, det, count + 1);
+        if (pick < count) {
+            snprintf(out, n, "%s", options[pick]);
+            return pick;
+        }
+        ui_line("  Type it", out, n);
+        if (out[0]) return -1;
+        printf("  Nothing entered; choose again.\n");
+    }
+}
+
 /* A list of things that can each be on or off, shown with checkboxes and
    toggled until the reader is done. flags[] is both the starting state and
    the answer. Returns how many ended up set. */

@@ -349,6 +349,43 @@ WEAPONPROP|Thrown|You can throw it to make a ranged attack, using the same abili
 WEAPONPROP|Two-Handed|The weapon requires two hands when you attack with it.
 WEAPONPROP|Versatile|Can be used with one or two hands; the larger damage die in brackets applies when wielded in two hands.
 
+# TOOLGROUP | group | item
+TOOLGROUP|Artisan's tools|Alchemist's supplies
+TOOLGROUP|Artisan's tools|Brewer's supplies
+TOOLGROUP|Artisan's tools|Calligrapher's supplies
+TOOLGROUP|Artisan's tools|Carpenter's tools
+TOOLGROUP|Artisan's tools|Cartographer's tools
+TOOLGROUP|Artisan's tools|Cobbler's tools
+TOOLGROUP|Artisan's tools|Cook's utensils
+TOOLGROUP|Artisan's tools|Glassblower's tools
+TOOLGROUP|Artisan's tools|Jeweler's tools
+TOOLGROUP|Artisan's tools|Leatherworker's tools
+TOOLGROUP|Artisan's tools|Mason's tools
+TOOLGROUP|Artisan's tools|Painter's supplies
+TOOLGROUP|Artisan's tools|Potter's tools
+TOOLGROUP|Artisan's tools|Smith's tools
+TOOLGROUP|Artisan's tools|Tinker's tools
+TOOLGROUP|Artisan's tools|Weaver's tools
+TOOLGROUP|Artisan's tools|Woodcarver's tools
+TOOLGROUP|Gaming set|Dice set
+TOOLGROUP|Gaming set|Playing card set
+TOOLGROUP|Musical instrument|Bagpipes
+TOOLGROUP|Musical instrument|Drum
+TOOLGROUP|Musical instrument|Dulcimer
+TOOLGROUP|Musical instrument|Flute
+TOOLGROUP|Musical instrument|Lute
+TOOLGROUP|Musical instrument|Lyre
+TOOLGROUP|Musical instrument|Horn
+TOOLGROUP|Musical instrument|Pan flute
+TOOLGROUP|Musical instrument|Shawm
+TOOLGROUP|Musical instrument|Viol
+TOOLGROUP|Other tools|Disguise kit
+TOOLGROUP|Other tools|Forgery kit
+TOOLGROUP|Other tools|Herbalism kit
+TOOLGROUP|Other tools|Navigator's tools
+TOOLGROUP|Other tools|Poisoner's kit
+TOOLGROUP|Other tools|Thieves' tools
+
 # TRINKET | text
 TRINKET|A shard of obsidian that always feels warm to the touch
 TRINKET|A dragon's bony talon hanging from a plain leather necklace

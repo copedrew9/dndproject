@@ -1293,6 +1293,46 @@ const ItemNote WEAPON_PROPERTIES[] = {
 const int WEAPON_PROPERTY_COUNT =
     (int)(sizeof(WEAPON_PROPERTIES) / sizeof(WEAPON_PROPERTIES[0]));
 
+const ToolGroup TOOL_GROUPS[] = {
+    { "Artisan's tools", "Alchemist's supplies" },
+    { "Artisan's tools", "Brewer's supplies" },
+    { "Artisan's tools", "Calligrapher's supplies" },
+    { "Artisan's tools", "Carpenter's tools" },
+    { "Artisan's tools", "Cartographer's tools" },
+    { "Artisan's tools", "Cobbler's tools" },
+    { "Artisan's tools", "Cook's utensils" },
+    { "Artisan's tools", "Glassblower's tools" },
+    { "Artisan's tools", "Jeweler's tools" },
+    { "Artisan's tools", "Leatherworker's tools" },
+    { "Artisan's tools", "Mason's tools" },
+    { "Artisan's tools", "Painter's supplies" },
+    { "Artisan's tools", "Potter's tools" },
+    { "Artisan's tools", "Smith's tools" },
+    { "Artisan's tools", "Tinker's tools" },
+    { "Artisan's tools", "Weaver's tools" },
+    { "Artisan's tools", "Woodcarver's tools" },
+    { "Gaming set", "Dice set" },
+    { "Gaming set", "Playing card set" },
+    { "Musical instrument", "Bagpipes" },
+    { "Musical instrument", "Drum" },
+    { "Musical instrument", "Dulcimer" },
+    { "Musical instrument", "Flute" },
+    { "Musical instrument", "Lute" },
+    { "Musical instrument", "Lyre" },
+    { "Musical instrument", "Horn" },
+    { "Musical instrument", "Pan flute" },
+    { "Musical instrument", "Shawm" },
+    { "Musical instrument", "Viol" },
+    { "Other tools", "Disguise kit" },
+    { "Other tools", "Forgery kit" },
+    { "Other tools", "Herbalism kit" },
+    { "Other tools", "Navigator's tools" },
+    { "Other tools", "Poisoner's kit" },
+    { "Other tools", "Thieves' tools" },
+};
+const int TOOL_GROUP_COUNT =
+    (int)(sizeof(TOOL_GROUPS) / sizeof(TOOL_GROUPS[0]));
+
 const char *const TRINKETS[] = {
     "A shard of obsidian that always feels warm to the touch",
     "A dragon's bony talon hanging from a plain leather necklace",

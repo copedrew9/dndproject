@@ -1311,6 +1311,89 @@ static void test_notes_and_custom_background(void)
        proficiency_bonus(&c), "a custom background's skill is proficient");
 }
 
+/* The lists the builder offers, and the room it leaves beside them. */
+static void test_choice_lists(void)
+{
+    const char *tools[64];
+    int i, j, n;
+
+    printf("tool groups and feat choices\n");
+
+    n = tools_in_group("Artisan's tools", tools, 64);
+    check(n == 17, "artisan's tools", n, 17);
+    n = tools_in_group("Musical instrument", tools, 64);
+    check(n == 10, "musical instruments", n, 10);
+    n = tools_in_group("Gaming set", tools, 64);
+    check(n == 2, "gaming sets", n, 2);
+
+    /* A group nobody has heard of yields every tool, so a proficiency the
+       books word some other way still gets a list rather than a blank. */
+    n = tools_in_group("Siege engines", tools, 64);
+    check(n > 30, "an unknown group falls back to every tool", n, 31);
+
+    for (i = 0; i < TOOL_GROUP_COUNT; i++) {
+        int id = find_item(TOOL_GROUPS[i].item);
+        if (id < 0) {
+            printf("  FAIL tool group names no item: \"%s\"\n",
+                   TOOL_GROUPS[i].item);
+            failures++;
+        } else if (ITEMS[id].category != ITEM_TOOL) {
+            printf("  FAIL \"%s\" is in a tool group but is not a tool\n",
+                   TOOL_GROUPS[i].item);
+            failures++;
+        }
+    }
+
+    /* Every tool a background or class can be asked to choose has to come
+       from a group the builder knows how to offer. */
+    for (i = 0; i < BACKGROUND_COUNT; i++) {
+        const char *t = BACKGROUNDS[i].tool_profs;
+        if (!contains_ci(t, "one type of")) continue;
+        if (contains_ci(t, "artisan") || contains_ci(t, "gaming set")
+            || contains_ci(t, "musical instrument")) continue;
+        printf("  FAIL %s grants an open tool choice with no group: \"%s\"\n",
+               BACKGROUNDS[i].name, t);
+        failures++;
+    }
+
+    /* Each feat the builder asks a follow-up question for must still exist,
+       since the questions are keyed on the printed name. */
+    for (i = 0; i < FEATS_WITH_CHOICES_COUNT; i++) {
+        int found = 0;
+        for (j = 0; j < FEAT_COUNT; j++) {
+            if (strcmp(FEATS[j].name, FEATS_WITH_CHOICES[i]) == 0) found = 1;
+        }
+        if (!found) {
+            printf("  FAIL no feat named \"%s\"\n", FEATS_WITH_CHOICES[i]);
+            failures++;
+        }
+    }
+
+    /* The two lists a feat can draw on are found by their plural name. */
+    {
+        int inv = 0, meta = 0;
+        for (i = 0; i < OPTION_LIST_COUNT; i++) {
+            if (!strcmp(OPTION_LISTS[i].plural, "eldritch invocations")) inv = 1;
+            if (!strcmp(OPTION_LISTS[i].plural, "metamagic options")) meta = 1;
+        }
+        check(inv, "Eldritch Adept can find the invocation list", inv, 1);
+        check(meta, "Metamagic Adept can find the metamagic list", meta, 1);
+    }
+
+    /* Eldritch Adept on a non-warlock is limited to invocations with no
+       prerequisite at all; there have to be some. */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        int open = 0;
+        if (strcmp(ol->plural, "eldritch invocations") != 0) continue;
+        for (j = 0; j < ol->count; j++) {
+            if (!ol->options[j].prereq[0] && ol->options[j].min_level == 0)
+                open++;
+        }
+        check(open >= 8, "invocations open to Eldritch Adept", open, 8);
+    }
+}
+
 static void test_carrying_and_coins(void)
 {
     Character c;
@@ -1355,6 +1438,7 @@ int main(void)
     test_magic_scores_and_speeds();
     test_life_tables();
     test_notes_and_custom_background();
+    test_choice_lists();
     test_carrying_and_coins();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");

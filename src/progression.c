@@ -211,6 +211,8 @@ static int feat_available(const Character *c, int f)
 }
 
 /* Applies a feat's own ability increase, asking when the feat allows a choice. */
+static void feat_extras(Character *c, int feat_id);
+
 static void apply_feat_asi(Character *c, int f)
 {
     const FeatData *fd = &FEATS[f];
@@ -310,6 +312,7 @@ void apply_asi_or_feat(Character *c, const char *reason)
         pick = ui_menu("  Feats you qualify for:", opts, det, n);
         if (c->feat_count < MAX_FEATS) c->feats[c->feat_count++] = map[pick];
         apply_feat_asi(c, map[pick]);
+        feat_extras(c, map[pick]);
 
         /* Feats that grant proficiencies. */
         if (strcmp(FEATS[map[pick]].name, "Heavily Armored") == 0) {
@@ -381,17 +384,28 @@ static void choose_infusions(Character *c, int artificer_level)
             return;
         }
 
-        pick = ui_menu("  Choose an artificer infusion:", opts, det, n);
+        {
+            char answer[MAX_TEXT];
 
-        if (strcmp(INFUSIONS[map[pick]].name, "Replicate Magic Item") == 0) {
-            char item[MAX_NAME];
-            char value[MAX_TEXT];
-            ui_line("    Which magic item does it replicate", item, sizeof item);
-            snprintf(value, sizeof value, "Replicate Magic Item (%s)",
-                     item[0] ? item : "to be chosen");
-            add_choice(c, "Infusion", value);
-        } else {
-            add_choice(c, "Infusion", INFUSIONS[map[pick]].name);
+            pick = ui_menu_custom("  Choose an artificer infusion:", opts, det,
+                                  n, "Another infusion (type it in)",
+                                  answer, sizeof answer);
+            if (pick < 0) {
+                add_choice(c, "Infusion", answer);
+            } else if (strcmp(INFUSIONS[map[pick]].name,
+                              "Replicate Magic Item") == 0) {
+                /* Which items may be replicated is its own table, by
+                   artificer level, so the item is named rather than picked
+                   from the magic item bank. */
+                char item[MAX_NAME], value[MAX_TEXT];
+                ui_line("    Which magic item does it replicate", item,
+                        sizeof item);
+                snprintf(value, sizeof value, "Replicate Magic Item (%s)",
+                         item[0] ? item : "to be chosen");
+                add_choice(c, "Infusion", value);
+            } else {
+                add_choice(c, "Infusion", INFUSIONS[map[pick]].name);
+            }
         }
     }
 }
@@ -498,7 +512,6 @@ void choose_fighting_style(Character *c, int class_id)
     };
     int allowed[6], n = 0, i;
     const char *opts[16];
-    int map[16], pick;
     char extra_buf[1024];
     const char *extra_parts[8];
     int extra_n = 0;
@@ -511,9 +524,7 @@ void choose_fighting_style(Character *c, int class_id)
 
     for (i = 0; i < 6; i++) {
         if (!allowed[i]) continue;
-        opts[n] = all[i];
-        map[n] = i;
-        n++;
+        opts[n++] = all[i];
     }
 
     /* Tasha's Fighting Style Options widens the list. */
@@ -522,16 +533,18 @@ void choose_fighting_style(Character *c, int class_id)
                         : (class_id == CLS_RANGER)  ? TASHA_RANGER_STYLES
                         : TASHA_FIGHTER_STYLES;
         extra_n = split_pipe(src, extra_buf, sizeof extra_buf, extra_parts, 8);
-        for (i = 0; i < extra_n && n < 16; i++) {
-            opts[n] = extra_parts[i];
-            map[n] = -1 - i;                /* negative marks a Tasha's style */
-            n++;
-        }
+        for (i = 0; i < extra_n && n < 16; i++) opts[n++] = extra_parts[i];
     }
 
-    pick = ui_menu("  Fighting Style:", opts, NULL, n);
-    add_choice(c, "Fighting Style",
-               map[pick] >= 0 ? all[map[pick]] : extra_parts[-1 - map[pick]]);
+    {
+        /* ui_menu_custom copies the label it was shown, so a Tasha's style
+           and a typed one are recorded the same way a PHB one is. */
+        char answer[MAX_TEXT];
+        ui_menu_custom("  Fighting Style:", opts, NULL, n,
+                       "Another fighting style (type it in)",
+                       answer, sizeof answer);
+        add_choice(c, "Fighting Style", answer);
+    }
 }
 
 void choose_expertise(Character *c, int count)
@@ -1071,6 +1084,100 @@ static int option_already_taken(const Character *c, const char *label,
  * Each list says how many are known by now; the difference from what has
  * already been recorded is what is still owed, so a character who levels up
  * in stages is asked exactly once for each. */
+/* Records `count` choices from one option list.
+ *
+ * `label` is what they are filed under, and `alt_label` a second label whose
+ * entries also count as already taken -- an eldritch invocation is an
+ * eldritch invocation whether the warlock class or the Eldritch Adept feat
+ * supplied it, and the same one cannot be had twice.
+ *
+ * `allow_prereq` is 0 when the list is being drawn on from outside the class
+ * that owns it: Tasha's lets a non-warlock take an invocation through a feat
+ * only if it has no prerequisite at all.
+ *
+ * Below the book's entries there is always one more, for whatever the table
+ * has agreed on instead.
+ */
+static void pick_from_option_list(Character *c, const OptionList *ol,
+                                  const char *label, const char *alt_label,
+                                  int class_level, int allow_prereq,
+                                  int count)
+{
+    while (count-- > 0) {
+        const char *opts[256];
+        const char *det[256];
+        static char labels[256][128];
+        int map[256], n = 0, i, pick;
+        char prompt[96], custom[128], answer[MAX_TEXT];
+
+        for (i = 0; i < ol->count && n < 256; i++) {
+            const ClassOption *o = &ol->options[i];
+            if (!book_enabled(o->book)) continue;
+            if (!allow_prereq && (o->prereq[0] || o->min_level > 0)) continue;
+            if (o->min_level > class_level) continue;
+            if (!ol->repeatable
+                && (option_already_taken(c, label, o->name)
+                    || (alt_label
+                        && option_already_taken(c, alt_label, o->name))))
+                continue;
+
+            if (o->prereq[0]) {
+                snprintf(labels[n], sizeof labels[n], "%s (needs %s)",
+                         o->name, o->prereq);
+            } else {
+                snprintf(labels[n], sizeof labels[n], "%s", o->name);
+            }
+            opts[n] = labels[n];
+            det[n] = o->summary[0] ? o->summary : NULL;
+            map[n] = i;
+            n++;
+        }
+
+        snprintf(prompt, sizeof prompt, "  Choose a %s:", ol->label);
+        snprintf(custom, sizeof custom, "Another %s (type it in)", ol->label);
+
+        if (n == 0) {
+            /* Every printed entry is taken or out of reach. The choice is
+               still owed, so ask for it rather than dropping it silently. */
+            printf("    Nothing further is printed for you to take.\n");
+            ui_line("  Name one your table uses", answer, sizeof answer);
+            if (!answer[0]) return;
+            add_choice(c, label, answer);
+            continue;
+        }
+
+        pick = ui_menu_custom(prompt, opts, det, n, custom,
+                              answer, sizeof answer);
+        if (pick >= 0) {
+            add_choice(c, label, ol->options[map[pick]].name);
+        } else if (!ol->repeatable
+                   && (option_already_taken(c, label, answer)
+                       || (alt_label
+                           && option_already_taken(c, alt_label, answer)))) {
+            printf("    You already have that; choose again.\n");
+            count++;
+        } else {
+            add_choice(c, label, answer);
+        }
+    }
+}
+
+/* The list a class or a feat draws on, found by the plural name its registry
+   entry carries. */
+static const OptionList *option_list_named(const char *plural)
+{
+    int i;
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        if (strcmp(OPTION_LISTS[i].plural, plural) == 0)
+            return &OPTION_LISTS[i];
+    }
+    return NULL;
+}
+
+/* Offer everything this class and subclass draw from, at this class level.
+ * Each list says how many are known by now; the difference from what has
+ * already been recorded is what is still owed, so a character who levels up
+ * in stages is asked exactly once for each. */
 static void offer_class_options(Character *c, int slot, int class_level)
 {
     const ClassData *cd = &CLASSES[c->classes[slot].class_id];
@@ -1091,42 +1198,185 @@ static void offer_class_options(Character *c, int slot, int class_level)
 
         printf("\n  %s knows %d %s at level %d.\n", cd->name,
                (int)ol->known[class_level], ol->plural, class_level);
+        pick_from_option_list(c, ol, ol->label, NULL, class_level, 1, want);
+    }
+}
 
-        while (want-- > 0) {
-            const char *opts[128];
-            const char *det[128];
-            static char labels[128][128];
-            int map[128], n = 0, i, pick;
 
-            for (i = 0; i < ol->count && n < 128; i++) {
-                const ClassOption *o = &ol->options[i];
-                if (!book_enabled(o->book)) continue;
-                if (o->min_level > class_level) continue;
-                if (!ol->repeatable
-                    && option_already_taken(c, ol->label, o->name)) continue;
+/* --------------------------------------------- what a feat then asks for */
 
-                if (o->prereq[0]) {
-                    snprintf(labels[n], sizeof labels[n], "%s (needs %s)",
-                             o->name, o->prereq);
-                } else {
-                    snprintf(labels[n], sizeof labels[n], "%s", o->name);
-                }
-                opts[n] = labels[n];
-                det[n] = o->summary[0] ? o->summary : NULL;
-                map[n] = i;
-                n++;
-            }
-            if (n == 0) {
-                printf("    Nothing further is available to you yet.\n");
-                break;
-            }
-            {
-                char prompt[96];
-                snprintf(prompt, sizeof prompt, "  Choose a %s:", ol->label);
-                pick = ui_menu(prompt, opts, det, n);
-            }
-            add_choice(c, ol->label, ol->options[map[pick]].name);
+/* Several feats hand you a further choice: an eldritch invocation, two
+ * metamagic options, a fighting style, a tool, a spell. Taking the feat used
+ * to record only its name and any ability increase, which left the player to
+ * remember the rest. What a feat grants is now asked for and recorded beside
+ * it -- as a choice, a proficiency or a spell -- so it reaches the sheet and
+ * the save file the way anything else does.
+ */
+
+static int levels_in_class(const Character *c, int class_id)
+{
+    int i;
+    for (i = 0; i < c->class_count; i++) {
+        if (c->classes[i].class_id == class_id) return c->classes[i].level;
+    }
+    return 0;
+}
+
+/* A spell a feat grants outright. It is filed under no class, so it never
+   counts against a class's cantrips or spells known. */
+static void grant_feat_spell(Character *c, const char *name)
+{
+    int id = find_spell_by_name(name);
+
+    if (id < 0) return;
+    if (already_known(c, id)) return;
+    add_spell(c, id, -1, 1, 1);
+    printf("    You learn %s.\n", SPELLS[id].name);
+}
+
+/* One spell of a given level, from a class's list, a pair of schools, or
+   both. A mask of 0 means "no restriction on that axis". */
+static void pick_feat_spell(Character *c, const char *prompt, int level,
+                            unsigned class_mask, unsigned school_mask)
+{
+    const char *opts[256];
+    static char labels[256][96];
+    int map[256], n = 0, i;
+    char answer[MAX_TEXT];
+
+    for (i = 0; i < SPELL_COUNT && n < 256; i++) {
+        if (SPELLS[i].level != level) continue;
+        if (!book_enabled((SourceBook)SPELLS[i].book)) continue;
+        if (class_mask && !(SPELLS[i].classes & class_mask)) continue;
+        if (school_mask && !(school_mask & (1u << SPELLS[i].school))) continue;
+        if (already_known(c, i)) continue;
+        snprintf(labels[n], sizeof labels[n], "%s (%s)", SPELLS[i].name,
+                 SCHOOL_NAMES[SPELLS[i].school]);
+        opts[n] = labels[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) {
+        printf("    Nothing is left for you to learn there.\n");
+        return;
+    }
+    i = ui_menu_custom(prompt, opts, NULL, n, "Another spell (type it in)",
+                       answer, sizeof answer);
+    if (i >= 0) {
+        add_spell(c, map[i], -1, 1, 1);
+        printf("    You learn %s.\n", SPELLS[map[i]].name);
+        return;
+    }
+    /* A spell the tables do not carry has no entry to point at, so it is
+       recorded as a note beside the feat instead. */
+    add_choice(c, "Spell from a feat", answer);
+}
+
+/* One proficiency from a group of tools. */
+static void pick_feat_tool(Character *c, const char *prompt, const char *group)
+{
+    const char *all[64];
+    const char *opts[64];
+    int total = tools_in_group(group, all, 64), n = 0, i;
+    char answer[MAX_NAME];
+
+    for (i = 0; i < total; i++) {
+        if (!has_tool(c, all[i])) opts[n++] = all[i];
+    }
+    if (n == 0) {
+        ui_line("  Name a tool you are not already proficient with",
+                answer, sizeof answer);
+    } else {
+        ui_menu_custom(prompt, opts, NULL, n, "Another tool (type it in)",
+                       answer, sizeof answer);
+    }
+    add_tool(c, answer);
+}
+
+/* The feats feat_extras() below asks a further question for. It is a
+   separate list only so the self-test can check that each still names a real
+   feat: the branches match on the printed name, so a rename in the data
+   would otherwise stop the questions being asked without anything failing. */
+const char *const FEATS_WITH_CHOICES[] = {
+    "Artificer Initiate", "Chef", "Eldritch Adept", "Fey Touched",
+    "Fighting Initiate", "Gunner", "Metamagic Adept", "Poisoner",
+    "Shadow Touched", "Skill Expert", "Telekinetic", "Telepathic"
+};
+const int FEATS_WITH_CHOICES_COUNT =
+    (int)(sizeof(FEATS_WITH_CHOICES) / sizeof(FEATS_WITH_CHOICES[0]));
+
+static void feat_extras(Character *c, int feat_id)
+{
+    const char *name = FEATS[feat_id].name;
+    const OptionList *ol;
+
+    if (!strcmp(name, "Eldritch Adept")) {
+        /* Tasha's, p.79: an invocation with a prerequisite is open only to
+           a warlock who meets it. */
+        int wl = levels_in_class(c, CLS_WARLOCK);
+        ol = option_list_named("eldritch invocations");
+        if (ol) pick_from_option_list(c, ol, "Eldritch Adept invocation",
+                                      "Eldritch Invocation", wl, wl > 0, 1);
+
+    } else if (!strcmp(name, "Metamagic Adept")) {
+        ol = option_list_named("metamagic options");
+        if (ol) pick_from_option_list(c, ol, "Metamagic Adept option",
+                                      "Metamagic option", MAX_LEVEL, 1, 2);
+
+    } else if (!strcmp(name, "Fighting Initiate")) {
+        choose_fighting_style(c, CLS_FIGHTER);
+
+    } else if (!strcmp(name, "Skill Expert")) {
+        const char *opts[SKL_COUNT];
+        int avail[SKL_COUNT], picks[1], i;
+        for (i = 0; i < SKL_COUNT; i++) {
+            opts[i] = SKILL_NAME[i];
+            avail[i] = !c->skill_prof[i];
         }
+        printf("    Skill Expert: a skill to learn, and expertise in one"
+               " you already have.\n");
+        if (ui_multi("  A skill to become proficient in:",
+                     opts, avail, SKL_COUNT, 1, picks) > 0 && picks[0] >= 0) {
+            c->skill_prof[picks[0]] = 1;
+        }
+        choose_expertise(c, 1);
+
+    } else if (!strcmp(name, "Chef")) {
+        add_tool(c, "Cook's utensils");
+        printf("    You gain proficiency with cook's utensils.\n");
+
+    } else if (!strcmp(name, "Poisoner")) {
+        add_tool(c, "Poisoner's kit");
+        printf("    You gain proficiency with a poisoner's kit.\n");
+
+    } else if (!strcmp(name, "Gunner")) {
+        add_prof(c, "Firearms");
+        printf("    You gain proficiency with firearms.\n");
+
+    } else if (!strcmp(name, "Artificer Initiate")) {
+        pick_feat_spell(c, "  An artificer cantrip:", 0, SPL_ARTIFICER, 0);
+        pick_feat_spell(c, "  A 1st-level artificer spell:", 1,
+                        SPL_ARTIFICER, 0);
+        pick_feat_tool(c, "  Artisan's tools to become proficient with:",
+                       "Artisan's tools");
+
+    } else if (!strcmp(name, "Fey Touched")) {
+        grant_feat_spell(c, "Misty Step");
+        pick_feat_spell(c, "  A 1st-level divination or enchantment spell:",
+                        1, 0, (1u << SCHOOL_DIVINATION)
+                            | (1u << SCHOOL_ENCHANTMENT));
+
+    } else if (!strcmp(name, "Shadow Touched")) {
+        grant_feat_spell(c, "Invisibility");
+        pick_feat_spell(c, "  A 1st-level illusion or necromancy spell:",
+                        1, 0, (1u << SCHOOL_ILLUSION)
+                            | (1u << SCHOOL_NECROMANCY));
+
+    } else if (!strcmp(name, "Telekinetic")) {
+        grant_feat_spell(c, "Mage Hand");
+
+    } else if (!strcmp(name, "Telepathic")) {
+        grant_feat_spell(c, "Detect Thoughts");
     }
 }
 
@@ -1468,7 +1718,7 @@ void wizard_level_up(Character *c)
         c->classes[slot].level = 0;
         c->classes[slot].subclass_id = -1;
         c->classes[slot].subclass_option = -1;
-        add_prof_list(c, CLASSES[pick].mc_profs);
+        add_prof_list(c, CLASSES[pick].mc_profs, CLASSES[pick].name);
     }
 
     if (ui_yesno("\n  Roll the hit die for this level?", 0)) hp_use_average = 0;

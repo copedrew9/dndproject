@@ -244,3 +244,24 @@ void spell_classes_text(unsigned mask, char *out, size_t n)
         out[used] = '\0';
     }
 }
+
+/* The items in one of the PHB's tool groups, in the order they are printed.
+   An unknown group name yields every tool, so a proficiency the books word
+   in some other way still gets a list to choose from rather than a blank
+   prompt. */
+int tools_in_group(const char *group, const char **out, int max)
+{
+    int i, n = 0, any = 0;
+
+    for (i = 0; i < TOOL_GROUP_COUNT && n < max; i++) {
+        if (strcmp(TOOL_GROUPS[i].group, group) != 0) continue;
+        out[n++] = TOOL_GROUPS[i].item;
+        any = 1;
+    }
+    if (any) return n;
+
+    for (i = 0; i < ITEM_COUNT && n < max; i++) {
+        if (ITEMS[i].category == ITEM_TOOL) out[n++] = ITEMS[i].name;
+    }
+    return n;
+}

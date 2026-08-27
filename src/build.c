@@ -56,6 +56,112 @@ void add_tool(Character *c, const char *tool)
 }
 
 
+/* ------------------------------------------------- tool proficiency phrases */
+
+/* Backgrounds and classes word tool proficiencies as prose: "Herbalism kit",
+ * "One type of gaming set", "Three musical instruments of your choice".
+ * A phrase that names a definite tool is simply granted; one that leaves the
+ * choice open turns into a menu of that group, taken from the equipment
+ * tables, with room at the bottom for something the books do not print.
+ */
+
+/* How many the phrase asks for. Only the bard's three instruments and the
+   monk's one go above one, but the words are cheap to read. */
+static int tool_phrase_count(const char *phrase)
+{
+    if (contains_ci(phrase, "three")) return 3;
+    if (contains_ci(phrase, "two")) return 2;
+    return 1;
+}
+
+/* Does the phrase leave the choice to the player? */
+static int tool_phrase_is_choice(const char *phrase)
+{
+    return contains_ci(phrase, "your choice")
+        || contains_ci(phrase, "one type of")
+        || contains_ci(phrase, "artisan")
+        || contains_ci(phrase, "gaming set")
+        || contains_ci(phrase, "musical instrument");
+}
+
+/* The tools a phrase may be satisfied with. The monk's line names two
+   groups at once, so the groups are gathered rather than matched one of. */
+static int tool_phrase_options(const char *phrase, const char **out, int max)
+{
+    static const struct { const char *word; const char *group; } GROUPS[] = {
+        { "artisan",           "Artisan's tools" },
+        { "gaming set",        "Gaming set" },
+        { "musical instrument", "Musical instrument" }
+    };
+    int n = 0;
+    size_t g;
+
+    for (g = 0; g < sizeof GROUPS / sizeof GROUPS[0]; g++) {
+        if (!contains_ci(phrase, GROUPS[g].word)) continue;
+        n += tools_in_group(GROUPS[g].group, out + n, max - n);
+    }
+    if (n == 0) n = tools_in_group("", out, max);   /* every tool */
+    return n;
+}
+
+/* Grants one comma-separated piece of a tool proficiency line. */
+static void grant_tool_phrase(Character *c, const char *phrase,
+                              const char *source)
+{
+    const char *all[64];
+    const char *opts[64];
+    int total, i, want, n;
+
+    if (!phrase || !*phrase) return;
+    if (!tool_phrase_is_choice(phrase)) { add_tool(c, phrase); return; }
+
+    total = tool_phrase_options(phrase, all, 64);
+    want = tool_phrase_count(phrase);
+
+    printf("\n  %s grants \"%s\".\n", source, phrase);
+    while (want-- > 0) {
+        char answer[MAX_NAME];
+
+        n = 0;
+        for (i = 0; i < total; i++) {
+            if (!has_tool(c, all[i])) opts[n++] = all[i];
+        }
+        if (n == 0) {
+            ui_line("  Name a tool you are not already proficient with",
+                    answer, sizeof answer);
+            if (!answer[0]) return;
+            add_tool(c, answer);
+            continue;
+        }
+        ui_menu_custom("  Which one?", opts, NULL, n,
+                       "Another tool (type it in)", answer, sizeof answer);
+        add_tool(c, answer);
+    }
+}
+
+/* Splits a tool proficiency line on commas and grants each piece. */
+static void grant_tool_line(Character *c, const char *line, const char *source)
+{
+    char buf[256], *p, *start;
+
+    if (!line || !*line) return;
+    strncpy(buf, line, sizeof buf - 1);
+    buf[sizeof buf - 1] = '\0';
+    start = buf;
+    for (p = buf;; p++) {
+        if (*p != ',' && *p != '\0') continue;
+        {
+            int end = (*p == '\0');
+            *p = '\0';
+            while (*start == ' ') start++;
+            grant_tool_phrase(c, start, source);
+            if (end) break;
+            start = p + 1;
+        }
+    }
+}
+
+
 int has_prof(const Character *c, const char *prof)
 {
     int i;
@@ -93,7 +199,38 @@ void add_prof(Character *c, const char *prof)
     c->other_prof_count++;
 }
 
-void add_prof_list(Character *c, const char *csv)
+/* One comma-separated piece of a class's proficiency line.
+ *
+ * Those lines mix three things the sheet keeps apart. A bard multiclassed
+ * into reads "Light armor, one skill of your choice, one musical
+ * instrument": the skill is granted by the skill picker, the instrument is a
+ * tool to be chosen, and only the armour belongs where the whole line used
+ * to go verbatim.
+ */
+static void grant_prof_piece(Character *c, const char *piece,
+                             const char *source)
+{
+    int id;
+
+    /* choose_class_skills() grants the skill; saying so again here would
+       leave "one skill of your choice" sitting among the armour. */
+    if (contains_ci(piece, "skill")) return;
+
+    if (contains_ci(piece, "artisan") || contains_ci(piece, "gaming set")
+        || contains_ci(piece, "musical instrument")) {
+        grant_tool_phrase(c, piece, source);
+        return;
+    }
+
+    id = find_item(piece);
+    if (id >= 0 && ITEMS[id].category == ITEM_TOOL) {
+        add_tool(c, ITEMS[id].name);
+        return;
+    }
+    add_prof(c, piece);
+}
+
+void add_prof_list(Character *c, const char *csv, const char *source)
 {
     char buf[512], *p, *start;
 
@@ -107,7 +244,7 @@ void add_prof_list(Character *c, const char *csv)
             int end = (*p == '\0');
             *p = '\0';
             while (*start == ' ') start++;
-            if (*start) add_prof(c, start);
+            if (*start) grant_prof_piece(c, start, source);
             if (end) break;
             start = p + 1;
         }
@@ -452,12 +589,12 @@ static void grant_class_proficiencies(Character *c)
     for (i = 0; i < c->class_count; i++) {
         const ClassData *cd = &CLASSES[c->classes[i].class_id];
         if (i == 0) {
-            add_prof_list(c, cd->armour_profs);
-            add_prof_list(c, cd->weapon_profs);
+            add_prof_list(c, cd->armour_profs, cd->name);
+            add_prof_list(c, cd->weapon_profs, cd->name);
             c->save_prof[cd->save_prof[0]] = 1;
             c->save_prof[cd->save_prof[1]] = 1;
         } else {
-            add_prof_list(c, cd->mc_profs);
+            add_prof_list(c, cd->mc_profs, cd->name);
         }
     }
 }
@@ -950,36 +1087,7 @@ static void choose_background(Character *c)
            SKILL_NAME[BACKGROUNDS[pick].skills[0]],
            SKILL_NAME[BACKGROUNDS[pick].skills[1]]);
 
-    /* Tool proficiencies: recorded verbatim, since several are "one type of
-       ..." and the specific choice is the player's. */
-    if (BACKGROUNDS[pick].tool_profs[0]) {
-        char buf[256], *p, *start;
-        strncpy(buf, BACKGROUNDS[pick].tool_profs, sizeof buf - 1);
-        buf[sizeof buf - 1] = '\0';
-        start = buf;
-        for (p = buf;; p++) {
-            if (*p == ',' || *p == '\0') {
-                int end = (*p == '\0');
-                *p = '\0';
-                while (*start == ' ') start++;
-                if (*start) {
-                    if (strstr(start, "One type of")) {
-                        char answer[MAX_NAME];
-                        char prompt[MAX_NAME + 320];
-                        snprintf(prompt, sizeof prompt,
-                                 "  Your background grants \"%s\" -- name it",
-                                 start);
-                        ui_line(prompt, answer, sizeof answer);
-                        add_tool(c, answer[0] ? answer : start);
-                    } else {
-                        add_tool(c, start);
-                    }
-                }
-                if (end) break;
-                start = p + 1;
-            }
-        }
-    }
+    grant_tool_line(c, BACKGROUNDS[pick].tool_profs, "Your background");
 
     for (i = 0; i < BACKGROUNDS[pick].extra_languages; i++) {
         const char *opts[32];
@@ -1040,17 +1148,7 @@ static void grant_class_tools(Character *c)
     for (i = 0; i < c->class_count; i++) {
         const ClassData *cd = &CLASSES[c->classes[i].class_id];
         if (i > 0) continue;                    /* multiclass tools vary */
-        if (!cd->tool_profs[0]) continue;
-
-        if (strstr(cd->tool_profs, "of your choice")) {
-            char answer[MAX_NAME], prompt[200];
-            snprintf(prompt, sizeof prompt, "  %s grants \"%s\" -- name it",
-                     cd->name, cd->tool_profs);
-            ui_line(prompt, answer, sizeof answer);
-            add_tool(c, answer[0] ? answer : cd->tool_profs);
-        } else {
-            add_tool(c, cd->tool_profs);
-        }
+        grant_tool_line(c, cd->tool_profs, cd->name);
     }
     /* Rogues gain thieves' tools when multiclassing in as well. */
     for (i = 1; i < c->class_count; i++) {

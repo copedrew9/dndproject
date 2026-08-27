@@ -244,7 +244,10 @@ static void write_spells(FILE *f, const Character *c)
                     c->spells[i].always_prepared ? ", always prepared" : "",
                     c->class_count > 1 ? " -- " : "",
                     c->class_count > 1
-                        ? CLASSES[c->spells[i].class_id].name : "");
+                        ? (c->spells[i].class_id < 0
+                               ? "from a feat"
+                               : CLASSES[c->spells[i].class_id].name)
+                        : "");
             fprintf(f, "        Casting Time: %-18s Range: %s\n",
                     s->casting_time, s->range);
             fprintf(f, "        Components:   %s\n", s->components);
@@ -693,9 +696,12 @@ static void write_data(FILE *f, const Character *c)
         }
     }
     for (i = 0; i < c->spell_count; i++) {
+        /* A spell a feat granted belongs to no class, and must not be
+           counted against any class's spells known when it is read back. */
         fprintf(f, "SPELL|%d|%d|%s|%s\n", c->spells[i].prepared,
                 c->spells[i].always_prepared,
-                CLASSES[c->spells[i].class_id].name,
+                c->spells[i].class_id < 0
+                    ? "-" : CLASSES[c->spells[i].class_id].name,
                 SPELLS[c->spells[i].spell_id].name);
     }
 
@@ -1006,11 +1012,13 @@ int load_character(const char *path, Character *c)
             c->platinum = atoi(fields[5]);
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
-            int owner = index_of_class(fields[3]);
+            int from_feat = !strcmp(fields[3], "-");
+            int owner = from_feat ? -1 : index_of_class(fields[3]);
             if (id < 0) warn_unknown("spell", fields[4]);
             if (id >= 0 && c->spell_count < MAX_SPELLS) {
                 c->spells[c->spell_count].spell_id = id;
-                c->spells[c->spell_count].class_id = owner < 0 ? 0 : owner;
+                c->spells[c->spell_count].class_id =
+                    (owner < 0 && !from_feat) ? 0 : owner;
                 c->spells[c->spell_count].prepared = atoi(fields[1]);
                 c->spells[c->spell_count].always_prepared = atoi(fields[2]);
                 c->spell_count++;

@@ -621,6 +621,15 @@ def build_equipment():
          for r in tags.get("WEAPONPROP", [])],
         "WEAPON_PROPERTY_COUNT")
 
+    out.table(
+        "const ToolGroup TOOL_GROUPS[]",
+        ["    { %s, %s }" % (cstr(r.str(0)), cstr(r.str(1)))
+         for r in tags.get("TOOLGROUP", [])],
+        "TOOL_GROUP_COUNT")
+    for r in tags.get("TOOLGROUP", []):
+        if r.str(1) not in item_names:
+            r.die("no ITEM named %r" % r.str(1))
+
     out.table("const char *const TRINKETS[]",
               ["    " + cstr(r.str(0)) for r in tags.get("TRINKET", [])],
               "TRINKET_COUNT")

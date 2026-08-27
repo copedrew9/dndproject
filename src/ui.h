@@ -49,6 +49,13 @@ int  roll_4d6_drop_lowest(void);
 void ui_pick_or_type(const char *prompt, const char *const *options,
                      int count, char *out, size_t n);
 
+/* The same, for menus that show a line of explanation beside each entry.
+   Fills out[] with the answer and returns the index chosen, or -1 when it
+   was typed in. An empty answer re-asks. */
+int  ui_menu_custom(const char *prompt, const char *const *options,
+                    const char *const *details, int count,
+                    const char *custom_label, char *out, size_t n);
+
 /* Checkboxes: toggle entries on and off until done. flags[] is both the
    starting state and the answer; returns how many ended up set. */
 int  ui_toggle_list(const char *prompt, const char *const *options,

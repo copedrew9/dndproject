@@ -67,8 +67,13 @@ def answer(prompt, rng, free_text_name):
     low = prompt.lower()
     if "character name" in low or "player name" in low:
         return free_text_name
-    if "name it" in low or "-- name it" in low:
+    if "name a tool" in low:
         return "Smith's tools"
+    # Every list the builder offers ends with an entry that lets the answer
+    # be typed instead. Answering it exercises that path; an empty reply
+    # would just send the menu round again.
+    if "type it" in low or "name one your table uses" in low:
+        return "Table's own option"
     return ""
 
 

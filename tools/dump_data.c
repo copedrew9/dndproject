@@ -482,6 +482,14 @@ static void dump_equipment(void)
         end(f);
     }
 
+    head(f, "TOOLGROUP", "group | item");
+    for (i = 0; i < TOOL_GROUP_COUNT; i++) {
+        rec(f, "TOOLGROUP");
+        field(f, TOOL_GROUPS[i].group);
+        field(f, TOOL_GROUPS[i].item);
+        end(f);
+    }
+
     head(f, "TRINKET", "text");
     for (i = 0; i < TRINKET_COUNT; i++) {
         rec(f, "TRINKET"); field(f, TRINKETS[i]); end(f);

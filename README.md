@@ -215,7 +215,7 @@ Every table the program uses is hand-written, in four files under `data/`:
 data/character.txt   races, subraces, classes, subclasses, features,
                      backgrounds, feats, invocations and the rest
 data/equipment.txt   armour, weapons, gear, tools, packs, magic items,
-                     trinkets, lifestyles and prices
+                     trinkets, lifestyles, prices and the tool groups
 data/spells.txt      every spell
 data/world.txt       gods, beasts, sidekicks, the background tables
 ```
@@ -345,7 +345,7 @@ half-caster slots and specialist spells.
 
 ```
 data/character.txt     races, classes, subclasses, features, backgrounds
-data/equipment.txt     gear, weapons, armour, magic items, prices
+data/equipment.txt     gear, weapons, armour, magic items, prices, tools
 data/spells.txt        every spell
 data/world.txt         gods, beasts, sidekicks, background tables
 homebrew.txt           the DM's own entries, read at run time
@@ -393,10 +393,42 @@ touched none of the eighty-odd places that read those tables.
 
 Tasha's sidekicks come from that book's chapter 4.
 
-A few choices are still recorded as free text rather than picked from a list,
-because the books do not give one: the specific artisan's tools a background
-grants, and which magic item an artificer's Replicate Magic Item infusion
-copies.
+### Choosing from the books, and beside them
+
+Every list a class draws on as it levels is offered as a menu with the book's
+entries and a line of explanation beside each: eldritch invocations, pact
+boons, metamagic options, Battle Master maneuvers, Arcane Shot options,
+elemental disciplines, rune knight runes, favoured enemies and favoured
+terrains, fighting styles and artificer infusions.
+
+Under each of those, and under the tool lists below, there is one more entry
+for something the books do not print. A DM who has written a new invocation,
+or a table using a maneuver from somewhere else, can put it on the sheet
+without waiting for the program to learn about it; it is recorded, saved and
+printed exactly as a printed one is. Where an entry is out of reach the menu
+says why rather than hiding it, and where every printed entry is already
+taken the question is still asked rather than dropped.
+
+Tool proficiencies are read out of the prose the books use. "One type of
+artisan's tools" offers the seventeen artisan's tools, "one type of gaming
+set" the gaming sets, "three musical instruments of your choice" asks three
+times from the ten instruments; the monk's "one artisan's tool or one
+musical instrument" offers both groups at once. Which items make up a group
+is the `TOOLGROUP` block in `data/equipment.txt`, so a homebrew tool can join
+one. A proficiency line that names a definite tool grants it without asking.
+
+The feats that hand you a further choice ask for it when the feat is taken,
+rather than leaving it to be remembered: Eldritch Adept draws on the
+invocation list (limited to those with no prerequisite unless you are a
+warlock), Metamagic Adept takes two metamagic options, Fighting Initiate a
+fighting style, Skill Expert a skill and an expertise, Artificer Initiate a
+cantrip, a 1st-level spell and a set of artisan's tools, Fey Touched and
+Shadow Touched their spells. A spell a feat grants is filed under no class,
+so it never counts against a class's cantrips or spells known.
+
+One choice is still free text, because the books give no list this program
+holds: which magic item an artificer's Replicate Magic Item infusion copies,
+that being its own table by artificer level.
 
 Magic items that change a computed number flatly and unconditionally are
 computed. The `MAGICRULE` lines in `data/equipment.txt` hold those, keyed by

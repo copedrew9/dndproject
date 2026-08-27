@@ -542,6 +542,23 @@ const MagicRule *magic_rule_for(const char *name);
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;
 
+/* Which of the PHB's tool groups an item belongs to. A background that
+ * grants "one type of artisan's tools" needs that list, and the item rows
+ * themselves do not say: nothing about smith's tools distinguishes them
+ * from a herbalism kit except which table they were printed in. */
+typedef struct {
+    const char *group;
+    const char *item;
+} ToolGroup;
+
+extern const ToolGroup TOOL_GROUPS[];
+extern const int TOOL_GROUP_COUNT;
+
+/* Fills out[] with the items in a group, and returns how many there are.
+   A group name that matches nothing gives every tool, which is what a
+   proficiency worded some other way should offer. */
+int tools_in_group(const char *group, const char **out, int max);
+
 /* ------------------------------------------------------------------ lookups */
 
 extern const char *const LANGUAGES[];

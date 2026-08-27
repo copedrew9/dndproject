@@ -124,7 +124,8 @@ typedef struct {
 
 typedef struct {
     int spell_id;       /* index into SPELLS */
-    int class_id;       /* the class this spell was learned as */
+    int class_id;       /* the class this spell was learned as, or -1 when a
+                           feat granted it and no class's limits apply */
     int prepared;       /* for preparation casters */
     int always_prepared;/* domain/oath/circle spells */
 } SpellEntry;
