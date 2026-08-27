@@ -2197,7 +2197,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "darkvision, wearing them increases its range by 60 feet." },
     { "Hammer of Thunderbolts", BOOK_DMG,
       "Weapon (maul)", "legendary",
-      "requires attunement",
+      NULL,
       "+1 to attack and damage rolls. If you have a belt of giant "
       "strength and gauntlets of ogre power attuned, your Strength "
       "score increases by 4 to a maximum of 30 while you hold the "
@@ -3082,7 +3082,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "devoured by insects." },
     { "Staff of the Adder", BOOK_DMG,
       "Staff", "uncommon",
-      "requires attunement",
+      "requires attunement by a cleric, druid, or warlock",
       "As a bonus action you can turn the head into a poisonous "
       "snake for 1 minute; you can attack with it at +9 to hit, "
       "reach 5 feet, dealing 1d6 piercing damage and 3d6 poison "
@@ -3439,7 +3439,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "creature made by a drow." },
     { "Tome of the Stilled Tongue", BOOK_DMG,
       "Wondrous item", "legendary",
-      "requires attunement by a spellcaster",
+      "requires attunement by a wizard",
       "Vecna's own spellbook, with a severed tongue in its front "
       "cover. It acts as a spellbook, and any spell you write in it "
       "costs half the usual gold and time. It holds five charges, "
@@ -3447,7 +3447,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "spell inscribed on its pages without expending a slot." },
     { "Blackrazor", BOOK_DMG,
       "Weapon (greatsword)", "legendary",
-      "requires attunement",
+      "requires attunement by a creature of non-lawful alignment",
       "A sentient blade that devours souls. +3 to attack and damage "
       "rolls. When you kill a creature with it that is not a "
       "construct or undead, the sword absorbs its soul and you gain "
@@ -3518,14 +3518,14 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "point maximum is reduced by the same amount; you regain that "
       "many hit points." },
     { "Whelm", BOOK_DMG,
-      "Weapon (maul)", "legendary",
+      "Weapon (warhammer)", "legendary",
       "requires attunement by a dwarf",
-      "A sentient maul. +3 to attack and damage rolls, an extra 1d8 "
-      "damage against giants, and it can be thrown 20 feet, "
-      "returning to your hand. It grants tremorsense to 30 feet and "
-      "detect evil and good, and a shock wave on a hit that stuns a "
-      "creature on a failed DC 15 Constitution save. It makes its "
-      "dwarven wielder reluctant to leave underground." },
+      "A sentient warhammer. +3 to attack and damage rolls, an "
+      "extra 1d8 damage against giants, and it can be thrown 20 "
+      "feet, returning to your hand. It grants tremorsense to 30 "
+      "feet and detect evil and good, and a shock wave on a hit "
+      "that stuns a creature on a failed DC 15 Constitution save. "
+      "It makes its dwarven wielder reluctant to leave underground." },
     { "Axe of the Dwarvish Lords", BOOK_DMG,
       "Weapon (battleaxe)", "artifact",
       "requires attunement",
