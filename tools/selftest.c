@@ -1167,6 +1167,22 @@ static void test_magic_armour_class(void)
     give_magic(&c, "Shield, +1, +2, or +3", 0, 2, 1);
     EQ(armour_class(&c), 14, "a +2 shield is +4 in total");
 
+    /* A sentinel shield is an ordinary shield's +2 and nothing more; what
+       it really does -- advantage on initiative and Perception -- is not a
+       number the sheet can carry. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_DEX] = 10;
+    give_magic(&c, "Sentinel Shield", 0, 0, 1);
+    EQ(armour_class(&c), 12, "a sentinel shield is +2");
+
+    /* A luckstone is +1 to saves, once attuned. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_CON] = 10;
+    give_magic(&c, "Stone of Good Luck (Luckstone)", 1, 0, 0);
+    EQ(save_bonus(&c, ABL_CON), 1, "a luckstone is +1 to saves");
+
     /* Bonuses stack: magic armour, a magic shield and a worn ring. */
     reset(&c);
     add_class(&c, CLS_FIGHTER, 1, -1);
@@ -1219,6 +1235,13 @@ static void test_magic_scores_and_speeds(void)
     c.base_score[ABL_INT] = 8;
     give_magic(&c, "Headband of Intellect", 0, 0, 0);
     EQ(ability_score(&c, ABL_INT), 8, "unattuned headband does nothing");
+
+    /* The Hand of Vecna sets Strength to 20, the same way. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 13;
+    give_magic(&c, "Hand of Vecna", 1, 0, 0);
+    EQ(ability_score(&c, ABL_STR), 20, "the hand of Vecna sets Strength to 20");
 
     /* A belt of giant strength carries the score of its own giant. */
     reset(&c);

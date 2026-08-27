@@ -8,7 +8,7 @@ character can be loaded again and levelled up.
 
 Content comes from seven sourcebooks -- PHB, XGE, TCE, DMG, MPMM, MM and
 SCAG -- and covers 42 races with 30 subraces, 13 classes, 107 subclasses,
-477 spells, 73 feats, 26 backgrounds, 270 magic items, 88 beast stat blocks
+477 spells, 73 feats, 26 backgrounds, 277 magic items, 88 beast stat blocks
 and 195 deities. A settings menu decides which of those are in play.
 
 ## Building and running
@@ -118,8 +118,9 @@ The main menu offers:
   penalty and don/doff times; weapons explain each property they list;
   and items with no stat line at all — thieves' tools, a healer's kit, a
   hunting trap — carry what they contain, what they are used for and which
-  ability checks they help with. **270 magic items** from the *Dungeon
-  Master's Guide* are browsable by kind, rarity, attunement or name, and
+  ability checks they help with. **277 magic items** from the *Dungeon
+  Master's Guide* are browsable by kind, rarity, attunement or name --
+  every one it prints, artifacts included, and
   the trinket table, lifestyle expenses and the prices of food, lodging,
   services and hired spellcasting are all to hand.
 - **Languages** — the PHB's 16, plus the **18 regional tongues of Faerun**
@@ -317,7 +318,7 @@ make verify     # the numbers beside those names are the book's too
 make check      # the above, plus the test suite
 ```
 
-`tools/audit.py` looks up all 2,640 names -- races, classes, subclasses,
+`tools/audit.py` looks up all 2,739 names -- races, classes, subclasses,
 features, feats, equipment, magic items, spells, deities, beasts -- in the
 dump of the book each claims to come from. All of them are found. Matching
 stays tolerant, because the typesetting still gets in the way: words are set
@@ -325,8 +326,19 @@ with a space inside them, small capitals come back as mixed case, and a
 section opening with a decorative initial loses that letter altogether, which
 is why *Quickened Healing* is set as "UICKENED HEALING". Six names are ours
 rather than the book's -- "Standard Human", for a human the PHB prints under
-no heading of its own, and five composite feature names -- and the audit says
-so rather than reporting them as missing.
+no heading of its own, five composite feature names, and three pairings of
+SCAG tiefling variants -- and the audit says so rather than reporting them as
+missing.
+
+The audit runs one way: every name in `data/` has to appear in its book. A
+gap hides in the other direction, because an entry nobody wrote down is not
+a name that fails to resolve -- it is simply absent, and nothing notices.
+`tools/verify_coverage.py` closes that: it enumerates the books by the fixed
+line each entry opens with -- a magic item's "Wondrous item, rare (requires
+attunement)", a spell's "3rd-level evocation" -- and subtracts what `data/`
+has. It found seven magic items nobody had entered, the Axe of the Dwarvish
+Lords and the Eye and Hand of Vecna among them. It now reports none, for 434
+spells and 255 magic items.
 
 Names are the cheap check. `tools/verify_equipment.py`,
 `tools/verify_deities.py` and `tools/verify_races.py` do the expensive one,
@@ -408,6 +420,7 @@ tools/audit.py         checks every name in data/ against TextFiles/
 tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
 tools/verify_races.py      checks the MPMM race numbers
+tools/verify_coverage.py   looks for book content data/ is missing
 tools/extract_deities.py   writes the DEITY rows from appendix B
 
 src/dnd.h              core types and the Character struct

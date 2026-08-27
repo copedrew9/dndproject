@@ -49,11 +49,15 @@ audit:
 	python3 tools/audit.py
 
 # Checks the numbers, not just the names: every PHB equipment row against
-# the book's own tables, and every deity against appendix B.
+# the book's own tables, and every deity against appendix B. verify_coverage
+# runs the other way, looking for spells and magic items the books have and
+# data/ does not -- the direction a gap hides in, since a missing entry is
+# not a name that fails to resolve.
 verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py
+	python3 tools/verify_coverage.py
 
 # Assertions on the rules engine.
 TESTBIN  = selftest
