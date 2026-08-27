@@ -11,12 +11,12 @@ The PDFs carry a text layer, and it is clean. This reads that instead, so
 TextFiles/ says what the books say. `make audit` then checks every name in
 data/ against it.
 
-This is run once, against PDFs that are not in the repository: they are 255MB
-and they are not ours to distribute. The extracted text is what is checked in.
-The script is kept so that anyone holding the books can reproduce it.
+No sourcebook is distributed with this project. This is run once, against
+copies you supply, and the extracted text is what is checked in; the script is
+kept so that anyone holding the books can reproduce it.
 
     pip install pymupdf
-    python3 tools/pdf_text.py path/to/pdfs
+    python3 tools/pdf_text.py /path/to/your/pdfs
 
 Reading order, not layout, is what comes out: a table's cells arrive one per
 line, column by column within a row, which is enough both to search for a
@@ -61,10 +61,11 @@ def extract(pdf_path, out_path):
 
 
 def main():
-    src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "Books")
+    if len(sys.argv) < 2:
+        sys.exit("usage: pdf_text.py <directory holding the PDFs>")
+    src = sys.argv[1]
     if not os.path.isdir(src):
-        sys.exit("no such directory: %s\n"
-                 "Pass the directory holding the PDFs as an argument." % src)
+        sys.exit("no such directory: %s" % src)
 
     for pdf, out in BOOKS:
         path = os.path.join(src, pdf)

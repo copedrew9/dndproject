@@ -2,15 +2,14 @@
 
 A D&D 5th Edition character creator and builder, written in C.
 
-It walks the six steps of *Player's Handbook* chapter 1, asks for every choice
-those steps require, and writes the finished character to
-`<Charactername>.txt`. A saved character can be loaded again and levelled up.
+It walks the six steps of PHB chapter 1, asks for every choice those steps
+require, and writes the finished character to `<Charactername>.txt`. A saved
+character can be loaded again and levelled up.
 
-Content comes from the *Player's Handbook*, *Xanathar's Guide to Everything*,
-*Tasha's Cauldron of Everything*, the *Dungeon Master's Guide*, *Monsters of
-the Multiverse* and the *Monster Manual*: 42 races, 13 classes, 101
-subclasses, 477 spells, 57 feats, 270 magic items, 88 beast stat blocks and
-186 deities. A settings menu decides which of those books are in play.
+Content comes from six sourcebooks -- PHB, XGE, TCE, DMG, MPMM and MM -- and
+covers 42 races, 13 classes, 101 subclasses, 477 spells, 72 feats, 270 magic
+items, 88 beast stat blocks and 195 deities. A settings menu decides which of
+those are in play.
 
 ## Building and running
 
@@ -28,11 +27,11 @@ The main menu offers:
 2. **Load a character and level up** — reads a saved `.txt` and advances it.
 3. **View a saved character** — prints the sheet.
 4. **Content settings** — which books are in play, and whether custom
-   origins, Tasha's optional class features, multiclassing and feats are
+   origins, TCE's optional class features, multiclassing and feats are
    allowed. The settings are written into the character file, so a character
    loaded to level up offers the content it was built with.
-5. **Item reference** — look up any item, magic item, weapon property,
-   trinket, lifestyle or service.
+5. **Reference** — look up any item, magic item, weapon property, trinket,
+   lifestyle, service or condition.
 6. **Manage a character's inventory** — pick things up, put them down,
    change what is worn, attune to magic items.
 7. **Manage a character's sidekicks** — add one, level it up, or write it
@@ -47,24 +46,23 @@ The main menu offers:
 - **Races** — all 9 from the PHB with their subraces, the dragonborn's
   draconic ancestry, the half-elf's floating ability increases and skill
   versatility, and the variant human's ability increases, skill and bonus
-  feat; plus the **33 races of *Monsters of the Multiverse***, from aarakocra
-  to yuan-ti. Tasha's "Customizing Your Origin" is off by default, so PHB
-  races keep their fixed increases; switching it on pools those points and
-  lets you place them. The Multiverse races have no fixed increases at all by
-  design, so they always choose their own spread whatever that setting
-  says.
-- **Classes** — the 12 PHB classes plus the **artificer** from Tasha's,
-  levels 1–20, with **101 subclasses**: the 40 from the PHB, 31 from
-  Xanathar's, 26 from Tasha's, and the artificer's four specialists. Class
-  and subclass features are listed at every level, along with the sub-choices
-  (totem animal, storm aura, kensei weapons, starry form, rune, genie kind,
-  Circle of the Land terrain, draconic bloodline).
+  feat; plus the **33 races of MPMM**, from aarakocra to yuan-ti. TCE's
+  "Customizing Your Origin" is off by default, so PHB races keep their fixed
+  increases; switching it on pools those points and lets you place them. The
+  MPMM races have no fixed increases at all by design, so they always choose
+  their own spread whatever that setting says.
+- **Classes** — the 12 PHB classes plus the **artificer** from TCE, levels
+  1–20, with **101 subclasses**: the 40 from the PHB, 31 from XGE, 26 from
+  TCE, and the artificer's four specialists. Class and subclass features are
+  listed at every level, along with the sub-choices (totem animal, storm aura,
+  kensei weapons, starry form, rune, genie kind, Circle of the Land terrain,
+  draconic bloodline).
 - **The artificer** — a half-caster that, unusually, has spell slots from
   1st level and counts half its levels **rounded up** towards the multiclass
   spellcaster table. Magical Tinkering, Infuse Item, Flash of Genius,
   Spell-Storing Item and the rest, the four specialists, and all 16 infusions
   with their minimum levels and the known/infused counts per level.
-- **Tasha's optional class features** — all 42, offered as opt-in choices at
+- **TCE's optional class features** — all 42, offered as opt-in choices at
   the class level that grants them, and recorded on the sheet with whatever
   PHB feature they replace. Favored Foe, Deft Explorer, Primal Awareness,
   Wild Companion, Harness Divine Power, Blessed Strikes, Steady Aim,
@@ -79,16 +77,16 @@ The main menu offers:
   spell slots use the multiclass spellcaster table when more than one class
   grants Spellcasting (and that class's own table when only one does).
 - **Ability Score Improvements** — at each ASI level, raise scores or take one
-  of **72 feats** (42 from the PHB, 15 from Tasha's, 15 racial feats from
-  Xanathar's), with prerequisites enforced — including the racial ones, so a
-  halfling is offered Bountiful Luck and Second Chance and a human is not.
-- **Backstory** — Xanathar's "This Is Your Life" tables: birthplace,
-  siblings, who raised you, family lifestyle, childhood home and memories,
-  occupation and more. Every table can be rolled on *or* read down and picked
-  from, and any of them skipped, so a player who already knows where their
-  character came from does not have to roll and then argue with the result.
-- **Spellcasting** — **477 spells**: 361 from the PHB, 95 from Xanathar's and
-  21 from Tasha's, each with level, school, ritual flag, casting time, range,
+  of **72 feats** (42 from the PHB, 15 from TCE, 15 racial feats from XGE),
+  with prerequisites enforced — including the racial ones, so a halfling is
+  offered Bountiful Luck and Second Chance and a human is not.
+- **Backstory** — XGE's "This Is Your Life" tables: birthplace, siblings, who
+  raised you, family lifestyle, childhood home and memories, occupation and
+  more. Every table can be rolled on *or* read down and picked from, and any
+  of them skipped, so a player who already knows where their character came
+  from does not have to roll and then argue with the result.
+- **Spellcasting** — **477 spells**: 361 from the PHB, 95 from XGE and 21
+  from TCE, each with level, school, ritual flag, casting time, range,
   components, duration and concentration. Cantrips and spells known/prepared
   are enforced per class, domain, oath, circle, patron and specialist spells
   are granted automatically at the right levels, and Pact Magic is tracked
@@ -114,11 +112,11 @@ The main menu offers:
   and terrains are all offered as menus and recorded on the sheet. Each list
   knows how many the class has by each level, so a character levelled in
   stages is asked exactly once for each.
-- **Beasts** — **88 stat blocks** from the *Monster Manual*. A druid's Wild
-  Shape lists the forms actually available at their level and circle, a Beast
-  Master picks a companion from the beasts that qualify, and a Pact of the
-  Chain warlock picks a familiar.
-- **Deities** — the **186 gods of appendix B** across nine pantheons, with
+- **Beasts** — **88 stat blocks** from the MM. A druid's Wild Shape lists the
+  forms actually available at their level and circle, a Beast Master picks a
+  companion from the beasts that qualify, and a Pact of the Chain warlock
+  picks a familiar.
+- **Deities** — the **195 gods of appendix B** across nine pantheons, with
   alignment, suggested domains and symbol. A cleric who has already chosen a
   domain sees which deities suggest it.
 - **Inventory** — the equipment step settles a character's starting gear;
@@ -128,13 +126,13 @@ The main menu offers:
   are actually worn (Armor Class follows), attune to at most three magic
   items, and set the purse. Nothing is ever sold: haggling over the price of
   a used breastplate is a conversation with the DM, not a menu.
-- **Sidekicks** — Tasha's Expert, Spellcaster and Warrior at levels 1–20,
-  built on any beast of challenge 1/2 or lower from the *Monster Manual*
-  tables or on a stat block typed in by hand. Each level's choices are
-  actually made — saving throw proficiency, martial role, spellcasting role
-  and its spells, and every ability score improvement. A sidekick is saved
-  inside its owner's file and can also be written out as its own sheet for
-  whoever is running it at the table.
+- **Sidekicks** — TCE's Expert, Spellcaster and Warrior at levels 1–20, built
+  on any beast of challenge 1/2 or lower from the MM tables or on a stat block
+  typed in by hand. Each level's choices are actually made — saving throw
+  proficiency, martial role, spellcasting role and its spells, and every
+  ability score improvement. A sidekick is saved inside its owner's file and
+  can also be written out as its own sheet for whoever is running it at the
+  table.
 - **Homebrew** — a DM can add items, magic items and spells of their own.
   Anything added appears wherever a printed entry would — in the shop, the
   spell picker, the item reference, on the sheet — and is marked as
@@ -162,7 +160,7 @@ The main menu offers:
   hides everything without deleting it.
 - **Backgrounds** — all 13, with their skills, tools, languages, feature, and
   suggested traits, ideals, bonds and flaws. Or build one of your own by the
-  Player's Handbook's own rules (p.125): any two skills, two tools or
+  PHB's own rules (p.125): any two skills, two tools or
   languages between them, and any feature — one borrowed from a printed
   background or written yourself.
 - **Notes and prose** — a character carries notes, each with a title and a
@@ -272,16 +270,18 @@ entries below it.
 
 ### Checking it against the books
 
-`TextFiles/` holds the books' text, extracted from the PDFs' text layer by
-`tools/pdf_text.py`. Nothing is built from it, and nothing reads the PDFs in
-`Books/` at all: the extraction is run once and its output is what everything
-else checks against.
+`TextFiles/` holds the text of the six sourcebooks, which is what every check
+below runs against. Nothing is built from it, and no sourcebook is
+distributed here: `tools/pdf_text.py` pulls the text layer out of a PDF you
+supply, once, and its output is what is checked in.
+
+    python3 tools/pdf_text.py /path/to/your/pdfs
 
 That text used to be OCR of scanned pages, and the difference is the
 difference between guessing and knowing. The OCR confused C with G and I with
 L, lost spaces inside words, read two-column stat blocks across the gutter,
-and dropped the Player's Handbook equipment table entirely -- not just the
-numbers, the names. Everything below became checkable when it was replaced.
+and dropped the PHB equipment table entirely -- not just the numbers, the
+names. Everything below became checkable when it was replaced.
 
 Three checks run over it:
 
@@ -305,8 +305,8 @@ so rather than reporting them as missing.
 Names are the cheap check. `tools/verify_equipment.py` and
 `tools/verify_deities.py` do the expensive one, comparing the numbers:
 
-- **All 214 Player's Handbook equipment rows** -- cost, weight, damage die and
-  type, armour class, the Dexterity cap, Strength requirement and stealth --
+- **All 214 PHB equipment rows** -- cost, weight, damage die and type,
+  armour class, the Dexterity cap, Strength requirement and stealth --
   against the book's own Armor, Weapons, Adventuring Gear, Tools, Mounts,
   Tack and Waterborne Vehicles tables, with the packs priced from the prose.
   This found four items ten times too heavy: crossbow bolts, sling bullets, a
@@ -322,15 +322,15 @@ Names are the cheap check. `tools/verify_equipment.py` and
 
 What the books themselves do not settle:
 
-- ***Trap the Soul*** appears on the Player's Handbook's wizard spell list
-  with no description anywhere in the book, and it is in neither Xanathar's
-  nor Tasha's. It is left out, and the extractor says so.
-- **The thirteen Sword Coast Adventurer's Guide backgrounds** are not here,
-  because that book is not among the six.
-- **Mordenkainen Presents: Monsters of the Multiverse** is the one book whose
-  dump is still OCR, since there is no PDF of it to read. Its races are
-  checked against that dump like everything else, but the numbers beside them
-  have not had the treatment above.
+- ***Trap the Soul*** appears on the PHB's wizard spell list with no
+  description anywhere in that book, and it is in neither XGE nor TCE. It is
+  left out, and the extractor says so.
+- **The thirteen SCAG backgrounds** are not here, because that book is not
+  among the six.
+- **MPMM** is the one book whose text is still OCR, no clean copy of it
+  having been to hand. Its races are checked against that text like
+  everything else, but the numbers beside them have not had the treatment
+  above.
 
 ## Testing
 
@@ -407,19 +407,17 @@ src/main.c             menu and entry point
 
 ## Scope
 
-Six books: the *Player's Handbook*, *Xanathar's Guide to Everything*,
-*Tasha's Cauldron of Everything*, the *Dungeon Master's Guide* (magic items),
-*Mordenkainen Presents: Monsters of the Multiverse* (races) and the *Monster
-Manual* (beasts), plus whatever the DM adds as homebrew. Any of them except
-the PHB can be switched off in the settings menu, which hides their races,
-classes, subclasses, spells, feats and items everywhere in the wizard.
+Six sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races) and MM
+(beasts), plus whatever the DM adds as homebrew. Any of them except the PHB
+can be switched off in the settings menu, which hides their races, classes,
+subclasses, spells, feats and items everywhere in the wizard.
 
 The item, magic item and spell banks are pointers rather than fixed arrays,
 so `src/homebrew.c` can replace each with the book's entries followed by the
 DM's. `ITEMS[i]` reads the same either way, which is why adding homebrew
 touched none of the eighty-odd places that read those tables.
 
-Tasha's sidekicks come from that book's chapter 4.
+TCE's sidekicks come from that book's chapter 4.
 
 ### What the sheet works out for you
 
