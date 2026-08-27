@@ -44,9 +44,15 @@ dataverify: $(DUMPBIN)
 	  if diff -r $$tmp data; then echo "data/ and the compiled tables agree"; \
 	  else rm -rf $$tmp; exit 1; fi; rm -rf $$tmp
 
-# Checks every name in data/ against the book dumps in TextFiles/.
+# Checks every name in data/ against the book text in TextFiles/.
 audit:
 	python3 tools/audit.py
+
+# Checks the numbers, not just the names: every PHB equipment row against
+# the book's own tables, and every deity against appendix B.
+verify:
+	python3 tools/verify_equipment.py
+	python3 tools/verify_deities.py
 
 # Assertions on the rules engine.
 TESTBIN  = selftest
@@ -59,7 +65,7 @@ test: $(TESTBIN)
 
 # Build many characters at random and check none of them crash, that a saved
 # character reloads unchanged, and that it all holds under valgrind.
-check: test dataverify $(BIN)
+check: test dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
@@ -68,4 +74,4 @@ check: test dataverify $(BIN)
 clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) $(DUMPBIN).d
 
-.PHONY: all clean check test data dataverify audit
+.PHONY: all clean check test data dataverify audit verify

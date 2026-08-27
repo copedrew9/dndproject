@@ -270,43 +270,66 @@ entries below it.
 
 ### Checking it against the books
 
-`TextFiles/` holds OCR'd text of the sourcebooks. Nothing is built from it;
-it is kept so the data can be checked against it. `tools/audit.py`
-(`make audit`) looks up every name in `data/` in the dump of the book it
-claims to come from and reports what it cannot find:
+`TextFiles/` holds the books' text, extracted from the PDFs' text layer by
+`tools/pdf_text.py`. Nothing is built from it; it is kept so the data can be
+checked against it. The PDFs themselves are not in the repository -- they are
+255MB and they are not ours to distribute -- so the extraction is run once and
+its output is what is checked in.
+
+That text used to be OCR of scanned pages, and the difference is the
+difference between guessing and knowing. The OCR confused C with G and I with
+L, lost spaces inside words, read two-column stat blocks across the gutter,
+and dropped the Player's Handbook equipment table entirely -- not just the
+numbers, the names. Everything below became checkable when it was replaced.
+
+Three checks run over it:
 
 ```sh
-make audit      # 2618 names checked against six book dumps
+make audit      # every name in data/ appears in the book it claims
+make verify     # the numbers beside those names are the book's too
+make check      # the above, plus the test suite
 ```
 
-Matching is deliberately tolerant, because the dumps are lossy in known ways:
-they confuse C with G and I with L, lose spaces inside words, and render small
-capitals as mixed case. So names are compared on their letters alone with
-those pairs folded together. That is enough to find real mistakes — it caught
-*Undying Servitude* tagged to Xanathar's when it is Tasha's, which meant the
-feature was hidden with the wrong book switched off.
+`tools/audit.py` looks up all 2,627 names -- races, classes, subclasses,
+features, feats, equipment, magic items, spells, deities, beasts -- in the
+dump of the book each claims to come from. All of them are found. Matching
+stays tolerant, because the typesetting still gets in the way: words are set
+with a space inside them, small capitals come back as mixed case, and a
+section opening with a decorative initial loses that letter altogether, which
+is why *Quickened Healing* is set as "UICKENED HEALING". Six names are ours
+rather than the book's -- "Standard Human", for a human the PHB prints under
+no heading of its own, and five composite feature names -- and the audit says
+so rather than reporting them as missing.
 
-What the audit reports as missing is worth stating plainly, because it is
-where the data is weakest:
+Names are the cheap check. `tools/verify_equipment.py` and
+`tools/verify_deities.py` do the expensive one, comparing the numbers:
 
-- **The PHB equipment table** is absent from that dump altogether — not just
-  the numbers, the names. Every cost, weight, damage die and armour value in
-  `data/equipment.txt` was typed from the book and cannot be cross-checked
-  against `TextFiles/`.
-- **Appendix B's deity columns** survive for the Forgotten Realms table and
-  for no other pantheon, so the alignment, domain and symbol columns of the
-  other eight were written from the book.
-- **Two "This Is Your Life" tables** (Alignment, and Life Events) are split
-  across columns in a way that cannot be read back, so they are absent rather
-  than guessed at.
-- **The Spellcaster sidekick's *Spells Known* column** is unreadable in the
-  OCR *and* in the PDF's own text layer, which is a subset-font encoding with
-  no ToUnicode map. The numbers in `data/world.txt` are a reconstruction
-  anchored on what the surrounding prose does state; the program says so on
-  screen when it uses them, so the DM can overrule it.
-- ***Trap the Soul*** appears on the PHB's wizard list with no description
-  anywhere in the book, and one 7th-level entry in Tasha's "Additional Druid
-  Spells" is destroyed in the dump. Both are left out rather than invented.
+- **All 214 Player's Handbook equipment rows** -- cost, weight, damage die and
+  type, armour class, the Dexterity cap, Strength requirement and stealth --
+  against the book's own Armor, Weapons, Adventuring Gear, Tools, Mounts,
+  Tack and Waterborne Vehicles tables, with the packs priced from the prose.
+  This found four items ten times too heavy: crossbow bolts, sling bullets, a
+  steel mirror and an orb, each stored in pounds where the column reads a
+  fraction.
+- **All 195 deities of appendix B** -- title, alignment, suggested domains and
+  symbol, compared pantheon by pantheon so that the two Tyrs, the two Surturs
+  and the two Silvanuses are each checked against the right table. The
+  hand-written rows had Vecna's symbol wrong, Incabulos's wrong, and the Norse
+  Tyr's title, alignment, domains and symbol all four; six nonhuman gods were
+  missing outright. `tools/extract_deities.py` reads the tables and writes the
+  rows now, and the verifier keeps them honest.
+
+What the books themselves do not settle:
+
+- ***Trap the Soul*** appears on the Player's Handbook's wizard spell list
+  with no description anywhere in the book, and it is in neither Xanathar's
+  nor Tasha's. It is left out, and the extractor says so.
+- **The thirteen Sword Coast Adventurer's Guide backgrounds** are not here,
+  because that book is not among the six.
+- **Mordenkainen Presents: Monsters of the Multiverse** is the one book whose
+  dump is still OCR, since there is no PDF of it to read. Its races are
+  checked against that dump like everything else, but the numbers beside them
+  have not had the treatment above.
 
 ## Testing
 
@@ -351,7 +374,11 @@ data/world.txt         gods, beasts, sidekicks, background tables
 homebrew.txt           the DM's own entries, read at run time
 tools/build_data.py    data/ -> src/gen_*.c
 tools/dump_data.c      src/gen_*.c -> data/, for `make dataverify`
+tools/pdf_text.py      the books' PDFs -> TextFiles/, run once
 tools/audit.py         checks every name in data/ against TextFiles/
+tools/verify_equipment.py  checks the PHB equipment numbers
+tools/verify_deities.py    checks appendix B, column by column
+tools/extract_deities.py   writes the DEITY rows from appendix B
 
 src/dnd.h              core types and the Character struct
 src/data.h             game data table types

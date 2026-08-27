@@ -73,8 +73,8 @@ ITEM|Acid (vial)|PHB|gear|2500|10|0|0|0|0||||
 ITEM|Alchemist's fire (flask)|PHB|gear|5000|10|0|0|0|0||||
 ITEM|Arrows (20)|PHB|gear|100|10|0|0|0|0||||
 ITEM|Blowgun needles (50)|PHB|gear|100|10|0|0|0|0||||
-ITEM|Crossbow bolts (20)|PHB|gear|100|150|0|0|0|0||||
-ITEM|Sling bullets (20)|PHB|gear|4|150|0|0|0|0||||
+ITEM|Crossbow bolts (20)|PHB|gear|100|15|0|0|0|0||||
+ITEM|Sling bullets (20)|PHB|gear|4|15|0|0|0|0||||
 ITEM|Antitoxin (vial)|PHB|gear|5000|0|0|0|0|0||||
 ITEM|Backpack|PHB|gear|200|50|0|0|0|0||||
 ITEM|Ball bearings (bag of 1,000)|PHB|gear|100|20|0|0|0|0||||
@@ -99,7 +99,7 @@ ITEM|Clothes, traveler's|PHB|gear|200|40|0|0|0|0||||
 ITEM|Component pouch|PHB|gear|2500|20|0|0|0|0||||
 ITEM|Crowbar|PHB|gear|200|50|0|0|0|0||||
 ITEM|Crystal (arcane focus)|PHB|gear|1000|10|0|0|0|0||||
-ITEM|Orb (arcane focus)|PHB|gear|2000|300|0|0|0|0||||
+ITEM|Orb (arcane focus)|PHB|gear|2000|30|0|0|0|0||||
 ITEM|Rod (arcane focus)|PHB|gear|1000|20|0|0|0|0||||
 ITEM|Staff (arcane focus)|PHB|gear|500|40|0|0|0|0||||
 ITEM|Wand (arcane focus)|PHB|gear|1000|10|0|0|0|0||||
@@ -129,7 +129,7 @@ ITEM|Lock|PHB|gear|1000|10|0|0|0|0||||
 ITEM|Magnifying glass|PHB|gear|10000|0|0|0|0|0||||
 ITEM|Manacles|PHB|gear|200|60|0|0|0|0||||
 ITEM|Mess kit|PHB|gear|20|10|0|0|0|0||||
-ITEM|Mirror, steel|PHB|gear|500|50|0|0|0|0||||
+ITEM|Mirror, steel|PHB|gear|500|5|0|0|0|0||||
 ITEM|Oil (flask)|PHB|gear|10|10|0|0|0|0||||
 ITEM|Paper (one sheet)|PHB|gear|20|0|0|0|0|0||||
 ITEM|Parchment (one sheet)|PHB|gear|10|0|0|0|0|0||||

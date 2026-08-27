@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Check every name in data/ against the book dumps in TextFiles/.
+"""Check every name in data/ against the book text in TextFiles/.
 
 The data files under data/ are hand-written and are the only source the
-program is built from. TextFiles/ holds OCR dumps of the books, and is kept
-for exactly this: looking each name up in the book it claims to come from
-and reporting what cannot be found.
+program is built from. TextFiles/ holds the books' text, and is kept for
+exactly this: looking each name up in the book it claims to come from and
+reporting what cannot be found.
 
-Matching has to be tolerant, because the dumps are lossy in known ways: they
-confuse C with G and I with L, lose spaces inside words and around
-punctuation, and render small capitals as mixed case. So names are compared
-on their letters alone, with those pairs folded together. A name that still
-cannot be found is either absent from the source or wrong in the data, and
-either way a person needs to look at it.
+Matching stays tolerant even though the text is now clean, because the
+typesetting still gets in the way: words are set with a space inside them,
+small capitals come back as mixed case, a section opening with a decorative
+initial loses that letter entirely, and a dozen ligatures do not survive. So
+names are compared on their letters alone, with the pairs the older OCR used
+to confuse still folded together -- it costs nothing and it is what makes a
+miss meaningful. A name that still cannot be found is either absent from the
+source or wrong in the data, and either way a person needs to look at it.
 """
 import os
 import re
@@ -22,6 +24,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 from build_data import read_file          # noqa: E402  (same record parser)
+from verify_equipment import ALIAS        # noqa: E402
 
 BOOKS = {
     "PHB":  "TextFiles/PHBtext.txt",
@@ -58,6 +61,21 @@ CHECKS = [
 ]
 
 
+# Names that are ours rather than the book's, with the reason. These are
+# reported apart from the real misses so that a genuine one stands out
+# instead of arriving in a crowd of expected ones.
+OURS = {
+    "Standard Human":
+        "the PHB prints the plain human with no heading of its own",
+    "Extra Elemental Discipline":
+        "our name for the extra disciplines the Four Elements monk gains",
+    "Inspiring Help improves": "our name for a feature's later upgrade",
+    "Extra Attack improves": "our name for a feature's later upgrade",
+    "Indomitable improves": "our name for a feature's later upgrade",
+    "Second Wind improves": "our name for a feature's later upgrade",
+}
+
+
 def squash(text):
     """Letters only, lowercased, with the dump's known confusions folded."""
     t = re.sub(r"[^A-Za-z]", "", text).lower()
@@ -78,6 +96,7 @@ def main():
             return 1
 
     files = {}
+    ours = {}
     total, missing_total, report = 0, 0, []
 
     for filename, tag, name_at, book_at, label in CHECKS:
@@ -91,9 +110,26 @@ def main():
             book = r.str(book_at) if book_at is not None else None
             if book == "Homebrew":
                 continue
+            if name in OURS:
+                ours.setdefault(name, OURS[name])
+                continue
             needle = squash(name)
             if len(needle) < 4:
                 continue                      # too short to match usefully
+
+            # What to look for. Besides the name itself: the name the book
+            # gives it where ours reads better in a menu; the part after a
+            # colon, for the features we name compositely ("Channel
+            # Divinity: Sacred Weapon"); and the name without its first
+            # letter, because a section opening with a decorative initial
+            # leaves that letter out of the text layer entirely, which is
+            # how Quickened Healing is set as "UICKENED HEALING".
+            tries = [needle]
+            if name in ALIAS:
+                tries.append(squash(ALIAS[name]))
+            if ": " in name:
+                tries.append(squash(name.split(": ", 1)[1]))
+            tries.append(needle[1:])
 
             # Check the book it claims first, then every other dump: a name
             # attested anywhere is at least real, even if it is tagged to
@@ -104,7 +140,8 @@ def main():
             found = None
             for b in order:
                 hay = haystacks[b]
-                if needle in hay or (len(head) >= 5 and head in hay):
+                if any(t in hay for t in tries) \
+                        or (len(head) >= 5 and head in hay):
                     found = b
                     break
             if found is None:
@@ -120,6 +157,11 @@ def main():
               % (label, n, len(misses)))
         for name, book, why in misses:
             print("    %-44s %-10s %s" % (name[:44], book, why))
+
+    if ours:
+        print("\nNames of our own, not the book's:")
+        for name, why in sorted(ours.items()):
+            print("    %-30s %s" % (name, why))
 
     print("\n%d names checked, %d could not be found" % (total, missing_total))
     return 0

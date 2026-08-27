@@ -1061,7 +1061,7 @@ OPTFEATURE|Wizard|TCE|3|Cantrip Formulas||After each long rest, replace one wiza
 # ADDSPELLS | class | spells added to the class list
 ADDSPELLS|Bard|color spray, command, aid, enlarge/reduce, mirror image, intellect fortress, mass healing word, phantasmal killer, rary's telepathic bond, heroes' feast, dream of the blue veil, prismatic spray, antipathy/sympathy, prismatic wall
 ADDSPELLS|Cleric|aura of vitality, spirit shroud, aura of life, aura of purity, summon celestial, sunbeam, sunburst, power word heal
-ADDSPELLS|Druid|protection from evil and good, augury, continual flame, enlarge/reduce, summon beast, aura of vitality, elemental weapon, revivify, summon fey, divination, fire shield, summon elemental, cone of cold, flesh to stone, incendiary cloud
+ADDSPELLS|Druid|protection from evil and good, augury, continual flame, enlarge/reduce, summon beast, aura of vitality, elemental weapon, revivify, summon fey, divination, fire shield, summon elemental, cone of cold, flesh to stone, symbol, incendiary cloud
 ADDSPELLS|Paladin|gentle repose, prayer of healing, warding bond, spirit shroud, summon celestial
 ADDSPELLS|Ranger|entangle, searing smite, aid, enhance ability, gust of wind, magic weapon, summon beast, elemental weapon, meld into stone, revivify, summon fey, dominate beast, summon elemental, greater restoration
 ADDSPELLS|Sorcerer|booming blade, green-flame blade, lightning lure, mind sliver, sword burst, grease, tasha's caustic brew, flame blade, flaming sphere, magic weapon, tasha's mind whip, intellect fortress, vampiric touch, fire shield, bigby's hand, flesh to stone, otiluke's freezing sphere, tasha's otherworldly guise, dream of the blue veil, demiplane, blade of disaster

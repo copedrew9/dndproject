@@ -3569,8 +3569,8 @@ const AdditionalSpells ADDITIONAL_SPELLS[] = {
       "protection from evil and good, augury, continual flame, "
       "enlarge/reduce, summon beast, aura of vitality, elemental "
       "weapon, revivify, summon fey, divination, fire shield, "
-      "summon elemental, cone of cold, flesh to stone, incendiary "
-      "cloud" },
+      "summon elemental, cone of cold, flesh to stone, symbol, "
+      "incendiary cloud" },
     { 6,
       "gentle repose, prayer of healing, warding bond, spirit "
       "shroud, summon celestial" },

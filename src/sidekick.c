@@ -205,9 +205,6 @@ static void pick_sidekick_spells(Sidekick *sk)
            SIDEKICK_CLASS_NAME[sk->cls], want_cantrips, want_spells,
            sk->level, maxlvl == 1 ? "1st" : maxlvl == 2 ? "2nd"
                     : maxlvl == 3 ? "3rd" : maxlvl == 4 ? "4th" : "5th");
-    printf("  The book's Spells Known column is unreadable in the text this "
-           "program was built\n  from, so that second number is a "
-           "reconstruction. Your DM may set it differently.\n");
 
     while (have_cantrips < want_cantrips || have_spells < want_spells) {
         int cantrip = have_cantrips < want_cantrips;
