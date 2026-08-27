@@ -34,6 +34,9 @@ typedef struct {
        table. Tables that hand out levels rather than experience do not want
        the line, so it can be switched off. */
     int experience;
+    /* Dice at the table: every roll the program would make is asked for
+       instead, so a player who rolls their own enters what came up. */
+    int manual_dice;
 } Settings;
 
 extern Settings SETTINGS;
@@ -266,7 +269,12 @@ int asi_levels_for(int class_id, int out[], int max);
 typedef struct {
     const char *name;
     SourceBook book;
-    Skill skills[2];
+    Skill skills[2];            /* SKL_COUNT where the book offers a choice */
+    /* Several SCAG backgrounds name one skill and let you choose the other,
+       or let you choose both. skill_choices is the pipe-separated list to
+       choose from, and is empty where the book fixes both. */
+    int skill_choice_count;
+    const char *skill_choices;
     const char *tool_profs;
     int extra_languages;
     const char *equipment;
@@ -604,7 +612,14 @@ int tools_in_group(const char *group, const char **out, int max);
 
 /* ------------------------------------------------------------------ lookups */
 
-extern const char *const LANGUAGES[];
+/* A language carries its book so that the regional tongues of the Realms
+   disappear along with the rest of SCAG when that book is switched off. */
+typedef struct {
+    const char *name;
+    SourceBook book;
+} LanguageData;
+
+extern const LanguageData LANGUAGES[];
 extern const int LANGUAGE_COUNT;
 
 /* The names the data files use for an item's category, a spell's school and

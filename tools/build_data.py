@@ -184,6 +184,7 @@ SKILLS = {
     "Performance": "SKL_PERFORMANCE", "Persuasion": "SKL_PERSUASION",
     "Religion": "SKL_RELIGION", "Sleight of Hand": "SKL_SLEIGHT_OF_HAND",
     "Stealth": "SKL_STEALTH", "Survival": "SKL_SURVIVAL",
+    "-": "SKL_COUNT",           # the background lets you choose this one
 }
 
 SIZES = {"Small": "SZ_SMALL", "Medium": "SZ_MEDIUM"}
@@ -289,8 +290,9 @@ def build_character():
     out.w('#include "data.h"\n')
 
     # --- languages
-    out.table("const char *const LANGUAGES[]",
-              ["    " + cstr(r.str(0)) for r in tags.get("LANGUAGE", [])],
+    out.table("const LanguageData LANGUAGES[]",
+              ["    { %s, %s }" % (cstr(r.str(0)), lookup(BOOKS, r, 1, "book"))
+               for r in tags.get("LANGUAGE", [])],
               "LANGUAGE_COUNT")
 
     # --- subraces, grouped under the race that owns them
@@ -573,12 +575,13 @@ def build_character():
             texts += ["      NULL"] * (cap - len(got))
             parts.append("    {\n" + ",\n".join(texts) + "\n    }")
         rows.append(
-            "    { %s, %s,\n      { %s, %s },\n      %s, %d,\n      %s,\n"
-            "      %d, %s,\n      %s,\n%s\n    }"
+            "    { %s, %s,\n      { %s, %s }, %d, %s,\n      %s, %d,\n"
+            "      %s,\n      %d, %s,\n      %s,\n%s\n    }"
             % (cstr(name), lookup(BOOKS, r, 1, "book"),
                lookup(SKILLS, r, 2, "skill"), lookup(SKILLS, r, 3, "skill"),
-               cstr(r.str(4)), r.int(5), cstr(r.str(6)), r.int(7),
-               cstr(r.str(8)), cstr(r.str(9)),
+               r.int(4), cstr(r.str(5)),
+               cstr(r.str(6)), r.int(7), cstr(r.str(8)), r.int(9),
+               cstr(r.str(10)), cstr(r.str(11)),
                ",\n".join(parts)))
     out.table("const BackgroundData BACKGROUNDS[]", rows, "BACKGROUND_COUNT")
     for tag, (_, store) in lists.items():

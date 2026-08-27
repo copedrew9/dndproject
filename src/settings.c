@@ -37,6 +37,8 @@ void settings_defaults(Settings *s)
     s->multiclassing = 1;
     s->feats = 1;
     s->experience = 1;
+    s->manual_dice = 0;
+    ui_set_manual_dice(s->manual_dice);
 }
 
 int book_enabled(SourceBook b)
@@ -71,7 +73,9 @@ static void show(const Settings *s)
            BOOK_COUNT + 4, s->feats ? 'x' : ' ');
     printf("   %2d) [%c] Experience on the sheet\n",
            BOOK_COUNT + 5, s->experience ? 'x' : ' ');
-    printf("   %2d) Done\n", BOOK_COUNT + 6);
+    printf("   %2d) [%c] Roll your own dice (the program asks instead)\n",
+           BOOK_COUNT + 6, s->manual_dice ? 'x' : ' ');
+    printf("   %2d) Done\n", BOOK_COUNT + 7);
 }
 
 void settings_menu(Settings *s)
@@ -86,9 +90,9 @@ void settings_menu(Settings *s)
         int pick;
 
         show(s);
-        pick = ui_int("  Toggle", 1, BOOK_COUNT + 6);
+        pick = ui_int("  Toggle", 1, BOOK_COUNT + 7);
 
-        if (pick == BOOK_COUNT + 6) break;
+        if (pick == BOOK_COUNT + 7) break;
         if (pick <= BOOK_COUNT) {
             int b = pick - 1;
             if (b == BOOK_PHB) {
@@ -103,9 +107,11 @@ void settings_menu(Settings *s)
         case 2: s->optional_features = !s->optional_features; break;
         case 3: s->multiclassing = !s->multiclassing; break;
         case 4: s->feats = !s->feats; break;
-        default: s->experience = !s->experience; break;
+        case 5: s->experience = !s->experience; break;
+        default: s->manual_dice = !s->manual_dice; break;
         }
     }
+    ui_set_manual_dice(s->manual_dice);
 
     /* Tasha's rules need Tasha's. */
     if (!s->book[BOOK_TCE] && (s->custom_origins || s->optional_features)) {
@@ -133,10 +139,11 @@ void settings_summary(const Settings *s, char *out, size_t n)
         first = 0;
     }
     snprintf(out + used, n - used, "; origins %s, optional features %s, "
-             "multiclassing %s, feats %s, experience %s",
+             "multiclassing %s, feats %s, experience %s, dice %s",
              s->custom_origins ? "custom" : "PHB",
              s->optional_features ? "on" : "off",
              s->multiclassing ? "on" : "off",
              s->feats ? "on" : "off",
-             s->experience ? "on" : "off");
+             s->experience ? "on" : "off",
+             s->manual_dice ? "your own" : "rolled");
 }

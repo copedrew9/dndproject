@@ -394,7 +394,8 @@ static void buy_with_gold(Character *c)
     printf(" gp.\n");
 
     if (ui_yesno("  Roll for starting gold?", 1)) {
-        rolled = roll_dice(cd->gold_dice, 4) * cd->gold_mult;
+        rolled = ui_roll(cd->gold_dice, 4, "starting gold")
+               * cd->gold_mult;
         printf("    Rolled %d gp.\n", rolled);
     } else {
         /* The average of d4 is 2.5; use the rounded expected value. */
@@ -561,7 +562,8 @@ static int roll_notation(const char *dice)
 {
     const char *d = strchr(dice, 'd');
     if (!d) return atoi(dice);
-    return roll_dice(d == dice ? 1 : atoi(dice), atoi(d + 1));
+    return ui_roll(d == dice ? 1 : atoi(dice), atoi(d + 1),
+                   "height and weight");
 }
 
 /* Offers the PHB's Random Height and Weight table where the books give a

@@ -37,6 +37,10 @@ const ItemData BOOK_ITEMS[] = {
       75000, 400, 15, 2, 0, 1,
       "", "", "",
       "" },
+    { "Spiked Armor", BOOK_SCAG, ITEM_MEDIUM_ARMOR,
+      7500, 450, 14, 2, 0, 1,
+      "", "", "",
+      "" },
     { "Ring mail", BOOK_PHB, ITEM_HEAVY_ARMOR,
       3000, 400, 14, 0, 0, 1,
       "", "", "",
@@ -905,6 +909,12 @@ const ItemNote ITEM_NOTES[] = {
     { "Half plate",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
       "doff 5 minutes. Disadvantage on Stealth." },
+    { "Spiked Armor",
+      "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
+      "doff 5 minutes. Disadvantage on Stealth. A rare dwarven make "
+      "-- a leather coat and leggings studded with metal spikes -- "
+      "and the armour a Path of the Battlerager barbarian needs "
+      "before any of its features do anything." },
     { "Ring mail",
       "Heavy armor: Dexterity does not apply. Don 10 minutes, doff "
       "5 minutes. Disadvantage on Stealth." },

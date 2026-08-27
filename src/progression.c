@@ -159,8 +159,10 @@ void grant_level_hp(Character *c, int class_id, int is_first_level)
     } else if (hp_use_average) {
         gain = die / 2 + 1;
     } else {
-        gain = roll_die(die);
-        printf("      Hit die (d%d) rolled: %d\n", die, gain);
+        gain = ui_roll_die(die, "this level's hit points");
+        if (!ui_manual_dice()) {
+            printf("      Hit die (d%d) rolled: %d\n", die, gain);
+        }
     }
     c->hp_rolls[c->hp_roll_count++] = gain;
 }

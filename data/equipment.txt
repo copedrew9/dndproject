@@ -19,6 +19,7 @@ ITEM|Chain shirt|PHB|medium-armour|5000|200|13|2|0|0||||
 ITEM|Scale mail|PHB|medium-armour|5000|450|14|2|0|1||||
 ITEM|Breastplate|PHB|medium-armour|40000|200|14|2|0|0||||
 ITEM|Half plate|PHB|medium-armour|75000|400|15|2|0|1||||
+ITEM|Spiked Armor|SCAG|medium-armour|7500|450|14|2|0|1||||
 ITEM|Ring mail|PHB|heavy-armour|3000|400|14|0|0|1||||
 ITEM|Chain mail|PHB|heavy-armour|7500|550|16|0|13|1||||
 ITEM|Splint armor|PHB|heavy-armour|20000|600|17|0|15|1||||
@@ -235,6 +236,7 @@ ITEMNOTE|Chain shirt|Medium armor worn under clothing: add up to +2 from Dexteri
 ITEMNOTE|Scale mail|Medium armor: add up to +2 from Dexterity. Don 5 minutes, doff 1 minute. Disadvantage on Stealth.
 ITEMNOTE|Breastplate|Medium armor that leaves the limbs free: add up to +2 from Dexterity. Don 5 minutes, doff 1 minute.
 ITEMNOTE|Half plate|Medium armor: add up to +2 from Dexterity. Don 5 minutes, doff 5 minutes. Disadvantage on Stealth.
+ITEMNOTE|Spiked Armor|Medium armor: add up to +2 from Dexterity. Don 5 minutes, doff 5 minutes. Disadvantage on Stealth. A rare dwarven make -- a leather coat and leggings studded with metal spikes -- and the armour a Path of the Battlerager barbarian needs before any of its features do anything.
 ITEMNOTE|Ring mail|Heavy armor: Dexterity does not apply. Don 10 minutes, doff 5 minutes. Disadvantage on Stealth.
 ITEMNOTE|Chain mail|Heavy armor: Dexterity does not apply. Requires Strength 13 or your speed drops by 10 feet. Don 10 minutes, doff 5 minutes. Disadvantage on Stealth.
 ITEMNOTE|Splint armor|Heavy armor: Dexterity does not apply. Requires Strength 15 or your speed drops by 10 feet. Don 10 minutes, doff 5 minutes. Disadvantage on Stealth.

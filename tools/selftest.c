@@ -406,6 +406,38 @@ static void test_data_integrity(void)
         EQ(phb, 9, "PHB races");
         EQ(mtf, 33, "Monsters of the Multiverse races");
         EQ(RACE_COUNT, phb + mtf, "every race is from the PHB or Multiverse");
+    }
+    {
+        int phb = 0, scag = 0, k;
+        for (k = 0; k < SUBRACE_COUNT; k++) {
+            if (SUBRACES[k].book == BOOK_PHB) phb++;
+            if (SUBRACES[k].book == BOOK_SCAG) scag++;
+        }
+        EQ(phb, 11, "PHB subraces");
+        EQ(scag, 19, "SCAG subraces");
+        EQ(SUBRACE_COUNT, phb + scag, "every subrace is from the PHB or SCAG");
+
+        /* A race reaches its subraces through a window into the table, so
+           every subrace has to fall inside exactly one race's window: one
+           written out of place would be unreachable, or would show up
+           under the wrong race. */
+        for (k = 0; k < SUBRACE_COUNT; k++) {
+            int r, owners = 0;
+            for (r = 0; r < RACE_COUNT; r++) {
+                if (k >= RACES[r].first_subrace
+                    && k < RACES[r].first_subrace + RACES[r].subrace_count) {
+                    owners++;
+                }
+            }
+            if (owners != 1) {
+                printf("  FAIL subrace \"%s\" is claimed by %d races\n",
+                       SUBRACES[k].name, owners);
+                failures++;
+            }
+        }
+    }
+    {
+        int k;
 
         /* The Multiverse races have no fixed increases at all; the spread
            is always chosen, so each must say so. */
@@ -426,7 +458,8 @@ static void test_data_integrity(void)
         }
     }
     EQ(CLASS_COUNT, 13, "classes (12 PHB + the artificer)");
-    EQ(BACKGROUND_COUNT, 25, "backgrounds, 13 from the PHB and 12 from SCAG");
+    EQ(BACKGROUND_COUNT, 26,
+       "backgrounds, 13 from the PHB and 13 from SCAG");
     {
         int phb = 0, scag = 0, k;
         for (k = 0; k < BACKGROUND_COUNT; k++) {
@@ -434,7 +467,50 @@ static void test_data_integrity(void)
             if (BACKGROUNDS[k].book == BOOK_SCAG) scag++;
         }
         EQ(phb, 13, "PHB backgrounds");
-        EQ(scag, 12, "SCAG backgrounds");
+        EQ(scag, 13,
+           "SCAG backgrounds, the City Watch investigator among them");
+    }
+    {
+        /* Every background hands out exactly two skills, whether it names
+           them or leaves them to the player, and every name it offers has
+           to be a skill that exists. */
+        int k, with_choices = 0;
+        for (k = 0; k < BACKGROUND_COUNT; k++) {
+            const BackgroundData *b = &BACKGROUNDS[k];
+            int fixed = 0, q, np;
+            char buf[256];
+            const char *parts[24];
+
+            for (q = 0; q < 2; q++) if (b->skills[q] < SKL_COUNT) fixed++;
+            if (fixed + b->skill_choice_count != 2) {
+                printf("  FAIL background \"%s\" grants %d skills, not 2\n",
+                       b->name, fixed + b->skill_choice_count);
+                failures++;
+            }
+            if (!b->skill_choice_count) {
+                if (b->skill_choices[0]) {
+                    printf("  FAIL background \"%s\" offers skills it never "
+                           "asks for\n", b->name);
+                    failures++;
+                }
+                continue;
+            }
+            with_choices++;
+            np = split_pipe(b->skill_choices, buf, sizeof buf, parts, 24);
+            if (np <= b->skill_choice_count) {
+                printf("  FAIL background \"%s\" offers %d skills to choose "
+                       "%d from\n", b->name, np, b->skill_choice_count);
+                failures++;
+            }
+            for (q = 0; q < np; q++) {
+                if (skill_by_name(parts[q]) < 0) {
+                    printf("  FAIL background \"%s\" offers \"%s\", which is "
+                           "not a skill\n", b->name, parts[q]);
+                    failures++;
+                }
+            }
+        }
+        EQ(with_choices, 5, "SCAG backgrounds that leave a skill to you");
     }
     {
         int phb = 0, tce = 0, k;
@@ -442,14 +518,17 @@ static void test_data_integrity(void)
             if (FEATS[k].book == BOOK_PHB) phb++;
             if (FEATS[k].book == BOOK_TCE) tce++;
         }
-        int xge = 0;
+        int xge = 0, scag = 0;
         for (k = 0; k < FEAT_COUNT; k++) {
             if (FEATS[k].book == BOOK_XGE) xge++;
+            if (FEATS[k].book == BOOK_SCAG) scag++;
         }
         EQ(phb, 42, "PHB feats");
         EQ(tce, 15, "Tasha's feats");
         EQ(xge, 15, "Xanathar's racial feats");
-        EQ(FEAT_COUNT, phb + tce + xge, "every feat comes from a book");
+        EQ(scag, 1, "SCAG's deep gnome feat");
+        EQ(FEAT_COUNT, phb + tce + xge + scag,
+           "every feat comes from a book");
 
         /* Every racial feat must name races that exist, or it could never
            be offered to anyone. */
@@ -503,7 +582,17 @@ static void test_data_integrity(void)
             failures++;
         }
     }
-    EQ(SUBCLASS_COUNT, 101, "subclasses across the three books");
+    EQ(SUBCLASS_COUNT, 107, "subclasses across the four books");
+    {
+        int by_book[BOOK_COUNT], k;
+        for (k = 0; k < BOOK_COUNT; k++) by_book[k] = 0;
+        for (k = 0; k < SUBCLASS_COUNT; k++) by_book[SUBCLASSES[k].book]++;
+        EQ(by_book[BOOK_PHB], 40, "PHB subclasses");
+        EQ(by_book[BOOK_XGE], 31, "XGE subclasses");
+        EQ(by_book[BOOK_TCE], 30, "TCE subclasses");
+        EQ(by_book[BOOK_SCAG], 6,
+           "SCAG subclasses, the five XGE reprinted not counted twice");
+    }
     /* Every feature must name a class that exists and a level in range. */
     for (i = 0; i < FEATURE_COUNT; i++) {
         if (FEATURES[i].class_id < 0 || FEATURES[i].class_id >= CLASS_COUNT

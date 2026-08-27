@@ -40,6 +40,7 @@ BOOKS = {
 # holds the source book (None when the record does not carry one, in which
 # case the name is looked for in every dump), and a label for the report.
 CHECKS = [
+    ("character.txt", "LANGUAGE",   0, 1,    "languages"),
     ("character.txt", "RACE",       0, 1,    "races"),
     ("character.txt", "SUBRACE",    1, 2,    "subraces"),
     ("character.txt", "CLASS",      0, 1,    "classes"),
@@ -74,6 +75,15 @@ OURS = {
     "Extra Attack improves": "our name for a feature's later upgrade",
     "Indomitable improves": "our name for a feature's later upgrade",
     "Second Wind improves": "our name for a feature's later upgrade",
+    # SCAG allows Feral alongside any one of the three variants it does call
+    # mutually exclusive, so those pairings are offered as subraces of their
+    # own. The book names the halves, not the pairs.
+    "Feral Devil's Tongue":
+        "our name for two SCAG tiefling variants taken together",
+    "Feral Hellfire":
+        "our name for two SCAG tiefling variants taken together",
+    "Feral Winged":
+        "our name for two SCAG tiefling variants taken together",
 }
 
 

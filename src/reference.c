@@ -366,7 +366,7 @@ static void browse_trinkets(void)
 
     if (mode == 2) return;
     if (mode == 0) {
-        i = roll_die(100) - 1;
+        i = ui_roll_die(100, "a trinket") - 1;
         printf("\n  %d: ", i + 1);
         ui_wrap(TRINKETS[i], 6);
         return;

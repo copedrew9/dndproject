@@ -109,9 +109,12 @@ static void dump_character(void)
         "backgrounds, feats");
     int i, j;
 
-    head(f, "LANGUAGE", "name");
+    head(f, "LANGUAGE", "name | book");
     for (i = 0; i < LANGUAGE_COUNT; i++) {
-        rec(f, "LANGUAGE"); field(f, LANGUAGES[i]); end(f);
+        rec(f, "LANGUAGE");
+        field(f, LANGUAGES[i].name);
+        field(f, book_of(LANGUAGES[i].book));
+        end(f);
     }
 
     head(f, "RACE", "name | book | STR | DEX | CON | INT | WIS | CHA | "
@@ -394,7 +397,7 @@ static void dump_character(void)
         }
     }
 
-    head(f, "BACKGROUND", "name | book | skill1 | skill2 | tool_profs | "
+    head(f, "BACKGROUND", "name | book | skill1 | skill2 | skill_choice_count | skill_choices | tool_profs | "
                           "extra_languages | equipment | gold | "
                           "feature_name | feature_summary");
     head(f, "BGTRAIT/BGIDEAL/BGBOND/BGFLAW", "background | text");
@@ -412,6 +415,8 @@ static void dump_character(void)
         field(f, book_of(b->book));
         field(f, skill_of(b->skills[0]));
         field(f, skill_of(b->skills[1]));
+        num(f, b->skill_choice_count);
+        field(f, b->skill_choices);
         field(f, b->tool_profs);
         num(f, b->extra_languages);
         field(f, b->equipment);

@@ -261,6 +261,60 @@ int roll_4d6_drop_lowest(void)
     return total;
 }
 
+/* Dice ---------------------------------------------------------------------
+ *
+ * Every roll the program makes goes through these, so that a table which
+ * rolls its own dice can switch the generator off and be asked instead. The
+ * prompt names what the roll is for and accepts only what those dice could
+ * actually have produced.
+ */
+
+static int manual_dice;
+
+void ui_set_manual_dice(int on) { manual_dice = on ? 1 : 0; }
+int  ui_manual_dice(void)       { return manual_dice; }
+
+int ui_roll(int count, int sides, const char *what)
+{
+    char prompt[160];
+
+    if (count < 1) count = 1;
+    if (sides < 2) sides = 20;
+    if (!manual_dice) return roll_dice(count, sides);
+
+    snprintf(prompt, sizeof prompt, "  Roll %dd%d for %s, and enter the total",
+             count, sides, what ? what : "this");
+    return ui_int(prompt, count, count * sides);
+}
+
+int ui_roll_die(int sides, const char *what)
+{
+    return ui_roll(1, sides, what);
+}
+
+/* The four dice are asked for one at a time rather than as a total, because
+   the lowest is dropped and the player should see which one went. */
+int ui_roll_4d6_drop_lowest(const char *what)
+{
+    int r[4], i, lowest = 0, total = 0;
+    char prompt[160];
+
+    if (!manual_dice) return roll_4d6_drop_lowest();
+
+    printf("\n  Roll 4d6 for %s.\n", what ? what : "an ability score");
+    for (i = 0; i < 4; i++) {
+        snprintf(prompt, sizeof prompt, "    die %d of 4", i + 1);
+        r[i] = ui_int(prompt, 1, 6);
+        if (r[i] < r[lowest]) lowest = i;
+    }
+    for (i = 0; i < 4; i++) {
+        if (i != lowest) total += r[i];
+    }
+    printf("    %d, %d, %d, %d -- dropping the %d gives %d.\n",
+           r[0], r[1], r[2], r[3], r[lowest], total);
+    return total;
+}
+
 /* Utility ------------------------------------------------------------------ */
 
 /* Case-insensitive substring test. */

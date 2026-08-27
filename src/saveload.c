@@ -6,6 +6,7 @@
  * stored so the file stays valid if the game data is extended.
  */
 #include "saveload.h"
+#include "ui.h"
 #include "data.h"
 #include "sidekick.h"
 #include "build.h"
@@ -651,9 +652,9 @@ static void write_data(FILE *f, const Character *c)
         }
         if (!w) fprintf(f, "%s", BOOK_ABBREV[BOOK_PHB]);
     }
-    fprintf(f, "|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
+    fprintf(f, "|%d|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
             SETTINGS.optional_features, SETTINGS.multiclassing,
-            SETTINGS.feats, SETTINGS.experience);
+            SETTINGS.feats, SETTINGS.experience, SETTINGS.manual_dice);
     fprintf(f, "NAME|%s\n", c->name);
     fprintf(f, "PLAYER|%s\n", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
@@ -928,6 +929,8 @@ int load_character(const char *path, Character *c)
             /* Written since the experience line became optional; a file
                from before that has the line, as it always did. */
             SETTINGS.experience = (at + 4 < n) ? atoi(fields[at + 4]) : 1;
+            SETTINGS.manual_dice = (at + 5 < n) ? atoi(fields[at + 5]) : 0;
+            ui_set_manual_dice(SETTINGS.manual_dice);
         } else if (!strcmp(fields[0], "NAME") && n >= 2) {
             copy_field(c->name, sizeof c->name, fields[1]);
         } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {

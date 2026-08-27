@@ -45,6 +45,16 @@ int  roll_die(int sides);
 int  roll_dice(int count, int sides);
 int  roll_4d6_drop_lowest(void);
 
+/* Dice at the table rather than in the program. When this is switched on,
+   every roll the program would make is asked for instead, so a player who
+   rolls their own can enter what came up. `what` names what is being rolled
+   for, since a prompt out of context is no use. */
+void ui_set_manual_dice(int on);
+int  ui_manual_dice(void);
+int  ui_roll(int count, int sides, const char *what);
+int  ui_roll_die(int sides, const char *what);
+int  ui_roll_4d6_drop_lowest(const char *what);
+
 /* A menu whose last entry lets the answer be typed instead. */
 void ui_pick_or_type(const char *prompt, const char *const *options,
                      int count, char *out, size_t n);

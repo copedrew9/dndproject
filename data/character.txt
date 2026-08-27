@@ -10,23 +10,41 @@
 # tools/build_data.py turns this file into C. Run `make data` after an
 # edit; it checks every cross-reference and refuses to write on an error.
 
-# LANGUAGE | name
-LANGUAGE|Common
-LANGUAGE|Dwarvish
-LANGUAGE|Elvish
-LANGUAGE|Giant
-LANGUAGE|Gnomish
-LANGUAGE|Goblin
-LANGUAGE|Halfling
-LANGUAGE|Orc
-LANGUAGE|Abyssal
-LANGUAGE|Celestial
-LANGUAGE|Deep Speech
-LANGUAGE|Draconic
-LANGUAGE|Infernal
-LANGUAGE|Primordial
-LANGUAGE|Sylvan
-LANGUAGE|Undercommon
+# LANGUAGE | name | book
+LANGUAGE|Common|PHB
+LANGUAGE|Dwarvish|PHB
+LANGUAGE|Elvish|PHB
+LANGUAGE|Giant|PHB
+LANGUAGE|Gnomish|PHB
+LANGUAGE|Goblin|PHB
+LANGUAGE|Halfling|PHB
+LANGUAGE|Orc|PHB
+LANGUAGE|Abyssal|PHB
+LANGUAGE|Celestial|PHB
+LANGUAGE|Deep Speech|PHB
+LANGUAGE|Draconic|PHB
+LANGUAGE|Infernal|PHB
+LANGUAGE|Primordial|PHB
+LANGUAGE|Sylvan|PHB
+LANGUAGE|Undercommon|PHB
+LANGUAGE|Dambrathan|SCAG
+LANGUAGE|Midani|SCAG
+LANGUAGE|Alzhedo|SCAG
+LANGUAGE|Waelan|SCAG
+LANGUAGE|Guran|SCAG
+LANGUAGE|Halruaan|SCAG
+LANGUAGE|Illuskan|SCAG
+LANGUAGE|Roushoum|SCAG
+LANGUAGE|Chessentan|SCAG
+LANGUAGE|Mulhorandi|SCAG
+LANGUAGE|Untheric|SCAG
+LANGUAGE|Thayan|SCAG
+LANGUAGE|Rashemi|SCAG
+LANGUAGE|Shaaran|SCAG
+LANGUAGE|Shou|SCAG
+LANGUAGE|Tuigan|SCAG
+LANGUAGE|Turmic|SCAG
+LANGUAGE|Uluik|SCAG
 
 # RACE | name | book | STR | DEX | CON | INT | WIS | CHA | speed | size | darkvision | languages | extra_languages | extra_skills | choice_asi_count | choice_asi_amount | bonus_feats | has_ancestry | origin_choice | traits
 RACE|Dwarf|PHB|0|0|2|0|0|0|25|Medium|60|Common, Dwarvish|0|0|0|0|0|0|0|Darkvision: 60 feet\|Dwarven Resilience: advantage on saves against poison, and resistance to poison damage\|Dwarven Combat Training: battleaxe, handaxe, light hammer, warhammer\|Tool Proficiency: smith's, brewer's or mason's tools\|Stonecunning: double proficiency on History checks about stonework\|Speed is not reduced by wearing heavy armor
@@ -75,15 +93,34 @@ RACE|Yuan-ti|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 f
 # SUBRACE | race | name | book | STR | DEX | CON | INT | WIS | CHA | speed_override | darkvision_override | extra_languages | choice_asi_count | extra_skills | bonus_feats | replaces_race_asi | traits
 SUBRACE|Dwarf|Hill Dwarf|PHB|0|0|0|0|1|0|0|0|0|0|0|0|0|Dwarven Toughness: your hit point maximum increases by 1, and by 1 again every time you gain a level
 SUBRACE|Dwarf|Mountain Dwarf|PHB|2|0|0|0|0|0|0|0|0|0|0|0|0|Dwarven Armor Training: proficiency with light and medium armor
+SUBRACE|Dwarf|Duergar (Gray Dwarf)|SCAG|1|0|0|0|0|0|0|120|0|0|0|0|0|Superior Darkvision: 120 feet\|Extra Language: Undercommon\|Duergar Resilience: advantage on saves against illusions, and against being charmed or paralysed\|Duergar Magic: cast enlarge/reduce on yourself from 3rd level, using only the enlarge option, and invisibility on yourself from 5th, each once per long rest and needing no material components, using Intelligence; neither can be cast in direct sunlight, though sunlight does not end one already cast\|Sunlight Sensitivity: disadvantage on attacks and sight-based Perception in direct sunlight
 SUBRACE|Elf|High Elf|PHB|0|0|0|1|0|0|0|0|1|0|0|0|0|Elf Weapon Training: longsword, shortsword, shortbow, longbow\|Cantrip: one wizard cantrip, cast with Intelligence
 SUBRACE|Elf|Wood Elf|PHB|0|0|0|0|1|0|35|0|0|0|0|0|0|Elf Weapon Training: longsword, shortsword, shortbow, longbow\|Fleet of Foot: base walking speed 35 feet\|Mask of the Wild: hide when lightly obscured by natural phenomena
 SUBRACE|Elf|Dark Elf (Drow)|PHB|0|0|0|0|0|1|0|120|0|0|0|0|0|Superior Darkvision: 120 feet\|Sunlight Sensitivity: disadvantage on attacks and sight-based Perception in direct sunlight\|Drow Magic: dancing lights; faerie fire at 3rd level; darkness at 5th level, each once per long rest, using Charisma\|Drow Weapon Training: rapier, shortsword, hand crossbow
 SUBRACE|Halfling|Lightfoot Halfling|PHB|0|0|0|0|0|1|0|0|0|0|0|0|0|Naturally Stealthy: hide behind a creature at least one size larger
 SUBRACE|Halfling|Stout Halfling|PHB|0|0|1|0|0|0|0|0|0|0|0|0|0|Stout Resilience: advantage on saves against poison, and resistance to poison damage
+SUBRACE|Halfling|Ghostwise Halfling|SCAG|0|0|0|0|1|0|0|0|0|0|0|0|0|Silent Speech: speak telepathically to one creature within 30 feet at a time, which understands you only if you share a language
 SUBRACE|Human|Standard Human|PHB|0|0|0|0|0|0|0|0|0|0|0|0|0|
 SUBRACE|Human|Variant Human|PHB|0|0|0|0|0|0|0|0|0|2|1|1|1|Ability Score Increase: +1 to two abilities of your choice\|Skills: proficiency in one skill of your choice\|Feat: one feat of your choice
 SUBRACE|Gnome|Forest Gnome|PHB|0|1|0|0|0|0|0|0|0|0|0|0|0|Natural Illusionist: you know the minor illusion cantrip, cast with Intelligence\|Speak with Small Beasts: communicate simple ideas to Small or smaller beasts
 SUBRACE|Gnome|Rock Gnome|PHB|0|0|1|0|0|0|0|0|0|0|0|0|0|Artificer's Lore: double proficiency on History checks about magic, alchemical or technological items\|Tinker: proficiency with tinker's tools; build Tiny clockwork devices
+SUBRACE|Gnome|Svirfneblin (Deep Gnome)|SCAG|0|1|0|0|0|0|0|120|0|0|0|0|0|Superior Darkvision: 120 feet\|Stone Camouflage: advantage on Stealth checks to hide in rocky terrain\|Extra Language: Undercommon
+SUBRACE|Half-Elf|Skill Versatility|SCAG|0|0|0|0|0|0|0|0|0|0|0|0|0|Skill Versatility: proficiency in two skills of your choice, as the Player's Handbook has it
+SUBRACE|Half-Elf|Keen Senses|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Keen Senses: proficiency in Perception. This replaces Skill Versatility
+SUBRACE|Half-Elf|Elf Weapon Training|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Elf Weapon Training: proficiency with the longsword, shortsword, shortbow and longbow, from a wood, moon or sun elf parent. This replaces Skill Versatility
+SUBRACE|Half-Elf|Fleet of Foot|SCAG|0|0|0|0|0|0|35|0|0|0|-2|0|0|Fleet of Foot: your walking speed rises to 35 feet, from a wood elf parent. This replaces Skill Versatility
+SUBRACE|Half-Elf|Mask of the Wild|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Mask of the Wild: you can hide when only lightly obscured by foliage, heavy rain, falling snow, mist or other natural phenomena, from a wood elf parent. This replaces Skill Versatility
+SUBRACE|Half-Elf|Cantrip|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Cantrip: one wizard cantrip of your choice, using Intelligence, from a moon or sun elf parent. This replaces Skill Versatility
+SUBRACE|Half-Elf|Drow Magic|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Drow Magic: you know dancing lights; faerie fire at 3rd level and darkness at 5th, each once per long rest, using Charisma, from a drow parent. This replaces Skill Versatility
+SUBRACE|Half-Elf|Swimming Speed|SCAG|0|0|0|0|0|0|0|0|0|0|-2|0|0|Swimming Speed: a swimming speed of 30 feet, from an aquatic elf parent. This replaces Skill Versatility
+SUBRACE|Tiefling|Mark of Asmodeus|SCAG|0|0|0|0|0|0|0|0|0|0|0|0|0|Mark of Asmodeus: the tiefling of the Player's Handbook, unchanged. The archdevil's rite claimed every tiefling in the world a century ago, and his bloodline is still the most numerous in Faerun. Take this to keep the race's own ability increases and Infernal Legacy
+SUBRACE|Tiefling|Feral|SCAG|0|2|0|1|0|0|0|0|0|0|0|0|1|Feral: your Dexterity increases by 2 and your Intelligence by 1, replacing the tiefling's usual increases
+SUBRACE|Tiefling|Devil's Tongue|SCAG|0|0|0|0|0|0|0|0|0|0|0|0|0|Devil's Tongue: you know vicious mockery; cast charm person as a 2nd-level spell from 3rd level and enthrall from 5th, each once per long rest, using Charisma. This replaces Infernal Legacy
+SUBRACE|Tiefling|Hellfire|SCAG|0|0|0|0|0|0|0|0|0|0|0|0|0|Hellfire: from 3rd level you can cast burning hands once per day as a 2nd-level spell. This replaces the hellish rebuke of Infernal Legacy; the rest of that trait stands
+SUBRACE|Tiefling|Winged|SCAG|0|0|0|0|0|0|0|0|0|0|0|0|0|Winged: bat-like wings sprout from your shoulder blades, giving you a flying speed of 30 feet. This replaces Infernal Legacy
+SUBRACE|Tiefling|Feral Devil's Tongue|SCAG|0|2|0|1|0|0|0|0|0|0|0|0|1|Feral: your Dexterity increases by 2 and your Intelligence by 1, replacing the tiefling's usual increases\|Devil's Tongue: you know vicious mockery; cast charm person as a 2nd-level spell from 3rd level and enthrall from 5th, each once per long rest, using Charisma. This replaces Infernal Legacy
+SUBRACE|Tiefling|Feral Hellfire|SCAG|0|2|0|1|0|0|0|0|0|0|0|0|1|Feral: your Dexterity increases by 2 and your Intelligence by 1, replacing the tiefling's usual increases\|Hellfire: from 3rd level you can cast burning hands once per day as a 2nd-level spell. This replaces the hellish rebuke of Infernal Legacy; the rest of that trait stands
+SUBRACE|Tiefling|Feral Winged|SCAG|0|2|0|1|0|0|0|0|0|0|0|0|1|Feral: your Dexterity increases by 2 and your Intelligence by 1, replacing the tiefling's usual increases\|Winged: bat-like wings sprout from your shoulder blades, giving you a flying speed of 30 feet. This replaces Infernal Legacy
 
 # BODY | race | subrace | base height in inches | height modifier dice | base weight in pounds | weight multiplier dice
 BODY|Human||56|2d10|110|2d4
@@ -313,6 +350,12 @@ SUBCLASS|Warlock|The Fathomless|TCE|Something vast in the deep: a tentacle answe
 SUBCLASS|Warlock|The Genie|TCE|A noble genie's pact, with a vessel to shelter in and elemental wrath.|detect evil and good\|phantasmal force\|create food and water\|phantasmal killer\|creation|Genie kind|Dao (earth)\|Djinni (air)\|Efreeti (fire)\|Marid (water)
 SUBCLASS|Wizard|Bladesinging|TCE|An elven tradition of sword and spell woven into one dance.|||
 SUBCLASS|Wizard|Order of Scribes|TCE|Your spellbook awakens; you rewrite spells and let the book take a hit.|||
+SUBCLASS|Barbarian|Path of the Battlerager|SCAG|Dwarves who fight in spiked armour, using it as a weapon and giving themselves to the fury of battle.|||
+SUBCLASS|Cleric|Arcana Domain|SCAG|A cleric of the gods of magic, drawing on the wizard's art alongside your own.|detect magic, magic missile\|magic weapon, Nystul's magic aura\|dispel magic, magic circle\|arcane eye, Leomund's secret chest\|planar binding, teleportation circle||
+SUBCLASS|Fighter|Purple Dragon Knight|SCAG|A knight of Cormyr, called a banneret elsewhere, who turns a band of allies into a war band.|||
+SUBCLASS|Monk|Way of the Long Death|SCAG|Monks obsessed with the mechanics of dying, who draw vitality from the deaths of others.|||
+SUBCLASS|Paladin|Oath of the Crown|SCAG|An oath sworn to the ideals of civilisation and the sovereign who embodies them.|command, compelled duel\|warding bond, zone of truth\|aura of vitality, spirit guardians\|banishment, guardian of faith\|circle of power, geas||
+SUBCLASS|Warlock|The Undying|SCAG|A patron who has cheated death itself, and grants a measure of that endurance.|false life, ray of sickness\|blindness/deafness, silence\|feign death, speak with dead\|aura of life, death ward\|contagion, legend lore||
 
 # FEATURE | class | subclass (blank for the class itself) | level | name | summary
 FEATURE|Barbarian||1|Rage|Enter a rage as a bonus action: advantage on Strength checks and saves, bonus melee damage, resistance to bludgeoning, piercing and slashing damage.
@@ -1049,6 +1092,32 @@ FEATURE|Wizard|Order of Scribes|2|Awakened Spellbook|Change a spell's damage typ
 FEATURE|Wizard|Order of Scribes|6|Manifest Mind|Send your spellbook's mind out as a spectral presence to scout and cast from.
 FEATURE|Wizard|Order of Scribes|10|Master Scrivener|Create a magic scroll from a spare spellbook after each long rest.
 FEATURE|Wizard|Order of Scribes|14|One with the Word|Sacrifice a spell slot to avoid damage; if the book is destroyed you may age instead.
+FEATURE|Barbarian|Path of the Battlerager|3|Battlerager Armor|While raging in spiked armour, make a bonus-action attack with the spikes for 1d4 piercing, and a successful grapple deals 3 piercing.
+FEATURE|Barbarian|Path of the Battlerager|6|Reckless Abandon|Using Reckless Attack while raging also grants temporary hit points equal to your Constitution modifier, lost when the rage ends.
+FEATURE|Barbarian|Path of the Battlerager|10|Battlerager Charge|Take the Dash action as a bonus action while raging.
+FEATURE|Barbarian|Path of the Battlerager|14|Spiked Retribution|A creature that hits you in melee takes 3 piercing damage while you are raging, not incapacitated, and wearing spiked armour.
+FEATURE|Cleric|Arcana Domain|1|Arcane Initiate|Proficiency in Arcana, and two cantrips from the wizard list that count as cleric cantrips for you.
+FEATURE|Cleric|Arcana Domain|2|Channel Divinity: Arcane Abjuration|Turn one celestial, elemental, fey or fiend within 30 feet on a failed Wisdom save; from 5th level it is banished instead if its challenge rating is low enough.
+FEATURE|Cleric|Arcana Domain|6|Spell Breaker|When you restore hit points to an ally with a spell of 1st level or higher, you may also end one spell of equal or lower level on them.
+FEATURE|Cleric|Arcana Domain|8|Potent Spellcasting|Add your Wisdom modifier to the damage of any cleric cantrip.
+FEATURE|Cleric|Arcana Domain|17|Arcane Mastery|Choose a 6th, 7th, 8th and 9th level wizard spell; they become always-prepared domain spells.
+FEATURE|Fighter|Purple Dragon Knight|3|Rallying Cry|When you use Second Wind, up to three allies within 60 feet who can see or hear you each regain hit points equal to your fighter level.
+FEATURE|Fighter|Purple Dragon Knight|7|Royal Envoy|Proficiency in Persuasion, or another social skill if you already have it, and your proficiency bonus is doubled for Persuasion checks.
+FEATURE|Fighter|Purple Dragon Knight|10|Inspiring Surge|When you use Action Surge, an ally within 60 feet may make one weapon attack as a reaction; two allies from 17th level.
+FEATURE|Fighter|Purple Dragon Knight|15|Bulwark|When you use Indomitable on an Intelligence, Wisdom or Charisma save, an ally within 60 feet who failed the same save may reroll it too.
+FEATURE|Monk|Way of the Long Death|3|Touch of Death|Reducing a creature within 5 feet to 0 hit points grants temporary hit points equal to your Wisdom modifier plus your monk level.
+FEATURE|Monk|Way of the Long Death|6|Hour of Reaping|As an action, every creature within 30 feet that can see you is frightened until the end of your next turn on a failed Wisdom save.
+FEATURE|Monk|Way of the Long Death|11|Mastery of Death|When reduced to 0 hit points, spend 1 ki point to drop to 1 instead.
+FEATURE|Monk|Way of the Long Death|17|Touch of the Long Death|Touch a creature and spend 1 to 10 ki points; it takes 2d10 necrotic damage per point on a failed Constitution save, half on a success.
+FEATURE|Paladin|Oath of the Crown|3|Channel Divinity: Champion Challenge|Creatures of your choice within 30 feet cannot willingly move more than 30 feet from you on a failed Wisdom save.
+FEATURE|Paladin|Oath of the Crown|3|Channel Divinity: Turn the Tide|As a bonus action, creatures within 30 feet that can hear you and are at half hit points or below regain 1d6 plus your Charisma modifier.
+FEATURE|Paladin|Oath of the Crown|7|Divine Allegiance|As a reaction, take the damage a creature within 5 feet would take; that damage to you cannot be reduced or prevented.
+FEATURE|Paladin|Oath of the Crown|15|Unyielding Spirit|Advantage on saving throws against being paralysed or stunned.
+FEATURE|Paladin|Oath of the Crown|20|Exalted Champion|For 1 hour: resistance to nonmagical weapon damage, allies within 30 feet have advantage on death saves, and you and they have advantage on Wisdom saves.
+FEATURE|Warlock|The Undying|1|Among the Dead|You learn spare the dying, have advantage on saves against disease, and undead must save to target you directly with an attack or harmful spell.
+FEATURE|Warlock|The Undying|6|Defy Death|Regain 1d8 plus your Constitution modifier when you succeed on a death saving throw or stabilise a creature, once per long rest.
+FEATURE|Warlock|The Undying|10|Undying Nature|You can hold your breath indefinitely, need no food, water or sleep, and age one year for every ten that pass.
+FEATURE|Warlock|The Undying|14|Indestructible Life|As a bonus action, regain 1d8 plus your warlock level and reattach a severed body part, once per short or long rest.
 
 # OPTFEATURE | class | book | level | name | replaces | summary
 OPTFEATURE|Barbarian|TCE|3|Primal Knowledge||Gain proficiency in one more barbarian skill, and while raging you can make Strength checks in place of Acrobatics, Intimidation, Perception, Stealth or Survival.
@@ -1306,10 +1375,10 @@ OPTION|favored terrains|Mountain|PHB|0||
 OPTION|favored terrains|Swamp|PHB|0||
 OPTION|favored terrains|Underdark|PHB|0||
 
-# BACKGROUND | name | book | skill1 | skill2 | tool_profs | extra_languages | equipment | gold | feature_name | feature_summary
+# BACKGROUND | name | book | skill1 | skill2 | skill_choice_count | skill_choices | tool_profs | extra_languages | equipment | gold | feature_name | feature_summary
 
 # BGTRAIT/BGIDEAL/BGBOND/BGFLAW | background | text
-BACKGROUND|Acolyte|PHB|Insight|Religion||2|Holy symbol, prayer book or prayer wheel, 5 sticks of incense, vestments, common clothes|15|Shelter of the Faithful|You and your companions receive free healing and care at temples of your faith, and its followers support you at a modest lifestyle.
+BACKGROUND|Acolyte|PHB|Insight|Religion|0|||2|Holy symbol, prayer book or prayer wheel, 5 sticks of incense, vestments, common clothes|15|Shelter of the Faithful|You and your companions receive free healing and care at temples of your faith, and its followers support you at a modest lifestyle.
 BGTRAIT|Acolyte|I idolise a particular hero of my faith and constantly refer to them.
 BGTRAIT|Acolyte|I can find common ground between the fiercest enemies.
 BGTRAIT|Acolyte|I see omens in every event and action.
@@ -1331,7 +1400,7 @@ BGFLAW|Acolyte|I put too much trust in those who wield power in my temple.
 BGFLAW|Acolyte|My piety sometimes leads me to blindly trust those who profess faith.
 BGFLAW|Acolyte|I am inflexible in my thinking.
 BGFLAW|Acolyte|I am suspicious of strangers and expect the worst of them.
-BACKGROUND|Charlatan|PHB|Deception|Sleight of Hand|Disguise kit, forgery kit|0|Fine clothes, disguise kit, tools of the con of your choice|15|False Identity|You have a second identity with documentation and contacts, and you can forge documents you have seen.
+BACKGROUND|Charlatan|PHB|Deception|Sleight of Hand|0||Disguise kit, forgery kit|0|Fine clothes, disguise kit, tools of the con of your choice|15|False Identity|You have a second identity with documentation and contacts, and you can forge documents you have seen.
 BGTRAIT|Charlatan|I fall in and out of love easily and am always chasing someone.
 BGTRAIT|Charlatan|I have a joke for every occasion, especially where humour is inappropriate.
 BGTRAIT|Charlatan|Flattery is my preferred trick for getting what I want.
@@ -1352,7 +1421,7 @@ BGFLAW|Charlatan|I am always in debt; I spend my gains on decadent luxuries.
 BGFLAW|Charlatan|I am convinced no one could ever fool me the way I fool others.
 BGFLAW|Charlatan|I am too greedy for my own good.
 BGFLAW|Charlatan|I cannot resist swindling people more powerful than me.
-BACKGROUND|Criminal|PHB|Deception|Stealth|One type of gaming set, thieves' tools|0|Crowbar, dark common clothes with a hood|15|Criminal Contact|You have a reliable contact in the criminal underworld who can carry messages for you across long distances.
+BACKGROUND|Criminal|PHB|Deception|Stealth|0||One type of gaming set, thieves' tools|0|Crowbar, dark common clothes with a hood|15|Criminal Contact|You have a reliable contact in the criminal underworld who can carry messages for you across long distances.
 BGTRAIT|Criminal|I always have a plan for what to do when things go wrong.
 BGTRAIT|Criminal|I am always calm, no matter the situation.
 BGTRAIT|Criminal|The first thing I do in a new place is note the exits.
@@ -1373,7 +1442,7 @@ BGFLAW|Criminal|When faced with a choice between money and friends, I usually ch
 BGFLAW|Criminal|If there is a plan, I will forget it; if I do not, I will ignore it.
 BGFLAW|Criminal|I have a tell that reveals when I am lying.
 BGFLAW|Criminal|I turn tail and run when things look bad.
-BACKGROUND|Entertainer|PHB|Acrobatics|Performance|Disguise kit, one type of musical instrument|0|A musical instrument, the favour of an admirer, a costume|15|By Popular Demand|You can always find a place to perform, receiving free lodging and food of a modest standard in return.
+BACKGROUND|Entertainer|PHB|Acrobatics|Performance|0||Disguise kit, one type of musical instrument|0|A musical instrument, the favour of an admirer, a costume|15|By Popular Demand|You can always find a place to perform, receiving free lodging and food of a modest standard in return.
 BGTRAIT|Entertainer|I know a story relevant to almost every situation.
 BGTRAIT|Entertainer|Whenever I come to a new place, I collect local rumours and gossip.
 BGTRAIT|Entertainer|I am a hopeless romantic, always searching for that special someone.
@@ -1394,7 +1463,7 @@ BGFLAW|Entertainer|I am a sucker for a pretty face.
 BGFLAW|Entertainer|A scandal prevents me from ever going home again.
 BGFLAW|Entertainer|I once satirised a noble who still wants my head.
 BGFLAW|Entertainer|I have trouble keeping my true feelings hidden.
-BACKGROUND|Folk Hero|PHB|Animal Handling|Survival|One type of artisan's tools, vehicles (land)|0|A set of artisan's tools, a shovel, an iron pot, common clothes|10|Rustic Hospitality|Common folk shelter you from the law or anyone searching for you, as long as you do not put them at risk.
+BACKGROUND|Folk Hero|PHB|Animal Handling|Survival|0||One type of artisan's tools, vehicles (land)|0|A set of artisan's tools, a shovel, an iron pot, common clothes|10|Rustic Hospitality|Common folk shelter you from the law or anyone searching for you, as long as you do not put them at risk.
 BGTRAIT|Folk Hero|I judge people by their actions, not their words.
 BGTRAIT|Folk Hero|If someone is in trouble, I am always ready to lend help.
 BGTRAIT|Folk Hero|When I set my mind to something, I follow through no matter what.
@@ -1415,7 +1484,7 @@ BGFLAW|Folk Hero|I am convinced of the significance of my destiny and blind to m
 BGFLAW|Folk Hero|The people who knew me when I was young know my shameful secret.
 BGFLAW|Folk Hero|I have a weakness for the vices of the city.
 BGFLAW|Folk Hero|I am inflexible in my thinking.
-BACKGROUND|Guild Artisan|PHB|Insight|Persuasion|One type of artisan's tools|1|A set of artisan's tools, a letter of introduction from your guild, traveller's clothes|15|Guild Membership|Your guild provides lodging and food, supports you politically, and its members will aid you; dues are 5 gp per month.
+BACKGROUND|Guild Artisan|PHB|Insight|Persuasion|0||One type of artisan's tools|1|A set of artisan's tools, a letter of introduction from your guild, traveller's clothes|15|Guild Membership|Your guild provides lodging and food, supports you politically, and its members will aid you; dues are 5 gp per month.
 BGTRAIT|Guild Artisan|I believe that anything worth doing is worth doing right.
 BGTRAIT|Guild Artisan|I am well known for my work, and I want to make sure everyone appreciates it.
 BGTRAIT|Guild Artisan|I have a one-track mind and pursue my goals relentlessly.
@@ -1436,7 +1505,7 @@ BGFLAW|Guild Artisan|I am quick to assume that someone is trying to cheat me.
 BGFLAW|Guild Artisan|No one must ever learn that I once stole money from guild coffers.
 BGFLAW|Guild Artisan|I am never satisfied with what I have; I always want more.
 BGFLAW|Guild Artisan|I am horribly jealous of anyone who can outshine my handiwork.
-BACKGROUND|Hermit|PHB|Medicine|Religion|Herbalism kit|1|A scroll case stuffed full of notes, a winter blanket, common clothes, a herbalism kit|5|Discovery|Your seclusion gave you a unique and powerful discovery, whose nature you and your DM determine together.
+BACKGROUND|Hermit|PHB|Medicine|Religion|0||Herbalism kit|1|A scroll case stuffed full of notes, a winter blanket, common clothes, a herbalism kit|5|Discovery|Your seclusion gave you a unique and powerful discovery, whose nature you and your DM determine together.
 BGTRAIT|Hermit|I have been isolated for so long that I rarely speak, preferring gestures and grunts.
 BGTRAIT|Hermit|I am utterly serene, even in the face of disaster.
 BGTRAIT|Hermit|The leader of my community had something wise to say on every topic.
@@ -1457,7 +1526,7 @@ BGFLAW|Hermit|I harbour dark, bloodthirsty thoughts that my isolation failed to 
 BGFLAW|Hermit|I am dogmatic in my thoughts and philosophy.
 BGFLAW|Hermit|I let my need to win arguments overshadow friendships.
 BGFLAW|Hermit|I would risk too much to uncover a lost bit of knowledge.
-BACKGROUND|Noble|PHB|History|Persuasion|One type of gaming set|1|Fine clothes, a signet ring, a scroll of pedigree|25|Position of Privilege|People are inclined to think the best of you; you are welcome in high society and can secure an audience with local nobles.
+BACKGROUND|Noble|PHB|History|Persuasion|0||One type of gaming set|1|Fine clothes, a signet ring, a scroll of pedigree|25|Position of Privilege|People are inclined to think the best of you; you are welcome in high society and can secure an audience with local nobles.
 BGTRAIT|Noble|My eloquent flattery makes everyone I talk to feel wonderful.
 BGTRAIT|Noble|The common folk love me for my kindness and generosity.
 BGTRAIT|Noble|No one could doubt by looking at my regal bearing that I am above the masses.
@@ -1478,7 +1547,7 @@ BGFLAW|Noble|I hide a truly scandalous secret that could ruin my family forever.
 BGFLAW|Noble|I too often hear veiled insults and threats in every word.
 BGFLAW|Noble|I have an insatiable desire for carnal pleasures.
 BGFLAW|Noble|In fact, the world does revolve around me.
-BACKGROUND|Outlander|PHB|Athletics|Survival|One type of musical instrument|1|A staff, a hunting trap, a trophy from an animal you killed, traveller's clothes|10|Wanderer|You have an excellent memory for maps and geography, and can find food and fresh water for yourself and up to five others each day.
+BACKGROUND|Outlander|PHB|Athletics|Survival|0||One type of musical instrument|1|A staff, a hunting trap, a trophy from an animal you killed, traveller's clothes|10|Wanderer|You have an excellent memory for maps and geography, and can find food and fresh water for yourself and up to five others each day.
 BGTRAIT|Outlander|I am driven by a wanderlust that led me away from home.
 BGTRAIT|Outlander|I watch over my friends as if they were a litter of newborn pups.
 BGTRAIT|Outlander|I once ran twenty-five miles without stopping to warn my clan; I would do it again.
@@ -1499,7 +1568,7 @@ BGFLAW|Outlander|There is no room for caution in a life lived to the fullest.
 BGFLAW|Outlander|I remember every insult and nurse a silent resentment.
 BGFLAW|Outlander|I am slow to trust members of other races, tribes and societies.
 BGFLAW|Outlander|Violence is my answer to almost any challenge.
-BACKGROUND|Sage|PHB|Arcana|History||2|A bottle of black ink, a quill, a small knife, a letter from a dead colleague posing a question you have not yet answered, common clothes|10|Researcher|When you do not know something, you usually know where and from whom you can obtain it.
+BACKGROUND|Sage|PHB|Arcana|History|0|||2|A bottle of black ink, a quill, a small knife, a letter from a dead colleague posing a question you have not yet answered, common clothes|10|Researcher|When you do not know something, you usually know where and from whom you can obtain it.
 BGTRAIT|Sage|I use polysyllabic words that convey the impression of erudition.
 BGTRAIT|Sage|I have read every book in the world's greatest libraries -- or I would like to.
 BGTRAIT|Sage|I am used to helping out those who are not as smart as I am.
@@ -1520,7 +1589,7 @@ BGFLAW|Sage|Most people scream and run when they see a demon; I stop and take no
 BGFLAW|Sage|Unlocking an ancient mystery is worth the price of a civilisation.
 BGFLAW|Sage|I overlook obvious solutions in favour of complicated ones.
 BGFLAW|Sage|I speak without really thinking through my words, invariably insulting others.
-BACKGROUND|Sailor|PHB|Athletics|Perception|Navigator's tools, vehicles (water)|0|A belaying pin (club), 50 feet of silk rope, a lucky charm, common clothes|10|Ship's Passage|You can secure free passage on a sailing ship for yourself and your companions, in exchange for helping crew the vessel.
+BACKGROUND|Sailor|PHB|Athletics|Perception|0||Navigator's tools, vehicles (water)|0|A belaying pin (club), 50 feet of silk rope, a lucky charm, common clothes|10|Ship's Passage|You can secure free passage on a sailing ship for yourself and your companions, in exchange for helping crew the vessel.
 BGTRAIT|Sailor|My friends know they can rely on me, no matter what.
 BGTRAIT|Sailor|I work hard so that I can play hard when the work is done.
 BGTRAIT|Sailor|I enjoy sailing into new ports and making new friends over a flagon of ale.
@@ -1541,7 +1610,7 @@ BGFLAW|Sailor|I will say anything to avoid having to do extra work.
 BGFLAW|Sailor|Once someone questions my courage, I never back down.
 BGFLAW|Sailor|I cannot help but pocket loose coins and trinkets I come across.
 BGFLAW|Sailor|My pride will probably lead to my destruction.
-BACKGROUND|Soldier|PHB|Athletics|Intimidation|One type of gaming set, vehicles (land)|0|An insignia of rank, a trophy taken from a fallen enemy, a set of bone dice or deck of cards, common clothes|10|Military Rank|Soldiers loyal to your former organisation recognise your authority and defer to you; you can invoke your rank to requisition simple equipment.
+BACKGROUND|Soldier|PHB|Athletics|Intimidation|0||One type of gaming set, vehicles (land)|0|An insignia of rank, a trophy taken from a fallen enemy, a set of bone dice or deck of cards, common clothes|10|Military Rank|Soldiers loyal to your former organisation recognise your authority and defer to you; you can invoke your rank to requisition simple equipment.
 BGTRAIT|Soldier|I am always polite and respectful.
 BGTRAIT|Soldier|I am haunted by memories of war; I cannot get the images out of my mind.
 BGTRAIT|Soldier|I have lost too many friends and am slow to make new ones.
@@ -1562,7 +1631,7 @@ BGFLAW|Soldier|I have little respect for anyone who is not a proven warrior.
 BGFLAW|Soldier|I made a terrible mistake in battle that cost many lives, and I would do anything to keep it secret.
 BGFLAW|Soldier|My hatred of my enemies is blind and unreasoning.
 BGFLAW|Soldier|I obey the law, even if it causes misery.
-BACKGROUND|Urchin|PHB|Sleight of Hand|Stealth|Disguise kit, thieves' tools|0|A small knife, a map of the city you grew up in, a pet mouse, a token to remember your parents by, common clothes|10|City Secrets|You know the secret patterns of cities and can travel between any two locations at twice the normal speed when not in combat.
+BACKGROUND|Urchin|PHB|Sleight of Hand|Stealth|0||Disguise kit, thieves' tools|0|A small knife, a map of the city you grew up in, a pet mouse, a token to remember your parents by, common clothes|10|City Secrets|You know the secret patterns of cities and can travel between any two locations at twice the normal speed when not in combat.
 BGTRAIT|Urchin|I hide scraps of food and trinkets away in my pockets.
 BGTRAIT|Urchin|I ask a lot of questions.
 BGTRAIT|Urchin|I like to squeeze into small places where no one else can get to me.
@@ -1583,18 +1652,19 @@ BGFLAW|Urchin|Gold seems like a lot of money to me, and I will do just about any
 BGFLAW|Urchin|I will never fully trust anyone other than myself.
 BGFLAW|Urchin|I would rather kill someone in their sleep than fight fair.
 BGFLAW|Urchin|It is not stealing if I need it more than someone else.
-BACKGROUND|City Watch|SCAG|Athletics|Insight||2|A uniform in the style of your unit and indicative of your rank, a horn with which to summon help, a set of manacles|10|Watcher's Eye|You can easily find the local watch post, and just as easily pick out the dens of criminal activity in a community.
-BACKGROUND|Clan Crafter|SCAG|History|Insight|One type of artisan's tools|1|A set of artisan's tools you are proficient with, a maker's mark chisel, traveler's clothes|5|Respect of the Stout Folk|You always have free room and board among shield dwarves or gold dwarves, who esteem clan crafters above all outsiders.
-BACKGROUND|Cloistered Scholar|SCAG|History|Arcana||2|The scholar's robes of your cloister, a writing kit, a borrowed book on the subject of your study|10|Library Access|You have free access to your cloister's library, bar its most secret holdings, and know how to navigate its people and bureaucracy.
-BACKGROUND|Courtier|SCAG|Insight|Persuasion||2|A set of fine clothes|5|Court Functionary|You can reach the records and inner workings of any noble court or government: who its movers are, whom to ask for a favour, and what the current intrigues are.
-BACKGROUND|Faction Agent|SCAG|Insight|Perception||2|A badge or emblem of your faction, a copy of a seminal faction text or a code-book, common clothes|15|Safe Haven|Your faction's network can hide you, house you or find you information, though its agents will not risk their lives for you.
-BACKGROUND|Far Traveler|SCAG|Insight|Perception|One musical instrument or gaming set of your homeland|1|One set of traveler's clothes, any one musical instrument or gaming set you are proficient with, poorly wrought maps of your homeland|5|All Eyes on You|Everything about you marks you as foreign, which draws curiosity you can parley into access to people and places otherwise closed to you.
-BACKGROUND|Inheritor|SCAG|Survival|Arcana|One gaming set or musical instrument|1|Your inheritance, a set of traveler's clothes, any tools you are proficient with|15|Inheritance|Something has come down to you: a document, a trinket, an heirloom or an article of clothing. Its full story is yours to discover with the DM.
-BACKGROUND|Knight of the Order|SCAG|Persuasion|History|One gaming set or musical instrument|1|One set of traveler's clothes, a signet, banner or seal representing your place or rank in the order|10|Knightly Regard|You receive shelter and aid from members of your order and those sympathetic to it, and can call on them for assistance short of open danger.
-BACKGROUND|Mercenary Veteran|SCAG|Athletics|Persuasion|One type of gaming set, vehicles (land)|0|A uniform of your company, an insignia of your rank, a gaming set of your choice|10|Mercenary Life|You can identify a mercenary company by its emblem, know where mercenaries drink in any town, and can find work between adventures.
-BACKGROUND|Urban Bounty Hunter|SCAG|Deception|Stealth|Two of: one type of gaming set, one musical instrument, thieves' tools|0|A set of clothes appropriate to your duties|20|Ear to the Ground|You have a contact in any city you visit, drawn from the part of society your quarries move through, who tells you about local people and places.
-BACKGROUND|Uthgardt Tribe Member|SCAG|Athletics|Survival|One type of musical instrument or artisan's tools|1|A hunting trap, a totemic token or set of tattoos marking your tribal totem, a set of traveler's clothes|10|Uthgardt Heritage|You forage twice as much food and water as you otherwise would, and can call on the hospitality of your people and their allies.
-BACKGROUND|Waterdhavian Noble|SCAG|History|Persuasion|One type of gaming set or one musical instrument|1|A set of fine clothes, a signet ring or brooch, a scroll of pedigree, a skin of fine zzar or wine|20|Kept in Style|In Waterdeep and the North your name and signet cover your everyday expenses, your house settling the accounting later.
+BACKGROUND|City Watch|SCAG|Athletics|Insight|0|||2|A uniform in the style of your unit and indicative of your rank, a horn with which to summon help, a set of manacles|10|Watcher's Eye|You can easily find the local watch post, and just as easily pick out the dens of criminal activity in a community.
+BACKGROUND|Investigator (City Watch Variant)|SCAG|Investigation|Insight|0|||2|A uniform in the style of your unit and indicative of your rank, a horn with which to summon help, a set of manacles|10|Watcher's Eye|You can easily find the local watch post, and just as easily pick out the dens of criminal activity in a community.
+BACKGROUND|Clan Crafter|SCAG|History|Insight|0||One type of artisan's tools|1|A set of artisan's tools you are proficient with, a maker's mark chisel, traveler's clothes|5|Respect of the Stout Folk|You always have free room and board among shield dwarves or gold dwarves, who esteem clan crafters above all outsiders.
+BACKGROUND|Cloistered Scholar|SCAG|History|-|1|Arcana\|Nature\|Religion||2|The scholar's robes of your cloister, a writing kit, a borrowed book on the subject of your study|10|Library Access|You have free access to your cloister's library, bar its most secret holdings, and know how to navigate its people and bureaucracy.
+BACKGROUND|Courtier|SCAG|Insight|Persuasion|0|||2|A set of fine clothes|5|Court Functionary|You can reach the records and inner workings of any noble court or government: who its movers are, whom to ask for a favour, and what the current intrigues are.
+BACKGROUND|Faction Agent|SCAG|Insight|-|1|Arcana\|History\|Investigation\|Nature\|Religion\|Animal Handling\|Medicine\|Perception\|Survival\|Deception\|Intimidation\|Performance\|Persuasion||2|A badge or emblem of your faction, a copy of a seminal faction text or a code-book, common clothes|15|Safe Haven|Your faction's network can hide you, house you or find you information, though its agents will not risk their lives for you.
+BACKGROUND|Far Traveler|SCAG|Insight|Perception|0||One musical instrument or gaming set of your homeland|1|One set of traveler's clothes, any one musical instrument or gaming set you are proficient with, poorly wrought maps of your homeland|5|All Eyes on You|Everything about you marks you as foreign, which draws curiosity you can parley into access to people and places otherwise closed to you.
+BACKGROUND|Inheritor|SCAG|Survival|-|1|Arcana\|History\|Religion|One gaming set or musical instrument|1|Your inheritance, a set of traveler's clothes, any tools you are proficient with|15|Inheritance|Something has come down to you: a document, a trinket, an heirloom or an article of clothing. Its full story is yours to discover with the DM.
+BACKGROUND|Knight of the Order|SCAG|Persuasion|-|1|Arcana\|History\|Nature\|Religion|One gaming set or musical instrument|1|One set of traveler's clothes, a signet, banner or seal representing your place or rank in the order|10|Knightly Regard|You receive shelter and aid from members of your order and those sympathetic to it, and can call on them for assistance short of open danger.
+BACKGROUND|Mercenary Veteran|SCAG|Athletics|Persuasion|0||One type of gaming set, vehicles (land)|0|A uniform of your company, an insignia of your rank, a gaming set of your choice|10|Mercenary Life|You can identify a mercenary company by its emblem, know where mercenaries drink in any town, and can find work between adventures.
+BACKGROUND|Urban Bounty Hunter|SCAG|-|-|2|Deception\|Insight\|Persuasion\|Stealth|Two of: one type of gaming set, one musical instrument, thieves' tools|0|A set of clothes appropriate to your duties|20|Ear to the Ground|You have a contact in any city you visit, drawn from the part of society your quarries move through, who tells you about local people and places.
+BACKGROUND|Uthgardt Tribe Member|SCAG|Athletics|Survival|0||One type of musical instrument or artisan's tools|1|A hunting trap, a totemic token or set of tattoos marking your tribal totem, a set of traveler's clothes|10|Uthgardt Heritage|You forage twice as much food and water as you otherwise would, and can call on the hospitality of your people and their allies.
+BACKGROUND|Waterdhavian Noble|SCAG|History|Persuasion|0||One type of gaming set or one musical instrument|1|A set of fine clothes, a signet ring or brooch, a scroll of pedigree, a skin of fine zzar or wine|20|Kept in Style|In Waterdeep and the North your name and signet cover your everyday expenses, your house settling the accounting later.
 
 # FEAT | name | book | prereq | req_ability | req_ability2 | req_score | req_prof | req_spellcasting | STR | DEX | CON | INT | WIS | CHA | asi_choice_count | asi_choices | req_race | summary
 FEAT|Alert|PHB||-|-|0||0|0|0|0|0|0|0|0|||+5 to initiative, you cannot be surprised while conscious, and unseen creatures gain no advantage on attacks against you.
@@ -1669,3 +1739,4 @@ FEAT|Prodigy|XGE|Half-elf, half-orc or human|-|-|0||0|0|0|0|0|0|0|0||Half-Elf\|H
 FEAT|Second Chance|XGE|Halfling|-|-|0||0|0|0|0|0|0|0|1|DEX,CON,CHA|Halfling|When a creature you can see hits you with an attack, you can use your reaction to force it to reroll. Once per short or long rest, or after you roll initiative.
 FEAT|Squat Nimbleness|XGE|Dwarf or a Small race|-|-|0||0|0|0|0|0|0|0|1|STR,DEX|Dwarf\|Gnome\|Halfling|Your walking speed increases by 5 feet, you gain proficiency in Acrobatics or Athletics, and you have advantage on checks made to escape a grapple.
 FEAT|Wood Elf Magic|XGE|Elf (wood)|-|-|0||0|0|0|0|0|0|0|0||Wood Elf|You learn one druid cantrip, plus longstrider and pass without trace, each castable once per long rest without a slot. Wisdom is your spellcasting ability for them.
+FEAT|Svirfneblin Magic|SCAG|Gnome (deep gnome)|-|-|0||0|0|0|0|0|0|0|0||Svirfneblin (Deep Gnome)|You can cast nondetection on yourself at will, needing no material component, and can cast blindness/deafness, blur and disguise self once each, regaining them on a long rest. Intelligence is your spellcasting ability for them.
