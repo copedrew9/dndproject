@@ -426,7 +426,16 @@ static void test_data_integrity(void)
         }
     }
     EQ(CLASS_COUNT, 13, "classes (12 PHB + the artificer)");
-    EQ(BACKGROUND_COUNT, 13, "PHB backgrounds");
+    EQ(BACKGROUND_COUNT, 25, "backgrounds, 13 from the PHB and 12 from SCAG");
+    {
+        int phb = 0, scag = 0, k;
+        for (k = 0; k < BACKGROUND_COUNT; k++) {
+            if (BACKGROUNDS[k].book == BOOK_PHB) phb++;
+            if (BACKGROUNDS[k].book == BOOK_SCAG) scag++;
+        }
+        EQ(phb, 13, "PHB backgrounds");
+        EQ(scag, 12, "SCAG backgrounds");
+    }
     {
         int phb = 0, tce = 0, k;
         for (k = 0; k < FEAT_COUNT; k++) {

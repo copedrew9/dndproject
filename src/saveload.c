@@ -640,8 +640,17 @@ static void write_data(FILE *f, const Character *c)
     hr(f);
     fprintf(f, "%s\n", DATA_BEGIN);
 
-    fprintf(f, "SETTINGS");
-    for (i = 0; i < BOOK_COUNT; i++) fprintf(f, "|%d", SETTINGS.book[i]);
+    /* The books are named rather than counted off, so that adding one to
+       the enum does not silently shift every flag in an older file. */
+    fprintf(f, "SETTINGS|");
+    {
+        int w = 0;
+        for (i = 0; i < BOOK_COUNT; i++) {
+            if (!SETTINGS.book[i]) continue;
+            fprintf(f, "%s%s", w++ ? "," : "", BOOK_ABBREV[i]);
+        }
+        if (!w) fprintf(f, "%s", BOOK_ABBREV[BOOK_PHB]);
+    }
     fprintf(f, "|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
             SETTINGS.optional_features, SETTINGS.multiclassing,
             SETTINGS.feats, SETTINGS.experience);
@@ -873,19 +882,52 @@ int load_character(const char *path, Character *c)
         n = split_fields(line, fields, 32);
         if (n < 1) continue;
 
-        if (!strcmp(fields[0], "SETTINGS") && n >= BOOK_COUNT + 5) {
-            int k;
-            for (k = 0; k < BOOK_COUNT; k++) {
-                SETTINGS.book[k] = atoi(fields[k + 1]);
+        if (!strcmp(fields[0], "SETTINGS") && n >= 2) {
+            /* Two shapes. Files written now name the books they allow. Older
+               ones carried one flag per book in enum order, which is exactly
+               why this is stored by name instead: adding SCAG to the middle
+               of that enum moved every book after it, so a positional read
+               would take an old file's Homebrew flag for SCAG's. An older
+               file is known by its first field being a digit, and its flags
+               are read against the enum as it stood when they were written. */
+            static const int LEGACY[] = {
+                BOOK_PHB, BOOK_XGE, BOOK_TCE, BOOK_DMG,
+                BOOK_MPMM, BOOK_MM, BOOK_HOMEBREW
+            };
+            const int legacy_books = (int)(sizeof LEGACY / sizeof LEGACY[0]);
+            int k, at;
+
+            if (fields[1][0] >= '0' && fields[1][0] <= '9') {
+                /* Books the older file never knew about stay switched on. */
+                for (k = 0; k < BOOK_COUNT; k++) SETTINGS.book[k] = 1;
+                for (k = 0; k < legacy_books && k + 1 < n; k++) {
+                    SETTINGS.book[LEGACY[k]] = atoi(fields[k + 1]);
+                }
+                at = legacy_books + 1;
+            } else {
+                char *p = fields[1];
+                for (k = 0; k < BOOK_COUNT; k++) SETTINGS.book[k] = 0;
+                while (p && *p) {
+                    char *comma = strchr(p, ',');
+                    if (comma) *comma = '\0';
+                    for (k = 0; k < BOOK_COUNT; k++) {
+                        if (!strcmp(BOOK_ABBREV[k], p)) SETTINGS.book[k] = 1;
+                    }
+                    p = comma ? comma + 1 : NULL;
+                }
+                at = 2;
             }
-            SETTINGS.custom_origins    = atoi(fields[BOOK_COUNT + 1]);
-            SETTINGS.optional_features = atoi(fields[BOOK_COUNT + 2]);
-            SETTINGS.multiclassing     = atoi(fields[BOOK_COUNT + 3]);
-            SETTINGS.feats             = atoi(fields[BOOK_COUNT + 4]);
+            SETTINGS.book[BOOK_PHB] = 1;        /* always available */
+
+            if (at + 3 < n) {
+                SETTINGS.custom_origins    = atoi(fields[at]);
+                SETTINGS.optional_features = atoi(fields[at + 1]);
+                SETTINGS.multiclassing     = atoi(fields[at + 2]);
+                SETTINGS.feats             = atoi(fields[at + 3]);
+            }
             /* Written since the experience line became optional; a file
                from before that has the line, as it always did. */
-            SETTINGS.experience = (n >= BOOK_COUNT + 6)
-                                ? atoi(fields[BOOK_COUNT + 5]) : 1;
+            SETTINGS.experience = (at + 4 < n) ? atoi(fields[at + 4]) : 1;
         } else if (!strcmp(fields[0], "NAME") && n >= 2) {
             copy_field(c->name, sizeof c->name, fields[1]);
         } else if (!strcmp(fields[0], "PLAYER") && n >= 2) {

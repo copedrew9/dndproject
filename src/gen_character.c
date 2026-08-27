@@ -4972,6 +4972,531 @@ const BackgroundData BACKGROUNDS[] = {
       NULL
     }
     },
+    { "City Watch", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_INSIGHT },
+      "", 2,
+      "A uniform in the style of your unit and indicative of your "
+      "rank, a horn with which to summon help, a set of manacles",
+      10, "Watcher's Eye",
+      "You can easily find the local watch post, and just as easily "
+      "pick out the dens of criminal activity in a community.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Clan Crafter", BOOK_SCAG,
+      { SKL_HISTORY, SKL_INSIGHT },
+      "One type of artisan's tools", 1,
+      "A set of artisan's tools you are proficient with, a maker's "
+      "mark chisel, traveler's clothes",
+      5, "Respect of the Stout Folk",
+      "You always have free room and board among shield dwarves or "
+      "gold dwarves, who esteem clan crafters above all outsiders.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Cloistered Scholar", BOOK_SCAG,
+      { SKL_HISTORY, SKL_ARCANA },
+      "", 2,
+      "The scholar's robes of your cloister, a writing kit, a "
+      "borrowed book on the subject of your study",
+      10, "Library Access",
+      "You have free access to your cloister's library, bar its "
+      "most secret holdings, and know how to navigate its people "
+      "and bureaucracy.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Courtier", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_PERSUASION },
+      "", 2,
+      "A set of fine clothes",
+      5, "Court Functionary",
+      "You can reach the records and inner workings of any noble "
+      "court or government: who its movers are, whom to ask for a "
+      "favour, and what the current intrigues are.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Faction Agent", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_PERCEPTION },
+      "", 2,
+      "A badge or emblem of your faction, a copy of a seminal "
+      "faction text or a code-book, common clothes",
+      15, "Safe Haven",
+      "Your faction's network can hide you, house you or find you "
+      "information, though its agents will not risk their lives for "
+      "you.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Far Traveler", BOOK_SCAG,
+      { SKL_INSIGHT, SKL_PERCEPTION },
+      "One musical instrument or gaming set of your homeland", 1,
+      "One set of traveler's clothes, any one musical instrument or "
+      "gaming set you are proficient with, poorly wrought maps of "
+      "your homeland",
+      5, "All Eyes on You",
+      "Everything about you marks you as foreign, which draws "
+      "curiosity you can parley into access to people and places "
+      "otherwise closed to you.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Inheritor", BOOK_SCAG,
+      { SKL_SURVIVAL, SKL_ARCANA },
+      "One gaming set or musical instrument", 1,
+      "Your inheritance, a set of traveler's clothes, any tools you "
+      "are proficient with",
+      15, "Inheritance",
+      "Something has come down to you: a document, a trinket, an "
+      "heirloom or an article of clothing. Its full story is yours "
+      "to discover with the DM.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Knight of the Order", BOOK_SCAG,
+      { SKL_PERSUASION, SKL_HISTORY },
+      "One gaming set or musical instrument", 1,
+      "One set of traveler's clothes, a signet, banner or seal "
+      "representing your place or rank in the order",
+      10, "Knightly Regard",
+      "You receive shelter and aid from members of your order and "
+      "those sympathetic to it, and can call on them for assistance "
+      "short of open danger.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Mercenary Veteran", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_PERSUASION },
+      "One type of gaming set, vehicles (land)", 0,
+      "A uniform of your company, an insignia of your rank, a "
+      "gaming set of your choice",
+      10, "Mercenary Life",
+      "You can identify a mercenary company by its emblem, know "
+      "where mercenaries drink in any town, and can find work "
+      "between adventures.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Urban Bounty Hunter", BOOK_SCAG,
+      { SKL_DECEPTION, SKL_STEALTH },
+      "Two of: one type of gaming set, one musical instrument, "
+      "thieves' tools", 0,
+      "A set of clothes appropriate to your duties",
+      20, "Ear to the Ground",
+      "You have a contact in any city you visit, drawn from the "
+      "part of society your quarries move through, who tells you "
+      "about local people and places.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Uthgardt Tribe Member", BOOK_SCAG,
+      { SKL_ATHLETICS, SKL_SURVIVAL },
+      "One type of musical instrument or artisan's tools", 1,
+      "A hunting trap, a totemic token or set of tattoos marking "
+      "your tribal totem, a set of traveler's clothes",
+      10, "Uthgardt Heritage",
+      "You forage twice as much food and water as you otherwise "
+      "would, and can call on the hospitality of your people and "
+      "their allies.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
+    { "Waterdhavian Noble", BOOK_SCAG,
+      { SKL_HISTORY, SKL_PERSUASION },
+      "One type of gaming set or one musical instrument", 1,
+      "A set of fine clothes, a signet ring or brooch, a scroll of "
+      "pedigree, a skin of fine zzar or wine",
+      20, "Kept in Style",
+      "In Waterdeep and the North your name and signet cover your "
+      "everyday expenses, your house settling the accounting later.",
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    },
+    {
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      NULL
+    }
+    },
 };
 const int BACKGROUND_COUNT =
     (int)(sizeof(BACKGROUNDS) / sizeof(BACKGROUNDS[0]));

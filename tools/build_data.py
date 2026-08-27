@@ -168,7 +168,7 @@ class Out:
 
 BOOKS = {"PHB": "BOOK_PHB", "XGE": "BOOK_XGE", "TCE": "BOOK_TCE",
          "DMG": "BOOK_DMG", "MPMM": "BOOK_MPMM", "MM": "BOOK_MM",
-         "Homebrew": "BOOK_HOMEBREW"}
+         "SCAG": "BOOK_SCAG", "Homebrew": "BOOK_HOMEBREW"}
 
 ABILITIES = {"STR": "ABL_STR", "DEX": "ABL_DEX", "CON": "ABL_CON",
              "INT": "ABL_INT", "WIS": "ABL_WIS", "CHA": "ABL_CHA",

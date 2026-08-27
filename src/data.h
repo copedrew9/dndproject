@@ -13,6 +13,7 @@ typedef enum {
     BOOK_DMG,       /* Dungeon Master's Guide */
     BOOK_MPMM,      /* Mordenkainen Presents: Monsters of the Multiverse */
     BOOK_MM,        /* Monster Manual */
+    BOOK_SCAG,      /* Sword Coast Adventurer's Guide */
     BOOK_HOMEBREW,  /* whatever the DM has added */
     BOOK_COUNT
 } SourceBook;

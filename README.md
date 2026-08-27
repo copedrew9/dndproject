@@ -6,10 +6,10 @@ It walks the six steps of PHB chapter 1, asks for every choice those steps
 require, and writes the finished character to `<Charactername>.txt`. A saved
 character can be loaded again and levelled up.
 
-Content comes from six sourcebooks -- PHB, XGE, TCE, DMG, MPMM and MM -- and
-covers 42 races, 13 classes, 101 subclasses, 477 spells, 72 feats, 270 magic
-items, 88 beast stat blocks and 195 deities. A settings menu decides which of
-those are in play.
+Content comes from seven sourcebooks -- PHB, XGE, TCE, DMG, MPMM, MM and
+SCAG -- and covers 42 races, 13 classes, 101 subclasses, 477 spells, 72
+feats, 25 backgrounds, 270 magic items, 88 beast stat blocks and 195
+deities. A settings menu decides which of those are in play.
 
 ## Building and running
 
@@ -160,11 +160,14 @@ The main menu offers:
   `|`-separated format, so they can be written by hand or shared. Homebrew
   is a source book like any other in the settings menu, so switching it off
   hides everything without deleting it.
-- **Backgrounds** — all 13, with their skills, tools, languages, feature, and
-  suggested traits, ideals, bonds and flaws. Or build one of your own by the
-  PHB's own rules (p.125): any two skills, two tools or
-  languages between them, and any feature — one borrowed from a printed
-  background or written yourself.
+- **Backgrounds** — all 13 from the PHB, with their skills, tools, languages,
+  feature, and suggested traits, ideals, bonds and flaws; plus SCAG's 12,
+  from City Watch to Waterdhavian Noble. SCAG sends you to a PHB background
+  for traits and ideals rather than printing its own tables, so those are
+  left open and the wizard asks for them. Or build one of your own by the
+  PHB's own rules (p.125): any two skills, two tools or languages between
+  them, and any feature — one borrowed from a printed background or written
+  yourself.
 - **Notes and prose** — a character carries notes, each with a title and a
   body that may run to paragraphs: a contact, a debt, a patron's demands,
   the history behind a family sword. Type as many lines as you like; a blank
@@ -293,7 +296,7 @@ make verify     # the numbers beside those names are the book's too
 make check      # the above, plus the test suite
 ```
 
-`tools/audit.py` looks up all 2,627 names -- races, classes, subclasses,
+`tools/audit.py` looks up all 2,640 names -- races, classes, subclasses,
 features, feats, equipment, magic items, spells, deities, beasts -- in the
 dump of the book each claims to come from. All of them are found. Matching
 stays tolerant, because the typesetting still gets in the way: words are set
@@ -325,8 +328,6 @@ comparing the numbers:
 
 What the books themselves do not settle:
 
-- **The thirteen SCAG backgrounds** are not here, because that book is not
-  among the six.
 - **MPMM** is the one book whose text is still OCR, no clean copy of it
   having been to hand. `tools/verify_races.py` checks 31 of its 33 races
   against it anyway -- size, walking speed, darkvision -- which caught the
@@ -414,10 +415,10 @@ src/main.c             menu and entry point
 
 ## Scope
 
-Six sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races) and MM
-(beasts), plus whatever the DM adds as homebrew. Any of them except the PHB
-can be switched off in the settings menu, which hides their races, classes,
-subclasses, spells, feats and items everywhere in the wizard.
+Seven sourcebooks: PHB, XGE, TCE, DMG (magic items), MPMM (races), MM (beasts)
+and SCAG (backgrounds), plus whatever the DM adds as homebrew. Any of them
+except the PHB can be switched off in the settings menu, which hides their
+races, classes, subclasses, spells, feats and items everywhere in the wizard.
 
 The item, magic item and spell banks are pointers rather than fixed arrays,
 so `src/homebrew.c` can replace each with the book's entries followed by the

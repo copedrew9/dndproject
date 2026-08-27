@@ -33,6 +33,7 @@ BOOKS = {
     "DMG":  "TextFiles/DMGtext.txt",
     "MPMM": "TextFiles/MORDENKAIDENtext.txt",
     "MM":   "TextFiles/MMtext.txt",
+    "SCAG": "TextFiles/SCAGtext.txt",
 }
 
 # What to check: the file, the record tag, which field holds the name, which

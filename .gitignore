@@ -10,4 +10,5 @@ dumpdata
 *.txt
 !examples/*.txt
 !data/*.txt
+!TextFiles/*.txt
 !homebrew.txt
