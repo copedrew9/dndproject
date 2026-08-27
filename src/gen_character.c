@@ -394,6 +394,23 @@ const RaceData RACES[] = {
 const int RACE_COUNT =
     (int)(sizeof(RACES) / sizeof(RACES[0]));
 
+const BodyData BODIES[] = {
+    { "Human", "", 56, "2d10", 110, "2d4" },
+    { "Dwarf", "Hill Dwarf", 44, "2d4", 115, "2d6" },
+    { "Dwarf", "Mountain Dwarf", 48, "2d4", 130, "2d6" },
+    { "Elf", "High Elf", 54, "2d10", 90, "1d4" },
+    { "Elf", "Wood Elf", 54, "2d10", 100, "1d4" },
+    { "Elf", "Dark Elf (Drow)", 53, "2d6", 75, "1d6" },
+    { "Halfling", "", 31, "2d4", 35, "1" },
+    { "Dragonborn", "", 66, "2d8", 175, "2d6" },
+    { "Gnome", "", 35, "2d4", 35, "1" },
+    { "Half-Elf", "", 57, "2d8", 110, "2d4" },
+    { "Half-Orc", "", 58, "2d10", 140, "2d6" },
+    { "Tiefling", "", 57, "2d8", 110, "2d4" },
+};
+const int BODY_COUNT =
+    (int)(sizeof(BODIES) / sizeof(BODIES[0]));
+
 const AncestryData ANCESTRIES[] = {
     { "Black", "Acid", "5 by 30 ft. line (Dex. save)" },
     { "Blue", "Lightning", "5 by 30 ft. line (Dex. save)" },
@@ -555,6 +572,15 @@ const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2] = {
     { 4, 5 },
     { 4, 5 },
     { 4, 5 },
+};
+
+/* The experience needed for each level (PHB p.15). */
+const int XP_FOR_LEVEL[MAX_LEVEL + 1] = {
+    0,
+    0, 300, 900, 2700, 6500,
+    14000, 23000, 34000, 48000, 64000,
+    85000, 100000, 120000, 140000, 165000,
+    195000, 225000, 265000, 305000, 355000
 };
 
 /* The skills each class may pick from. Classes with the same list share one

@@ -1312,6 +1312,111 @@ static void test_notes_and_custom_background(void)
 }
 
 /* The lists the builder offers, and the room it leaves beside them. */
+/* The attacks block: what a weapon hits at and what it does. */
+static void test_attacks(void)
+{
+    Character c;
+    Attack a[MAX_ATTACKS];
+    int n, i;
+
+    printf("attacks\n");
+
+    /* A mountain dwarf fighter, as in chapter 1: Strength 17, proficiency
+       +2, proficient with martial weapons. */
+    reset(&c);
+    c.race_id = find_race("Dwarf");
+    c.subrace_id = find_subrace("Mountain Dwarf");
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 15;
+    c.base_score[ABL_DEX] = 10;
+    c.racial_bonus[ABL_STR] = 2;
+    add_prof(&c, "Simple weapons");
+    add_prof(&c, "Martial weapons");
+    add_item_by_name(&c, "Battleaxe", 1, 0);
+    add_item_by_name(&c, "Light crossbow", 1, 0);   /* a simple weapon */
+
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    EQ(n, 3, "two weapons and an unarmed strike");
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Battleaxe")) {
+            EQ(a[i].bonus, 5, "battleaxe to hit (Str 3 + prof 2)");
+            check(!strcmp(a[i].damage, "1d8+3 slashing"),
+                  "battleaxe damage", 0, 0);
+        } else if (!strcmp(a[i].name, "Light crossbow")) {
+            EQ(a[i].bonus, 2, "light crossbow to hit (Dex 0 + prof 2)");
+        } else if (!strcmp(a[i].name, "Unarmed strike")) {
+            check(!strcmp(a[i].damage, "4 bludgeoning"),
+                  "unarmed strike damage (1 + Str 3)", 0, 0);
+        }
+    }
+
+    /* Finesse takes the better of Strength and Dexterity, and a weapon the
+       character has no proficiency with says so. */
+    reset(&c);
+    c.race_id = find_race("Human");
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_STR] = 8;
+    c.base_score[ABL_DEX] = 16;
+    add_prof(&c, "Simple weapons");
+    add_item_by_name(&c, "Dagger", 1, 0);       /* finesse, simple */
+    add_item_by_name(&c, "Greataxe", 1, 0);     /* martial, no proficiency */
+
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Dagger")) {
+            EQ(a[i].bonus, 5, "dagger to hit (finesse: Dex 3 + prof 2)");
+            check(!strcmp(a[i].damage, "1d4+3 piercing"),
+                  "dagger damage takes Dexterity", 0, 0);
+        } else if (!strcmp(a[i].name, "Greataxe")) {
+            EQ(a[i].bonus, -1, "greataxe to hit (Str -1, no proficiency)");
+            EQ(a[i].proficient, 0, "not proficient with a greataxe");
+        }
+    }
+
+    /* A monk's unarmed strike uses the Martial Arts die, and Dexterity
+       when it is the better modifier. */
+    reset(&c);
+    c.race_id = find_race("Human");
+    add_class(&c, CLS_MONK, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_DEX] = 18;
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Unarmed strike")) {
+            EQ(a[i].bonus, 7, "monk unarmed to hit (Dex 4 + prof 3)");
+            check(!strcmp(a[i].damage, "1d6+4 bludgeoning"),
+                  "5th-level Martial Arts die", 0, 0);
+        }
+    }
+
+    /* The experience table, and the height and weight rows. */
+    EQ(XP_FOR_LEVEL[1], 0, "level 1 costs nothing");
+    EQ(XP_FOR_LEVEL[5], 6500, "level 5 experience");
+    EQ(XP_FOR_LEVEL[20], 355000, "level 20 experience");
+    for (i = 2; i <= MAX_LEVEL; i++) {
+        if (XP_FOR_LEVEL[i] <= XP_FOR_LEVEL[i - 1]) {
+            printf("  FAIL experience does not rise at level %d\n", i);
+            failures++;
+        }
+    }
+
+    check(body_for("Dwarf", "Hill Dwarf") != NULL,
+          "the height and weight table covers the hill dwarf", 1, 1);
+    check(body_for("Halfling", NULL) != NULL,
+          "and a race with no subrace row", 1, 1);
+    check(body_for("Aarakocra", NULL) == NULL,
+          "and not a race the table never listed", 1, 1);
+    for (i = 0; i < BODY_COUNT; i++) {
+        if (find_race(BODIES[i].race) < 0) {
+            printf("  FAIL height and weight row names no race: \"%s\"\n",
+                   BODIES[i].race);
+            failures++;
+        }
+    }
+
+    EQ(CONDITION_COUNT, 15, "conditions, appendix A plus exhaustion");
+}
+
 static void test_choice_lists(void)
 {
     const char *tools[64];
@@ -1438,6 +1543,7 @@ int main(void)
     test_magic_scores_and_speeds();
     test_life_tables();
     test_notes_and_custom_background();
+    test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
 

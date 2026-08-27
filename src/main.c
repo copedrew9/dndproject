@@ -192,7 +192,7 @@ int main(int argc, char **argv)
         "Load a character and level up",
         "View a saved character",
         "Content settings (books and optional rules)",
-        "Item reference (equipment, magic items, prices)",
+        "Reference (equipment, magic items, prices, conditions)",
         "Manage a character's inventory",
         "Manage a character's sidekicks",
         "Homebrew (your own items and spells)",

@@ -596,6 +596,80 @@ const Deity DEITIES[] = {
 const int DEITY_COUNT =
     (int)(sizeof(DEITIES) / sizeof(DEITIES[0]));
 
+const ConditionData CONDITIONS[] = {
+    { "Blinded",
+      "You cannot see, and automatically fail any ability check "
+      "that needs sight|Attacks against you have advantage, and "
+      "your attacks have disadvantage" },
+    { "Charmed",
+      "You cannot attack the charmer or target them with a harmful "
+      "ability or magical effect|The charmer has advantage on "
+      "ability checks to interact with you socially" },
+    { "Deafened",
+      "You cannot hear, and automatically fail any ability check "
+      "that needs hearing" },
+    { "Frightened",
+      "You have disadvantage on ability checks and attack rolls "
+      "while the source of your fear is in line of sight|You cannot "
+      "willingly move closer to it" },
+    { "Grappled",
+      "Your speed becomes 0 and cannot be raised by any bonus|It "
+      "ends if the grappler is incapacitated, or if an effect puts "
+      "you out of the grappler's reach" },
+    { "Incapacitated",
+      "You cannot take actions or reactions" },
+    { "Invisible",
+      "You cannot be seen without magic or a special sense, and "
+      "count as heavily obscured for hiding; noise and tracks still "
+      "give you away|Attacks against you have disadvantage, and "
+      "your attacks have advantage" },
+    { "Paralyzed",
+      "You are incapacitated, and cannot move or speak|You "
+      "automatically fail Strength and Dexterity saving "
+      "throws|Attacks against you have advantage, and any hit from "
+      "within 5 feet is a critical hit" },
+    { "Petrified",
+      "You and your nonmagical gear turn to solid inanimate "
+      "substance, ten times the weight, and you stop ageing|You are "
+      "incapacitated, cannot move or speak, and are unaware of your "
+      "surroundings|You automatically fail Strength and Dexterity "
+      "saving throws, and attacks against you have advantage|You "
+      "resist all damage and are immune to poison and disease, "
+      "though anything already in you is suspended rather than "
+      "cured" },
+    { "Poisoned",
+      "You have disadvantage on attack rolls and ability checks" },
+    { "Prone",
+      "Your only movement is to crawl, until you stand up and end "
+      "the condition|You have disadvantage on attack rolls|Attacks "
+      "against you have advantage from within 5 feet and "
+      "disadvantage from further away" },
+    { "Restrained",
+      "Your speed becomes 0 and cannot be raised by any "
+      "bonus|Attacks against you have advantage, and your attacks "
+      "have disadvantage|You have disadvantage on Dexterity saving "
+      "throws" },
+    { "Stunned",
+      "You are incapacitated, cannot move, and can speak only "
+      "falteringly|You automatically fail Strength and Dexterity "
+      "saving throws|Attacks against you have advantage" },
+    { "Unconscious",
+      "You are incapacitated, cannot move or speak, and are unaware "
+      "of your surroundings|You drop what you are holding and fall "
+      "prone|You automatically fail Strength and Dexterity saving "
+      "throws|Attacks against you have advantage, and any hit from "
+      "within 5 feet is a critical hit" },
+    { "Exhaustion",
+      "Measured in six levels, and you suffer your level's effect "
+      "and every lower one|1: disadvantage on ability checks|2: "
+      "speed halved|3: disadvantage on attack rolls and saving "
+      "throws|4: hit point maximum halved|5: speed reduced to 0|6: "
+      "death|A long rest with food and drink reduces it by one "
+      "level" },
+};
+const int CONDITION_COUNT =
+    (int)(sizeof(CONDITIONS) / sizeof(CONDITIONS[0]));
+
 const char *const BEAST_SIZE_NAME[] = {
     "Tiny",
     "Small",

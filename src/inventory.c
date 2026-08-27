@@ -197,6 +197,33 @@ static void add_magic(Character *c)
             }
             add_magic_item(c, map[pick], qty, attune, plus);
 
+            /* The book's magic weapon entry covers every weapon at once,
+               so the copy has to say which one it is before the attacks
+               block can add its bonus. */
+            if (r && r->weapon) {
+                const char *opts[64];
+                int k, wn = 0;
+                char answer[MAX_NAME];
+
+                for (k = 0; k < c->item_count && wn < 64; k++) {
+                    const ItemData *w;
+                    if (c->inventory[k].is_magic) continue;
+                    w = &ITEMS[c->inventory[k].item_id];
+                    if (w->category < ITEM_SIMPLE_MELEE
+                        || w->category > ITEM_MARTIAL_RANGED) continue;
+                    opts[wn++] = w->name;
+                }
+                if (wn) {
+                    ui_menu_custom("  Which weapon is it?", opts, NULL, wn,
+                                   "A weapon you are not carrying yet",
+                                   answer, sizeof answer);
+                } else {
+                    ui_line("  Which weapon is it?", answer, sizeof answer);
+                }
+                snprintf(c->inventory[c->item_count - 1].variant,
+                         sizeof c->inventory[0].variant, "%s", answer);
+            }
+
             /* Armour and rings of resistance are made against one kind of
                damage; which one is a property of the copy. */
             if (r && ((r->resist && !strcmp(r->resist, "*"))

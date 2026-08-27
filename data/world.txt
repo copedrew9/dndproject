@@ -365,6 +365,23 @@ SIDEKICKFEATURE|Warrior|20|Second Wind improves|Second Wind can be used twice be
 PROGRESSION|sidekick spellcaster cantrips|0,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4
 PROGRESSION|sidekick spellcaster spells known|0,1,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11
 
+# CONDITION | name | what it does, one effect per '|'
+CONDITION|Blinded|You cannot see, and automatically fail any ability check that needs sight\|Attacks against you have advantage, and your attacks have disadvantage
+CONDITION|Charmed|You cannot attack the charmer or target them with a harmful ability or magical effect\|The charmer has advantage on ability checks to interact with you socially
+CONDITION|Deafened|You cannot hear, and automatically fail any ability check that needs hearing
+CONDITION|Frightened|You have disadvantage on ability checks and attack rolls while the source of your fear is in line of sight\|You cannot willingly move closer to it
+CONDITION|Grappled|Your speed becomes 0 and cannot be raised by any bonus\|It ends if the grappler is incapacitated, or if an effect puts you out of the grappler's reach
+CONDITION|Incapacitated|You cannot take actions or reactions
+CONDITION|Invisible|You cannot be seen without magic or a special sense, and count as heavily obscured for hiding; noise and tracks still give you away\|Attacks against you have disadvantage, and your attacks have advantage
+CONDITION|Paralyzed|You are incapacitated, and cannot move or speak\|You automatically fail Strength and Dexterity saving throws\|Attacks against you have advantage, and any hit from within 5 feet is a critical hit
+CONDITION|Petrified|You and your nonmagical gear turn to solid inanimate substance, ten times the weight, and you stop ageing\|You are incapacitated, cannot move or speak, and are unaware of your surroundings\|You automatically fail Strength and Dexterity saving throws, and attacks against you have advantage\|You resist all damage and are immune to poison and disease, though anything already in you is suspended rather than cured
+CONDITION|Poisoned|You have disadvantage on attack rolls and ability checks
+CONDITION|Prone|Your only movement is to crawl, until you stand up and end the condition\|You have disadvantage on attack rolls\|Attacks against you have advantage from within 5 feet and disadvantage from further away
+CONDITION|Restrained|Your speed becomes 0 and cannot be raised by any bonus\|Attacks against you have advantage, and your attacks have disadvantage\|You have disadvantage on Dexterity saving throws
+CONDITION|Stunned|You are incapacitated, cannot move, and can speak only falteringly\|You automatically fail Strength and Dexterity saving throws\|Attacks against you have advantage
+CONDITION|Unconscious|You are incapacitated, cannot move or speak, and are unaware of your surroundings\|You drop what you are holding and fall prone\|You automatically fail Strength and Dexterity saving throws\|Attacks against you have advantage, and any hit from within 5 feet is a critical hit
+CONDITION|Exhaustion|Measured in six levels, and you suffer your level's effect and every lower one\|1: disadvantage on ability checks\|2: speed halved\|3: disadvantage on attack rolls and saving throws\|4: hit point maximum halved\|5: speed reduced to 0\|6: death\|A long rest with food and drink reduces it by one level
+
 # LIFETABLE | name | die
 
 # LIFEROW | table | lowest roll | highest roll | text

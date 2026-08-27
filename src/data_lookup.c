@@ -265,3 +265,20 @@ int tools_in_group(const char *group, const char **out, int max)
     }
     return n;
 }
+
+/* The Random Height and Weight row for a character. A subrace row wins over
+   its race's, and a race the table does not cover has none: the newer books
+   give height and weight in prose instead of in that table. */
+const BodyData *body_for(const char *race, const char *subrace)
+{
+    const BodyData *fallback = NULL;
+    int i;
+
+    for (i = 0; i < BODY_COUNT; i++) {
+        if (strcmp(BODIES[i].race, race) != 0) continue;
+        if (subrace && BODIES[i].subrace[0]
+            && strcmp(BODIES[i].subrace, subrace) == 0) return &BODIES[i];
+        if (!BODIES[i].subrace[0]) fallback = &BODIES[i];
+    }
+    return fallback;
+}

@@ -82,6 +82,25 @@ extern const int RACE_COUNT;
 extern const SubraceData SUBRACES[];
 extern const int SUBRACE_COUNT;
 
+/* The PHB's Random Height and Weight table. The height modifier dice give
+ * the inches above the base height, and that same roll multiplied by the
+ * weight dice gives the pounds above the base weight. */
+typedef struct {
+    const char *race;
+    const char *subrace;        /* "" when the whole race shares a row */
+    int base_height;            /* inches */
+    const char *height_dice;
+    int base_weight;            /* pounds */
+    const char *weight_dice;    /* "1" for the halfling and the gnome */
+} BodyData;
+
+extern const BodyData BODIES[];
+extern const int BODY_COUNT;
+
+/* The row for a race, preferring the one that names the subrace. NULL when
+   the books give no row, as they do not for the newer races. */
+const BodyData *body_for(const char *race, const char *subrace);
+
 typedef struct {
     const char *dragon;
     const char *damage;
@@ -230,6 +249,10 @@ extern const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1];
 extern const unsigned char *const THIRD_CANTRIPS;
 extern const unsigned char *const THIRD_SPELLS_KNOWN;
 
+/* The experience needed for each character level (PHB p.15). Indexed by
+   level, so XP_FOR_LEVEL[1] is 0 and XP_FOR_LEVEL[20] is 355,000. */
+extern const int XP_FOR_LEVEL[MAX_LEVEL + 1];
+
 /* Levels at which a class grants an Ability Score Improvement. */
 int asi_levels_for(int class_id, int out[], int max);
 
@@ -350,6 +373,17 @@ typedef struct {
 
 extern const LifeTable LIFE_TABLES[];
 extern const int LIFE_TABLE_COUNT;
+
+/* The conditions of appendix A. The effects are '|' separated, one to a
+ * line on screen, because that is how they are read: down a list, mid-turn,
+ * to settle what a creature can still do. */
+typedef struct {
+    const char *name;
+    const char *effects;
+} ConditionData;
+
+extern const ConditionData CONDITIONS[];
+extern const int CONDITION_COUNT;
 
 /* The gods of appendix B. A cleric or paladin names one, and the suggested
  * domains connect that choice to the Divine Domain menu. */
@@ -517,6 +551,10 @@ typedef struct {
     int only_unarmored;         /* applies only with no armour or shield */
     int unarmored_base;         /* sets the unarmoured base AC instead */
     int variable;               /* the bonus is the copy's own +N */
+    /* The bonus goes on attack and damage rolls rather than Armor Class.
+       The inventory entry's variant names the weapon it is, since the
+       book's entry covers every weapon at once. */
+    int weapon;
 
     /* Scores an item sets outright, rather than adding to. sets_ability is
        the ability plus one, so zero means none; sets_to of 0 means the copy

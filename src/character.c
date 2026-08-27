@@ -1,7 +1,9 @@
 /* character.c -- derived statistics (PHB chapters 1, 5 and 7). */
 #include "dnd.h"
 #include "data.h"
+#include "ui.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 const char *const ABILITY_NAME[ABL_COUNT] = {
@@ -309,6 +311,212 @@ int armour_class(const Character *c)
         best += 1;
     }
     return best;
+}
+
+/* ------------------------------------------------------------- attacks */
+
+/* A character sheet's attack lines: for each weapon carried, what it hits
+ * at and what it does. The arithmetic is small but it is the arithmetic a
+ * player redoes at the table more often than any other, and getting it from
+ * the sheet rather than from memory is the point of writing one.
+ */
+
+/* Proficiency is granted three ways: by name, by category, or by "All
+ * weapons". A class grants a plural ("longswords") where the equipment
+ * table has the singular, so a trailing s is ignored on both sides. */
+static int same_weapon(const char *a, const char *b)
+{
+    size_t la = strlen(a), lb = strlen(b);
+
+    if (la && (a[la - 1] == 's' || a[la - 1] == 'S')) la--;
+    if (lb && (b[lb - 1] == 's' || b[lb - 1] == 'S')) lb--;
+    if (la != lb) return 0;
+    while (la--) {
+        int ca = a[la], cb = b[la];
+        if (ca >= 'A' && ca <= 'Z') ca += 32;
+        if (cb >= 'A' && cb <= 'Z') cb += 32;
+        if (ca != cb) return 0;
+    }
+    return 1;
+}
+
+static int weapon_proficient(const Character *c, const ItemData *it)
+{
+    int simple = (it->category == ITEM_SIMPLE_MELEE
+                  || it->category == ITEM_SIMPLE_RANGED);
+    int i;
+
+    for (i = 0; i < c->other_prof_count; i++) {
+        const char *p = c->other_profs[i];
+        if (same_weapon(p, it->name)) return 1;
+        if (!strcmp(p, "All weapons")) return 1;
+        if (simple && !strcmp(p, "Simple weapons")) return 1;
+        if (!simple && !strcmp(p, "Martial weapons")) return 1;
+    }
+    /* A monk is proficient with shortswords through Martial Arts, and a
+       druid's list is worded as a set of names, both already covered above. */
+    return 0;
+}
+
+/* The +N of a magic weapon the character has said this one is. The book's
+   entry covers every weapon at once, so the copy names which. */
+static int magic_weapon_bonus(const Character *c, const char *weapon)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r;
+        if (!c->inventory[i].is_magic) continue;
+        r = magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+        if (!r || !r->weapon) continue;
+        if (!c->inventory[i].variant[0]) continue;
+        if (same_weapon(c->inventory[i].variant, weapon)) {
+            return c->inventory[i].plus;
+        }
+    }
+    return 0;
+}
+
+/* The monk's Martial Arts die, which replaces an unarmed strike's damage
+   and that of any monk weapon. Zero for anyone else. */
+static int martial_arts_die(const Character *c)
+{
+    int lv = class_level_of(c, CLS_MONK);
+    if (lv <= 0) return 0;
+    if (lv >= 17) return 10;
+    if (lv >= 11) return 8;
+    if (lv >= 5) return 6;
+    return 4;
+}
+
+static int has_choice_containing(const Character *c, const char *label,
+                                 const char *needle)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) != 0) continue;
+        if (strstr(c->choices[i].value, needle)) return 1;
+    }
+    return 0;
+}
+
+/* "1d8" -> 8. Zero when the damage is a flat number or absent. */
+static int die_of(const char *damage)
+{
+    const char *d = strchr(damage, 'd');
+    return d ? atoi(d + 1) : 0;
+}
+
+static void add_note(char *note, size_t n, const char *text)
+{
+    size_t used = strlen(note);
+    snprintf(note + used, n - used, "%s%s", used ? ", " : "", text);
+}
+
+int attacks_of(const Character *c, Attack *out, int max)
+{
+    int prof = proficiency_bonus(c);
+    int str = ability_mod(c, ABL_STR);
+    int dex = ability_mod(c, ABL_DEX);
+    int monk_die = martial_arts_die(c);
+    int archery = has_choice_containing(c, "Fighting Style", "Archery");
+    int i, n = 0;
+
+    for (i = 0; i < c->item_count && n < max; i++) {
+        const ItemData *it;
+        const char *props;
+        int ranged, finesse, ability, plus, hit, dmg, die;
+        Attack *a;
+
+        if (c->inventory[i].is_magic) continue;
+        it = &ITEMS[c->inventory[i].item_id];
+        if (it->category < ITEM_SIMPLE_MELEE
+            || it->category > ITEM_MARTIAL_RANGED) continue;
+        if (!it->damage[0]) continue;              /* a net does none */
+
+        props = it->properties;
+        ranged = (it->category == ITEM_SIMPLE_RANGED
+                  || it->category == ITEM_MARTIAL_RANGED);
+        finesse = contains_ci(props, "finesse");
+
+        /* Finesse lets either modifier be used, so the sheet shows the
+           better one; a ranged weapon uses Dexterity and everything else
+           Strength. */
+        ability = ranged ? dex : str;
+        if (finesse && dex > ability) ability = dex;
+        if (finesse && str > ability) ability = str;
+
+        plus = magic_weapon_bonus(c, it->name);
+        hit = ability + plus;
+        if (weapon_proficient(c, it)) hit += prof;
+        if (archery && ranged) hit += 2;
+
+        a = &out[n++];
+        snprintf(a->name, sizeof a->name, "%s", it->name);
+        a->bonus = hit;
+        a->proficient = weapon_proficient(c, it);
+
+        die = die_of(it->damage);
+        dmg = ability + plus;
+        {
+            /* A monk weapon -- a simple melee weapon that is neither
+               two-handed nor heavy, and the shortsword -- may use the
+               Martial Arts die when it is the larger one. */
+            const char *dice = it->damage;
+            char monk[8];
+            if (monk_die && die && die < monk_die
+                && (it->category == ITEM_SIMPLE_MELEE
+                    || same_weapon(it->name, "Shortsword"))
+                && !contains_ci(props, "two-handed")
+                && !contains_ci(props, "heavy")) {
+                snprintf(monk, sizeof monk, "1d%d", monk_die);
+                dice = monk;
+            }
+            if (dmg) {
+                snprintf(a->damage, sizeof a->damage, "%s%+d %s",
+                         dice, dmg, it->damage_type);
+            } else {
+                snprintf(a->damage, sizeof a->damage, "%s %s",
+                         dice, it->damage_type);
+            }
+        }
+
+        a->note[0] = '\0';
+        if (props[0]) add_note(a->note, sizeof a->note, props);
+        if (!a->proficient) {
+            add_note(a->note, sizeof a->note,
+                     "you are not proficient with it");
+        }
+        if (plus) {
+            char buf[32];
+            snprintf(buf, sizeof buf, "+%d weapon", plus);
+            add_note(a->note, sizeof a->note, buf);
+        }
+    }
+
+    /* Everyone can punch, and for a monk it is a real attack. */
+    if (n < max) {
+        Attack *a = &out[n++];
+        int ability = str;
+        if (monk_die && dex > str) ability = dex;
+        snprintf(a->name, sizeof a->name, "Unarmed strike");
+        a->bonus = ability + prof;
+        a->proficient = 1;
+        if (monk_die) {
+            snprintf(a->damage, sizeof a->damage, "1d%d%+d bludgeoning",
+                     monk_die, ability);
+            snprintf(a->note, sizeof a->note,
+                     "Martial Arts; a bonus-action strike after the Attack "
+                     "action");
+        } else {
+            /* An unarmed strike deals 1 plus the Strength modifier, and
+               never less than nothing. */
+            int hurt = 1 + ability;
+            snprintf(a->damage, sizeof a->damage, "%d bludgeoning",
+                     hurt > 0 ? hurt : 0);
+            a->note[0] = '\0';
+        }
+    }
+    return n;
 }
 
 int initiative_bonus(const Character *c)

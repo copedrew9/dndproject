@@ -328,6 +328,37 @@ static void write_sheet(FILE *f, const Character *c)
     }
     fprintf(f, "\n");
     fprintf(f, "  Passive Perception %d\n", passive_perception(c));
+    {
+        /* Experience is not tracked, but knowing where the level sits on
+           the advancement table is what tells a player how far off the
+           next one is. */
+        int lv = total_level(c);
+        fprintf(f, "  Experience       %d needed for level %d",
+                XP_FOR_LEVEL[lv], lv);
+        if (lv < MAX_LEVEL) {
+            fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+        }
+        fprintf(f, "\n");
+    }
+
+    {
+        Attack atk[MAX_ATTACKS];
+        int n = attacks_of(c, atk, MAX_ATTACKS);
+        if (n) {
+            section(f, "ATTACKS");
+            for (i = 0; i < n; i++) {
+                fprintf(f, "  %-24s %+3d to hit   %s\n",
+                        atk[i].name, atk[i].bonus, atk[i].damage);
+                if (atk[i].note[0]) {
+                    fprintf(f, "        %s\n", atk[i].note);
+                }
+            }
+            fprintf(f, "\n  A fighting style or a feature that adds to one "
+                       "of these -- Dueling,\n  Great Weapon Fighting, "
+                       "Sneak Attack, Rage -- is listed under class\n"
+                       "  features and applies on top.\n");
+        }
+    }
 
     section(f, "SKILLS");
     for (i = 0; i < SKL_COUNT; i++) {
@@ -478,6 +509,17 @@ static void write_sheet(FILE *f, const Character *c)
     fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
             current_weight_tenths(c) / 10, current_weight_tenths(c) % 10,
             carrying_capacity(c));
+    {
+        /* The PHB's optional encumbrance rule (p.176), which most tables
+           that use it want on the sheet rather than in their heads. */
+        int str = ability_score(c, ABL_STR);
+        int carried = current_weight_tenths(c);
+        fprintf(f, "  Encumbered above %d lb, heavily encumbered above %d lb"
+                   " (variant rule)%s\n",
+                str * 5, str * 10,
+                carried > str * 100 ? " -- you are heavily encumbered"
+                    : carried > str * 50 ? " -- you are encumbered" : "");
+    }
 
     /* Magic items get their own section with what each one does, since the
        whole point of carrying one is the rule it brings. */

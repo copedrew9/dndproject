@@ -85,6 +85,20 @@ SUBRACE|Human|Variant Human|PHB|0|0|0|0|0|0|0|0|0|2|1|1|1|Ability Score Increase
 SUBRACE|Gnome|Forest Gnome|PHB|0|1|0|0|0|0|0|0|0|0|0|0|0|Natural Illusionist: you know the minor illusion cantrip, cast with Intelligence\|Speak with Small Beasts: communicate simple ideas to Small or smaller beasts
 SUBRACE|Gnome|Rock Gnome|PHB|0|0|1|0|0|0|0|0|0|0|0|0|0|Artificer's Lore: double proficiency on History checks about magic, alchemical or technological items\|Tinker: proficiency with tinker's tools; build Tiny clockwork devices
 
+# BODY | race | subrace | base height in inches | height modifier dice | base weight in pounds | weight multiplier dice
+BODY|Human||56|2d10|110|2d4
+BODY|Dwarf|Hill Dwarf|44|2d4|115|2d6
+BODY|Dwarf|Mountain Dwarf|48|2d4|130|2d6
+BODY|Elf|High Elf|54|2d10|90|1d4
+BODY|Elf|Wood Elf|54|2d10|100|1d4
+BODY|Elf|Dark Elf (Drow)|53|2d6|75|1d6
+BODY|Halfling||31|2d4|35|1
+BODY|Dragonborn||66|2d8|175|2d6
+BODY|Gnome||35|2d4|35|1
+BODY|Half-Elf||57|2d8|110|2d4
+BODY|Half-Orc||58|2d10|140|2d6
+BODY|Tiefling||57|2d8|110|2d4
+
 # ANCESTRY | dragon | damage | breath
 ANCESTRY|Black|Acid|5 by 30 ft. line (Dex. save)
 ANCESTRY|Blue|Lightning|5 by 30 ft. line (Dex. save)
@@ -174,6 +188,28 @@ PACTSLOTS|17|4|5
 PACTSLOTS|18|4|5
 PACTSLOTS|19|4|5
 PACTSLOTS|20|4|5
+
+# XP | level | experience points needed to reach it
+XP|1|0
+XP|2|300
+XP|3|900
+XP|4|2700
+XP|5|6500
+XP|6|14000
+XP|7|23000
+XP|8|34000
+XP|9|48000
+XP|10|64000
+XP|11|85000
+XP|12|100000
+XP|13|120000
+XP|14|140000
+XP|15|165000
+XP|16|195000
+XP|17|225000
+XP|18|265000
+XP|19|305000
+XP|20|355000
 
 # SUBCLASS | class | name | book | summary | bonus_spells | option_label | options
 SUBCLASS|Barbarian|Path of the Berserker|PHB|Fury in battle: frenzy grants a bonus attack at the cost of exhaustion.|||

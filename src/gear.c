@@ -554,6 +554,51 @@ void choose_equipment(Character *c)
     }
 }
 
+
+/* "2d10" -> a roll of it; "1" -> 1. The weight column of the Random Height
+   and Weight table is a flat multiplier for the halfling and the gnome. */
+static int roll_notation(const char *dice)
+{
+    const char *d = strchr(dice, 'd');
+    if (!d) return atoi(dice);
+    return roll_dice(d == dice ? 1 : atoi(dice), atoi(d + 1));
+}
+
+/* Offers the PHB's Random Height and Weight table where the books give a
+   row for the race, and falls back to asking outright where they do not:
+   the newer races describe their build in prose instead. */
+static void choose_body(Character *c)
+{
+    const BodyData *b = body_for(RACES[c->race_id].name,
+                                 c->subrace_id >= 0
+                                     ? SUBRACES[c->subrace_id].name : NULL);
+
+    c->age = ui_int("  Age", 1, 900);
+
+    if (b && ui_yesno("  Roll height and weight on the book's table?", 1)) {
+        /* The same roll that gives the inches above the base height also
+           multiplies the weight dice, which is what keeps a tall character
+           heavy and a short one light. */
+        int modifier = roll_notation(b->height_dice);
+        int extra = modifier * roll_notation(b->weight_dice);
+
+        c->height_in = b->base_height + modifier;
+        c->weight_lb = b->base_weight + extra;
+        printf("    %d ft %d in, %d lb (base %d in + %d, base %d lb + %d)\n",
+               c->height_in / 12, c->height_in % 12, c->weight_lb,
+               b->base_height, modifier, b->base_weight, extra);
+        return;
+    }
+
+    if (b) {
+        printf("    The table gives %d ft %d in + %s inches, and %d lb plus"
+               " that roll times %s lb.\n", b->base_height / 12,
+               b->base_height % 12, b->height_dice, b->base_weight,
+               b->weight_dice);
+    }
+    c->height_in = ui_int("  Height in inches", 20, 120);
+    c->weight_lb = ui_int("  Weight in pounds", 10, 1500);
+}
 /* ------------------------------------------------------------- personality */
 
 /* The background's suggestions are a NULL-terminated array; the shared
@@ -667,9 +712,7 @@ void choose_personality(Character *c)
     for (i = 0; i < ALIGN_COUNT; i++) aligns[i] = ALIGNMENT_NAME[i];
     c->alignment = (Alignment)ui_menu("  Alignment:", aligns, NULL, ALIGN_COUNT);
 
-    c->age = ui_int("  Age", 1, 900);
-    c->height_in = ui_int("  Height in inches", 20, 100);
-    c->weight_lb = ui_int("  Weight in pounds", 10, 600);
+    choose_body(c);
     ui_line_default("  Eyes", "brown", c->eyes, sizeof c->eyes);
     ui_line_default("  Skin", "tan", c->skin, sizeof c->skin);
     ui_line_default("  Hair", "black", c->hair, sizeof c->hair);

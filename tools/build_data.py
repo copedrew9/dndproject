@@ -332,6 +332,16 @@ def build_character():
         if r.str(0) not in race_names:
             r.die("no RACE named %r" % r.str(0))
 
+    # --- the Random Height and Weight table
+    rows = []
+    for r in tags.get("BODY", []):
+        if r.str(0) not in race_names:
+            r.die("no RACE named %r" % r.str(0))
+        rows.append("    { %s, %s, %d, %s, %d, %s }"
+                    % (cstr(r.str(0)), cstr(r.str(1)), r.int(2),
+                       cstr(r.str(3)), r.int(4), cstr(r.str(5))))
+    out.table("const BodyData BODIES[]", rows, "BODY_COUNT")
+
     # --- draconic ancestry
     out.table("const AncestryData ANCESTRIES[]",
               ["    { %s, %s, %s }" % (cstr(r.str(0)), cstr(r.str(1)),
@@ -372,6 +382,18 @@ def build_character():
             sys.exit("data/character.txt: PACTSLOTS is missing level %d" % lvl)
         rows.append("    { %d, %d }" % pact[lvl])
     out.table("const unsigned char PACT_SLOTS[MAX_LEVEL + 1][2]", rows)
+
+    xp = {}
+    for r in tags.get("XP", []):
+        xp[r.int(0)] = r.int(1)
+    for lvl in range(1, 21):
+        if lvl not in xp:
+            sys.exit("data/character.txt: XP is missing level %d" % lvl)
+    out.w("\n/* The experience needed for each level (PHB p.15). */\n"
+          "const int XP_FOR_LEVEL[MAX_LEVEL + 1] = {\n    0")
+    for lvl in range(1, 21):
+        out.w("%s%d" % (",\n    " if lvl % 5 == 1 else ", ", xp[lvl]))
+    out.w("\n};\n")
 
     # --- classes
     skill_lists = {}
@@ -671,7 +693,8 @@ def build_equipment():
     # written as designated initialisers and everything else stays zero.
     INT_KEYS = ("ac_bonus", "save_bonus", "armor_base", "armor_dex",
                 "armor_str", "armor_stealth", "shield", "only_unarmored",
-                "unarmored_base", "variable", "sets_ability", "sets_to",
+                "unarmored_base", "variable", "weapon", "sets_ability",
+                "sets_to",
                 "sets_speed", "fly_speed", "swim_speed", "climb_speed")
     rows = []
     for r in tags.get("MAGICRULE", []):
@@ -766,6 +789,12 @@ def build_world():
             cstr(r.str(4)), cstr(r.str(5)))
          for r in tags.get("DEITY", [])],
         "DEITY_COUNT")
+
+    out.table(
+        "const ConditionData CONDITIONS[]",
+        ["    { %s,\n      %s }" % (cstr(r.str(0)), cstr(r.str(1)))
+         for r in tags.get("CONDITION", [])],
+        "CONDITION_COUNT")
 
     sizes = [r.str(0) for r in tags.get("BEASTSIZE", [])]
     if len(sizes) != 6:

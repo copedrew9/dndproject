@@ -166,6 +166,20 @@ static void dump_character(void)
         }
     }
 
+    head(f, "BODY", "race | subrace | base height in inches | height "
+                    "modifier dice | base weight in pounds | weight "
+                    "multiplier dice");
+    for (i = 0; i < BODY_COUNT; i++) {
+        rec(f, "BODY");
+        field(f, BODIES[i].race);
+        field(f, BODIES[i].subrace);
+        num(f, BODIES[i].base_height);
+        field(f, BODIES[i].height_dice);
+        num(f, BODIES[i].base_weight);
+        field(f, BODIES[i].weight_dice);
+        end(f);
+    }
+
     head(f, "ANCESTRY", "dragon | damage | breath");
     for (i = 0; i < ANCESTRY_COUNT; i++) {
         rec(f, "ANCESTRY");
@@ -263,6 +277,14 @@ static void dump_character(void)
         num(f, i);
         num(f, PACT_SLOTS[i][0]);
         num(f, PACT_SLOTS[i][1]);
+        end(f);
+    }
+
+    head(f, "XP", "level | experience points needed to reach it");
+    for (i = 1; i <= MAX_LEVEL; i++) {
+        rec(f, "XP");
+        num(f, i);
+        num(f, XP_FOR_LEVEL[i]);
         end(f);
     }
 
@@ -550,6 +572,7 @@ static void dump_equipment(void)
             { "only_unarmored",  offsetof(MagicRule, only_unarmored) },
             { "unarmored_base",  offsetof(MagicRule, unarmored_base) },
             { "variable",        offsetof(MagicRule, variable) },
+            { "weapon",          offsetof(MagicRule, weapon) },
             { "sets_ability",    offsetof(MagicRule, sets_ability) },
             { "sets_to",         offsetof(MagicRule, sets_to) },
             { "sets_speed",      offsetof(MagicRule, sets_speed) },
@@ -694,6 +717,14 @@ static void dump_world(void)
     progression(f, "sidekick spellcaster cantrips", SPELLCASTER_CANTRIPS);
     progression(f, "sidekick spellcaster spells known",
                 SPELLCASTER_SPELLS_KNOWN);
+
+    head(f, "CONDITION", "name | what it does, one effect per '|'");
+    for (i = 0; i < CONDITION_COUNT; i++) {
+        rec(f, "CONDITION");
+        field(f, CONDITIONS[i].name);
+        field(f, CONDITIONS[i].effects);
+        end(f);
+    }
 
     head(f, "LIFETABLE", "name | die");
     head(f, "LIFEROW", "table | lowest roll | highest roll | text");

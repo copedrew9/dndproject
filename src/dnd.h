@@ -75,8 +75,9 @@ typedef struct {
     int attuned;        /* magic items only; at most three at a time */
     int plus;           /* for a +1/+2/+3 item, which one this copy is */
     /* For an item whose effect names something -- the damage a ring of
-       resistance resists, the giant a belt draws its Strength from. */
-    char variant[24];
+       resistance resists, the giant a belt draws its Strength from, the
+       weapon a +1 weapon is. */
+    char variant[MAX_NAME];
 } InventoryEntry;
 
 #define MAX_ATTUNED 3
@@ -233,6 +234,20 @@ int  spell_save_dc(const Character *c, int class_id);
 int  spell_attack_bonus(const Character *c, int class_id);
 int  find_class_slot(const Character *c, int class_id);
 int  armour_class(const Character *c);
+
+/* One line of the attacks block: what the character swings, what it hits
+   at, and what it does when it lands. */
+#define MAX_ATTACKS 24
+
+typedef struct {
+    char name[MAX_NAME];
+    int  bonus;                 /* to hit */
+    char damage[48];            /* "1d8 + 3 slashing" */
+    char note[MAX_TEXT];        /* reach, range, versatile, thrown */
+    int  proficient;
+} Attack;
+
+int  attacks_of(const Character *c, Attack *out, int max);
 int  initiative_bonus(const Character *c);
 int  speed_of(const Character *c);
 int  carrying_capacity(const Character *c);

@@ -3562,6 +3562,7 @@ const MagicRule MAGIC_RULES[] = {
     { "Shield of Missile Attraction", .shield = 2 },
     { "Spellguard Shield", .shield = 2 },
     { "Shield, +1, +2, or +3", .shield = 2, .variable = 1 },
+    { "Weapon, +1, +2, or +3", .variable = 1, .weapon = 1 },
     { "Amulet of Health", .sets_ability = 3, .sets_to = 19 },
     { "Headband of Intellect", .sets_ability = 4, .sets_to = 19 },
     { "Gauntlets of Ogre Power", .sets_ability = 1, .sets_to = 19 },

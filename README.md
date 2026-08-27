@@ -213,11 +213,13 @@ Every table the program uses is hand-written, in four files under `data/`:
 
 ```
 data/character.txt   races, subraces, classes, subclasses, features,
-                     backgrounds, feats, invocations and the rest
+                     backgrounds, feats, invocations, the experience
+                     table and the height and weight table
 data/equipment.txt   armour, weapons, gear, tools, packs, magic items,
                      trinkets, lifestyles, prices and the tool groups
 data/spells.txt      every spell
-data/world.txt       gods, beasts, sidekicks, the background tables
+data/world.txt       gods, beasts, sidekicks, conditions, the
+                     background tables
 ```
 
 They are line-oriented and `|` separated, the same shape as the character
@@ -271,10 +273,9 @@ entries below it.
 ### Checking it against the books
 
 `TextFiles/` holds the books' text, extracted from the PDFs' text layer by
-`tools/pdf_text.py`. Nothing is built from it; it is kept so the data can be
-checked against it. The PDFs themselves are not in the repository -- they are
-255MB and they are not ours to distribute -- so the extraction is run once and
-its output is what is checked in.
+`tools/pdf_text.py`. Nothing is built from it, and nothing reads the PDFs in
+`Books/` at all: the extraction is run once and its output is what everything
+else checks against.
 
 That text used to be OCR of scanned pages, and the difference is the
 difference between guessing and knowing. The OCR confused C with G and I with
@@ -370,7 +371,7 @@ half-caster slots and specialist spells.
 data/character.txt     races, classes, subclasses, features, backgrounds
 data/equipment.txt     gear, weapons, armour, magic items, prices, tools
 data/spells.txt        every spell
-data/world.txt         gods, beasts, sidekicks, background tables
+data/world.txt         gods, beasts, sidekicks, conditions, tables
 homebrew.txt           the DM's own entries, read at run time
 tools/build_data.py    data/ -> src/gen_*.c
 tools/dump_data.c      src/gen_*.c -> data/, for `make dataverify`
@@ -419,6 +420,33 @@ DM's. `ITEMS[i]` reads the same either way, which is why adding homebrew
 touched none of the eighty-odd places that read those tables.
 
 Tasha's sidekicks come from that book's chapter 4.
+
+### What the sheet works out for you
+
+The point of writing a sheet is not having to redo arithmetic at the table,
+so the sheet carries the numbers a player reaches for most:
+
+- **An attacks block.** For every weapon carried: what it hits at and what it
+  does. Finesse takes the better of Strength and Dexterity, a ranged weapon
+  takes Dexterity, proficiency is added when the character has it and the
+  line says so when they do not, the Archery fighting style adds its +2, and a
+  monk's unarmed strike and monk weapons use the Martial Arts die for their
+  level. A `+1`, `+2` or `+3` weapon names which weapon it is when you pick it
+  up, and its bonus lands on both rolls. What stays off the block is anything
+  conditional -- Dueling, Great Weapon Fighting, Sneak Attack, Rage -- and the
+  sheet says so rather than quietly leaving it out.
+- **Where the level sits on the advancement table**, so the distance to the
+  next one is on the page rather than in someone's head.
+- **The encumbrance thresholds** from the variant rule, and whether the
+  character is over them.
+
+Height and weight are rolled on the PHB's own table where the books give the
+race a row: the roll that sets the inches above the base height is the one
+that multiplies the weight dice, which is what keeps a tall character heavy.
+The races the table never listed say so and ask instead.
+
+The reference screen carries **appendix A's conditions** alongside the
+equipment, because that is the page a table turns to once play has started.
 
 ### Choosing from the books, and beside them
 

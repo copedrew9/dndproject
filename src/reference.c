@@ -378,12 +378,43 @@ static void browse_trinkets(void)
     }
 }
 
+/* The conditions of appendix A, which is the page a table turns to most
+   often once play has started. */
+static void browse_conditions(void)
+{
+    for (;;) {
+        const char *opts[32];
+        int i, n = 0;
+
+        for (i = 0; i < CONDITION_COUNT && n < 31; i++) {
+            opts[n++] = CONDITIONS[i].name;
+        }
+        opts[n] = "Back";
+        i = ui_menu("  Condition:", opts, NULL, n + 1);
+        if (i == n) return;
+
+        printf("\n  %s\n", CONDITIONS[i].name);
+        {
+            char buf[1024];
+            const char *parts[16];
+            int k, count = split_pipe(CONDITIONS[i].effects, buf, sizeof buf,
+                                      parts, 16);
+            for (k = 0; k < count; k++) {
+                char line[MAX_TEXT + 8];
+                snprintf(line, sizeof line, "- %s", parts[k]);
+                ui_wrap(line, 4);
+            }
+        }
+        printf("\n");
+    }
+}
 void reference_menu(void)
 {
-    ui_header("Item Reference");
+    ui_header("Reference");
     ui_para("Everything the books say about a piece of equipment: what it "
             "costs and weighs, what its stat line means, and what it does "
-            "when it has no stat line at all.");
+            "when it has no stat line at all. And the conditions, for when "
+            "something has just gone wrong.");
 
     for (;;) {
         static const char *const modes[] = {
@@ -393,15 +424,17 @@ void reference_menu(void)
             "Trinkets",
             "Lifestyle expenses",
             "Food, lodging, services and spellcasting",
+            "Conditions",
             "Back"
         };
-        switch (ui_menu("  Look up:", modes, NULL, 7)) {
+        switch (ui_menu("  Look up:", modes, NULL, 8)) {
         case 0: browse_equipment();   break;
         case 1: browse_magic_items(); break;
         case 2: browse_properties();  break;
         case 3: browse_trinkets();    break;
         case 4: browse_lifestyles();  break;
         case 5: browse_prices();      break;
+        case 6: browse_conditions();  break;
         default: return;
         }
     }
