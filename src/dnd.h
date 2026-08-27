@@ -82,6 +82,7 @@ typedef struct {
 #define MAX_ATTUNED 3
 #define MAX_SIDEKICKS 4
 #define MAX_NOTES 16
+#define MAX_LORE 2048
 #define MAX_SK_CHOICES 12
 
 
@@ -91,6 +92,14 @@ typedef struct {
     char label[MAX_NAME];
     char value[MAX_TEXT];
 } ChoiceEntry;
+
+/* A note the player keeps on a character: a contact, a debt, a patron's
+   demands, the history behind a family sword. The body may run to
+   paragraphs, so it is far larger than the other text on a character. */
+typedef struct {
+    char title[MAX_NAME];
+    char body[MAX_LORE];
+} Note;
 
 /* A sidekick: a creature from the beast tables (or one typed in by hand)
    with levels in Expert, Spellcaster or Warrior. The creature supplies the
@@ -184,9 +193,10 @@ typedef struct {
     char background_feature_text[MAX_TEXT];
     char background_equipment[MAX_TEXT];
 
-    /* Anything the player wants to remember: contacts, debts, the name of
-       the innkeeper's dog. */
-    char notes[MAX_NOTES][MAX_TEXT];
+    /* Anything the player wants to remember, from a one-line reminder to
+       a character's history. Each has a title so a long one can be found
+       again without reading it. */
+    Note notes[MAX_NOTES];
     int  note_count;
 
     /* Personality (PHB chapter 4). */

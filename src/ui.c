@@ -287,6 +287,39 @@ int contains_ci(const char *haystack, const char *needle)
    Used wherever the books have a usual set of answers but not a closed one --
    a spell's range, a magic item's type -- so the common case is one keypress
    and the unusual case is still possible. */
+/* Reads a block of text: lines until a blank one. Paragraph breaks are kept
+   as newlines, which is what makes this usable for something longer than an
+   answer to a question -- a character's history, a patron's demands. */
+int ui_text_block(const char *prompt, char *out, size_t n)
+{
+    char line[512];
+    size_t used = 0;
+
+    printf("%s\n", prompt);
+    printf("  Type as many lines as you like. A blank line ends it.\n");
+
+    out[0] = '\0';
+    for (;;) {
+        printf("  > ");
+        fflush(stdout);
+        if (!read_line(line, sizeof line)) break;
+        if (line[0] == '\0') break;
+
+        {
+            size_t len = strlen(line);
+            if (used + len + 2 >= n) {
+                printf("  (that is as much as this note holds)\n");
+                break;
+            }
+            if (used) out[used++] = '\n';
+            memcpy(out + used, line, len);
+            used += len;
+            out[used] = '\0';
+        }
+    }
+    return (int)used;
+}
+
 void ui_pick_or_type(const char *prompt, const char *const *options,
                      int count, char *out, size_t n)
 {

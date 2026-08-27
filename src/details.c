@@ -19,6 +19,22 @@
 
 /* ------------------------------------------------------------------ notes */
 
+/* One line per note when listing them, since a note may run to paragraphs
+   and the list is for finding one, not reading it. */
+static void note_summary(const Note *nt, char *out, size_t n)
+{
+    const char *nl = strchr(nt->body, '\n');
+    int first = nl ? (int)(nl - nt->body) : (int)strlen(nt->body);
+
+    if (first > 46) first = 46;
+    if (!strcmp(nt->title, nt->body)) {         /* a one-line note */
+        snprintf(out, n, "%s", nt->title);
+        return;
+    }
+    snprintf(out, n, "%-22s %.*s%s", nt->title, first, nt->body,
+             (nl || (int)strlen(nt->body) > 46) ? "..." : "");
+}
+
 static void list_notes(const Character *c)
 {
     int i;
@@ -29,8 +45,31 @@ static void list_notes(const Character *c)
     }
     printf("\n");
     for (i = 0; i < c->note_count; i++) {
-        printf("  %2d. ", i + 1);
-        ui_wrap(c->notes[i], 6);
+        char line[120];
+        note_summary(&c->notes[i], line, sizeof line);
+        printf("  %2d. %s\n", i + 1, line);
+    }
+}
+
+/* Prints a note in full, paragraph breaks and all. */
+static void show_note(const Note *nt)
+{
+    char buf[MAX_LORE];
+    char *start, *p;
+
+    printf("\n  %s\n", nt->title);
+    if (!strcmp(nt->title, nt->body)) return;   /* a one-line note */
+    snprintf(buf, sizeof buf, "%s", nt->body);
+    start = buf;
+    for (p = buf;; p++) {
+        if (*p == '\n' || *p == '\0') {
+            int end = (*p == '\0');
+            *p = '\0';
+            if (*start) ui_wrap(start, 4);
+            else printf("\n");
+            if (end) break;
+            start = p + 1;
+        }
     }
 }
 
@@ -41,8 +80,23 @@ static void add_note(Character *c)
                "first.\n");
         return;
     }
-    ui_line("  The note", c->notes[c->note_count], MAX_TEXT);
-    if (c->notes[c->note_count][0]) {
+    {
+        Note *nt = &c->notes[c->note_count];
+        nt->title[0] = nt->body[0] = '\0';
+
+        ui_line("  A short title for it", nt->title, sizeof nt->title);
+        if (!nt->title[0]) return;
+        ui_text_block("  The note:", nt->body, sizeof nt->body);
+        if (!nt->body[0]) {
+            /* A title with nothing under it is still worth keeping.
+               Copied rather than printed, because the two are members of
+               the same struct and the compiler cannot see that they do not
+               overlap. */
+            size_t tn = strlen(nt->title);
+            if (tn >= sizeof nt->body) tn = sizeof nt->body - 1;
+            memcpy(nt->body, nt->title, tn);
+            nt->body[tn] = '\0';
+        }
         c->note_count++;
         printf("  Noted.\n");
     }
@@ -59,7 +113,7 @@ static void remove_note(Character *c)
         return;
     }
     for (i = 0; i < c->note_count; i++) {
-        snprintf(labels[i], sizeof labels[i], "%.72s", c->notes[i]);
+        note_summary(&c->notes[i], labels[i], sizeof labels[i]);
         opts[i] = labels[i];
     }
     opts[c->note_count] = "Back";
@@ -67,8 +121,11 @@ static void remove_note(Character *c)
     pick = ui_menu("  Remove which?", opts, NULL, c->note_count + 1);
     if (pick == c->note_count) return;
 
+    show_note(&c->notes[pick]);
+    if (!ui_yesno("  Remove it?", 0)) return;
+
     for (i = pick; i < c->note_count - 1; i++) {
-        memcpy(c->notes[i], c->notes[i + 1], MAX_TEXT);
+        c->notes[i] = c->notes[i + 1];
     }
     c->note_count--;
     printf("  Removed.\n");
@@ -85,24 +142,55 @@ static void edit_note(Character *c)
         return;
     }
     for (i = 0; i < c->note_count; i++) {
-        snprintf(labels[i], sizeof labels[i], "%.72s", c->notes[i]);
+        note_summary(&c->notes[i], labels[i], sizeof labels[i]);
         opts[i] = labels[i];
     }
     opts[c->note_count] = "Back";
 
-    pick = ui_menu("  Edit which?", opts, NULL, c->note_count + 1);
+    pick = ui_menu("  Which note?", opts, NULL, c->note_count + 1);
     if (pick == c->note_count) return;
 
-    printf("  Currently: ");
-    ui_wrap(c->notes[pick], 4);
-    ui_line_default("  New text", c->notes[pick], c->notes[pick], MAX_TEXT);
+    show_note(&c->notes[pick]);
+
+    {
+        static const char *const what[] = {
+            "Add more to the end", "Replace what it says",
+            "Rename it", "Leave it alone"
+        };
+        Note *nt = &c->notes[pick];
+
+        switch (ui_menu("  What would you like to do?", what, NULL, 4)) {
+        case 0: {
+            char more[MAX_LORE];
+            size_t used = strlen(nt->body);
+            if (ui_text_block("  What to add:", more, sizeof more)
+                && used + strlen(more) + 2 < sizeof nt->body) {
+                nt->body[used] = '\n';
+                snprintf(nt->body + used + 1, sizeof nt->body - used - 1,
+                         "%s", more);
+            }
+            break;
+        }
+        case 1:
+            ui_text_block("  The note:", nt->body, sizeof nt->body);
+            break;
+        case 2: {
+            char t[MAX_NAME];
+            ui_line_default("  Title", nt->title, t, sizeof t);
+            snprintf(nt->title, sizeof nt->title, "%s", t);
+            break;
+        }
+        default:
+            break;
+        }
+    }
 }
 
 static void notes_menu(Character *c)
 {
     for (;;) {
         static const char *const modes[] = {
-            "Add a note", "Edit one", "Remove one", "Done"
+            "Add a note", "Read or change one", "Remove one", "Done"
         };
 
         list_notes(c);

@@ -1253,23 +1253,44 @@ static void test_notes_and_custom_background(void)
     /* Notes hold what they are given, up to the limit. */
     for (i = 0; i < MAX_NOTES + 4; i++) {
         if (c.note_count >= MAX_NOTES) break;
-        snprintf(c.notes[c.note_count], MAX_TEXT, "note %d", i);
+        snprintf(c.notes[c.note_count].title, MAX_NAME, "note %d", i);
+        snprintf(c.notes[c.note_count].body, MAX_LORE, "body %d", i);
         c.note_count++;
     }
     EQ(c.note_count, MAX_NOTES, "notes fill to the limit and stop");
-    check(strcmp(c.notes[0], "note 0") == 0, "the first note is kept", 1, 1);
-    check(strcmp(c.notes[MAX_NOTES - 1], "note 15") == 0,
+    check(strcmp(c.notes[0].title, "note 0") == 0, "the first note is kept",
+          1, 1);
+    check(strcmp(c.notes[MAX_NOTES - 1].title, "note 15") == 0,
           "and so is the last", 1, 1);
+
+    /* A note's body holds far more than the other text on a character, so
+       lore fits without being cut short. */
+    check(MAX_LORE >= 2048, "a note holds paragraphs, not a line",
+          MAX_LORE, 2048);
+    {
+        char big[MAX_LORE];
+        memset(big, 'x', sizeof big - 1);
+        big[sizeof big - 1] = '\0';
+        snprintf(c.notes[0].body, MAX_LORE, "%s", big);
+        EQ((int)strlen(c.notes[0].body), MAX_LORE - 1,
+           "and it keeps all of it");
+    }
+    {
+        /* Newlines survive, because a note is written as paragraphs. */
+        snprintf(c.notes[1].body, MAX_LORE, "first\nsecond\n\nfourth");
+        check(strchr(c.notes[1].body, '\n') != NULL,
+              "paragraph breaks are kept", 1, 1);
+    }
 
     /* Removing one closes the gap, as the screen does. */
     {
         int k;
         for (k = 0; k < c.note_count - 1; k++) {
-            memcpy(c.notes[k], c.notes[k + 1], MAX_TEXT);
+            c.notes[k] = c.notes[k + 1];
         }
         c.note_count--;
         EQ(c.note_count, MAX_NOTES - 1, "removing a note shortens the list");
-        check(strcmp(c.notes[0], "note 1") == 0,
+        check(strcmp(c.notes[0].title, "note 1") == 0,
               "and the rest move up", 1, 1);
     }
 

@@ -143,15 +143,6 @@ static void wrap_to(FILE *f, const char *text, int indent)
     wrap_from(f, text, indent, 0);
 }
 
-/* As wrap_to, but the first line begins with a label already printed at
-   the margin -- "  1. " -- so a short note takes one line, not two. */
-static void wrap_after(FILE *f, const char *label, const char *text,
-                       int indent)
-{
-    fprintf(f, "%s", label);
-    wrap_from(f, text, indent, (int)strlen(label));
-}
-
 
 static void class_line(const Character *c, char *out, size_t n)
 {
@@ -565,9 +556,25 @@ static void write_sheet(FILE *f, const Character *c)
         int k;
         section(f, "NOTES");
         for (k = 0; k < c->note_count; k++) {
-            char label[16];
-            snprintf(label, sizeof label, "  %2d. ", k + 1);
-            wrap_after(f, label, c->notes[k], 6);
+            /* A note may run to paragraphs, so its title heads it and the
+               body keeps the breaks it was typed with. */
+            char buf[MAX_LORE], *start, *p;
+
+            fprintf(f, "\n  %d. %s\n", k + 1, c->notes[k].title);
+            /* A one-line note is its own title; do not print it twice. */
+            if (!strcmp(c->notes[k].title, c->notes[k].body)) continue;
+            snprintf(buf, sizeof buf, "%s", c->notes[k].body);
+            start = buf;
+            for (p = buf;; p++) {
+                if (*p == '\n' || *p == '\0') {
+                    int end = (*p == '\0');
+                    *p = '\0';
+                    if (*start) wrap_to(f, start, 6);
+                    else fprintf(f, "\n");
+                    if (end) break;
+                    start = p + 1;
+                }
+            }
         }
     }
 }
@@ -706,7 +713,18 @@ static void write_data(FILE *f, const Character *c)
     {
         int k;
         for (k = 0; k < c->note_count; k++) {
-            fprintf(f, "NOTE|%s\n", c->notes[k]);
+            const char *p;
+            fprintf(f, "NOTE|%s|", c->notes[k].title);
+            /* The format is one record per line and '|' separated, so a
+               note's own newlines and pipes are escaped rather than
+               allowed to break it. */
+            for (p = c->notes[k].body; *p; p++) {
+                if (*p == '\n')      fputs("\\n", f);
+                else if (*p == '|')  fputs("\\p", f);
+                else if (*p == '\\') fputs("\\\\", f);
+                else                 fputc(*p, f);
+            }
+            fputc('\n', f);
         }
     }
     fprintf(f, "BACKSTORY|%s\n", c->backstory);
@@ -836,8 +854,32 @@ int load_character(const char *path, Character *c)
                      sizeof c->background_equipment, "%s", fields[4]);
         } else if (!strcmp(fields[0], "NOTE") && n >= 2) {
             if (c->note_count < MAX_NOTES) {
-                snprintf(c->notes[c->note_count++], MAX_TEXT, "%s",
-                         fields[1]);
+                Note *nt = &c->notes[c->note_count++];
+                char *out = nt->body;
+                const char *p = (n >= 3) ? fields[2] : "";
+                size_t room = sizeof nt->body - 1;
+
+                snprintf(nt->title, sizeof nt->title, "%s", fields[1]);
+                while (*p && room) {
+                    if (*p == '\\' && p[1]) {
+                        p++;
+                        *out++ = (*p == 'n') ? '\n'
+                               : (*p == 'p') ? '|' : *p;
+                        p++;
+                    } else {
+                        *out++ = *p++;
+                    }
+                    room--;
+                }
+                *out = '\0';
+                /* Notes written before they had a title and a body of
+                   their own are a single line; keep it as both. */
+                if (!nt->body[0]) {
+                    size_t tn = strlen(nt->title);
+                    if (tn >= sizeof nt->body) tn = sizeof nt->body - 1;
+                    memcpy(nt->body, nt->title, tn);
+                    nt->body[tn] = '\0';
+                }
             }
         } else if (!strcmp(fields[0], "ALIGNMENT") && n >= 2) {
             c->alignment = (Alignment)index_of_alignment(fields[1]);

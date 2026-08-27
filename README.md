@@ -165,13 +165,20 @@ The main menu offers:
   Player's Handbook's own rules (p.125): any two skills, two tools or
   languages between them, and any feature — one borrowed from a printed
   background or written yourself.
-- **Notes and prose** — a character carries as many notes as you want to
-  keep: a contact, a debt, the name of the innkeeper's dog. Those, along
-  with personality, appearance and backstory, can be changed at any time
-  from the main menu, not just while the character is being made. Traits,
-  ideals, bonds and flaws offer the background's suggestions and always let
-  you write your own — including for a character whose background is their
-  own, which the wizard used to skip past entirely.
+- **Notes and prose** — a character carries notes, each with a title and a
+  body that may run to paragraphs: a contact, a debt, a patron's demands,
+  the history behind a family sword. Type as many lines as you like; a blank
+  line ends the note. They can be added, read, extended, rewritten, retitled
+  and removed at any time from the main menu, long after the character was
+  made. Personality, appearance and backstory sit on the same screen, so
+  those can change in play too. Traits, ideals, bonds and flaws offer the
+  background's suggestions and always let you write your own — including for
+  a character whose background is their own, which the wizard used to skip
+  past entirely.
+
+  Notes are stored in the character file as one record each, with their
+  newlines and separators escaped so a note full of paragraphs cannot break
+  the line-oriented format.
 
 Derived numbers are computed rather than typed in: proficiency bonus, ability
 modifiers, saving throws, skills (including expertise and the bard's Jack of

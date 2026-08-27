@@ -15,6 +15,10 @@ int  ui_int(const char *prompt, int lo, int hi);
 /* Prompt for a line of text. Returns the number of characters stored. */
 int  ui_line(const char *prompt, char *out, size_t n);
 
+/* Prompt for several lines, ending at a blank one. Newlines are kept, so
+   the result can hold paragraphs. Returns the number of characters stored. */
+int  ui_text_block(const char *prompt, char *out, size_t n);
+
 /* Prompt for a line, substituting def when the reply is empty. */
 void ui_line_default(const char *prompt, const char *def, char *out, size_t n);
 
