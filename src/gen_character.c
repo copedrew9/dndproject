@@ -208,18 +208,19 @@ const RaceData RACES[] = {
       "one size larger for carrying capacity|Speech of Beast and "
       "Leaf: beasts and plants can understand you, and you have "
       "advantage on Charisma checks made to influence them", 1 },
-    { "Genasi, Air", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
+    { "Genasi, Air", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 60,
       "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
-      "Unending Breath: you can hold your breath indefinitely while "
-      "not incapacitated|Lightning Resistance: resistance to "
-      "lightning damage|Air Genasi Magic: you know shocking grasp; "
-      "cast feather fall from 3rd level and levitate from 5th "
-      "level, each once per long rest", 1 },
-    { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
+      "Darkvision: 60 feet|Unending Breath: you can hold your "
+      "breath indefinitely while not incapacitated|Lightning "
+      "Resistance: resistance to lightning damage|Air Genasi Magic: "
+      "you know shocking grasp; cast feather fall from 3rd level "
+      "and levitate from 5th level, each once per long rest", 1 },
+    { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
-      "Earth Walk: difficult terrain made of earth or stone costs "
-      "no extra movement|Merge with Stone: cast pass without trace "
-      "once per long rest|Earth Genasi Magic: you know blade ward", 1 },
+      "Darkvision: 60 feet|Earth Walk: difficult terrain made of "
+      "earth or stone costs no extra movement|Merge with Stone: "
+      "cast pass without trace once per long rest|Earth Genasi "
+      "Magic: you know blade ward", 1 },
     { "Genasi, Fire", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common, Primordial", 0, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fire Resistance: resistance to fire "

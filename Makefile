@@ -53,6 +53,7 @@ audit:
 verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_deities.py
+	python3 tools/verify_races.py
 
 # Assertions on the rules engine.
 TESTBIN  = selftest

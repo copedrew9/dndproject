@@ -302,8 +302,9 @@ rather than the book's -- "Standard Human", for a human the PHB prints under
 no heading of its own, and five composite feature names -- and the audit says
 so rather than reporting them as missing.
 
-Names are the cheap check. `tools/verify_equipment.py` and
-`tools/verify_deities.py` do the expensive one, comparing the numbers:
+Names are the cheap check. `tools/verify_equipment.py`,
+`tools/verify_deities.py` and `tools/verify_races.py` do the expensive one,
+comparing the numbers:
 
 - **All 214 PHB equipment rows** -- cost, weight, damage die and type,
   armour class, the Dexterity cap, Strength requirement and stealth --
@@ -328,9 +329,13 @@ What the books themselves do not settle:
 - **The thirteen SCAG backgrounds** are not here, because that book is not
   among the six.
 - **MPMM** is the one book whose text is still OCR, no clean copy of it
-  having been to hand. Its races are checked against that text like
-  everything else, but the numbers beside them have not had the treatment
-  above.
+  having been to hand. `tools/verify_races.py` checks 31 of its 33 races
+  against it anyway -- size, walking speed, darkvision -- which caught the
+  air genasi's speed and darkvision and the earth genasi's darkvision. The
+  minotaur and the orc are the two it leaves alone: the orc's heading is
+  missing from the dump, so its traits run on into the minotaur's block and
+  neither can be told from the other. Both were read off the page by hand
+  and are right, but nothing is watching them.
 
 ## Testing
 
@@ -379,6 +384,7 @@ tools/pdf_text.py      the books' PDFs -> TextFiles/, run once
 tools/audit.py         checks every name in data/ against TextFiles/
 tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
+tools/verify_races.py      checks the MPMM race numbers
 tools/extract_deities.py   writes the DEITY rows from appendix B
 
 src/dnd.h              core types and the Character struct
