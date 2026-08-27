@@ -12,6 +12,14 @@ void wizard_level_up(Character *c);
 /* Walks every class level, granting hit points, subclasses and choices. */
 void build_levels(Character *c);
 
+/* Menus are built into fixed arrays before being shown. One bound governs
+   both the array and the loop that fills it, so a table that outgrows it
+   truncates the menu instead of writing past the end -- which is what the
+   race list did once it reached 42 entries against a 32-slot array, spilling
+   the last ten races over the details of the first ten. The self-test checks
+   that every table the wizard lists still fits. */
+#define MENU_MAX 64
+
 /* Shared list helpers; each ignores duplicates. */
 void add_language(Character *c, const char *lang);
 void add_tool(Character *c, const char *tool);

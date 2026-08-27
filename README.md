@@ -346,6 +346,7 @@ flushing, the harness can synchronise on real prompts and answer anything.
 
 ```sh
 make check                                  # the suite below
+make asan                                   # the same, with the sanitizers
 python3 tools/drive.py --runs 30            # 30 random characters
 python3 tools/drive.py --runs 10 --levelup  # create, save, reload, level up
 python3 tools/drive.py --runs 8 --valgrind  # under valgrind
