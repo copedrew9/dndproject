@@ -908,10 +908,10 @@ const ItemNote ITEM_NOTES[] = {
       "Dexterity. Don 5 minutes, doff 1 minute." },
     { "Half plate",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
-      "doff 5 minutes. Disadvantage on Stealth." },
+      "doff 1 minute. Disadvantage on Stealth." },
     { "Spiked Armor",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
-      "doff 5 minutes. Disadvantage on Stealth. A rare dwarven make "
+      "doff 1 minute. Disadvantage on Stealth. A rare dwarven make "
       "-- a leather coat and leggings studded with metal spikes -- "
       "and the armour a Path of the Battlerager barbarian needs "
       "before any of its features do anything." },
