@@ -397,6 +397,34 @@ static void test_skills_and_saves(void)
     c.base_score[ABL_DEX] = 14;         /* +2 */
     EQ(skill_bonus(&c, SKL_ACROBATICS), 3, "Jack of All Trades");
 
+    /* A Champion of 7th adds half its proficiency bonus, rounded up, to
+       Strength, Dexterity and Constitution checks that do not already use
+       it -- and to nothing else. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 7, subclass_by_name("Champion"));
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_DEX] = 10;
+    c.base_score[ABL_INT] = 10;
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 2, "Remarkable Athlete on Strength");
+    EQ(skill_bonus(&c, SKL_STEALTH), 2, "and on Dexterity");
+    EQ(skill_bonus(&c, SKL_ARCANA), 0, "but not on Intelligence");
+    c.skill_prof[SKL_ATHLETICS] = 1;
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 3,
+       "and not on a check that already uses it");
+
+    /* A bard who is also a Champion adds the better of the two halves,
+       not both. At thirteen levels the proficiency bonus is +5, so Jack of
+       All Trades rounds its half down to 2 and Remarkable Athlete rounds
+       the same half up to 3: the answer is 3, not 5. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 7, subclass_by_name("Champion"));
+    add_class(&c, CLS_BARD, 6, -1);
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_INT] = 10;
+    EQ(proficiency_bonus(&c), 5, "thirteen levels");
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 3, "the better half, not both");
+    EQ(skill_bonus(&c, SKL_ARCANA), 2, "and the bard's half elsewhere");
+
     /* A monk of 14th level is proficient in every save. */
     reset(&c);
     add_class(&c, CLS_MONK, 14, -1);

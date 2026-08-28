@@ -189,8 +189,27 @@ int skill_bonus(const Character *c, Skill s)
     if (c->skill_prof[s]) {
         bonus += pb;
         if (c->skill_expertise[s]) bonus += pb;
-    } else if (class_level_of(c, CLS_BARD) >= 2) {
-        bonus += pb / 2;            /* Jack of All Trades */
+        return bonus;
+    }
+
+    /* Two features add half the proficiency bonus to a check that does not
+       already use it: the bard's Jack of All Trades, rounded down and on
+       any of them, and the Champion's Remarkable Athlete, rounded up and
+       only on Strength, Dexterity and Constitution. A character with both
+       adds the better of the two rather than both -- they are the same
+       half of the same bonus. */
+    {
+        Ability a = SKILL_ABILITY[s];
+        int half = 0;
+
+        if (class_level_of(c, CLS_BARD) >= 2) half = pb / 2;
+        if (class_level_of(c, CLS_FIGHTER) >= 7
+            && has_subclass_named(c, "Champion")
+            && (a == ABL_STR || a == ABL_DEX || a == ABL_CON)
+            && (pb + 1) / 2 > half) {
+            half = (pb + 1) / 2;
+        }
+        bonus += half;
     }
     return bonus;
 }
