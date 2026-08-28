@@ -352,7 +352,7 @@ has. It found seven magic items nobody had entered, the Axe of the Dwarvish
 Lords and the Eye and Hand of Vecna among them. It now reports none, for 434
 spells and 255 magic items.
 
-Names are the cheap check. Nine scripts do the expensive one, comparing the
+Names are the cheap check. Eleven scripts do the expensive one, comparing the
 numbers and the words beside those names -- every spell's stat line, every
 magic item's kind and rarity, every beast's stat block, every class and
 subclass feature's level, every background's table of suggestions, every
@@ -408,6 +408,21 @@ before. Between them they found 52 rows the books settle differently:
   increases, speeds, sizes, darkvision, languages. Nothing wrong in either,
   which is worth as much as a finding: the feat checker was run against 36
   deliberately corrupted copies of its own rows first, and caught all 36.
+- **The tables that are nothing but numbers** -- the experience needed for
+  each level, the full caster's spell slots, the warlock's Pact Magic
+  columns, the height and weight table and the artificer's infusion levels,
+  90 rows, read back out of the book. All right, which took writing a reader
+  for the shape the extraction leaves a table in: one cell to a line, an em
+  dash for an empty column, and the header's own "1st" to "9th" sitting
+  above the rows like nine more of them.
+- **The reference rows** -- prices, conditions, weapon properties, tool
+  groups, trinkets and the This Is Your Life tables. Two prices were in
+  silver in the book and stored as copper, a tenth of what the book asks.
+  The Childhood Home table was filed as 3d6 where Xanathar's rolls d100, and
+  since a 3d6 cannot reach past 18 and that table's first row runs to 20,
+  every character the program ever rolled a childhood for grew up in a
+  rundown shack. Two more of its rows were a page header and a footnote the
+  extraction had left in the table.
 - **All 195 deities of appendix B** -- title, alignment, suggested domains and
   symbol, compared pantheon by pantheon so that the two Tyrs, the two Surturs
   and the two Silvanuses are each checked against the right table. The
@@ -524,6 +539,8 @@ tools/verify_classes.py    checks the class tables and feature levels
 tools/verify_backgrounds.py  checks the backgrounds and their tables
 tools/verify_feats.py      checks feat prerequisites and Tasha's features
 tools/verify_races_phb.py  checks the PHB and SCAG races
+tools/verify_tables.py     checks the tables that are only numbers
+tools/verify_reference.py  checks prices, conditions and the life tables
 tools/verify_coverage.py   looks for book content data/ is missing
 tools/extract_deities.py   writes the DEITY rows from appendix B
 tools/stress.py            walks every menu, not just the wizard
