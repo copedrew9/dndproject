@@ -127,7 +127,7 @@ static void add_from_catalogue(Character *c)
 
             show_item_detail(map[pick]);
             if (!ui_yesno("  Add it?", 1)) continue;
-            qty = ui_int("  How many", 1, 99);
+            qty = ui_int("  How many", 1, MAX_QUANTITY);
             add_item(c, map[pick], qty, 0);
             printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
             /* Back to the categories rather than the same long list, so
@@ -171,7 +171,7 @@ static void add_magic(Character *c)
         if (!ui_yesno("  Add it?", 1)) continue;
 
         {
-            int qty = ui_int("  How many", 1, 99);
+            int qty = ui_int("  How many", 1, MAX_QUANTITY);
             int attune = 0, plus = 0;
             const MagicItem *m = &MAGIC_ITEMS[map[pick]];
             const MagicRule *r = magic_rule_for(m->name);
@@ -308,7 +308,7 @@ static int is_wearable(const Character *c, int i)
     if (c->inventory[i].is_magic) {
         const MagicRule *r =
             magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
-        return r && (r->armor_base || r->shield);
+        return magic_rule_is_worn(r);
     }
     return ITEMS[c->inventory[i].item_id].category <= ITEM_SHIELD;
 }
@@ -408,11 +408,11 @@ static void adjust_coins(Character *c)
 {
     printf("\n  Enter the new totals; a treasure hoard or a night's "
            "spending both land here.\n");
-    c->platinum = ui_int("  Platinum", 0, 999999);
-    c->gold     = ui_int("  Gold",     0, 999999);
-    c->electrum = ui_int("  Electrum", 0, 999999);
-    c->silver   = ui_int("  Silver",   0, 999999);
-    c->copper   = ui_int("  Copper",   0, 999999);
+    c->platinum = ui_int("  Platinum", 0, MAX_COINS);
+    c->gold     = ui_int("  Gold",     0, MAX_COINS);
+    c->electrum = ui_int("  Electrum", 0, MAX_COINS);
+    c->silver   = ui_int("  Silver",   0, MAX_COINS);
+    c->copper   = ui_int("  Copper",   0, MAX_COINS);
 }
 
 /* --------------------------------------------------------------- the screen */

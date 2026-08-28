@@ -212,12 +212,15 @@ int homebrew_load(void)
             it->name = keep(fields[1]);
             it->book = BOOK_HOMEBREW;
             it->category = (ItemCategory)category_of(fields[2]);
-            it->cost_cp = atoi(fields[3]);
-            it->weight_tenths = atoi(fields[4]);
-            it->base_ac = atoi(fields[5]);
-            it->dex_cap = atoi(fields[6]);
-            it->str_req = atoi(fields[7]);
-            it->stealth_disadvantage = atoi(fields[8]);
+            /* The same ranges the prompts that write this file ask for.
+               A DM is invited to edit it by hand, and a weight of two
+               billion is an overflowed pack rather than a heavy one. */
+            it->cost_cp = record_int(fields[3], 0, 10000000);
+            it->weight_tenths = record_int(fields[4], 0, 100009);
+            it->base_ac = record_int(fields[5], 0, 25);
+            it->dex_cap = record_int(fields[6], -1, 10);
+            it->str_req = record_int(fields[7], 0, 30);
+            it->stealth_disadvantage = record_int(fields[8], 0, 1);
             it->damage = keep(fields[9]);
             it->damage_type = keep(fields[10]);
             it->properties = keep(fields[11]);

@@ -489,7 +489,7 @@ static void shop(Character *c)
             }
             show_item_detail(map[pick]);
             if (!ui_yesno("  Buy it?", 1)) continue;
-            qty = ui_int("  Quantity", 1, 99);
+            qty = ui_int("  Quantity", 1, MAX_QUANTITY);
 
             {
                 int cost = ITEMS[map[pick]].cost_cp * qty;

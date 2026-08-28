@@ -111,6 +111,18 @@ int find_magic_item(const char *name)
     return -1;
 }
 
+/* Whether a rule is armour or a shield, and so does nothing until it is
+   worn. Most such rules are recognised by the base Armor Class they set,
+   but "Armor, +1, +2, or +3" sets none -- the copy's plus is the whole of
+   its effect -- so it has to be recognised by what it is instead: a rule
+   that varies from copy to copy and is not a weapon. Without that it was
+   never treated as worn at all, and a +3 breastplate sitting in the pack
+   raised its owner's Armor Class by three. */
+int magic_rule_is_worn(const MagicRule *r)
+{
+    return r && (r->armor_base || r->shield || (r->variable && !r->weapon));
+}
+
 const MagicRule *magic_rule_for(const char *name)
 {
     int i;

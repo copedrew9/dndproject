@@ -14,6 +14,7 @@
 #include "data.h"
 #include "data_spells.h"
 #include "sidekick.h"
+#include "saveload.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -427,11 +428,21 @@ void print_sidekick(FILE *f, const Sidekick *sk, int indent)
  * not a second source of truth, and it says so. */
 static int export_sidekick(const Sidekick *sk, const Character *owner)
 {
-    char path[MAX_NAME + 8];
+    char path[MAX_NAME + 16], safe[MAX_NAME];
     FILE *f;
     int i;
 
-    snprintf(path, sizeof path, "%s.txt", sk->name);
+    /* The same sanitising the character files get -- this used to write
+       sk->name straight into a path -- and never over a character: a
+       sidekick may be named after its owner, or after somebody else's
+       character in the same folder, and this sheet is a printout rather
+       than the authoritative copy. Writing it over a character file would
+       lose that character. */
+    sheet_filename(sk->name, safe, sizeof safe);
+    snprintf(path, sizeof path, "%s.txt", safe);
+    if (file_is_character(path)) {
+        snprintf(path, sizeof path, "%s (sidekick).txt", safe);
+    }
     f = fopen(path, "w");
     if (!f) return -1;
 

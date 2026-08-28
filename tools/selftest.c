@@ -91,6 +91,41 @@ static void test_proficiency(void)
     }
 }
 
+/* The levels at which a class gains an Ability Score Improvement. Every
+ * class gains one at 4th, 8th, 12th, 16th and 19th; the fighter gains two
+ * more, at 6th and 14th, and the rogue one more, at 10th. The list has to
+ * come back in order, because the level-up walks it forwards.
+ */
+static void test_asi_levels(void)
+{
+    static const int PLAIN[] = {4, 8, 12, 16, 19};
+    static const int FIGHTER[] = {4, 6, 8, 12, 14, 16, 19};
+    static const int ROGUE[] = {4, 8, 10, 12, 16, 19};
+    int got[16], n, i, cls;
+
+    printf("ability score improvement levels\n");
+    for (cls = 0; cls < CLASS_COUNT; cls++) {
+        const int *want = (cls == CLS_FIGHTER) ? FIGHTER
+                        : (cls == CLS_ROGUE)   ? ROGUE : PLAIN;
+        int count = (cls == CLS_FIGHTER) ? 7 : (cls == CLS_ROGUE) ? 6 : 5;
+        char buf[64];
+
+        n = asi_levels_for(cls, got, 16);
+        snprintf(buf, sizeof buf, "%s improvements", CLASSES[cls].name);
+        EQ(n, count, buf);
+        for (i = 0; i < n && i < count; i++) {
+            snprintf(buf, sizeof buf, "%s improvement %d",
+                     CLASSES[cls].name, i + 1);
+            EQ(got[i], want[i], buf);
+        }
+    }
+
+    /* The caller passes the size of its array, and the list is cut to fit
+       rather than written past the end of it. */
+    n = asi_levels_for(CLS_FIGHTER, got, 3);
+    EQ(n, 3, "improvements asked for three");
+}
+
 /* The PHB's own worked example: Bruenor, a 1st-level mountain dwarf fighter
  * with the standard array, ends on 17/10/16/8/13/12 and 13 hit points. */
 static void test_bruenor(void)
@@ -1245,6 +1280,24 @@ static void test_magic_scores_and_speeds(void)
     EQ(ability_score(&c, ABL_STR), 27, "cloud giant belt");
     EQ(carrying_capacity(&c), 27 * 15, "and it changes what you can carry");
 
+    /* Through the file as well. The belt keeps its giant's score in the
+       column every other item keeps a +1, +2 or +3 in, so a reader that
+       held that column to three would send a cloud giant's belt back as
+       nothing at all. */
+    {
+        Character back;
+        char path[MAX_NAME + 8];
+        snprintf(c.name, sizeof c.name, "SelftestBelt");
+        if (save_character(&c, path, sizeof path) == 0
+            && load_character(path, &back) == 0) {
+            EQ(ability_score(&back, ABL_STR), 27, "the belt survives the file");
+        } else {
+            printf("  FAIL %-52s would not save and load\n", "the belt");
+            failures++;
+        }
+        remove(path);
+    }
+
     /* Boots of striding and springing set a floor under the walking speed. */
     reset(&c);
     add_class(&c, CLS_FIGHTER, 1, -1);
@@ -1915,6 +1968,87 @@ static void test_awkward_text(void)
 }
 
 /* The two id spaces, and a row the loader must decline. */
+/* Numbers a file may hold that no prompt would take.
+ *
+ * A sheet is a text file, and a text file gets edited. Nothing checked what
+ * came back out of the numeric columns, and five of them were multiplied or
+ * added the moment the character was drawn: a quantity by an item's weight,
+ * five coin counts together, the hit dice one after another, a Strength by
+ * fifteen. Each of those overflowed, which is undefined behaviour rather
+ * than a big number -- and the sanitizers had been letting it pass, because
+ * they were built to report and carry on.
+ *
+ * The file is written by hand here rather than by save_character, because
+ * the point is what the program does with a file it did not write.
+ */
+static void test_absurd_numbers(void)
+{
+    static const char *const EXTREME[] = { "2147483647", "-2147483648" };
+    const char *path = "SelftestAbsurd.txt";
+    Character c;
+    int e;
+
+    printf("numbers from a file that no prompt would take\n");
+
+    for (e = 0; e < 2; e++) {
+        const char *v = EXTREME[e];
+        FILE *f = fopen(path, "w");
+        int a, i;
+
+        if (!f) {
+            printf("  FAIL %-52s could not be written\n", path);
+            failures++;
+            return;
+        }
+        fprintf(f, "A sheet, hand-edited.\n\n#BEGIN-DNDDATA v1\n");
+        fprintf(f, "NAME|Absurd|Player\n");
+        fprintf(f, "CLASS|Fighter|5|-|-1\n");
+        fprintf(f, "BASE|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "RACIALBONUS|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "ASIBONUS|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "COINS|%s|%s|%s|%s|%s\n", v, v, v, v, v);
+        fprintf(f, "ITEM|%s|0|Carriage\n", v);
+        fprintf(f, "ITEM|%s|1|Plate armor\n", v);
+        fprintf(f, "MAGICITEM|%s|1|Belt of Fire Giant Strength|%s|1|\n", v, v);
+        fprintf(f, "HPROLLS|%s|%s|%s|%s\n", v, v, v, v);
+        fprintf(f, "BODY|%s|%s|%s|blue|pale|black\n", v, v, v);
+        fprintf(f, "#END-DNDDATA\n");
+        fclose(f);
+
+        if (load_character(path, &c) != 0) {
+            printf("  FAIL %-52s would not load\n", v);
+            failures++;
+            remove(path);
+            continue;
+        }
+        remove(path);
+
+        for (a = 0; a < ABL_COUNT; a++) {
+            int score = ability_score(&c, (Ability)a);
+            check(score >= 1 && score <= 40, "an ability score in range",
+                  score, 0);
+        }
+        for (i = 0; i < c.item_count; i++) {
+            int q = c.inventory[i].quantity;
+            check(q >= 1 && q <= MAX_STACK, "a quantity in range", q, 0);
+        }
+        check(c.copper >= 0 && c.copper <= MAX_COINS, "copper in range",
+              c.copper, 0);
+        check(c.hp_roll_count >= 0 && c.hp_roll_count <= MAX_LEVEL,
+              "one hit die per level at most", c.hp_roll_count, 0);
+        check(carrying_capacity(&c) > 0, "a carrying capacity above nothing",
+              carrying_capacity(&c), 0);
+        check(current_weight_tenths(&c) >= 0, "a weight above nothing",
+              current_weight_tenths(&c), 0);
+        check(hit_points_max(&c) > -1000 && hit_points_max(&c) < 100000,
+              "hit points that are a number", hit_points_max(&c), 0);
+        check(armour_class(&c) >= 0 && armour_class(&c) < 1000,
+              "an armour class that is a number", armour_class(&c), 0);
+        check(speed_of(&c) >= 0 && speed_of(&c) < 1000,
+              "a speed that is a number", speed_of(&c), 0);
+    }
+}
+
 static void test_inventory_id_spaces(void)
 {
     Character c;
@@ -2009,6 +2143,7 @@ int main(void)
 
     test_modifiers();
     test_proficiency();
+    test_asi_levels();
     test_bruenor();
     test_hill_dwarf_and_tough();
     test_armour_class();
@@ -2032,6 +2167,7 @@ int main(void)
     test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
+    test_absurd_numbers();
     test_inventory_id_spaces();
     test_awkward_text();
     test_sweep_characters();

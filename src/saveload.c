@@ -837,7 +837,24 @@ static void write_data(FILE *f, const Character *c)
 
 /* ------------------------------------------------------------------ saving */
 
-static void sanitise_filename(const char *name, char *out, size_t n)
+/* Whether a file already holds a character. Used before writing a sheet
+   that is not one, so that it cannot be written over the top of one. */
+int file_is_character(const char *path)
+{
+    char line[256];
+    FILE *f = fopen(path, "r");
+    int found = 0;
+
+    if (!f) return 0;
+    while (!found && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (!strcmp(line, DATA_BEGIN)) found = 1;
+    }
+    fclose(f);
+    return found;
+}
+
+void sheet_filename(const char *name, char *out, size_t n)
 {
     size_t i, k = 0;
     for (i = 0; name[i] && k + 1 < n; i++) {
@@ -860,7 +877,7 @@ int save_character(const Character *c, char *path, size_t pathsz)
     char safe[MAX_NAME];
     FILE *f;
 
-    sanitise_filename(c->name, safe, sizeof safe);
+    sheet_filename(c->name, safe, sizeof safe);
     snprintf(path, pathsz, "%s.txt", safe);
 
     f = fopen(path, "w");
@@ -880,6 +897,22 @@ void print_sheet(const Character *c)
 /* ----------------------------------------------------------------- loading */
 
 /* Splits a '|' separated record in place. Returns the field count. */
+/* A number out of one of those fields, held to a range. A hand-edited file
+ * is not an attack, but it is not checked either, and an unbounded number
+ * here became undefined behaviour further on: a quantity of two billion
+ * multiplied by an item's weight, five coin counts of two billion added
+ * together, a hit point roll of two billion added to the last. strtol
+ * rather than atoi because atoi is itself undefined on a number too large
+ * to hold, which is the case this exists for.
+ */
+int record_int(const char *field, int lo, int hi)
+{
+    long v = strtol(field, NULL, 10);
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return (int)v;
+}
+
 int record_split(char *line, char **out, int max)
 {
     int n = 0;
@@ -897,6 +930,30 @@ static void copy_field(char *dst, size_t n, const char *src)
 {
     strncpy(dst, src ? src : "", n - 1);
     dst[n - 1] = '\0';
+}
+
+/* The sidekick a SKAC, SKCHOICE or SKSPELL record belongs to.
+ *
+ * The writer emits a SIDEKICK record and then that sidekick's own records
+ * immediately after it, so the one being read is almost always the one most
+ * recently added -- and that is what has to decide it, because a name does
+ * not. Two sidekicks may share a name, and when they did, every record for
+ * either was applied to both: the first of them ended up with the last one's
+ * Armor Class, and with both of their choices and spells. Matching by name
+ * is kept only as the answer for a file whose records were reordered by
+ * hand, which the program itself never writes. */
+static Sidekick *sidekick_named(Character *c, const char *name)
+{
+    int k;
+
+    if (c->sidekick_count > 0) {
+        Sidekick *last = &c->sidekicks[c->sidekick_count - 1];
+        if (!strcmp(last->name, name)) return last;
+    }
+    for (k = 0; k < c->sidekick_count; k++) {
+        if (!strcmp(c->sidekicks[k].name, name)) return &c->sidekicks[k];
+    }
+    return NULL;
 }
 
 int load_character(const char *path, Character *c)
@@ -1057,13 +1114,19 @@ int load_character(const char *path, Character *c)
             }
         } else if (!strcmp(fields[0], "BASE") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->base_score[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->base_score[i] = record_int(fields[i + 1], 1, 30);
+            }
         } else if (!strcmp(fields[0], "RACIALBONUS") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->racial_bonus[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->racial_bonus[i] = record_int(fields[i + 1], -10, 10);
+            }
         } else if (!strcmp(fields[0], "ASIBONUS") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->asi_bonus[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->asi_bonus[i] = record_int(fields[i + 1], -10, 20);
+            }
         } else if (!strcmp(fields[0], "SAVEPROF") && n >= 7) {
             int i;
             for (i = 0; i < ABL_COUNT; i++) c->save_prof[i] = atoi(fields[i + 1]);
@@ -1088,7 +1151,10 @@ int load_character(const char *path, Character *c)
             add_choice(c, fields[1], fields[2]);
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
-            if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            if (id >= 0) {
+                add_item(c, id, record_int(fields[1], 1, MAX_STACK),
+                         record_int(fields[2], 0, 1));
+            }
             else warn_unknown("item", fields[3]);
         } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
             if (c->sidekick_count < MAX_SIDEKICKS) {
@@ -1113,18 +1179,11 @@ int load_character(const char *path, Character *c)
                 snprintf(sk->speed, sizeof sk->speed, "%s", fields[13]);
             }
         } else if (!strcmp(fields[0], "SKAC") && n >= 3) {
-            int k;
-            for (k = 0; k < c->sidekick_count; k++) {
-                if (!strcmp(c->sidekicks[k].name, fields[1])) {
-                    c->sidekicks[k].ac = atoi(fields[2]);
-                }
-            }
+            Sidekick *sk = sidekick_named(c, fields[1]);
+            if (sk) sk->ac = atoi(fields[2]);
         } else if (!strcmp(fields[0], "SKCHOICE") && n >= 4) {
-            int k;
-            for (k = 0; k < c->sidekick_count; k++) {
-                Sidekick *sk = &c->sidekicks[k];
-                if (strcmp(sk->name, fields[1])) continue;
-                if (sk->choice_count >= MAX_SK_CHOICES) break;
+            Sidekick *sk = sidekick_named(c, fields[1]);
+            if (sk && sk->choice_count < MAX_SK_CHOICES) {
                 snprintf(sk->choices[sk->choice_count].label,
                          sizeof sk->choices[0].label, "%s", fields[2]);
                 snprintf(sk->choices[sk->choice_count].value,
@@ -1132,22 +1191,27 @@ int load_character(const char *path, Character *c)
                 sk->choice_count++;
             }
         } else if (!strcmp(fields[0], "SKSPELL") && n >= 3) {
-            int k, id = index_of_spell(fields[2]);
-            if (id < 0) warn_unknown("sidekick spell", fields[2]);
-            for (k = 0; k < c->sidekick_count && id >= 0; k++) {
-                Sidekick *sk = &c->sidekicks[k];
-                if (strcmp(sk->name, fields[1])) continue;
-                if (sk->spell_count >=
-                    (int)(sizeof sk->spells / sizeof sk->spells[0])) break;
-                sk->spells[sk->spell_count++] = id;
+            int id = index_of_spell(fields[2]);
+            if (id < 0) {
+                warn_unknown("sidekick spell", fields[2]);
+            } else {
+                Sidekick *sk = sidekick_named(c, fields[1]);
+                int max = (int)(sizeof sk->spells / sizeof sk->spells[0]);
+                if (sk && sk->spell_count < max) {
+                    sk->spells[sk->spell_count++] = id;
+                }
             }
         } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
             int id = find_magic_item(fields[3]);
             if (id >= 0) {
                 int before = c->item_count;
                 /* Older files have no plus or worn column; both read as 0. */
-                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]),
-                               n >= 5 ? atoi(fields[4]) : 0);
+                add_magic_item(c, id, record_int(fields[1], 1, MAX_STACK),
+                               record_int(fields[2], 0, 1),
+                               /* The copy's plus -- except for a belt of
+                                  giant strength, whose column carries the
+                                  Strength it sets instead. */
+                               n >= 5 ? record_int(fields[4], 0, 30) : 0);
                 /* A row the bank declines -- a quantity of zero or less, or
                    an inventory already full -- adds nothing, and the columns
                    after the name then have no entry of their own to land on.
@@ -1164,11 +1228,11 @@ int load_character(const char *path, Character *c)
                 warn_unknown("magic item", fields[3]);
             }
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
-            c->copper   = atoi(fields[1]);
-            c->silver   = atoi(fields[2]);
-            c->electrum = atoi(fields[3]);
-            c->gold     = atoi(fields[4]);
-            c->platinum = atoi(fields[5]);
+            c->copper   = record_int(fields[1], 0, MAX_COINS);
+            c->silver   = record_int(fields[2], 0, MAX_COINS);
+            c->electrum = record_int(fields[3], 0, MAX_COINS);
+            c->gold     = record_int(fields[4], 0, MAX_COINS);
+            c->platinum = record_int(fields[5], 0, MAX_COINS);
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
             int from_feat = !strcmp(fields[3], "-");
@@ -1183,15 +1247,18 @@ int load_character(const char *path, Character *c)
                 c->spell_count++;
             }
         } else if (!strcmp(fields[0], "HPROLLS") && n >= 2) {
-            int count = atoi(fields[1]), i;
-            for (i = 0; i < count && i < MAX_LEVEL && i + 2 < n; i++) {
-                c->hp_rolls[i] = atoi(fields[i + 2]);
+            int count = record_int(fields[1], 0, MAX_LEVEL), i;
+            for (i = 0; i < count && i + 2 < n; i++) {
+                /* A hit die rolls at most 12, and the first level takes it
+                   whole; a homebrew class may state a larger one, so the
+                   ceiling is generous rather than exact. */
+                c->hp_rolls[i] = record_int(fields[i + 2], 0, 100);
             }
-            c->hp_roll_count = (count > MAX_LEVEL) ? MAX_LEVEL : count;
+            c->hp_roll_count = count;
         } else if (!strcmp(fields[0], "BODY") && n >= 7) {
-            c->age = atoi(fields[1]);
-            c->height_in = atoi(fields[2]);
-            c->weight_lb = atoi(fields[3]);
+            c->age = record_int(fields[1], 0, 100000);
+            c->height_in = record_int(fields[2], 0, 10000);
+            c->weight_lb = record_int(fields[3], 0, 100000);
             copy_field(c->eyes, sizeof c->eyes, fields[4]);
             copy_field(c->skin, sizeof c->skin, fields[5]);
             copy_field(c->hair, sizeof c->hair, fields[6]);

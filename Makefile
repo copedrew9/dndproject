@@ -100,24 +100,37 @@ check: test combos dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
-	python3 tools/stress.py --runs 6 --seed 1 --ops 4
+	python3 tools/stress.py --runs 1 --seed 11 --tour --ops 9 --grace 0.02
+	python3 tools/stress.py --runs 4 --seed 20 --ops 4 --grace 0.02
 	python3 tools/fuzz_files.py --runs 150 --seed 1
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race
 # menu writing past the end of its array; a plain build did not notice, and
 # neither did valgrind, the array being on the stack.
+#
+# -fno-sanitize-recover matters as much as the sanitizers do. Without it the
+# undefined-behaviour checker prints its complaint and carries on, the
+# program exits zero, and every harness below reports success: five signed
+# overflows on numbers read out of a character file went that way for a
+# whole round of testing. With it, the first one aborts and is seen.
+SANFLAGS = -std=c99 -O1 -g -fsanitize=address,undefined \
+	   -fno-sanitize-recover=all -fno-omit-frame-pointer
+SANENV = ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1
+
 asan:
 	$(MAKE) clean
-	$(MAKE) CFLAGS="-std=c99 -O1 -g -fsanitize=address,undefined \
-	  -fno-omit-frame-pointer" all $(COMBOBIN)
-	ASAN_OPTIONS=detect_leaks=0 ./$(COMBOBIN)
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 25 --seed 1
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 10 --seed 500 \
+	$(MAKE) CFLAGS="$(SANFLAGS)" all $(COMBOBIN) $(TESTBIN)
+	$(SANENV) ./$(TESTBIN)
+	$(SANENV) ./$(COMBOBIN)
+	$(SANENV) python3 tools/drive.py --runs 25 --seed 1
+	$(SANENV) python3 tools/drive.py --runs 10 --seed 500 \
 	  --levelup
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/stress.py --runs 4 --seed 1 \
-	  --ops 5 --nasty 0.3
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/fuzz_files.py --runs 200 --seed 1
+	$(SANENV) python3 tools/stress.py --runs 1 --seed 11 \
+	  --tour --ops 9 --nasty 0.3 --grace 0.02 --seconds 1800
+	$(SANENV) python3 tools/stress.py --runs 3 --seed 20 \
+	  --ops 5 --nasty 0.3 --grace 0.02 --seconds 1800
+	$(SANENV) python3 tools/fuzz_files.py --runs 200 --seed 1
 	$(MAKE) clean
 
 clean:

@@ -10,6 +10,15 @@
    and fills path[] with the file actually written. */
 int save_character(const Character *c, char *path, size_t pathsz);
 
+/* The file name a sheet of this name is written to, without the ".txt":
+   the characters a file name cannot hold are dropped, and a name left empty
+   by that becomes "Unnamed". */
+void sheet_filename(const char *name, char *out, size_t n);
+
+/* Whether a file already holds a character, so that a sheet which is not
+   one is not written over the top of it. */
+int file_is_character(const char *path);
+
 /* Reads a file written by save_character. Returns 0 on success. */
 int load_character(const char *path, Character *c);
 
@@ -28,5 +37,12 @@ void record_unescape(char *field);
    returning how many there were. The last piece keeps whatever is left,
    separators and all, when the line has more fields than there is room for. */
 int  record_split(char *line, char **out, int max);
+
+/* A number out of one of those fields, held to the range the program's own
+   prompts allow. Both files are meant to be readable and so are edited, and
+   an unbounded number here is an overflow later rather than a big number:
+   two billion of an item, multiplied by its weight. strtol rather than
+   atoi, which is itself undefined on a number too large to hold. */
+int  record_int(const char *field, int lo, int hi);
 
 #endif /* SAVELOAD_H */

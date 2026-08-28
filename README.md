@@ -522,12 +522,14 @@ every subclass x every option it offers                totem, land, rune...
 every pair of classes x four level splits, and every three classes together
 every background x every class; every feat x every class and every race
 every spell x every class; every magic item x every class; every item carried
+every armour x seven Dexterities x two Strengths x shield or none
+every weapon x every class x three levels
 every beast x every kind of sidekick x every level
 a character sitting on every array limit at once
 all 8,192 combinations of the seven books and the six optional rules
 ```
 
-That is 198,000 characters, measured in about a second, of which 2,278 go
+That is 202,000 characters, measured in about a second, of which 2,278 go
 through the file and back. What it checks at each point is not that a number
 is a particular value -- the self-test does that against the book -- but that
 it is possible at all, and that the numbers the PHB states as formulas follow
@@ -536,6 +538,13 @@ the skill, an initiative of the Dexterity modifier, an unarmoured Armor Class
 at least what the class allows, and never more spell slots than the caster
 level permits. Breaking any of those in the engine on purpose -- Strength x
 14, say -- makes it fail within the first few hundred combinations.
+
+Three of the sweeps check an exact number rather than a range, by working it
+out a second way from the tables the character was built from: the speed,
+from the race and what is worn; the Armor Class, from the armour's own row
+and the Dexterity it admits; and each attack, from the class's proficiency
+line and the weapon's category. Those three found five of this round's bugs
+between them.
 
 Run under `make asan` it is the same walk with the address and
 undefined-behaviour sanitizers watching every table index, which is what it

@@ -113,7 +113,7 @@ static const MagicRule *rule_in_effect(const Character *c, int i)
     if (!r) return NULL;
 
     if (m->attunement && !e->attuned) return NULL;
-    if ((r->armor_base || r->shield) && !e->equipped) return NULL;
+    if (magic_rule_is_worn(r) && !e->equipped) return NULL;
     return r;
 }
 
@@ -151,6 +151,14 @@ int ability_score(const Character *c, Ability a)
         set = r->sets_to ? r->sets_to : c->inventory[i].plus;
         if (set > score) score = set;
     }
+
+    /* "the range of possible ability scores, from 1 to 30" (PHB p.173).
+       Nothing the program itself builds comes near either end -- an
+       improvement stops at 20 and the largest belt sets 29 -- but a sheet
+       is a text file, and a hand-edited one that says two billion here used
+       to be multiplied by fifteen for the carrying capacity. */
+    if (score < 1) score = 1;
+    if (score > 30) score = 30;
     return score;
 }
 
@@ -222,6 +230,67 @@ static const InventoryEntry *equipped_of(const Character *c, ItemCategory cat)
         }
     }
     return NULL;
+}
+
+/* What the character is actually wearing. Three rules of the PHB turn on
+   it: Unarmored Defense, Unarmored Movement and Fast Movement, each with
+   its own idea of what counts, so all three answers are worked out here and
+   the callers take the ones they need.
+
+   Heavy is judged from the armour's own row, and from a magic armour only
+   when the rule states a base and admits no Dexterity -- which is what
+   heavy armour is. A "+1, +2, or +3" suit states no base and could be any
+   armour at all, so it is not called heavy on a guess. */
+static void worn_armour_state(const Character *c, int *armour, int *shield,
+                              int *heavy, int *too_heavy)
+{
+    const InventoryEntry *worn = NULL;
+    int cat, i;
+
+    for (cat = ITEM_LIGHT_ARMOR; cat <= ITEM_HEAVY_ARMOR && !worn; cat++) {
+        worn = equipped_of(c, (ItemCategory)cat);
+    }
+    *armour = (worn != NULL);
+    *shield = (equipped_of(c, ITEM_SHIELD) != NULL);
+    *heavy = (worn && ITEMS[worn->item_id].category == ITEM_HEAVY_ARMOR);
+
+    /* "If the Armor table shows Str 13 or Str 15 for an armor, the armor
+       reduces the wearer's speed by 10 feet unless the wearer has a
+       Strength score equal to or higher than the listed score" (PHB p.144).
+       The equipment table carries the requirement and the reference screen
+       reads it out; until now nothing subtracted the ten feet. */
+    *too_heavy = (worn && ITEMS[worn->item_id].str_req
+                  && ability_score(c, ABL_STR) < ITEMS[worn->item_id].str_req);
+
+    /* Magic armour counts as armour whether or not its rule states a base
+       Armor Class: a "+1, +2, or +3" suit states none, and a monk wearing
+       one is wearing armour as surely as one in plate. */
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (!r || !magic_rule_is_worn(r)) continue;
+        if (r->shield) {
+            *shield = 1;
+        } else {
+            *armour = 1;
+            if (r->armor_base && r->armor_dex == 0) *heavy = 1;
+            /* Magic armour carries its Strength requirement too: dwarven
+               plate is plate, and slows a wearer who cannot bear it. */
+            if (r->armor_str && ability_score(c, ABL_STR) < r->armor_str) {
+                *too_heavy = 1;
+            }
+        }
+    }
+}
+
+static int has_choice_containing(const Character *c, const char *label,
+                                 const char *needle)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) != 0) continue;
+        if (strstr(c->choices[i].value, needle)) return 1;
+    }
+    return 0;
 }
 
 int armour_class(const Character *c)
@@ -299,8 +368,21 @@ int armour_class(const Character *c)
         if (r->armor_base || r->shield) continue;      /* already counted */
         if (r->only_unarmored && (wearing_armour || using_shield)) continue;
         if (r->unarmored_base) continue;               /* handled above */
+        /* A weapon's plus is a bonus to hit and to damage; the attacks
+           block spends it. It never belonged in the Armor Class, where it
+           was quietly making a +3 longsword worth three points of armour. */
+        if (r->weapon) continue;
         best += r->ac_bonus;
         if (r->variable) best += c->inventory[i].plus;
+    }
+
+    /* The Defense fighting style, which is worth a point while armour is
+       worn. Its companion Archery is already spent in the attacks block,
+       and the two are chosen the same way, so both belong in the numbers
+       rather than in a note. */
+    if (wearing_armour
+        && has_choice_containing(c, "Fighting Style", "Defense")) {
+        best += 1;
     }
 
     if (has_named_feat(c, "Dual Wielder") && !using_shield) {
@@ -343,15 +425,19 @@ static int weapon_proficient(const Character *c, const ItemData *it)
                   || it->category == ITEM_SIMPLE_RANGED);
     int i;
 
-    for (i = 0; i < c->other_prof_count; i++) {
-        const char *p = c->other_profs[i];
-        if (same_weapon(p, it->name)) return 1;
-        if (!strcmp(p, "All weapons")) return 1;
-        if (simple && !strcmp(p, "Simple weapons")) return 1;
-        if (!simple && !strcmp(p, "Martial weapons")) return 1;
-    }
+    /* The books do not word the category line the same way twice: the
+       fighter's reads "Simple weapons, martial weapons" and the cleric's
+       "All simple weapons". Matching the whole line against one spelling
+       left the cleric proficient with nothing -- so the phrase is looked
+       for inside the line, which is what has_prof() already does. */
+    if (has_prof(c, "All weapons")) return 1;
+    if (has_prof(c, simple ? "Simple weapons" : "Martial weapons")) return 1;
+
     /* A monk is proficient with shortswords through Martial Arts, and a
-       druid's list is worded as a set of names, both already covered above. */
+       druid's list is worded as a set of names: both are matched by name. */
+    for (i = 0; i < c->other_prof_count; i++) {
+        if (same_weapon(c->other_profs[i], it->name)) return 1;
+    }
     return 0;
 }
 
@@ -385,17 +471,6 @@ static int martial_arts_die(const Character *c)
     return 4;
 }
 
-static int has_choice_containing(const Character *c, const char *label,
-                                 const char *needle)
-{
-    int i;
-    for (i = 0; i < c->choice_count; i++) {
-        if (strcmp(c->choices[i].label, label) != 0) continue;
-        if (strstr(c->choices[i].value, needle)) return 1;
-    }
-    return 0;
-}
-
 /* "1d8" -> 8. Zero when the damage is a flat number or absent. */
 static int die_of(const char *damage)
 {
@@ -421,14 +496,20 @@ int attacks_of(const Character *c, Attack *out, int max)
     for (i = 0; i < c->item_count && n < max; i++) {
         const ItemData *it;
         const char *props;
-        int ranged, finesse, ability, plus, hit, dmg, die;
+        int ranged, finesse, ability, plus, hit, dmg, die, no_damage;
         Attack *a;
 
         if (c->inventory[i].is_magic) continue;
         it = &ITEMS[c->inventory[i].item_id];
         if (it->category < ITEM_SIMPLE_MELEE
             || it->category > ITEM_MARTIAL_RANGED) continue;
-        if (!it->damage[0]) continue;              /* a net does none */
+
+        /* The PHB's weapons table prints a dash where a weapon deals no
+           damage, and the net is the one that does. Its attack is real --
+           throwing a net is a ranged weapon attack -- so it stays in the
+           block, with the damage said in words rather than run through the
+           format below, which would have written it "-+3 -". */
+        no_damage = (!it->damage[0] || !strcmp(it->damage, "-"));
 
         props = it->properties;
         ranged = (it->category == ITEM_SIMPLE_RANGED
@@ -468,7 +549,9 @@ int attacks_of(const Character *c, Attack *out, int max)
                 snprintf(monk, sizeof monk, "1d%d", monk_die);
                 dice = monk;
             }
-            if (dmg) {
+            if (no_damage) {
+                snprintf(a->damage, sizeof a->damage, "no damage");
+            } else if (dmg) {
                 snprintf(a->damage, sizeof a->damage, "%s%+d %s",
                          dice, dmg, it->damage_type);
             } else {
@@ -526,6 +609,7 @@ int initiative_bonus(const Character *c)
 int speed_of(const Character *c)
 {
     int speed = 30, monk, barb;
+    int wearing_armour, using_shield, wearing_heavy, armour_too_heavy;
 
     if (c->race_id >= 0 && c->race_id < RACE_COUNT) {
         speed = RACES[c->race_id].speed;
@@ -535,17 +619,32 @@ int speed_of(const Character *c)
         }
     }
 
+    worn_armour_state(c, &wearing_armour, &using_shield, &wearing_heavy,
+                      &armour_too_heavy);
+
+    /* Unarmored Movement: "while you are not wearing armor and are not
+       wielding a shield" (PHB p.78). Both halves used to go unread, so a
+       monk in plate with a shield still moved thirty feet faster. */
     monk = class_level_of(c, CLS_MONK);
+    if (wearing_armour || using_shield) monk = 0;
     if (monk >= 18)      speed += 30;
     else if (monk >= 14) speed += 25;
     else if (monk >= 10) speed += 20;
     else if (monk >= 6)  speed += 15;
     else if (monk >= 2)  speed += 10;
 
+    /* Fast Movement: "while you aren't wearing heavy armor" (PHB p.48).
+       Medium armour is allowed, which is why this is not the same test the
+       monk's step makes. */
     barb = class_level_of(c, CLS_BARBARIAN);
-    if (barb >= 5) speed += 10;         /* Fast Movement, unarmoured or light */
+    if (barb >= 5 && !wearing_heavy) speed += 10;
 
     if (has_named_feat(c, "Mobile")) speed += 10;
+
+    /* Armour too heavy for its wearer costs ten feet, and can never take
+       the speed below nothing. */
+    if (armour_too_heavy) speed -= 10;
+    if (speed < 0) speed = 0;
 
     /* Boots of striding and springing set a floor rather than adding. */
     {
@@ -627,19 +726,33 @@ int carrying_capacity(const Character *c)
     return ability_score(c, ABL_STR) * 15;
 }
 
+/* What is carried, in tenths of a pound.
+ *
+ * Added up in a wider number than it is returned in. Ninety-six lines of an
+ * inventory, each holding hundreds of something a homebrew file is free to
+ * say weighs half a ton, is a product no int is required to hold -- and an
+ * overflowed one is undefined behaviour rather than a heavy pack. The
+ * ceiling is never reached by anything a game produces; it is there so that
+ * a number typed into homebrew.txt cannot make the arithmetic undefined. */
 int current_weight_tenths(const Character *c)
 {
-    int i, w = 0;
+    long long w = 0;
+    int i;
+
     for (i = 0; i < c->item_count; i++) {
         /* Magic items index a different table and carry no listed weight;
            their bulk is the DM's call. */
         if (c->inventory[i].is_magic) continue;
-        w += ITEMS[c->inventory[i].item_id].weight_tenths
+        w += (long long)ITEMS[c->inventory[i].item_id].weight_tenths
              * c->inventory[i].quantity;
     }
     /* 50 coins weigh a pound (PHB chapter 5). */
-    w += (c->copper + c->silver + c->electrum + c->gold + c->platinum) / 5;
-    return w;
+    w += ((long long)c->copper + c->silver + c->electrum
+          + c->gold + c->platinum) / 5;
+
+    if (w > 1000000000LL) return 1000000000;
+    if (w < 0) return 0;
+    return (int)w;
 }
 
 int hit_points_max(const Character *c)

@@ -19,6 +19,9 @@
  *   every triple of classes    at 20 levels between them
  *   every background           x every class
  *   every feat                 on a character of every class that qualifies
+ *   every weapon               x every class x three levels
+ *   every armour               x seven Dexterities x two Strengths
+ *                              x shield or none
  *   every combination of books and optional rules             (8,192 of them)
  *
  * What is checked at each point is not that the numbers are any particular
@@ -102,7 +105,7 @@ static void add_class_at(Character *c, int class_id, int level, int subclass)
 
 /* True when the character has the named feat, which two of the derived
    numbers below add to. */
-static int has_named(const Character *c, const char *name)
+static int has_feat_named(const Character *c, const char *name)
 {
     int i;
     for (i = 0; i < c->feat_count; i++) {
@@ -149,13 +152,13 @@ static void measure(const Character *c, const char *what)
     }
     {
         int want = 10 + skill_bonus(c, SKL_PERCEPTION)
-                 + (has_named(c, "Observant") ? 5 : 0);
+                 + (has_feat_named(c, "Observant") ? 5 : 0);
         if (passive_perception(c) != want) {
             fail(what, "a passive Perception that is not 10 + Perception");
         }
     }
     {
-        int want = ability_mod(c, ABL_DEX) + (has_named(c, "Alert") ? 5 : 0);
+        int want = ability_mod(c, ABL_DEX) + (has_feat_named(c, "Alert") ? 5 : 0);
         if (initiative_bonus(c) != want) {
             fail(what, "an initiative that is not the Dexterity modifier");
         }
@@ -212,6 +215,85 @@ static void measure(const Character *c, const char *what)
         for (i = 1; i <= 9; i++) {
             if (slots[i] > FULL_SLOTS[eff][i]) {
                 fail(what, "more slots than the caster level allows");
+            }
+        }
+    }
+
+    /* Unarmored Movement and Fast Movement are conditional in the PHB, and
+       both conditions used to go unread: a monk in plate with a shield kept
+       the whole of its bonus. Worked out here from the inventory rather than
+       asked of the engine, so that the engine has to agree with the book
+       rather than with itself. */
+    {
+        int worn_armour = 0, worn_shield = 0, worn_heavy = 0, i2;
+        int too_heavy = 0;
+        int want = 30, monk, barb;
+
+        for (i2 = 0; i2 < c->item_count; i2++) {
+            const InventoryEntry *e = &c->inventory[i2];
+            if (!e->equipped) continue;
+            if (e->is_magic) {
+                const MagicRule *r =
+                    magic_rule_for(MAGIC_ITEMS[e->item_id].name);
+                if (!magic_rule_is_worn(r)) continue;
+                if (MAGIC_ITEMS[e->item_id].attunement && !e->attuned) continue;
+                if (r->shield) worn_shield = 1;
+                else {
+                    worn_armour = 1;
+                    if (r->armor_base && r->armor_dex == 0) worn_heavy = 1;
+                    if (r->armor_str
+                        && ability_score(c, ABL_STR) < r->armor_str) {
+                        too_heavy = 1;
+                    }
+                }
+            } else {
+                ItemCategory cat = ITEMS[e->item_id].category;
+                if (cat == ITEM_SHIELD) worn_shield = 1;
+                else if (cat <= ITEM_HEAVY_ARMOR) {
+                    worn_armour = 1;
+                    if (cat == ITEM_HEAVY_ARMOR) worn_heavy = 1;
+                    if (ITEMS[e->item_id].str_req
+                        && ability_score(c, ABL_STR)
+                           < ITEMS[e->item_id].str_req) {
+                        too_heavy = 1;
+                    }
+                }
+            }
+        }
+
+        if (c->race_id >= 0 && c->race_id < RACE_COUNT) {
+            want = RACES[c->race_id].speed;
+            if (c->subrace_id >= 0 && c->subrace_id < SUBRACE_COUNT
+                && SUBRACES[c->subrace_id].speed_override > 0) {
+                want = SUBRACES[c->subrace_id].speed_override;
+            }
+        }
+        monk = (worn_armour || worn_shield) ? 0 : class_level_of(c, CLS_MONK);
+        if (monk >= 18)      want += 30;
+        else if (monk >= 14) want += 25;
+        else if (monk >= 10) want += 20;
+        else if (monk >= 6)  want += 15;
+        else if (monk >= 2)  want += 10;
+        barb = class_level_of(c, CLS_BARBARIAN);
+        if (barb >= 5 && !worn_heavy) want += 10;
+        if (has_feat_named(c, "Mobile")) want += 10;
+        /* Armour the wearer is not strong enough for costs ten feet. */
+        if (too_heavy) want -= 10;
+        if (want < 0) want = 0;
+        /* An item that sets a floor under the speed -- boots of striding and
+           springing -- may raise it, so where one is worn the check is only
+           that the number is no lower. Where none is, it is exact. */
+        {
+            int floored = 0;
+            for (i2 = 0; i2 < c->item_count; i2++) {
+                const InventoryEntry *e = &c->inventory[i2];
+                const MagicRule *r;
+                if (!e->is_magic) continue;
+                r = magic_rule_for(MAGIC_ITEMS[e->item_id].name);
+                if (r && r->sets_speed) floored = 1;
+            }
+            if (floored ? (speed_of(c) < want) : (speed_of(c) != want)) {
+                fail(what, "a speed the race and class do not add up to");
             }
         }
     }
@@ -780,10 +862,334 @@ static void sweep_at_the_limits(void)
     round_trip(&c, "every limit at once");
 }
 
+/* An item in the pack is not an item in use. Carrying a magic item without
+   wearing or attuning it must leave every number where it was -- which a
+   "+1, +2, or +3" suit of armour and, worse, a "+1, +2, or +3" weapon did
+   not: both added their plus to Armor Class from inside the pack, and the
+   weapon added it even when wielded, where a plus belongs to the attack. */
+static void sweep_carried_but_unused(void)
+{
+    Character bare, c;
+    char what[160];
+    int i, p, base_ac;
+
+    printf("every magic item carried but not worn, at every plus\n");
+    base(&bare, "Combo");
+    bare.race_id = 0;
+    add_class_at(&bare, CLS_FIGHTER, MAX_LEVEL, -1);
+    base_ac = armour_class(&bare);
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        for (p = 0; p <= 3; p++) {
+            c = bare;
+            add_magic_item(&c, i, 1, 0, p);
+            if (!c.item_count) continue;
+            c.inventory[c.item_count - 1].equipped = 0;
+            c.inventory[c.item_count - 1].attuned = 0;
+            snprintf(what, sizeof what, "%s +%d in the pack",
+                     MAGIC_ITEMS[i].name, p);
+            if (armour_class(&c) != base_ac) {
+                fail(what, "changes Armor Class from inside the pack");
+            }
+            measure(&c, what);
+        }
+    }
+
+    printf("every magic weapon wielded, at every plus\n");
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        const MagicRule *r = magic_rule_for(MAGIC_ITEMS[i].name);
+        if (!r || !r->weapon) continue;
+        for (p = 0; p <= 3; p++) {
+            c = bare;
+            add_magic_item(&c, i, 1, MAGIC_ITEMS[i].attunement ? 1 : 0, p);
+            if (!c.item_count) continue;
+            c.inventory[c.item_count - 1].equipped = 1;
+            snprintf(what, sizeof what, "%s +%d in hand",
+                     MAGIC_ITEMS[i].name, p);
+            if (armour_class(&c) != base_ac) {
+                fail(what, "a weapon that adds to Armor Class");
+            }
+            measure(&c, what);
+        }
+    }
+}
+
 /* Every combination of the seven books and the six optional rules. The
    banks are rebuilt as the books change, and every menu the wizard shows is
    filtered by them, so a combination that leaves a bank empty is exactly
    where an off-by-one goes unnoticed. */
+/* Every suit of armour, at every Dexterity, on the classes that answer to it.
+ *
+ * The Armor Class is the one number on the sheet that four rules argue
+ * over: what the armour sets, how much Dexterity it lets through, whether
+ * a shield is up, and the unarmoured formulas a monk and a barbarian bring
+ * that only apply while nothing is worn. Each of those is tested on its own
+ * elsewhere; what they do to each other is tested here, by working the
+ * number out a second way from the equipment table and comparing.
+ *
+ * The Dexterity range is what makes it worth crossing: a medium suit's cap
+ * only shows up above +2, and heavy armour's refusal of Dexterity only
+ * above +0.
+ */
+static int dex_through(int cap, int dex)
+{
+    if (cap < 0) return dex;                    /* light armour: all of it */
+    if (cap == 0) return 0;                     /* heavy armour: none */
+    return dex < cap ? dex : cap;               /* medium armour: up to cap */
+}
+
+static void sweep_armour_and_dex(void)
+{
+    static const int SCORES[] = { 1, 8, 10, 14, 18, 20, 30 };
+    /* Both sides of every armour's Strength requirement: 10 is under the
+       lightest of them, 15 meets the heaviest. */
+    static const int STRENGTHS[] = { 10, 15 };
+    static const int CLASSES_TRIED[] = {
+        CLS_FIGHTER, CLS_MONK, CLS_BARBARIAN, CLS_WIZARD
+    };
+    Character c;
+    char what[160];
+    int a, s, k, st, shield_on, shield_id = find_item("Shield");
+
+    if (shield_id < 0) {
+        fail("armour", "the equipment table has no shield");
+        return;
+    }
+
+    printf("every armour x every Dexterity x shield or none\n");
+    for (a = -1; a < ITEM_COUNT; a++) {
+        if (a >= 0 && ITEMS[a].category > ITEM_HEAVY_ARMOR) continue;
+        if (a >= 0 && ITEMS[a].category == ITEM_SHIELD) continue;
+
+        for (s = 0; s < (int)(sizeof SCORES / sizeof *SCORES); s++) {
+            for (shield_on = 0; shield_on < 2; shield_on++) {
+              for (st = 0; st < (int)(sizeof STRENGTHS / sizeof *STRENGTHS);
+                   st++) {
+                for (k = 0; k < (int)(sizeof CLASSES_TRIED
+                                      / sizeof *CLASSES_TRIED); k++) {
+                    int dex, want, got;
+
+                    base(&c, "Combo");
+                    c.race_id = 0;
+                    c.base_score[ABL_DEX] = SCORES[s];
+                    c.base_score[ABL_STR] = STRENGTHS[st];
+                    add_class_at(&c, CLASSES_TRIED[k], 5, -1);
+                    if (a >= 0) {
+                        add_item(&c, a, 1, 1);
+                        c.inventory[c.item_count - 1].equipped = 1;
+                    }
+                    if (shield_on) {
+                        add_item(&c, shield_id, 1, 1);
+                        c.inventory[c.item_count - 1].equipped = 1;
+                    }
+
+                    dex = ability_mod(&c, ABL_DEX);
+                    if (a >= 0) {
+                        want = ITEMS[a].base_ac
+                             + dex_through(ITEMS[a].dex_cap, dex);
+                    } else {
+                        want = 10 + dex;
+                        /* Unarmoured, the class formulas apply -- and the
+                           monk's is refused by a shield, the barbarian's
+                           is not. */
+                        if (CLASSES_TRIED[k] == CLS_BARBARIAN) {
+                            int alt = 10 + dex + ability_mod(&c, ABL_CON);
+                            if (alt > want) want = alt;
+                        }
+                        if (CLASSES_TRIED[k] == CLS_MONK && !shield_on) {
+                            int alt = 10 + dex + ability_mod(&c, ABL_WIS);
+                            if (alt > want) want = alt;
+                        }
+                    }
+                    if (shield_on) want += ITEMS[shield_id].base_ac;
+
+                    snprintf(what, sizeof what,
+                             "a %s with %s%s at DEX %d, STR %d",
+                             CLASSES[CLASSES_TRIED[k]].name,
+                             a >= 0 ? ITEMS[a].name : "no armour",
+                             shield_on ? " and a shield" : "", SCORES[s],
+                             STRENGTHS[st]);
+                    got = armour_class(&c);
+                    if (got != want) {
+                        fprintf(stderr, "  FAIL %-58s AC %d, worked out "
+                                        "a second way as %d\n",
+                                what, got, want);
+                        fail(what, "an armour class the equipment table "
+                                   "does not give");
+                    }
+                    measure(&c, what);
+                }
+              }
+            }
+        }
+    }
+
+    /* Magic armour carries a Strength requirement of its own -- dwarven
+       plate is plate -- and it is read from the rule rather than from the
+       equipment table, so it is walked separately. The Armor Class of a
+       magic suit is checked by selftest.c against the DMG; what is added
+       here is the speed, which measure() works out from the inventory. */
+    printf("every magic armour x two Strengths\n");
+    for (a = 0; a < MAGIC_ITEM_COUNT; a++) {
+        const MagicRule *r = magic_rule_for(MAGIC_ITEMS[a].name);
+        if (!magic_rule_is_worn(r) || r->shield) continue;
+
+        for (st = 0; st < (int)(sizeof STRENGTHS / sizeof *STRENGTHS); st++) {
+            base(&c, "Combo");
+            c.race_id = 0;
+            c.base_score[ABL_STR] = STRENGTHS[st];
+            add_class_at(&c, CLS_FIGHTER, 5, -1);
+            add_magic_item(&c, a, 1, MAGIC_ITEMS[a].attunement ? 1 : 0, 1);
+            if (c.item_count) c.inventory[0].equipped = 1;
+            snprintf(what, sizeof what, "a Fighter in %s at STR %d",
+                     MAGIC_ITEMS[a].name, STRENGTHS[st]);
+            measure(&c, what);
+        }
+    }
+}
+
+/* Every weapon in the book, in the hands of every class.
+ *
+ * A class's weapon proficiencies are prose, and no two classes word them
+ * alike: the fighter's line reads "Simple weapons, martial weapons", the
+ * cleric's "All simple weapons", the druid's a list of ten names. The sheet
+ * has to reach the same answer from all three spellings.
+ *
+ * Two things are checked. Weapon by weapon, whether the sheet calls it
+ * proficient agrees with what the class's own line says, and the attack
+ * bonus is the ability modifier plus the proficiency bonus exactly when it
+ * does. Class by class, the number of weapons it ends up proficient with is
+ * the number the PHB fixes: fourteen simple weapons, twenty-three martial
+ * ones, or the names the class lists.
+ *
+ * The bug this was written for: the category phrases were matched against
+ * the whole line, so "All simple weapons" matched nothing and a 20th-level
+ * cleric's mace showed +5 rather than +11, under a proficiency list that
+ * said "All simple weapons".
+ */
+static const struct { const char *name; int weapons; } WEAPONS_KNOWN[] = {
+    { "Barbarian", 37 },        /* simple and martial: all of them */
+    { "Bard",      18 },        /* simple, + hand crossbow, longsword,
+                                   rapier, shortsword */
+    { "Cleric",    14 },        /* "All simple weapons" */
+    { "Druid",     10 },        /* club, dagger, dart, javelin, mace,
+                                   quarterstaff, scimitar, sickle, sling,
+                                   spear */
+    { "Fighter",   37 }, { "Monk",     15 },   /* simple, + shortsword */
+    { "Paladin",   37 }, { "Ranger",   37 },
+    { "Rogue",     18 }, { "Sorcerer",  5 },   /* dagger, dart, sling,
+                                                  quarterstaff, light
+                                                  crossbow */
+    { "Warlock",   14 },        /* "Simple weapons" */
+    { "Wizard",     5 }, { "Artificer", 14 }
+};
+
+/* What the class's own line says about this weapon, read here rather than
+   asked of the engine, so that the two have to agree. */
+static int line_covers(const char *line, const ItemData *it)
+{
+    int simple = (it->category == ITEM_SIMPLE_MELEE
+                  || it->category == ITEM_SIMPLE_RANGED);
+
+    if (contains_ci(line, "all weapons")) return 1;
+    if (contains_ci(line, simple ? "simple weapons" : "martial weapons")) {
+        return 1;
+    }
+    /* Named, in the plural the books write them in: "longswords" covers the
+       longsword, and does not cover the sword that is not one. */
+    return contains_ci(line, it->name);
+}
+
+static void sweep_weapon_proficiency(void)
+{
+    static const int LEVELS[] = { 1, 5, 20 };
+    Character c;
+    char what[160];
+    int cls, lv, i, k;
+
+    printf("every weapon in the hands of every class\n");
+    for (cls = 0; cls < CLASS_COUNT; cls++) {
+        const char *line = CLASSES[cls].weapon_profs;
+        int expected = -1;
+
+        for (k = 0; k < (int)(sizeof WEAPONS_KNOWN / sizeof *WEAPONS_KNOWN);
+             k++) {
+            if (!strcmp(WEAPONS_KNOWN[k].name, CLASSES[cls].name)) {
+                expected = WEAPONS_KNOWN[k].weapons;
+            }
+        }
+        if (expected < 0) {
+            fail(CLASSES[cls].name, "no book count is written down for it");
+            continue;
+        }
+
+        for (lv = 0; lv < (int)(sizeof LEVELS / sizeof *LEVELS); lv++) {
+            int prof_count = 0;
+
+            for (i = 0; i < ITEM_COUNT; i++) {
+                const ItemData *it = &ITEMS[i];
+                Attack atk[MAX_ATTACKS];
+                int n, j, found = 0;
+                int want, ability;
+
+                if (it->category < ITEM_SIMPLE_MELEE
+                    || it->category > ITEM_MARTIAL_RANGED) continue;
+
+                base(&c, "Combo");
+                c.race_id = 0;
+                add_class_at(&c, cls, LEVELS[lv], -1);
+                add_prof_list(&c, line, CLASSES[cls].name);
+                add_item(&c, i, 1, 1);
+
+                snprintf(what, sizeof what, "a %s of %d with a %s",
+                         CLASSES[cls].name, LEVELS[lv], it->name);
+                measure(&c, what);
+
+                want = line_covers(line, it);
+                /* Ranged uses Dexterity, melee Strength, and finesse the
+                   better of them -- but base() gives every score 15, so
+                   whichever is chosen the modifier is the same +2. */
+                ability = ability_mod(&c, ABL_STR);
+
+                n = attacks_of(&c, atk, MAX_ATTACKS);
+                for (j = 0; j < n; j++) {
+                    if (strcmp(atk[j].name, it->name)) continue;
+                    found = 1;
+                    if (atk[j].proficient != want) {
+                        fail(what, want ? "not called proficient, and the "
+                                          "class's line covers it"
+                                        : "called proficient, and the "
+                                          "class's line does not cover it");
+                    }
+                    if (atk[j].proficient) prof_count++;
+                    if (atk[j].bonus != ability
+                        + (atk[j].proficient ? proficiency_bonus(&c) : 0)) {
+                        fail(what, "an attack bonus that is not the ability "
+                                   "modifier plus the proficiency bonus");
+                    }
+                    /* The net's damage is a dash in the book's table, and
+                       formatting it as a die once produced "-+3 -". */
+                    if (atk[j].damage[0] == '-' || strstr(atk[j].damage, "-+")) {
+                        fail(what, "a damage line built out of the table's "
+                                   "dash");
+                    }
+                }
+                if (!found) fail(what, "the weapon it carries is not in its "
+                                       "attacks");
+            }
+
+            if (prof_count != expected) {
+                snprintf(what, sizeof what,
+                         "a %s of %d", CLASSES[cls].name, LEVELS[lv]);
+                fprintf(stderr, "  FAIL %-58s proficient with %d weapons; "
+                                "the book gives it %d\n",
+                        what, prof_count, expected);
+                fail(what, "a weapon proficiency count the book does not give");
+            }
+        }
+    }
+}
+
 static void sweep_settings(void)
 {
     Character c;
@@ -846,7 +1252,10 @@ int main(int argc, char **argv)
     sweep_multiclass();
     sweep_backgrounds_and_feats();
     sweep_spells_and_items();
+    sweep_carried_but_unused();
     sweep_sidekicks();
+    sweep_armour_and_dex();
+    sweep_weapon_proficiency();
     sweep_at_the_limits();
     sweep_settings();
 

@@ -90,7 +90,7 @@ NASTY = [
 ]
 
 
-def read_prompt(proc, transcript, limit, deadline):
+def read_prompt(proc, transcript, limit, deadline, grace=0.05):
     """Reads stdout until the program blocks on input, or EOF.
 
     Descriptive text is full of colons, so ending in ': ' is not on its own a
@@ -116,7 +116,7 @@ def read_prompt(proc, transcript, limit, deadline):
         # reader that knows only ": " waits forever for a prompt the program
         # has already given.
         if buf.endswith(b": ") or buf.endswith(b"> "):
-            ready, _, _ = select.select([fd], [], [], 0.05)
+            ready, _, _ = select.select([fd], [], [], grace)
             if not ready:
                 text = buf.decode("utf-8", "replace")
                 transcript.append(text)
@@ -128,13 +128,16 @@ def read_prompt(proc, transcript, limit, deadline):
 class Session:
     """One run of the program, and the state the answers depend on."""
 
-    def __init__(self, rng, ops, nasty_odds):
+    def __init__(self, rng, ops, nasty_odds, tour=False):
         self.rng = rng
+        self.tour = tour        # visit every screen in turn, not at random
+        self.next_screen = 1
         self.ops_left = ops
         self.nasty_odds = nasty_odds
         self.name = rng.choice(NAMES) + str(rng.randint(1, 9999))
         self.saved = []         # file names the program says it has written
         self.lines_typed = 0    # lines given to the text block in hand
+        self.depth = 0          # menus answered since the last main menu
 
     def main_menu(self, size, transcript):
         """Which entry of the main menu to take next.
@@ -148,6 +151,15 @@ class Session:
         self.ops_left -= 1
         if self.ops_left <= 0:
             return str(size)
+        if self.tour:
+            # Every screen in turn, so that one session touches all of them.
+            # Chosen at random, the rarer screens are simply missed: gcov
+            # found the whole sidekick screen untouched by fifty sessions.
+            if self.next_screen >= size:
+                return str(size)
+            pick = self.next_screen
+            self.next_screen += 1
+            return str(pick)
         # Weighted so the screens that carry state -- level up, inventory,
         # homebrew -- come up more often than the read-only ones.
         pick = self.rng.choices(
@@ -176,7 +188,10 @@ class Session:
             return "no-such-character"
         if "player name" in low:
             return self.nasty_or("Player")
-        if "name" in low and "spell" not in low:
+        # "What is the sidekick called" is a name prompt that does not use
+        # the word: answering it with a blank abandoned the whole sidekick
+        # flow, which is why gcov found none of it had ever run.
+        if ("name" in low and "spell" not in low) or "called" in low:
             return self.nasty_or(self.name)
         if "name a tool" in low:
             return "Smith's tools"
@@ -199,6 +214,7 @@ class Session:
             lo, hi = int(m.group(1)), int(m.group(2))
             tail = "".join(transcript[-4:])[-600:]
             if "What would you like to do" in tail and lo == 1:
+                self.depth = 0          # a fresh screen, a fresh budget
                 return self.main_menu(hi, transcript)
             if lo == 1 and hi == 20 and "level" in prompt.lower():
                 return str(self.rng.choice([1, 1, 2, 3, 5, 8, 11, 14, 17, 20]))
@@ -206,6 +222,20 @@ class Session:
             # question asked again; that path is worth exercising too.
             if self.rng.random() < 0.05:
                 return str(self.rng.choice([lo - 1, hi + 1, 0, -7, 10 ** 9]))
+            # The last entry of a menu is almost always Done, Back or Quit.
+            # Answering uniformly meant most visits to a screen left it again
+            # at once: measured with gcov, fifty sessions never once reached
+            # the sidekick screen's own flows or a homebrew add-flow. So the
+            # way out is avoided at first -- and then, as the session goes on,
+            # taken more and more often, because a walk that never takes it
+            # does not end: the shop and the reference browser will offer
+            # their lists for as long as anything keeps answering.
+            self.depth += 1
+            leave = 0.03 + self.depth / 400.0
+            if leave > 0.9:
+                leave = 0.9
+            if hi > lo and self.rng.random() > leave:
+                return str(self.rng.randint(lo, hi - 1))
             return str(self.rng.randint(lo, hi))
         if YESNO_RE.search(prompt):
             return self.rng.choice(["y", "n", "", "Y", "N", "maybe"])
@@ -213,7 +243,7 @@ class Session:
 
 
 def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
-             max_prompts, limit, seconds):
+             max_prompts, limit, seconds, tour=False, grace=0.05):
     cmd = [binary, "--seed", str(seed)]
     if use_valgrind:
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
@@ -223,7 +253,7 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             bufsize=0, cwd=workdir)
     rng = random.Random(seed)
-    session = Session(rng, ops, nasty_odds)
+    session = Session(rng, ops, nasty_odds, tour)
     transcript = []
     replies = []
     steps = 0
@@ -235,7 +265,7 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
 
     try:
         while True:
-            prompt = read_prompt(proc, transcript, limit, deadline)
+            prompt = read_prompt(proc, transcript, limit, deadline, grace)
             if prompt is None:
                 break
             steps += 1
@@ -283,6 +313,14 @@ def view_sheet(binary, workdir, filename):
     return proc.stdout.decode("utf-8", "replace"), 0 if ok else proc.returncode
 
 
+def is_character_file(path):
+    """A character file carries the machine-readable block. A sidekick's
+    sheet, written out from the sidekick screen, is a printout with no block
+    and is not meant to be loaded."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        return any(line.startswith("#BEGIN-DNDDATA") for line in fh)
+
+
 def check_roundtrip(binary, workdir, produced):
     """Every sheet the session wrote must reprint exactly as it was stored.
 
@@ -292,6 +330,8 @@ def check_roundtrip(binary, workdir, produced):
     problems = []
     for f in produced:
         path = os.path.join(workdir, f)
+        if not is_character_file(path):
+            continue
         stored = roundtrip.sheet_of(open(path, encoding="utf-8",
                                          errors="replace").read())
         shown, rc = view_sheet(binary, workdir, f)
@@ -320,6 +360,15 @@ def main():
                     help="share of free-text answers chosen to break the "
                          "save format")
     ap.add_argument("--max-prompts", type=int, default=20000)
+    ap.add_argument("--grace", type=float, default=0.05,
+                    help="how long to wait, after a ': ', for more output "
+                         "before calling it a prompt. The program writes its "
+                         "whole screen and then blocks, so the gap it has to "
+                         "beat is microseconds; the default is a thousandfold "
+                         "margin, and most of a long session's wall clock.")
+    ap.add_argument("--tour", action="store_true",
+                    help="visit every main-menu screen in turn rather than "
+                         "at random, so one session touches all of them")
     ap.add_argument("--seconds", type=int, default=300,
                     help="give up on a session after this long; 0 waits")
     ap.add_argument("--output-limit", type=int, default=40_000_000)
@@ -343,7 +392,7 @@ def main():
                 rc, transcript, err, replies = run_once(
                     binary, seed, args.ops, args.nasty, args.valgrind,
                     workdir, args.max_prompts, args.output_limit,
-                    args.seconds)
+                    args.seconds, args.tour, args.grace)
             except Exception as exc:            # noqa: BLE001
                 print("seed %d: harness error: %s" % (seed, exc))
                 failures += 1

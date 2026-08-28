@@ -277,6 +277,15 @@ int has_choice_exactly(const Character *c, const char *label,
     return 0;
 }
 
+/* Adds to a stack that is already there, and stops at MAX_STACK. Buying
+   ninety-nine of something twice over adds up, and nothing used to stop it
+   adding up past what the weight of a pack can be held in. */
+static void stack_up(int *held, int qty)
+{
+    if (qty > MAX_STACK - *held) *held = MAX_STACK;
+    else *held += qty;
+}
+
 void add_item(Character *c, int item_id, int qty, int equipped)
 {
     int i;
@@ -291,7 +300,7 @@ void add_item(Character *c, int item_id, int qty, int equipped)
         if (!c->inventory[i].is_magic
             && c->inventory[i].item_id == item_id
             && c->inventory[i].equipped == equipped) {
-            c->inventory[i].quantity += qty;
+            stack_up(&c->inventory[i].quantity, qty);
             return;
         }
     }
@@ -314,7 +323,7 @@ void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
         if (c->inventory[i].is_magic && c->inventory[i].item_id == magic_id
             && c->inventory[i].attuned == attuned
             && c->inventory[i].plus == plus) {
-            c->inventory[i].quantity += qty;
+            stack_up(&c->inventory[i].quantity, qty);
             return;
         }
     }

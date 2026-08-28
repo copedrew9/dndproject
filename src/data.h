@@ -589,6 +589,10 @@ extern const MagicRule MAGIC_RULES[];
 extern const int MAGIC_RULE_COUNT;
 const MagicRule *magic_rule_for(const char *name);
 
+/* True when the rule is armour or a shield: something that does nothing
+   until it is actually worn. */
+int magic_rule_is_worn(const MagicRule *r);
+
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;
 
