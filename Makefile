@@ -66,6 +66,7 @@ verify:
 	python3 tools/verify_feats.py
 	python3 tools/verify_races_phb.py
 	python3 tools/verify_tables.py
+	python3 tools/verify_options.py
 	python3 tools/verify_reference.py
 	python3 tools/verify_sidekicks.py
 	python3 tools/verify_small_tables.py
