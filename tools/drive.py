@@ -47,7 +47,11 @@ def read_prompt(proc, transcript):
         # makes no difference to that test -- a ': ' with more text behind it
         # is not at the end of the buffer -- and saves a syscall per byte,
         # which is most of what a run used to spend its time on.
-        if buf.endswith(b": "):
+        # "  > " is the other prompt the program writes: ui_text_block asks
+        # for line after line that way until a blank one ends it, and a
+        # reader that knows only ": " waits forever for a prompt the program
+        # has already given.
+        if buf.endswith(b": ") or buf.endswith(b"> "):
             ready, _, _ = select.select([fd], [], [], 0.05)
             if not ready:
                 text = buf.decode("utf-8", "replace")
@@ -58,6 +62,10 @@ def read_prompt(proc, transcript):
 
 
 def answer(prompt, rng, free_text_name):
+    # A line of a text block. A blank line ends it, which is what this
+    # harness wants: the notes screen is not what it is here to exercise.
+    if prompt.endswith("> "):
+        return ""
     m = RANGE_RE.search(prompt)
     if m:
         lo, hi = int(m.group(1)), int(m.group(2))

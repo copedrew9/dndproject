@@ -10,6 +10,9 @@
 # with '#' is a comment. Everything here is tagged as Homebrew, so the
 # settings menu can switch it all off at once.
 #
+# A field that needs a literal '|' writes it as \p, and a literal
+# backslash as \\, the same as the character files.
+#
 # ITEM|name|category|cost_cp|weight_tenths|base_ac|dex_cap|str_req|
 #      stealth|damage|damage_type|properties|contents
 #   category is one of: light-armour, medium-armour, heavy-armour,

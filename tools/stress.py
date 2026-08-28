@@ -111,7 +111,11 @@ def read_prompt(proc, transcript, limit, deadline):
         # makes no difference to that test -- a ': ' with more text behind it
         # is not at the end of the buffer -- and saves a syscall per byte,
         # which is most of what a run used to spend its time on.
-        if buf.endswith(b": "):
+        # "  > " is the other prompt the program writes: ui_text_block asks
+        # for line after line that way until a blank one ends it, and a
+        # reader that knows only ": " waits forever for a prompt the program
+        # has already given.
+        if buf.endswith(b": ") or buf.endswith(b"> "):
             ready, _, _ = select.select([fd], [], [], 0.05)
             if not ready:
                 text = buf.decode("utf-8", "replace")
@@ -130,6 +134,7 @@ class Session:
         self.nasty_odds = nasty_odds
         self.name = rng.choice(NAMES) + str(rng.randint(1, 9999))
         self.saved = []         # file names the program says it has written
+        self.lines_typed = 0    # lines given to the text block in hand
 
     def main_menu(self, size, transcript):
         """Which entry of the main menu to take next.
@@ -152,6 +157,14 @@ class Session:
 
     def text(self, prompt):
         low = prompt.lower()
+        # One line of a text block. A blank line is what ends it, so a
+        # session that only ever typed would never get out of one.
+        if prompt.endswith("> "):
+            if self.lines_typed >= 3 or self.rng.random() < 0.4:
+                self.lines_typed = 0
+                return ""
+            self.lines_typed += 1
+            return self.nasty_or("a line of the note")
         # The screens that open a saved file say so -- "(or a path to the
         # .txt file)" -- which is what tells them from the wizard asking a
         # new character for its name.

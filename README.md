@@ -316,7 +316,11 @@ That text used to be OCR of scanned pages, and the difference is the
 difference between guessing and knowing. The OCR confused C with G and I with
 L, lost spaces inside words, read two-column stat blocks across the gutter,
 and dropped the PHB equipment table entirely -- not just the numbers, the
-names. Everything below became checkable when it was replaced.
+names. Everything below became checkable when it was replaced -- and most of
+what the checks have found since is that same OCR's fingerprints, left in
+rows typed up while it was still the only text to hand: "| action" for
+"1 action", "crystal bail" for "crystal ball", a casting time that stops
+where the page's line did.
 
 Three checks run over it:
 

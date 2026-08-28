@@ -1535,10 +1535,10 @@ const PriceEntry SERVICES[] = {
     { "Coach cab, between towns (per mile)", 3 },
     { "Coach cab, within a city", 1 },
     { "Hireling, skilled (per day)", 200 },
-    { "Hireling, untrained (per day)", 2 },
+    { "Hireling, untrained (per day)", 20 },
     { "Messenger (per mile)", 2 },
     { "Road or gate toll", 1 },
-    { "Ship's passage (per mile)", 1 },
+    { "Ship's passage (per mile)", 10 },
     { "Stabling (per day)", 50 },
 };
 const int SERVICE_COUNT =

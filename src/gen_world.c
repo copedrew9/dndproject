@@ -1287,29 +1287,28 @@ static const LifeEntry LIFEROWS_5[] = {
     { 18, 18, "Aristocratic (+40)" },
 };
 static const LifeEntry LIFEROWS_6[] = {
+    { 0, 0, "On the streets" },
     { 1, 20, "Rundown shack" },
     { 21, 30, "No permanent residence; you moved around a lot" },
     { 31, 40, "Encampment or village in the wilderness" },
     { 41, 50, "Apartment in a rundown neighborhood" },
     { 51, 70, "Small house" },
     { 71, 90, "Large house" },
-    { 91, 110, "Mansion ll orhigher Palace or castle style table to arrive "
-      "at the result" },
+    { 91, 110, "Mansion" },
+    { 111, 111, "Palace or castle" },
 };
 static const LifeEntry LIFEROWS_7[] = {
-    { 3, 3, "I amstill haunted by my childhood, when I was treated badly "
+    { 3, 3, "I am still haunted by my childhood, when I was treated badly "
       "by my peers" },
     { 4, 5, "I spent most of my childhood alone, with no close friends" },
     { 6, 8, "Others saw me as being different or strange, and so I had "
       "few companions" },
-    { 9, 12, "I had a few close friends and lived an ordinary childhood "
-      "jah" },
+    { 9, 12, "I had a few close friends and lived an ordinary childhood" },
     { 13, 15, "I had several friends, and my childhood was generally a "
       "happy one" },
     { 16, 17, "I always found it easy to make friends, and I loved being "
       "around people" },
     { 18, 18, "Everyone knew who I was, and I had friends everywhere I went" },
-    { 64, 64, "NX CHAPTER 1 I'CHARACTER OPTIONS" },
 };
 static const LifeEntry LIFEROWS_8[] = {
     { 1, 5, "Academic" },
@@ -1391,7 +1390,7 @@ const LifeTable LIFE_TABLES[] = {
       LIFEROWS_4, (int)(sizeof(LIFEROWS_4) / sizeof(LIFEROWS_4[0])) },
     { "Family lifestyle", "3d6",
       LIFEROWS_5, (int)(sizeof(LIFEROWS_5) / sizeof(LIFEROWS_5[0])) },
-    { "Childhood home", "3d6",
+    { "Childhood home", "d100",
       LIFEROWS_6, (int)(sizeof(LIFEROWS_6) / sizeof(LIFEROWS_6[0])) },
     { "Childhood memories", "3d6",
       LIFEROWS_7, (int)(sizeof(LIFEROWS_7) / sizeof(LIFEROWS_7[0])) },
