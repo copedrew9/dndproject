@@ -696,6 +696,7 @@ def build_equipment():
     # written as designated initialisers and everything else stays zero.
     INT_KEYS = ("ac_bonus", "save_bonus", "armor_base", "armor_dex",
                 "armor_str", "armor_stealth", "shield", "only_unarmored",
+                "worn",
                 "unarmored_base", "variable", "weapon", "sets_ability",
                 "sets_to",
                 "sets_speed", "fly_speed", "swim_speed", "climb_speed")

@@ -2027,6 +2027,55 @@ static void test_awkward_text(void)
  * them now. A deep gnome, a fairy, a goblin and a kobold were all refused a
  * feat the book gives them.
  */
+/* Two things a magic armour's rule must not claim.
+ *
+ * Armour of resistance is "Armor (light, medium, or heavy)" and the DMG's own
+ * treasure tables print it in eight suits. Its rule said plate: Armor Class
+ * 18, Strength 15, disadvantage on Stealth. A leather one on a Dexterity 18
+ * rogue therefore read 18 instead of 15, and slowed a wearer by ten feet for
+ * a requirement leather does not have. It states no Armor Class now, and the
+ * suit the character is actually wearing supplies it.
+ *
+ * And the damage a copy is made against is not always one of the ten: dragon
+ * scale mail takes the dragon's, and armour of vulnerability is made against
+ * bludgeoning, piercing or slashing. Offering the ten there built suits the
+ * book does not allow.
+ */
+static void test_magic_armour_claims(void)
+{
+    const char *types[16];
+    Character c;
+    int id, i;
+
+    printf("what a magic armour's rule may claim\n");
+
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 5, -1);
+    c.base_score[ABL_DEX] = 18;
+    id = find_item("Leather armor");
+    add_item(&c, id, 1, 1);
+    c.inventory[0].equipped = 1;
+    EQ(armour_class(&c), 15, "leather on a Dexterity 18 rogue");
+
+    give_magic(&c, "Armor of Resistance", 1, 0, 0);
+    for (i = 0; i < c.item_count; i++) {
+        if (c.inventory[i].is_magic) c.inventory[i].equipped = 1;
+    }
+    EQ(armour_class(&c), 15, "and the armour of resistance adds nothing to it");
+    /* No race, so the walking speed is the plain thirty; the point is that
+       nothing has taken ten feet off it. */
+    EQ(speed_of(&c), 30, "nor takes ten feet for a Strength it never asks for");
+
+    EQ(magic_variant_types(magic_rule_for("Dragon Scale Mail"), types, 16), 5,
+       "the dragons' five damage types");
+    EQ(magic_variant_types(magic_rule_for("Armor of Vulnerability"), types, 16),
+       3, "bludgeoning, piercing, slashing");
+    EQ(magic_variant_types(magic_rule_for("Ring of Resistance"), types, 16), 10,
+       "and any of the ten where the book allows any");
+    EQ(magic_variant_types(magic_rule_for("Boots of the Winterlands"),
+                           types, 16), 0, "none where the type is fixed");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2244,6 +2293,7 @@ int main(void)
     test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
+    test_magic_armour_claims();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

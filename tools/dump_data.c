@@ -574,6 +574,7 @@ static void dump_equipment(void)
             { "armor_stealth",   offsetof(MagicRule, armor_stealth) },
             { "shield",          offsetof(MagicRule, shield) },
             { "only_unarmored",  offsetof(MagicRule, only_unarmored) },
+            { "worn",            offsetof(MagicRule, worn) },
             { "unarmored_base",  offsetof(MagicRule, unarmored_base) },
             { "variable",        offsetof(MagicRule, variable) },
             { "weapon",          offsetof(MagicRule, weapon) },

@@ -231,17 +231,21 @@ static void add_magic(Character *c)
             }
 
             /* Armour and rings of resistance are made against one kind of
-               damage; which one is a property of the copy. */
-            if (r && ((r->resist && !strcmp(r->resist, "*"))
-                      || (r->immune && !strcmp(r->immune, "*")))) {
-                static const char *const types[] = {
-                    "acid", "cold", "fire", "force", "lightning", "necrotic",
-                    "poison", "psychic", "radiant", "thunder"
-                };
-                snprintf(c->inventory[c->item_count - 1].variant,
-                         sizeof c->inventory[0].variant, "%s",
-                         types[ui_menu("  Made against which damage?", types,
-                                       NULL, 10)]);
+               damage; which one is a property of the copy. Which kinds are
+               on offer is a property of the item: most take any of the ten,
+               but dragon scale mail takes the dragon's and armour of
+               vulnerability is made against bludgeoning, piercing or
+               slashing, and offering the ten there let a player build a
+               suit the DMG does not allow. */
+            {
+                const char *types[12];
+                int nt = magic_variant_types(r, types, 12);
+                if (nt > 0) {
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s",
+                             types[ui_menu("  Made against which damage?",
+                                           types, NULL, nt)]);
+                }
             }
             printf("  Added %d x %s.\n", qty, m->name);
             if (r && (r->armor_base || r->shield)) {

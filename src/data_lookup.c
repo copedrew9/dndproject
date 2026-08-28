@@ -11,8 +11,10 @@
  */
 #include "dnd.h"
 #include "data.h"
+#include "ui.h"
 #include "data_spells.h"
 
+#include <stdio.h>
 #include <string.h>
 
 /* --------------------------------------------------------------- classes */
@@ -120,7 +122,47 @@ int find_magic_item(const char *name)
    raised its owner's Armor Class by three. */
 int magic_rule_is_worn(const MagicRule *r)
 {
-    return r && (r->armor_base || r->shield || (r->variable && !r->weapon));
+    return r && (r->armor_base || r->shield || r->worn
+                 || (r->variable && !r->weapon));
+}
+
+/* A field the copy fills in: the "*" that means any damage type, or a list
+   of the only ones the book allows. */
+int magic_type_is_variant(const char *what)
+{
+    return what && (!strcmp(what, "*") || strchr(what, ',') != NULL);
+}
+
+int magic_variant_types(const MagicRule *r, const char **out, int max)
+{
+    static const char *const ANY[] = {
+        "acid", "cold", "fire", "force", "lightning", "necrotic",
+        "poison", "psychic", "radiant", "thunder"
+    };
+    /* The split is in place, so the list has to be copied first. One item
+       is asked about at a time, so one buffer is enough. */
+    static char buf[128];
+    const char *what = NULL;
+    char *cursor, *piece;
+    int n = 0;
+
+    if (r && magic_type_is_variant(r->resist)) what = r->resist;
+    else if (r && magic_type_is_variant(r->immune)) what = r->immune;
+    if (!what) return 0;
+
+    if (!strcmp(what, "*")) {
+        for (n = 0; n < (int)(sizeof ANY / sizeof ANY[0]) && n < max; n++) {
+            out[n] = ANY[n];
+        }
+        return n;
+    }
+
+    snprintf(buf, sizeof buf, "%s", what);
+    cursor = buf;
+    while (n < max && (piece = next_csv(&cursor)) != NULL) {
+        if (*piece) out[n++] = piece;
+    }
+    return n;
 }
 
 const MagicRule *magic_rule_for(const char *name)

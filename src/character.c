@@ -734,8 +734,9 @@ int magic_defences(const Character *c, char *out, size_t n)
             int w;
 
             if (!what) continue;
-            /* A "*" means the copy carries the type it was made against. */
-            if (!strcmp(what, "*")) {
+            /* A "*", or a list of the only types the book allows, means
+               the copy carries the one it was made against. */
+            if (magic_type_is_variant(what)) {
                 what = c->inventory[i].variant[0]
                      ? c->inventory[i].variant : "a chosen damage type";
             }

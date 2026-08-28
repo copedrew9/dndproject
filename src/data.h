@@ -561,6 +561,12 @@ typedef struct {
     int armor_stealth;          /* disadvantage on Stealth */
     int shield;                 /* the whole shield bonus, its own +2 too */
     int only_unarmored;         /* applies only with no armour or shield */
+    /* Worn armour that states no Armor Class of its own. Armour of
+       resistance is "Armor (light, medium, or heavy)" and the copy could be
+       any of them, so the suit the character is actually wearing supplies
+       the Armor Class and this supplies only the resistance -- but it still
+       has to be worn to do that, which is what this says. */
+    int worn;
     int unarmored_base;         /* sets the unarmoured base AC instead */
     int variable;               /* the bonus is the copy's own +N */
     /* The bonus goes on attack and damage rolls rather than Armor Class.
@@ -592,6 +598,18 @@ const MagicRule *magic_rule_for(const char *name);
 /* True when the rule is armour or a shield: something that does nothing
    until it is actually worn. */
 int magic_rule_is_worn(const MagicRule *r);
+
+/* The damage types a copy of this item may be made against, written into
+   out[] and counted by the return value; 0 when the item's type is fixed.
+   A "*" in the rule means any of the ten the game has. A comma-separated
+   list means only those, because the book says only those: dragon scale
+   mail takes its resistance from the dragon that grew the scales, and
+   armour of vulnerability is made against bludgeoning, piercing or
+   slashing and nothing else. */
+int magic_variant_types(const MagicRule *r, const char **out, int max);
+
+/* Whether a rule's resist or immune field is one the copy fills in. */
+int magic_type_is_variant(const char *what);
 
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;
