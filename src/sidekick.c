@@ -188,11 +188,19 @@ static int sk_max_spell_level(int level)
 
 static void pick_sidekick_spells(Sidekick *sk)
 {
-    unsigned bits = spell_bits_for_role(sk->role);
-    int want_cantrips = SPELLCASTER_CANTRIPS[sk->level];
-    int want_spells = SPELLCASTER_SPELLS_KNOWN[sk->level];
-    int maxlvl = sk_max_spell_level(sk->level);
+    unsigned bits;
+    int want_cantrips, want_spells, maxlvl;
     int have_cantrips = 0, have_spells = 0, i;
+
+    /* The role names a table this reads by index, and a sidekick whose
+       class was changed by hand in the file carries the -1 of a creature
+       that never had a role at all. */
+    if (sk->role < 0 || sk->role >= SK_ROLE_COUNT) sk->role = SK_MAGE;
+
+    bits = spell_bits_for_role(sk->role);
+    want_cantrips = SPELLCASTER_CANTRIPS[sk->level];
+    want_spells = SPELLCASTER_SPELLS_KNOWN[sk->level];
+    maxlvl = sk_max_spell_level(sk->level);
 
     for (i = 0; i < sk->spell_count; i++) {
         if (SPELLS[sk->spells[i]].level == 0) have_cantrips++;

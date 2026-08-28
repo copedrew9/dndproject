@@ -1173,14 +1173,20 @@ int load_character(const char *path, Character *c)
                     sk->level = lvl < 0 ? 0
                               : lvl > MAX_LEVEL ? MAX_LEVEL : lvl;
                 }
-                sk->role  = atoi(fields[5]);
-                for (k = 0; k < 6; k++) sk->abilities[k] = atoi(fields[6 + k]);
-                sk->hp = atoi(fields[12]);
+                /* The role indexes the role tables, and -1 is what a
+                   sidekick that is not a spellcaster carries. */
+                sk->role  = record_int(fields[5], -1, SK_ROLE_COUNT - 1);
+                /* Zero is what a stat block the program has not filled
+                   in carries, so the floor is nothing rather than one. */
+                for (k = 0; k < 6; k++) {
+                    sk->abilities[k] = record_int(fields[6 + k], 0, 30);
+                }
+                sk->hp = record_int(fields[12], 0, 1000);
                 snprintf(sk->speed, sizeof sk->speed, "%s", fields[13]);
             }
         } else if (!strcmp(fields[0], "SKAC") && n >= 3) {
             Sidekick *sk = sidekick_named(c, fields[1]);
-            if (sk) sk->ac = atoi(fields[2]);
+            if (sk) sk->ac = record_int(fields[2], 0, 40);
         } else if (!strcmp(fields[0], "SKCHOICE") && n >= 4) {
             Sidekick *sk = sidekick_named(c, fields[1]);
             if (sk && sk->choice_count < MAX_SK_CHOICES) {
