@@ -357,7 +357,7 @@ numbers and the words beside those names -- every spell's stat line, every
 magic item's kind and rarity, every beast's stat block, every class and
 subclass feature's level, every background's table of suggestions, every
 feat's prerequisite, and the races and equipment and gods that were checked
-before. Between them they found 52 rows the books settle differently:
+before. Between them they found 65 rows the books settle differently:
 
 - **All 214 PHB equipment rows** -- cost, weight, damage die and type,
   armour class, the Dexterity cap, Strength requirement and stealth --
