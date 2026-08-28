@@ -90,7 +90,7 @@ NASTY = [
 ]
 
 
-def read_prompt(proc, transcript, limit, deadline, grace=0.05):
+def read_prompt(proc, transcript, limit, deadline, grace=0.05, steps=0):
     """Reads stdout until the program blocks on input, or EOF.
 
     Descriptive text is full of colons, so ending in ': ' is not on its own a
@@ -100,8 +100,23 @@ def read_prompt(proc, transcript, limit, deadline, grace=0.05):
     buf = bytearray()
     fd = proc.stdout.fileno()
     while True:
-        if deadline and time.time() > deadline:
-            raise RuntimeError("session ran past its deadline")
+        left = (deadline - time.time()) if deadline else None
+        if left is not None and left <= 0:
+            raise RuntimeError("session ran past its deadline, %d prompts in"
+                               % steps)
+        # Waited for rather than read straight, so that the deadline is what
+        # ends a session and not the program's willingness to speak. A prompt
+        # this cannot recognise leaves the program waiting on input and this
+        # waiting on output, and a plain read would then block for as long as
+        # the machine stays up -- which it once did, for two hours, over a
+        # prompt the program writes "  > " rather than ": ". The count in the
+        # message above is what tells the two apart afterwards: a session that
+        # stopped at nine prompts is stuck, one that stopped at nine thousand
+        # was only long.
+        ready, _, _ = select.select([fd], [], [],
+                                    1.0 if left is None else min(left, 1.0))
+        if not ready:
+            continue
         chunk = os.read(fd, 65536)
         if not chunk:
             return None
@@ -265,7 +280,8 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
 
     try:
         while True:
-            prompt = read_prompt(proc, transcript, limit, deadline, grace)
+            prompt = read_prompt(proc, transcript, limit, deadline, grace,
+                                 steps)
             if prompt is None:
                 break
             steps += 1
@@ -282,9 +298,13 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
             proc.stdin.flush()
     except BrokenPipeError:
         pass
-    except RuntimeError:
+    except RuntimeError as exc:
         proc.kill()
         proc.communicate()
+        # Carried out on the exception because main cannot see either of
+        # these otherwise: the session that failed never returned them.
+        exc.transcript = "".join(transcript)
+        exc.replies = replies
         raise
 
     out, err = proc.communicate(timeout=600)
@@ -394,7 +414,16 @@ def main():
                     workdir, args.max_prompts, args.output_limit,
                     args.seconds, args.tour, args.grace)
             except Exception as exc:            # noqa: BLE001
+                # The failure that says least about itself used to print the
+                # least: a deadline or a runaway is exactly where the last few
+                # answers and the tail of the transcript say whether the
+                # session was stuck or merely long, and neither was shown.
                 print("seed %d: harness error: %s" % (seed, exc))
+                if args.verbose:
+                    print("  replies: %r"
+                          % (getattr(exc, "replies", [])[-40:],))
+                    print("  tail: ...%s"
+                          % getattr(exc, "transcript", "")[-1200:])
                 failures += 1
                 continue
 
