@@ -264,7 +264,13 @@ static void worn_armour_state(const Character *c, int *armour, int *shield,
                               int *heavy, int *too_heavy)
 {
     const InventoryEntry *worn = NULL;
+    int is_heavy, is_too_heavy;
     int cat, i;
+
+    /* The last two are what only the speed cares about, and are passed as
+       NULL by the caller that does not. */
+    if (!heavy) heavy = &is_heavy;
+    if (!too_heavy) too_heavy = &is_too_heavy;
 
     for (cat = ITEM_LIGHT_ARMOR; cat <= ITEM_HEAVY_ARMOR && !worn; cat++) {
         worn = equipped_of(c, (ItemCategory)cat);
@@ -327,8 +333,11 @@ int armour_class(const Character *c)
         armour = equipped_of(c, (ItemCategory)cat);
     }
 
-    wearing_armour = (armour != NULL) || (magic_armour != NULL);
-    using_shield = (shield != NULL) || (magic_shield != NULL);
+    /* What is worn is asked of the one place that works it out, rather
+       than judged from the two entries found above: a "+1, +2, or +3" suit
+       states no base Armor Class and so is not one of them, and a monk
+       wearing one is still wearing armour. */
+    worn_armour_state(c, &wearing_armour, &using_shield, NULL, NULL);
 
     if (magic_armour) {
         const MagicRule *r = armour_rule;

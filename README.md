@@ -496,6 +496,14 @@ where it found the loader writing one entry before the start of the
 inventory, and a level of 99 in a hand-edited file reading past the end of
 the experience table.
 
+A sanitizer build has to be told to stop, though. Without
+`-fno-sanitize-recover` the undefined-behaviour checker prints its
+complaint and carries on, the program exits zero, and every harness above
+reports success -- which is how five signed overflows on numbers read out
+of a character file survived a whole round of this. `make asan` sets it
+now, and the numeric columns of both files are held to the ranges the
+program's own prompts ask for.
+
 `tools/selftest.c` (`make test`) asserts the rules engine directly: ability
 modifiers, proficiency bonus at every level, the PHB's own Bruenor example,
 Armor Class for each unarmoured option and armour category, the single-class
