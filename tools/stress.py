@@ -64,6 +64,10 @@ RANGE_RE = re.compile(r"\[(-?\d+)-(-?\d+)\]:\s*$")
 YESNO_RE = re.compile(r"\[(?:Y/n|y/N)\]:\s*$")
 SAVED_RE = re.compile(r"Saved to (.+\.txt)")
 
+# Printed immediately above the main menu and nowhere else, which is what
+# makes it a safe way to recognise the main menu.
+BANNER = "D&D 5th Edition Character Creator"
+
 NAMES = ["Bruenor", "Lidda", "Tordek", "Mialee", "Jozan", "Vadania",
          "Krusk", "Nebin", "Ember", "Hennet", "Naull", "Alhandra"]
 
@@ -228,7 +232,17 @@ class Session:
         if m:
             lo, hi = int(m.group(1)), int(m.group(2))
             tail = "".join(transcript[-4:])[-600:]
-            if "What would you like to do" in tail and lo == 1:
+            # The main menu is the one under the program's own banner, not
+            # merely the one that asks "What would you like to do?". Two
+            # screens ask that -- the other is the note editor -- and taking
+            # the second for the first was a livelock: it reset the wind-down
+            # below to zero every time a note was opened, spent one of the
+            # session's operations on a submenu, and then answered that
+            # submenu with a strategy written for a ten-entry main menu.
+            # Seed 20 spent all twenty thousand of its prompts that way,
+            # opening the notes screen, cancelling a note and starting again,
+            # and make check reported it as a failure with no clue in it.
+            if BANNER in tail and lo == 1:
                 self.depth = 0          # a fresh screen, a fresh budget
                 return self.main_menu(hi, transcript)
             if lo == 1 and hi == 20 and "level" in prompt.lower():
