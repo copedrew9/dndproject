@@ -4635,7 +4635,8 @@ const BackgroundData BACKGROUNDS[] = {
     {
       "I always have a plan for what to do when things go wrong.",
       "I am always calm, no matter the situation.",
-      "The first thing I do in a new place is note the exits.",
+      "The first thing I do in a new place is note where the "
+        "valuables are, and where they might be hidden.",
       "I would rather make a new friend than a new enemy.",
       "I blow up at the slightest insult.",
       NULL,

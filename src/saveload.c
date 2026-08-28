@@ -1212,8 +1212,15 @@ int load_character(const char *path, Character *c)
             if (id >= 0) {
                 int before = c->item_count;
                 /* Older files have no plus or worn column; both read as 0. */
-                add_magic_item(c, id, record_int(fields[1], 1, MAX_STACK),
-                               record_int(fields[2], 0, 1),
+                /* You cannot be attuned to something that asks for no
+                   attunement. A file written before an item's row lost its
+                   clause -- the gem of brightness had one it should never
+                   have had -- would otherwise keep spending one of the
+                   three slots on it. */
+                add_magic_item(c, id,
+                               record_int(fields[1], 1, MAX_STACK),
+                               MAGIC_ITEMS[id].attunement
+                                   ? record_int(fields[2], 0, 1) : 0,
                                /* The copy's plus -- except for a belt of
                                   giant strength, whose column carries the
                                   Strength it sets instead. */

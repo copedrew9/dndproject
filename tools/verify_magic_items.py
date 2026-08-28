@@ -67,6 +67,32 @@ HAND OF VECNA and gives no line to either half. Frost Brand's own heading
 is not in the dump at all -- the only FROST BRAND in it is a running header
 that landed in the middle of the figurine of wondrous power, over a line
 reading "an Intelligence of 8 and can speak Common".
+
+What this file used to have and no longer does is a table of rows excused
+from agreeing, each with a reason. Both of its entries turned out to be
+wrong, and neither could be caught while the table existed, because a row
+in it is never reported:
+
+  Gem of Brightness was excused on the grounds that its line had lost its
+  attunement clause to the page edge. The line is DMGtext.txt:17530,
+  "Wondrous item, uncommon", twenty-four characters. The entry directly
+  above it in the same column, gauntlets of ogre power, keeps its own
+  clause across forty-six ("Wondrous item, uncommon (requires attunement)"),
+  and the damage on that page is at the left edge, not the right. Xanathar's
+  prints the item in a table with a column headed "Attune?" and the answer
+  "No" (XANATHARtext.txt:17230). The gem needs no attunement; the row did.
+
+  Sword of Kas was excused on the grounds that the line above its entry
+  belonged to something else, the entry being plainly a sword. The line is
+  DMGtext.txt:22136, first thing on page 226 under its own heading, and it
+  reads "Wondrous item, artifact (requires attunement)". The DMG means it:
+  the artifact four pages earlier, the axe of the dwarvish lords, is typed
+  "Weapon (battleaxe), artifact" in the same dump. The book files this sword
+  as a wondrous item, so the row does too.
+
+A row that disagrees with the book is either an error in the row or a fault
+in the reading, and both are worth seeing. Neither is worth a list that
+makes the disagreement invisible.
 """
 
 import os
@@ -107,21 +133,6 @@ NOISE = re.compile(r"[·•]")
 # Headings the extraction mangles past matching on letters, and the entry
 # each one is. Every name here has to exist in data/, so the table cannot
 # outlive what it points at.
-# Two rows where ours deliberately differs from the book's line, and why.
-# Reported under a heading of their own rather than as disagreements, the way
-# audit.py names the six entries that are ours rather than the book's.
-KEPT = {
-    "Sword of Kas":
-        "the DMG's line reads \"Wondrous item, artifact\", but the entry "
-        "under it describes a longsword and gives a +3 to attack and damage "
-        "rolls with it. Filed as the weapon it is, so it can be wielded, "
-        "reach the attacks block and carry a weapon's bonus.",
-    "Gem of Brightness":
-        "the line in the dump carries no attunement clause. A clause at a "
-        "line end is exactly what the extraction loses, so ours is kept "
-        "rather than dropped on the strength of one damaged line.",
-}
-
 MANGLED = {
     ":JEMON ARMOR":            "Demon Armor",
     "~IM ENSIONAL SHACKLES":   "Dimensional Shackles",
@@ -415,7 +426,7 @@ def main():
     unindex(lines, nb, found, names)
 
     checked = bad = 0
-    unchecked, ranged, nokind, noatt, kept = [], [], [], [], []
+    unchecked, ranged, nokind, noatt = [], [], [], []
 
     for r in rows:
         name, book = r.str(0), r.str(1)
@@ -482,19 +493,12 @@ def main():
                             % (r.str(4), ("requires attunement "
                                           + b_who.strip()).strip()))
 
-        if problems and name in KEPT:
-            kept.append((name, problems[0], KEPT[name]))
-        elif problems:
+        if problems:
             bad += 1
             print("  %s" % name)
             for p in problems:
                 print("      %s" % p)
 
-    if kept:
-        print("\n  %d rows differ from the book on purpose:" % len(kept))
-        for name, what, why in kept:
-            print("      %s -- %s" % (name, what))
-            print("          %s" % why)
     if unchecked:
         print("\n  %d rows left unchecked:" % len(unchecked))
         for name, why in unchecked:

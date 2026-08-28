@@ -80,6 +80,19 @@ brackets after ("Tradition. The ancient traditions ... (Lawful)"). The name
 is checked. No BGIDEAL row stores an alignment at present, so the check for
 one finds nothing to do; it is written anyway, so that the day a row carries
 one it is compared rather than believed.
+
+The criminal's personality traits are the hole in all of this, and it is
+worth saying plainly what it cost. Six of the eight are gone from the dump
+-- entries 1, 2, 3, 5, 6 and 7, and their words are in none of the seven
+files, so nothing here can reach them -- and the two that survive are too
+few for the table to be claimed for the background at all. Every one of our
+five rows therefore goes unchecked, and one of them said "The first thing I
+do in a new place is note the exits", which is not the PHB's trait: the
+book's third entry is about noting where the valuables are, and where they
+might be hidden. It sat there until somebody read the page. So the rows a
+table takes down with it are now printed by name under the reason, because
+a table nothing checks is a table whose rows only a reader can catch, and a
+reader cannot catch what the report does not show.
 """
 
 import difflib
@@ -560,7 +573,8 @@ def main():
                                   "entries left and is not clearly this "
                                   "background's (%.2f against %.2f)"
                                   % (len(tabs[which[bg]]["entries"]),
-                                     FULL[kind], mine, best_rival)))
+                                     FULL[kind], mine, best_rival),
+                                  chars[(tag, bg)]))
                 continue
             tab = tabs[which[bg]]
             full = len(tab["entries"]) == FULL[kind]
@@ -573,7 +587,8 @@ def main():
                                       "the dump has only %d of the %d entries "
                                       "in this table, and this row matches "
                                       "none of them"
-                                      % (len(tab["entries"]), FULL[kind])))
+                                      % (len(tab["entries"]), FULL[kind]),
+                                      [text]))
                     continue
                 checked += 1
                 if best < MATCHED:
@@ -614,8 +629,13 @@ def main():
 
     if unchecked:
         print("\n  %d left unchecked:" % len(unchecked))
-        for what, why in unchecked:
+        for what, why, rows in unchecked:
             print("      %s -- %s" % (what, why))
+            # The rows themselves, because a table nothing checks is a
+            # table whose rows only a reader can catch, and a reader
+            # cannot catch what the report does not print.
+            for row in rows:
+                print("          %s" % row)
 
     print("\n%d checked, %d disagree" % (checked, bad))
     return 1 if bad else 0

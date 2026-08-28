@@ -2145,12 +2145,16 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "effect if your Strength is already 19 or higher." },
     { "Gem of Brightness", BOOK_DMG,
       "Wondrous item", "uncommon",
-      "requires attunement",
-      "A prism with 50 charges. One charge makes it shed bright "
-      "light in a 30-foot radius for 10 minutes. Two charges fire a "
-      "beam at a creature within 60 feet, blinding it for 1 minute "
-      "unless it succeeds on a DC 15 Constitution save. It becomes "
-      "nonmagical when the last charge is spent." },
+      NULL,
+      "A prism with 50 charges. One command word makes it shed "
+      "bright light in a 30-foot radius and dim light for another "
+      "30, spending no charge, until you speak the word again or "
+      "use it another way. A second spends a charge to fire a beam "
+      "at a creature within 60 feet, blinding it for 1 minute "
+      "unless it succeeds on a DC 15 Constitution save, which it "
+      "may repeat at the end of each of its turns. A third spends "
+      "five charges to flare in a 30-foot cone, against the same "
+      "save. With the last charge spent it is a jewel worth 50 gp." },
     { "Gem of Seeing", BOOK_DMG,
       "Wondrous item", "rare",
       "requires attunement",
@@ -2472,7 +2476,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Nine Lives Stealer", BOOK_DMG,
       "Weapon (any sword)", "very rare",
       "requires attunement",
-      "+1 to attack and damage rolls. It has 1d8+1 charges. When "
+      "+2 to attack and damage rolls. It has 1d8+1 charges. When "
       "you score a critical hit against a creature with fewer than "
       "100 hit points, it must succeed on a DC 15 Constitution save "
       "or die, spending a charge. With no charges left the sword "
@@ -3489,14 +3493,19 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "daylight, death ward and detect magic, and carries a curse "
       "toward evil." },
     { "Sword of Kas", BOOK_DMG,
-      "Weapon (longsword)", "artifact",
+      "Wondrous item", "artifact",
       "requires attunement",
-      "The blade Vecna's lieutenant turned against him. +3 to "
-      "attack and damage rolls, an extra 2d10 slashing damage "
-      "against undead, and a roll of 20 forces a DC 15 Constitution "
-      "save or the target takes an extra 4d12 necrotic damage and "
-      "dies at 0 hit points. It is sentient and drives its wielder "
-      "to destruction." },
+      "The longsword Vecna's lieutenant turned against him. +3 to "
+      "attack and damage rolls, a critical hit on a 19 or 20, and "
+      "an extra 2d10 slashing damage against undead. Drawn and not "
+      "bathed in blood within a minute, it demands its due: a DC 15 "
+      "Charisma save, 3d6 psychic damage on a success and "
+      "domination until the demand is met on a failure. It adds a "
+      "d10 to your initiative, lets you move its attack bonus to "
+      "your Armor Class for a turn, and casts call lightning, "
+      "divine word or finger of death at save DC 18, each once a "
+      "dawn. It is sentient and chaotic evil, and its purpose is "
+      "Vecna's ruin." },
     { "Wand of Orcus", BOOK_DMG,
       "Wand", "artifact",
       "requires attunement",

@@ -1424,7 +1424,7 @@ BGFLAW|Charlatan|I cannot resist swindling people more powerful than me.
 BACKGROUND|Criminal|PHB|Deception|Stealth|0||One type of gaming set, thieves' tools|0|Crowbar, dark common clothes with a hood|15|Criminal Contact|You have a reliable contact in the criminal underworld who can carry messages for you across long distances.
 BGTRAIT|Criminal|I always have a plan for what to do when things go wrong.
 BGTRAIT|Criminal|I am always calm, no matter the situation.
-BGTRAIT|Criminal|The first thing I do in a new place is note the exits.
+BGTRAIT|Criminal|The first thing I do in a new place is note where the valuables are, and where they might be hidden.
 BGTRAIT|Criminal|I would rather make a new friend than a new enemy.
 BGTRAIT|Criminal|I blow up at the slightest insult.
 BGIDEAL|Criminal|Honour: I do not steal from others in the trade.
