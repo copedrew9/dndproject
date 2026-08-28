@@ -34,7 +34,7 @@ void format_price(int cp, char *out, size_t n)
     else                    snprintf(out, n, "%d cp", cp);
 }
 
-static void format_weight(int tenths, char *out, size_t n)
+void format_weight(int tenths, char *out, size_t n)
 {
     if (tenths == 0)          snprintf(out, n, "--");
     else if (tenths % 10 == 0) snprintf(out, n, "%d lb", tenths / 10);
@@ -221,12 +221,12 @@ static void browse_equipment(void)
         const char *cats[16];
         int i, pick;
 
-        for (i = 0; i < 12; i++) cats[i] = CATEGORY_LABEL[i];
-        cats[12] = "Search by name";
-        cats[13] = "Back";
+        for (i = 0; i < ITEM_CATEGORY_COUNT; i++) cats[i] = CATEGORY_LABEL[i];
+        cats[ITEM_CATEGORY_COUNT]     = "Search by name";
+        cats[ITEM_CATEGORY_COUNT + 1] = "Back";
 
-        pick = ui_menu("  Equipment:", cats, NULL, 14);
-        if (pick == 13) return;
+        pick = ui_menu("  Equipment:", cats, NULL, ITEM_CATEGORY_COUNT + 2);
+        if (pick == ITEM_CATEGORY_COUNT + 1) return;
 
         {
             static char lines[REF_MAX][REF_LINE];

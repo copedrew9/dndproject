@@ -11,8 +11,10 @@
  */
 #include "dnd.h"
 #include "data.h"
+#include "ui.h"
 #include "data_spells.h"
 
+#include <stdio.h>
 #include <string.h>
 
 /* --------------------------------------------------------------- classes */
@@ -89,14 +91,7 @@ int find_item(const char *name)
     /* Fall back to a case-insensitive match so saved sheets survive small
        differences in capitalisation. */
     for (i = 0; i < ITEM_COUNT; i++) {
-        const char *a = ITEMS[i].name, *b = name;
-        while (*a && *b) {
-            int ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;
-            int cb = (*b >= 'A' && *b <= 'Z') ? *b + 32 : *b;
-            if (ca != cb) break;
-            a++; b++;
-        }
-        if (!*a && !*b) return i;
+        if (same_fold(ITEMS[i].name, name)) return i;
     }
     return -1;
 }
@@ -118,6 +113,84 @@ int find_magic_item(const char *name)
     return -1;
 }
 
+/* Whether a rule is armour or a shield, and so does nothing until it is
+   worn. Most such rules are recognised by the base Armor Class they set,
+   but "Armor, +1, +2, or +3" sets none -- the copy's plus is the whole of
+   its effect -- so it has to be recognised by what it is instead: a rule
+   that varies from copy to copy and is not a weapon. Without that it was
+   never treated as worn at all, and a +3 breastplate sitting in the pack
+   raised its owner's Armor Class by three. */
+int magic_rule_is_worn(const MagicRule *r)
+{
+    return r && (r->armor_base || r->shield || r->worn
+                 || (r->variable && !r->weapon));
+}
+
+/* A field the copy fills in: the "*" that means any damage type, or a list
+   of the only ones the book allows. */
+int magic_type_is_variant(const char *what)
+{
+    return what && (!strcmp(what, "*") || strchr(what, ',') != NULL);
+}
+
+int magic_weapon_kind(const char *type, char *out, size_t n)
+{
+    const char *open, *close;
+    size_t len;
+
+    if (out && n) out[0] = '\0';
+    if (!type || strncmp(type, "Weapon", 6) != 0) return MAGIC_WEAPON_NONE;
+
+    open = strchr(type, '(');
+    close = open ? strchr(open, ')') : NULL;
+    if (!close || close <= open + 1) return MAGIC_WEAPON_NONE;
+
+    len = (size_t)(close - open - 1);
+    if (!out || !n) return MAGIC_WEAPON_NONE;
+    if (len >= n) len = n - 1;
+    memcpy(out, open + 1, len);
+    out[len] = '\0';
+
+    /* "any", "any sword", "any axe or sword", "any sword that deals
+       slashing damage" -- all of them leave the weapon to the copy. */
+    if (!strncmp(out, "any", 3) || !strncmp(out, "Any", 3)) {
+        return MAGIC_WEAPON_CHOICE;
+    }
+    return MAGIC_WEAPON_NAMED;
+}
+
+int magic_variant_types(const MagicRule *r, const char **out, int max)
+{
+    static const char *const ANY[] = {
+        "acid", "cold", "fire", "force", "lightning", "necrotic",
+        "poison", "psychic", "radiant", "thunder"
+    };
+    /* The split is in place, so the list has to be copied first. One item
+       is asked about at a time, so one buffer is enough. */
+    static char buf[128];
+    const char *what = NULL;
+    char *cursor, *piece;
+    int n = 0;
+
+    if (r && magic_type_is_variant(r->resist)) what = r->resist;
+    else if (r && magic_type_is_variant(r->immune)) what = r->immune;
+    if (!what) return 0;
+
+    if (!strcmp(what, "*")) {
+        for (n = 0; n < (int)(sizeof ANY / sizeof ANY[0]) && n < max; n++) {
+            out[n] = ANY[n];
+        }
+        return n;
+    }
+
+    snprintf(buf, sizeof buf, "%s", what);
+    cursor = buf;
+    while (n < max && (piece = next_csv(&cursor)) != NULL) {
+        if (*piece) out[n++] = piece;
+    }
+    return n;
+}
+
 const MagicRule *magic_rule_for(const char *name)
 {
     int i;
@@ -128,14 +201,6 @@ const MagicRule *magic_rule_for(const char *name)
 }
 
 /* ----------------------------------------------------------------- world */
-
-int find_deity(const char *name)
-{
-    int i;
-    for (i = 0; i < DEITY_COUNT; i++)
-        if (strcmp(DEITIES[i].name, name) == 0) return i;
-    return -1;
-}
 
 int find_beast(const char *name)
 {
@@ -174,7 +239,7 @@ const char *const SPELL_CLASS_NAME[] = {
 const int SPELL_CLASS_NAME_COUNT =
     (int)(sizeof(SPELL_CLASS_NAME) / sizeof(SPELL_CLASS_NAME[0]));
 
-static int same_fold(const char *a, const char *b)
+int same_fold(const char *a, const char *b)
 {
     while (*a && *b) {
         int ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;

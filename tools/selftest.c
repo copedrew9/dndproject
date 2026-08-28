@@ -8,6 +8,8 @@
 #include "sidekick.h"
 #include "build.h"
 #include "data_spells.h"
+#include "saveload.h"
+#include "homebrew.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -87,6 +89,41 @@ static void test_proficiency(void)
         snprintf(buf, sizeof buf, "level %d", lvl);
         EQ(proficiency_bonus(&c), want[lvl], buf);
     }
+}
+
+/* The levels at which a class gains an Ability Score Improvement. Every
+ * class gains one at 4th, 8th, 12th, 16th and 19th; the fighter gains two
+ * more, at 6th and 14th, and the rogue one more, at 10th. The list has to
+ * come back in order, because the level-up walks it forwards.
+ */
+static void test_asi_levels(void)
+{
+    static const int PLAIN[] = {4, 8, 12, 16, 19};
+    static const int FIGHTER[] = {4, 6, 8, 12, 14, 16, 19};
+    static const int ROGUE[] = {4, 8, 10, 12, 16, 19};
+    int got[16], n, i, cls;
+
+    printf("ability score improvement levels\n");
+    for (cls = 0; cls < CLASS_COUNT; cls++) {
+        const int *want = (cls == CLS_FIGHTER) ? FIGHTER
+                        : (cls == CLS_ROGUE)   ? ROGUE : PLAIN;
+        int count = (cls == CLS_FIGHTER) ? 7 : (cls == CLS_ROGUE) ? 6 : 5;
+        char buf[64];
+
+        n = asi_levels_for(cls, got, 16);
+        snprintf(buf, sizeof buf, "%s improvements", CLASSES[cls].name);
+        EQ(n, count, buf);
+        for (i = 0; i < n && i < count; i++) {
+            snprintf(buf, sizeof buf, "%s improvement %d",
+                     CLASSES[cls].name, i + 1);
+            EQ(got[i], want[i], buf);
+        }
+    }
+
+    /* The caller passes the size of its array, and the list is cut to fit
+       rather than written past the end of it. */
+    n = asi_levels_for(CLS_FIGHTER, got, 3);
+    EQ(n, 3, "improvements asked for three");
 }
 
 /* The PHB's own worked example: Bruenor, a 1st-level mountain dwarf fighter
@@ -360,6 +397,34 @@ static void test_skills_and_saves(void)
     c.base_score[ABL_DEX] = 14;         /* +2 */
     EQ(skill_bonus(&c, SKL_ACROBATICS), 3, "Jack of All Trades");
 
+    /* A Champion of 7th adds half its proficiency bonus, rounded up, to
+       Strength, Dexterity and Constitution checks that do not already use
+       it -- and to nothing else. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 7, subclass_by_name("Champion"));
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_DEX] = 10;
+    c.base_score[ABL_INT] = 10;
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 2, "Remarkable Athlete on Strength");
+    EQ(skill_bonus(&c, SKL_STEALTH), 2, "and on Dexterity");
+    EQ(skill_bonus(&c, SKL_ARCANA), 0, "but not on Intelligence");
+    c.skill_prof[SKL_ATHLETICS] = 1;
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 3,
+       "and not on a check that already uses it");
+
+    /* A bard who is also a Champion adds the better of the two halves,
+       not both. At thirteen levels the proficiency bonus is +5, so Jack of
+       All Trades rounds its half down to 2 and Remarkable Athlete rounds
+       the same half up to 3: the answer is 3, not 5. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 7, subclass_by_name("Champion"));
+    add_class(&c, CLS_BARD, 6, -1);
+    c.base_score[ABL_STR] = 10;
+    c.base_score[ABL_INT] = 10;
+    EQ(proficiency_bonus(&c), 5, "thirteen levels");
+    EQ(skill_bonus(&c, SKL_ATHLETICS), 3, "the better half, not both");
+    EQ(skill_bonus(&c, SKL_ARCANA), 2, "and the bard's half elsewhere");
+
     /* A monk of 14th level is proficient in every save. */
     reset(&c);
     add_class(&c, CLS_MONK, 14, -1);
@@ -513,14 +578,11 @@ static void test_data_integrity(void)
         EQ(with_choices, 5, "SCAG backgrounds that leave a skill to you");
     }
     {
-        int phb = 0, tce = 0, k;
+        int phb = 0, tce = 0, xge = 0, scag = 0, k;
         for (k = 0; k < FEAT_COUNT; k++) {
-            if (FEATS[k].book == BOOK_PHB) phb++;
-            if (FEATS[k].book == BOOK_TCE) tce++;
-        }
-        int xge = 0, scag = 0;
-        for (k = 0; k < FEAT_COUNT; k++) {
-            if (FEATS[k].book == BOOK_XGE) xge++;
+            if (FEATS[k].book == BOOK_PHB)  phb++;
+            if (FEATS[k].book == BOOK_TCE)  tce++;
+            if (FEATS[k].book == BOOK_XGE)  xge++;
             if (FEATS[k].book == BOOK_SCAG) scag++;
         }
         EQ(phb, 42, "PHB feats");
@@ -531,7 +593,10 @@ static void test_data_integrity(void)
            "every feat comes from a book");
 
         /* Every racial feat must name races that exist, or it could never
-           be offered to anyone. */
+           be offered to anyone. "Small" is the one entry that is a size
+           rather than a race -- Xanathar's asks Squat Nimbleness for "a
+           dwarf or a small race" -- and it has to name a size some race
+           actually is, for the same reason. */
         for (k = 0; k < FEAT_COUNT; k++) {
             char buf[128];
             const char *parts[8];
@@ -539,12 +604,13 @@ static void test_data_integrity(void)
             if (!FEATS[k].req_race[0]) continue;
             np = split_pipe(FEATS[k].req_race, buf, sizeof buf, parts, 8);
             for (q = 0; q < np; q++) {
-                int found = 0, r;
-                for (r = 0; r < RACE_COUNT; r++) {
-                    if (!strcmp(RACES[r].name, parts[q])) found = 1;
-                }
-                for (r = 0; r < SUBRACE_COUNT; r++) {
-                    if (!strcmp(SUBRACES[r].name, parts[q])) found = 1;
+                int found = find_race(parts[q]) >= 0
+                         || find_subrace(parts[q]) >= 0;
+                if (!found && !strcmp(parts[q], "Small")) {
+                    int r2;
+                    for (r2 = 0; r2 < RACE_COUNT; r2++) {
+                        if (RACES[r2].size == SZ_SMALL) found = 1;
+                    }
                 }
                 if (!found) {
                     printf("  FAIL feat \"%s\" needs race \"%s\", which "
@@ -1251,6 +1317,24 @@ static void test_magic_scores_and_speeds(void)
     EQ(ability_score(&c, ABL_STR), 27, "cloud giant belt");
     EQ(carrying_capacity(&c), 27 * 15, "and it changes what you can carry");
 
+    /* Through the file as well. The belt keeps its giant's score in the
+       column every other item keeps a +1, +2 or +3 in, so a reader that
+       held that column to three would send a cloud giant's belt back as
+       nothing at all. */
+    {
+        Character back;
+        char path[MAX_NAME + 8];
+        snprintf(c.name, sizeof c.name, "SelftestBelt");
+        if (save_character(&c, path, sizeof path) == 0
+            && load_character(path, &back) == 0) {
+            EQ(ability_score(&back, ABL_STR), 27, "the belt survives the file");
+        } else {
+            printf("  FAIL %-52s would not save and load\n", "the belt");
+            failures++;
+        }
+        remove(path);
+    }
+
     /* Boots of striding and springing set a floor under the walking speed. */
     reset(&c);
     add_class(&c, CLS_FIGHTER, 1, -1);
@@ -1647,6 +1731,689 @@ static void test_carrying_and_coins(void)
     EQ(current_weight_tenths(&c), 570, "100 gp adds 2 lb");
 }
 
+
+/* ----------------------------------------------- the whole data matrix */
+
+/* Round trips a character through the file and back, and checks the file it
+   writes the second time is the file it wrote the first.
+ *
+ * tools/roundtrip.py makes this check on characters the wizard happens to
+ * build; here it runs over every row of every table, which is how a race,
+ * a subclass, a magic item or a spell that the writer and the reader
+ * disagree about gets found rather than waited for. */
+static char sheet_a[600000], sheet_b[600000];
+
+static size_t slurp(const char *path, char *out, size_t max)
+{
+    FILE *f = fopen(path, "r");
+    size_t n;
+
+    if (!f) return 0;
+    n = fread(out, 1, max - 1, f);
+    out[n] = '\0';
+    fclose(f);
+    return n;
+}
+
+/* Returns 1 when the character survives being written and read back. */
+static int survives_the_file(const Character *c, const char *what)
+{
+    char path[MAX_NAME + 8];
+    Character back;
+    size_t na, nb;
+
+    if (save_character(c, path, sizeof path) != 0) {
+        printf("  FAIL %-52s could not be written\n", what);
+        failures++;
+        return 0;
+    }
+    na = slurp(path, sheet_a, sizeof sheet_a);
+    if (load_character(path, &back) != 0) {
+        printf("  FAIL %-52s could not be read back\n", what);
+        failures++;
+        remove(path);
+        return 0;
+    }
+    if (save_character(&back, path, sizeof path) != 0) {
+        printf("  FAIL %-52s could not be rewritten\n", what);
+        failures++;
+        remove(path);
+        return 0;
+    }
+    nb = slurp(path, sheet_b, sizeof sheet_b);
+    remove(path);
+
+    if (na == 0 || na != nb || memcmp(sheet_a, sheet_b, na) != 0) {
+        size_t i = 0, line = 1, col = 0;
+        while (i < na && i < nb && sheet_a[i] == sheet_b[i]) {
+            if (sheet_a[i] == '\n') { line++; col = 0; } else col++;
+            i++;
+        }
+        printf("  FAIL %-52s differs at line %lu column %lu\n",
+               what, (unsigned long)line, (unsigned long)col);
+        printf("        wrote %.60s\n", sheet_a + i - col);
+        printf("        read  %.60s\n", sheet_b + i - col);
+        failures++;
+        return 0;
+    }
+    return 1;
+}
+
+static void base_character(Character *c, const char *name)
+{
+    int a;
+
+    reset(c);
+    snprintf(c->name, sizeof c->name, "%s", name);
+    snprintf(c->player, sizeof c->player, "Self Test");
+    for (a = 0; a < ABL_COUNT; a++) c->base_score[a] = 12;
+}
+
+/* The sweep's usual subject: a 1st-level fighter of the first race, with one
+   hit die rolled, ready to have the row under test hung on it. */
+static void plain_fighter(Character *c, const char *name)
+{
+    base_character(c, name);
+    c->race_id = 0;
+    add_class(c, CLS_FIGHTER, 1, -1);
+    c->hp_rolls[0] = 10;
+    c->hp_roll_count = 1;
+}
+
+/* Every race and subrace, every class at every level, and every subclass:
+   built, written, read back and written again. */
+static void test_sweep_characters(void)
+{
+    Character c;
+    int i, lvl;
+
+    printf("every race, class and subclass through the file\n");
+
+    for (i = 0; i < RACE_COUNT; i++) {
+        int k, subs = RACES[i].subrace_count;
+
+        base_character(&c, "SelftestRace");
+        c.race_id = i;
+        if (RACES[i].has_ancestry) c.ancestry_id = 0;
+        add_class(&c, CLS_FIGHTER, 1, -1);
+        c.hp_rolls[0] = 10;
+        c.hp_roll_count = 1;
+        if (!survives_the_file(&c, RACES[i].name)) return;
+
+        for (k = 0; k < subs; k++) {
+            c.subrace_id = RACES[i].first_subrace + k;
+            if (!survives_the_file(&c, SUBRACES[c.subrace_id].name)) return;
+        }
+    }
+
+    for (i = 0; i < CLASS_COUNT; i++) {
+        for (lvl = 1; lvl <= MAX_LEVEL; lvl++) {
+            int h;
+
+            base_character(&c, "SelftestClass");
+            c.race_id = 0;
+            add_class(&c, i, lvl, -1);
+            for (h = 0; h < lvl; h++) c.hp_rolls[h] = 5;
+            c.hp_roll_count = lvl;
+            if (!survives_the_file(&c, CLASSES[i].name)) return;
+        }
+    }
+
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        int h;
+
+        base_character(&c, "SelftestSubclass");
+        c.race_id = 0;
+        add_class(&c, SUBCLASSES[i].class_id, MAX_LEVEL, i);
+        for (h = 0; h < MAX_LEVEL; h++) c.hp_rolls[h] = 5;
+        c.hp_roll_count = MAX_LEVEL;
+        if (!survives_the_file(&c, SUBCLASSES[i].name)) return;
+    }
+}
+
+/* Every spell, every magic item and every beast, one at a time. A row the
+   sheet cannot print, or that the loader cannot find its way back to, shows
+   up here rather than on the day a player picks it. */
+static void test_sweep_content(void)
+{
+    Character c;
+    int i;
+
+    printf("every spell, magic item and beast through the file\n");
+
+    for (i = 0; i < SPELL_COUNT; i++) {
+        base_character(&c, "SelftestSpell");
+        c.race_id = 0;
+        add_class(&c, CLS_WIZARD, MAX_LEVEL, -1);
+        c.hp_rolls[0] = 6;
+        c.hp_roll_count = 1;
+        c.spells[0].spell_id = i;
+        c.spells[0].class_id = CLS_WIZARD;
+        c.spells[0].prepared = 1;
+        c.spell_count = 1;
+        if (!survives_the_file(&c, SPELLS[i].name)) return;
+    }
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        plain_fighter(&c, "SelftestMagic");
+        add_magic_item(&c, i, 1, MAGIC_ITEMS[i].attunement ? 1 : 0, 0);
+        if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
+    }
+
+    for (i = 0; i < ITEM_COUNT; i++) {
+        plain_fighter(&c, "SelftestItem");
+        add_item(&c, i, 1, 0);
+        if (!survives_the_file(&c, ITEMS[i].name)) return;
+    }
+
+    for (i = 0; i < BEAST_COUNT_ACTUAL; i++) {
+        Sidekick *sk;
+
+        plain_fighter(&c, "SelftestBeast");
+        sk = &c.sidekicks[c.sidekick_count++];
+        memset(sk, 0, sizeof *sk);
+        snprintf(sk->name, sizeof sk->name, "Companion");
+        snprintf(sk->creature, sizeof sk->creature, "%s", BEASTS[i].name);
+        snprintf(sk->speed, sizeof sk->speed, "%s", BEASTS[i].speed);
+        sk->cls = SK_WARRIOR;
+        sk->level = 1;
+        sk->role = -1;
+        sk->hp = BEASTS[i].hp;
+        sk->ac = BEASTS[i].ac;
+        if (!survives_the_file(&c, BEASTS[i].name)) return;
+    }
+}
+
+/* Text that the '|' separated format cannot take at face value. A name, a
+   note or a tool with a separator or an escape in it used to be written
+   raw, and everything after the stray character was lost on reload. */
+static void test_awkward_text(void)
+{
+    static const char *const AWKWARD[] = {
+        "a|b", "back\\slash", "both|and\\here", "#END-DNDDATA",
+        "#BEGIN-DNDDATA v1", "NAME|spoof", "trailing|", "|leading",
+        "\\p literal", "\\n literal", "pipes||together"
+    };
+    const int n = (int)(sizeof AWKWARD / sizeof AWKWARD[0]);
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i;
+
+    printf("text the file format has to escape\n");
+
+    for (i = 0; i < n; i++) {
+        plain_fighter(&c, "SelftestText");
+
+        snprintf(c.player, sizeof c.player, "%s", AWKWARD[i]);
+        snprintf(c.trait, sizeof c.trait, "%s", AWKWARD[i]);
+        snprintf(c.appearance, sizeof c.appearance, "%s", AWKWARD[i]);
+        snprintf(c.eyes, sizeof c.eyes, "%s", AWKWARD[i]);
+        add_language(&c, AWKWARD[i]);
+        add_tool(&c, AWKWARD[i]);
+        add_choice(&c, "Fighting Style", AWKWARD[i]);
+        snprintf(c.notes[0].title, sizeof c.notes[0].title, "%s", AWKWARD[i]);
+        snprintf(c.notes[0].body, sizeof c.notes[0].body,
+                 "%s\nsecond line\n%s", AWKWARD[i], AWKWARD[i]);
+        c.note_count = 1;
+
+        if (save_character(&c, path, sizeof path) != 0
+            || load_character(path, &back) != 0) {
+            printf("  FAIL %-52s would not save and load\n", AWKWARD[i]);
+            failures++;
+            remove(path);
+            continue;
+        }
+        remove(path);
+
+        check(!strcmp(back.player, c.player), "player survives", 0, 0);
+        check(!strcmp(back.trait, c.trait), "trait survives", 0, 0);
+        check(!strcmp(back.appearance, c.appearance), "appearance survives",
+              0, 0);
+        check(!strcmp(back.eyes, c.eyes), "eye colour survives", 0, 0);
+        check(back.language_count == c.language_count
+              && !strcmp(back.languages[0], c.languages[0]),
+              "language survives", 0, 0);
+        check(back.tool_prof_count == c.tool_prof_count
+              && !strcmp(back.tool_profs[0], c.tool_profs[0]),
+              "tool survives", 0, 0);
+        check(back.choice_count == c.choice_count
+              && !strcmp(back.choices[0].value, c.choices[0].value),
+              "choice survives", 0, 0);
+        check(back.note_count == 1
+              && !strcmp(back.notes[0].title, c.notes[0].title)
+              && !strcmp(back.notes[0].body, c.notes[0].body),
+              "note survives", 0, 0);
+    }
+
+    /* A note long enough to have been cut in half by the read buffer. */
+    plain_fighter(&c, "SelftestLongNote");
+    for (i = 0; i + 8 < (int)sizeof c.notes[0].body - 1; i += 8) {
+        memcpy(c.notes[0].body + i, "abcdefg\n", 8);
+    }
+    c.notes[0].body[i] = '\0';
+    snprintf(c.notes[0].title, sizeof c.notes[0].title, "A very long note");
+    c.note_count = 1;
+    if (save_character(&c, path, sizeof path) == 0
+        && load_character(path, &back) == 0) {
+        EQ((long)strlen(back.notes[0].body), (long)strlen(c.notes[0].body),
+           "a note of 2000 characters comes back whole");
+    } else {
+        printf("  FAIL long note would not save and load\n");
+        failures++;
+    }
+    remove(path);
+}
+
+/* The two id spaces, and a row the loader must decline. */
+/* Numbers a file may hold that no prompt would take.
+ *
+ * A sheet is a text file, and a text file gets edited. Nothing checked what
+ * came back out of the numeric columns, and five of them were multiplied or
+ * added the moment the character was drawn: a quantity by an item's weight,
+ * five coin counts together, the hit dice one after another, a Strength by
+ * fifteen. Each of those overflowed, which is undefined behaviour rather
+ * than a big number -- and the sanitizers had been letting it pass, because
+ * they were built to report and carry on.
+ *
+ * The file is written by hand here rather than by save_character, because
+ * the point is what the program does with a file it did not write.
+ */
+/* Squat Nimbleness is offered to a dwarf and to anything small.
+ *
+ * Xanathar's asks it for "a dwarf or a small race", and the requirement is
+ * stored as a list of names that the level-up matches one at a time. Named
+ * one at a time, the list said Dwarf, Gnome and Halfling -- which was the
+ * whole of the small races on the day it was written, and is four short of
+ * them now. A deep gnome, a fairy, a goblin and a kobold were all refused a
+ * feat the book gives them.
+ */
+/* Two things a magic armour's rule must not claim.
+ *
+ * Armour of resistance is "Armor (light, medium, or heavy)" and the DMG's own
+ * treasure tables print it in eight suits. Its rule said plate: Armor Class
+ * 18, Strength 15, disadvantage on Stealth. A leather one on a Dexterity 18
+ * rogue therefore read 18 instead of 15, and slowed a wearer by ten feet for
+ * a requirement leather does not have. It states no Armor Class now, and the
+ * suit the character is actually wearing supplies it.
+ *
+ * And the damage a copy is made against is not always one of the ten: dragon
+ * scale mail takes the dragon's, and armour of vulnerability is made against
+ * bludgeoning, piercing or slashing. Offering the ten there built suits the
+ * book does not allow.
+ */
+static void test_magic_armour_claims(void)
+{
+    const char *types[16];
+    Character c;
+    int id, i;
+
+    printf("what a magic armour's rule may claim\n");
+
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 5, -1);
+    c.base_score[ABL_DEX] = 18;
+    id = find_item("Leather armor");
+    add_item(&c, id, 1, 1);
+    c.inventory[0].equipped = 1;
+    EQ(armour_class(&c), 15, "leather on a Dexterity 18 rogue");
+
+    give_magic(&c, "Armor of Resistance", 1, 0, 0);
+    for (i = 0; i < c.item_count; i++) {
+        if (c.inventory[i].is_magic) c.inventory[i].equipped = 1;
+    }
+    EQ(armour_class(&c), 15, "and the armour of resistance adds nothing to it");
+    /* No race, so the walking speed is the plain thirty; the point is that
+       nothing has taken ten feet off it. */
+    EQ(speed_of(&c), 30, "nor takes ten feet for a Strength it never asks for");
+
+    EQ(magic_variant_types(magic_rule_for("Dragon Scale Mail"), types, 16), 5,
+       "the dragons' five damage types");
+    EQ(magic_variant_types(magic_rule_for("Armor of Vulnerability"), types, 16),
+       3, "bludgeoning, piercing, slashing");
+    EQ(magic_variant_types(magic_rule_for("Ring of Resistance"), types, 16), 10,
+       "and any of the ten where the book allows any");
+    EQ(magic_variant_types(magic_rule_for("Boots of the Winterlands"),
+                           types, 16), 0, "none where the type is fixed");
+}
+
+/* The two things a magic item may do that nothing used to record: raise
+   every ability check, and curse the wearer with a vulnerability. */
+static void test_magic_checks_and_curses(void)
+{
+    char buf[512];
+    Character c;
+    int before, after;
+
+    printf("an item that raises ability checks, and one that curses\n");
+
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_DEX] = 14;
+    c.skill_prof[SKL_STEALTH] = 1;
+    before = skill_bonus(&c, SKL_STEALTH);
+    give_magic(&c, "Stone of Good Luck (Luckstone)", 1, 0, 0);
+    after = skill_bonus(&c, SKL_STEALTH);
+    EQ(after - before, 1, "a luckstone raises a skill check by one");
+    EQ(save_bonus(&c, ABL_DEX) - ability_mod(&c, ABL_DEX), 1,
+       "and the saving throw it always raised");
+
+    /* An unattuned stone does nothing, the same as it does for saves. */
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.skill_prof[SKL_STEALTH] = 1;
+    before = skill_bonus(&c, SKL_STEALTH);
+    give_magic(&c, "Stone of Good Luck (Luckstone)", 0, 0, 0);
+    EQ(skill_bonus(&c, SKL_STEALTH), before,
+       "an unattuned luckstone raises nothing");
+
+    /* The armour of vulnerability resists the type it was made against and
+       makes its wearer vulnerable to the other two, which are not known
+       until the copy names one. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Armor of Vulnerability", 1, 0, 1);
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "the two damage types it was not made against") != NULL,
+          "an armour with no type chosen names neither", 1, 1);
+
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "piercing");
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "resistant to piercing") != NULL,
+          "a piercing copy resists piercing", 1, 1);
+    check(strstr(buf, "vulnerable to bludgeoning and slashing") != NULL,
+          "and is vulnerable to the other two", 1, 1);
+    check(strstr(buf, "vulnerable to piercing") == NULL,
+          "never to the one it turns aside", 1, 1);
+}
+
+/* A magic weapon is a weapon, and belongs in the attacks block with the
+   rest of them. */
+static void test_magic_weapon_attacks(void)
+{
+    Attack a[MAX_ATTACKS];
+    Character c;
+    int n, i, found;
+
+    printf("magic weapons among the attacks\n");
+
+    /* A holy avenger is a longsword: Strength 3 + proficiency 2 + its own
+       +3, and 1d8 + 3 + 3 slashing. The DMG leaves the sword to the copy,
+       so the copy has to say which. */
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 5, -1);
+    c.base_score[ABL_STR] = 16;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Holy Avenger", 1, 0, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "Longsword");
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Holy Avenger")) continue;
+        found = 1;
+        EQ(a[i].bonus, 9, "holy avenger to hit (Str 3 + prof 3 + weapon 3)");
+        check(strstr(a[i].damage, "1d8+6 slashing") != NULL,
+              "and 1d8 + Strength + 3 slashing", 1, 1);
+        check(strstr(a[i].note, "a longsword") != NULL,
+              "the line says which weapon it is", 1, 1);
+    }
+    EQ(found, 1, "the holy avenger has a line of its own");
+
+    /* Until the copy names a sword there is nothing to put on a line. */
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 5, -1);
+    give_magic(&c, "Holy Avenger", 1, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Holy Avenger")) found = 1;
+    }
+    EQ(found, 0, "no line until the copy says which sword");
+
+    /* A staff of power is filed under Staff and wielded as a quarterstaff,
+       which only its rule knows. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Staff of Power", 1, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Staff of Power")) continue;
+        found = 1;
+        EQ(a[i].bonus, 5, "staff of power to hit (prof 3 + weapon 2)");
+        check(strstr(a[i].note, "a quarterstaff") != NULL,
+              "and it says it is a quarterstaff", 1, 1);
+    }
+    EQ(found, 1, "a staff that is a weapon gets a line");
+
+    /* Unattuned, it is still a quarterstaff and no longer a +2 one. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Staff of Power", 0, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Staff of Power")) continue;
+        found = 1;
+        EQ(a[i].bonus, 3, "unattuned, the bonus is gone");
+    }
+    EQ(found, 1, "but the staff is still a weapon");
+
+    /* The generic entry is named for the book, not for the thing: what the
+       character owns is a longsword. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 14;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Weapon, +1, +2, or +3", 0, 2, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "Longsword");
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Longsword")) continue;
+        found = 1;
+        EQ(a[i].bonus, 6, "a +2 longsword (Str 2 + prof 2 + copy's 2)");
+    }
+    EQ(found, 1, "and it is filed under the weapon, not the entry");
+
+    /* Ammunition is not a weapon: you attack with the bow. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Ammunition, +1, +2, or +3", 0, 1, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strstr(a[i].name, "Ammunition")) found = 1;
+    }
+    EQ(found, 0, "ammunition gets no line of its own");
+}
+
+static void test_racial_feat_by_size(void)
+{
+    int f, r, small = 0;
+
+    printf("a feat asked for by size rather than by name\n");
+
+    for (f = 0; f < FEAT_COUNT; f++) {
+        if (!strcmp(FEATS[f].name, "Squat Nimbleness")) break;
+    }
+    if (f == FEAT_COUNT) {
+        printf("  FAIL %-52s is not in the feat table\n", "Squat Nimbleness");
+        failures++;
+        return;
+    }
+
+    for (r = 0; r < RACE_COUNT; r++) {
+        Character c;
+        int want, i;
+
+        reset(&c);
+        c.race_id = r;
+        add_class(&c, CLS_FIGHTER, 4, -1);
+        for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 15;
+
+        want = (RACES[r].size == SZ_SMALL) || !strcmp(RACES[r].name, "Dwarf");
+        if (RACES[r].size == SZ_SMALL) small++;
+        EQ(feat_offered(&c, f), want, RACES[r].name);
+    }
+    check(small >= 6, "small races the feat must reach", small, 6);
+}
+
+static void test_absurd_numbers(void)
+{
+    static const char *const EXTREME[] = { "2147483647", "-2147483648" };
+    const char *path = "SelftestAbsurd.txt";
+    Character c;
+    int e;
+
+    printf("numbers from a file that no prompt would take\n");
+
+    for (e = 0; e < 2; e++) {
+        const char *v = EXTREME[e];
+        FILE *f = fopen(path, "w");
+        int a, i;
+
+        if (!f) {
+            printf("  FAIL %-52s could not be written\n", path);
+            failures++;
+            return;
+        }
+        fprintf(f, "A sheet, hand-edited.\n\n#BEGIN-DNDDATA v1\n");
+        fprintf(f, "NAME|Absurd|Player\n");
+        fprintf(f, "CLASS|Fighter|5|-|-1\n");
+        fprintf(f, "BASE|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "RACIALBONUS|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "ASIBONUS|%s|%s|%s|%s|%s|%s\n", v, v, v, v, v, v);
+        fprintf(f, "COINS|%s|%s|%s|%s|%s\n", v, v, v, v, v);
+        fprintf(f, "ITEM|%s|0|Carriage\n", v);
+        fprintf(f, "ITEM|%s|1|Plate armor\n", v);
+        fprintf(f, "MAGICITEM|%s|1|Belt of Fire Giant Strength|%s|1|\n", v, v);
+        fprintf(f, "HPROLLS|%s|%s|%s|%s\n", v, v, v, v);
+        fprintf(f, "BODY|%s|%s|%s|blue|pale|black\n", v, v, v);
+        fprintf(f, "#END-DNDDATA\n");
+        fclose(f);
+
+        if (load_character(path, &c) != 0) {
+            printf("  FAIL %-52s would not load\n", v);
+            failures++;
+            remove(path);
+            continue;
+        }
+        remove(path);
+
+        for (a = 0; a < ABL_COUNT; a++) {
+            int score = ability_score(&c, (Ability)a);
+            check(score >= 1 && score <= 40, "an ability score in range",
+                  score, 0);
+        }
+        for (i = 0; i < c.item_count; i++) {
+            int q = c.inventory[i].quantity;
+            check(q >= 1 && q <= MAX_STACK, "a quantity in range", q, 0);
+        }
+        check(c.copper >= 0 && c.copper <= MAX_COINS, "copper in range",
+              c.copper, 0);
+        check(c.hp_roll_count >= 0 && c.hp_roll_count <= MAX_LEVEL,
+              "one hit die per level at most", c.hp_roll_count, 0);
+        check(carrying_capacity(&c) > 0, "a carrying capacity above nothing",
+              carrying_capacity(&c), 0);
+        check(current_weight_tenths(&c) >= 0, "a weight above nothing",
+              current_weight_tenths(&c), 0);
+        check(hit_points_max(&c) > -1000 && hit_points_max(&c) < 100000,
+              "hit points that are a number", hit_points_max(&c), 0);
+        check(armour_class(&c) >= 0 && armour_class(&c) < 1000,
+              "an armour class that is a number", armour_class(&c), 0);
+        check(speed_of(&c) >= 0 && speed_of(&c) < 1000,
+              "a speed that is a number", speed_of(&c), 0);
+    }
+}
+
+static void test_inventory_id_spaces(void)
+{
+    Character c;
+
+    printf("the two item tables are told apart\n");
+
+    base_character(&c, "SelftestIds");
+    c.race_id = 0;
+    add_class(&c, CLS_FIGHTER, 1, -1);
+
+    /* item_id indexes MAGIC_ITEMS here and ITEMS there; an ordinary item
+       must never be merged into a magic entry that shares its index. */
+    add_magic_item(&c, 5, 1, 0, 0);
+    add_item(&c, 5, 1, 0);
+    EQ(c.item_count, 2, "an item and a magic item at index 5 stay apart");
+    EQ(c.inventory[0].quantity, 1, "the magic item keeps its quantity");
+    EQ(c.inventory[0].is_magic, 1, "the first entry is the magic one");
+    EQ(c.inventory[1].is_magic, 0, "the second is the ordinary one");
+
+    /* A quantity of zero is declined, and nothing may be written for it. */
+    base_character(&c, "SelftestZero");
+    add_magic_item(&c, 5, 0, 0, 0);
+    EQ(c.item_count, 0, "a quantity of zero adds nothing");
+}
+
+
+/* homebrew.txt is the one file read while the program runs, and a DM types
+   its contents. It shares the character file's record format, so a name with
+   a separator in it has to survive being written and read the same way. */
+static void test_homebrew_file(void)
+{
+    static char before[200000], after[200000];
+    size_t n_before;
+    FILE *f;
+    int i, found;
+
+    printf("the homebrew file keeps what the DM typed\n");
+
+    /* The DM's own file is put back exactly as it was found. */
+    n_before = slurp("homebrew.txt", before, sizeof before);
+
+    f = fopen("homebrew.txt", "w");
+    if (!f) {
+        printf("  FAIL could not write a homebrew file to test with\n");
+        failures++;
+        return;
+    }
+    fputs("MAGICITEM|Hammer\\pof Dawn|wondrous item|rare|"
+          "requires attunement|It shines a\\pbit, and costs 5\\\\10 gp.\n", f);
+    fputs("ITEM|Pole\\parm|martial-melee|2000|60|0|0|0|0|1d10|slashing|"
+          "Heavy, reach|\n", f);
+    fclose(f);
+
+    EQ(homebrew_load(), 2, "both homebrew entries load");
+
+    for (i = 0, found = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (!strcmp(MAGIC_ITEMS[i].name, "Hammer|of Dawn")) found = 1;
+    }
+    check(found, "a '|' in a magic item's name comes back", 0, 0);
+    for (i = 0, found = 0; i < ITEM_COUNT; i++) {
+        if (!strcmp(ITEMS[i].name, "Pole|arm")) found = 1;
+    }
+    check(found, "a '|' in an item's name comes back", 0, 0);
+
+    /* Written back out, the separator must be escaped again rather than
+       breaking the line it is written on. */
+    EQ(homebrew_save(), 0, "the homebrew file is written");
+    slurp("homebrew.txt", after, sizeof after);
+    check(strstr(after, "Hammer\\pof Dawn") != NULL,
+          "the name is written back escaped", 0, 0);
+    check(strstr(after, "5\\\\10 gp") != NULL,
+          "a backslash is written back escaped", 0, 0);
+
+    EQ(homebrew_load(), 2, "and the file it wrote reads back");
+    for (i = 0, found = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (!strcmp(MAGIC_ITEMS[i].name, "Hammer|of Dawn")) found = 1;
+    }
+    check(found, "the name survives a second trip through the file", 0, 0);
+
+    if (n_before) {
+        f = fopen("homebrew.txt", "w");
+        if (f) { fwrite(before, 1, n_before, f); fclose(f); }
+    } else {
+        remove("homebrew.txt");
+    }
+}
+
 int main(void)
 {
     printf("dndcreator self-test\n\n");
@@ -1654,6 +2421,7 @@ int main(void)
 
     test_modifiers();
     test_proficiency();
+    test_asi_levels();
     test_bruenor();
     test_hill_dwarf_and_tough();
     test_armour_class();
@@ -1677,6 +2445,18 @@ int main(void)
     test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
+    test_magic_armour_claims();
+    test_magic_checks_and_curses();
+    test_magic_weapon_attacks();
+    test_racial_feat_by_size();
+    test_absurd_numbers();
+    test_inventory_id_spaces();
+    test_awkward_text();
+    test_sweep_characters();
+    test_sweep_content();
+    /* Last: it repoints the banks, which the checks above compare
+       against the books' own tables. */
+    test_homebrew_file();
 
     printf("\n%s\n", failures ? "FAILURES" : "all checks passed");
     return failures ? 1 : 0;

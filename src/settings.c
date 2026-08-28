@@ -9,7 +9,6 @@
 #include "ui.h"
 
 #include <stdio.h>
-#include <string.h>
 
 Settings SETTINGS;
 

@@ -25,6 +25,13 @@ void add_language(Character *c, const char *lang);
 void add_tool(Character *c, const char *tool);
 void add_prof(Character *c, const char *prof);
 void add_choice(Character *c, const char *label, const char *value);
+
+/* The three ways the choices list is read back. */
+int  count_choices(const Character *c, const char *label);
+int  has_choice_starting(const Character *c, const char *label,
+                         const char *value);
+int  has_choice_exactly(const Character *c, const char *label,
+                        const char *value);
 void add_item(Character *c, int item_id, int qty, int equipped);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 
@@ -41,6 +48,11 @@ int  has_language(const Character *c, const char *lang);
 void choose_subclass_for(Character *c, int slot);
 void grant_level_hp(Character *c, int class_id, int is_first_level);
 void apply_asi_or_feat(Character *c, const char *reason);
+
+/* Whether a feat's prerequisites are met, which is what decides whether the
+   level-up offers it. Exported so that a test can ask the same question the
+   menu asks, rather than a copy of it. */
+int  feat_offered(const Character *c, int feat_id);
 void choose_fighting_style(Character *c, int class_id);
 void choose_expertise(Character *c, int count);
 void manage_spells(Character *c, int class_id);
@@ -53,11 +65,13 @@ void choose_personality(Character *c);
 void add_prof_list(Character *c, const char *csv, const char *source);
 
 /* Spellcasting helpers. */
+/* True for the two subclasses that cast off a third of their level. */
+int  is_third_caster(int subclass_id);
+
 int  spell_slots_for(const Character *c, int out[10]);
 int  pact_slots_for(const Character *c, int *count, int *level);
 int  spells_prepared_count(const Character *c, int class_id);
 int  known_spell_count(const Character *c, int class_id, int cantrips);
-int  class_of_spell(const Character *c, int spell_id);
 
 /* True when the character meets the PHB multiclassing prerequisites. */
 int  multiclass_ok_public(const Character *c, int class_id, int *why);

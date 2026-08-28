@@ -56,39 +56,39 @@ RACE|Gnome|PHB|0|0|0|2|0|0|25|Small|60|Common, Gnomish|0|0|0|0|0|0|0|Darkvision:
 RACE|Half-Elf|PHB|0|0|0|0|0|2|30|Medium|60|Common, Elvish|1|2|2|1|0|0|0|Darkvision: 60 feet\|Fey Ancestry: advantage on saves against being charmed, and magic cannot put you to sleep\|Skill Versatility: proficiency in two skills of your choice\|Ability Score Increase: +1 to two abilities of your choice
 RACE|Half-Orc|PHB|2|0|1|0|0|0|30|Medium|60|Common, Orc|0|0|0|0|0|0|0|Darkvision: 60 feet\|Menacing: proficiency in Intimidation\|Relentless Endurance: when dropped to 0 hit points, drop to 1 instead, once per long rest\|Savage Attacks: roll one extra weapon damage die on a melee critical hit
 RACE|Tiefling|PHB|0|0|0|1|0|2|30|Medium|60|Common, Infernal|0|0|0|0|0|0|0|Darkvision: 60 feet\|Hellish Resistance: resistance to fire damage\|Infernal Legacy: you know thaumaturgy; hellish rebuke at 3rd level and darkness at 5th level, each once per long rest, using Charisma
-RACE|Aarakocra|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Flight: a flying speed of 30 feet, but not while wearing medium or heavy armor\|Talons: unarmed strikes deal 1d6 slashing damage\|Wind Caller: cast gust of wind once per long rest without a slot, from 5th level, using a spellcasting ability of your choice
-RACE|Aasimar|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Celestial Resistance: resistance to necrotic and radiant damage\|Darkvision: 60 feet\|Healing Hands: heal a creature you touch for d4 per level, once per long rest\|Light Bearer: you know the light cantrip, cast with Charisma\|Celestial Revelation: from 3rd level, transform as a bonus action for 1 minute -- Heavenly Wings, Inner Radiance or Necrotic Shroud -- once per long rest
-RACE|Bugbear|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Long-Limbed: your reach is 5 feet longer for melee attacks on your turn\|Powerful Build: you count as one size larger for carrying capacity\|Sneaky: proficiency in Stealth, and you can move through the space of a creature one size larger\|Surprise Attack: once per turn, deal an extra 2d6 damage to a creature that has not taken a turn yet in combat
-RACE|Centaur|MPMM|0|0|0|0|0|0|40|Medium|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Charge: after moving 30 feet in a straight line, a melee weapon attack deals an extra 1d6 damage\|Equine Build: you count as one size larger for carrying capacity, and climbing costs extra movement\|Hooves: unarmed strikes deal 1d6 bludgeoning damage\|Natural Affinity: proficiency in one of Animal Handling, Medicine, Nature or Survival
+RACE|Aarakocra|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Flight: a flying speed of 30 feet, but not while wearing medium or heavy armor\|Talons: unarmed strikes deal 1d6 slashing damage\|Wind Caller: cast gust of wind once per long rest without a slot, from 3rd level, using a spellcasting ability of your choice
+RACE|Aasimar|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Celestial Resistance: resistance to necrotic and radiant damage\|Darkvision: 60 feet\|Healing Hands: heal a creature you touch for a number of d4 equal to your proficiency bonus, once per long rest\|Light Bearer: you know the light cantrip, cast with Charisma\|Celestial Revelation: from 3rd level, transform as a bonus action for 1 minute -- Necrotic Shroud, Radiant Consumption or Radiant Soul -- once per long rest
+RACE|Bugbear|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Long-Limbed: your reach is 5 feet longer for melee attacks on your turn\|Powerful Build: you count as one size larger for carrying capacity\|Sneaky: proficiency in Stealth, and without squeezing you can move through and stop in a space large enough for a Small creature\|Surprise Attack: deal an extra 2d6 damage when you hit a creature that has not taken a turn yet in combat
+RACE|Centaur|MPMM|0|0|0|0|0|0|40|Medium|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Charge: after moving 30 feet straight toward a target and hitting it with a melee weapon attack, make one hooves attack against it as a bonus action\|Equine Build: you count as one size larger for carrying capacity, and climbing costs extra movement\|Hooves: unarmed strikes deal 1d6 bludgeoning damage\|Natural Affinity: proficiency in one of Animal Handling, Medicine, Nature or Survival
 RACE|Changeling|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Shapechanger: as an action, change your appearance and voice to any Medium or Small humanoid you have seen; your statistics do not change\|Changeling Instincts: proficiency in two of Deception, Insight, Intimidation, Performance or Persuasion
-RACE|Deep Gnome|MPMM|0|0|0|0|0|0|30|Small|120|Common|1|0|0|0|0|0|1|Superior Darkvision: 120 feet\|Gnomish Magic Resistance: advantage on saving throws against spells\|Gnomish Magic: cast disguise self once per long rest from 3rd level, and nondetection on yourself from 5th level, without a slot
-RACE|Duergar|MPMM|0|0|0|0|0|0|30|Medium|120|Common|1|0|0|0|0|0|1|Superior Darkvision: 120 feet\|Dwarven Resilience: advantage on saves against poison, and resistance to poison damage\|Duergar Magic: cast enlarge/reduce on yourself from 3rd level and invisibility on yourself from 5th level, each once per long rest\|Psionic Fortitude: advantage on saves against being charmed or stunned
+RACE|Deep Gnome|MPMM|0|0|0|0|0|0|30|Small|120|Common|1|0|0|0|0|0|1|Superior Darkvision: 120 feet\|Gnomish Magic Resistance: advantage on Intelligence, Wisdom and Charisma saves against spells\|Gift of the Svirfneblin: cast disguise self once per long rest from 3rd level, and nondetection from 5th level, without a slot
+RACE|Duergar|MPMM|0|0|0|0|0|0|30|Medium|120|Common|1|0|0|0|0|0|1|Superior Darkvision: 120 feet\|Dwarven Resilience: advantage on saves to avoid or end the poisoned condition, and resistance to poison damage\|Duergar Magic: cast enlarge/reduce on yourself from 3rd level and invisibility on yourself from 5th level, each once per long rest\|Psionic Fortitude: advantage on saves to avoid or end the charmed or stunned condition
 RACE|Eladrin|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Fey Step: teleport 30 feet as a bonus action, a number of times equal to your proficiency bonus per long rest; from 3rd level the season you are in adds an effect\|Keen Senses: proficiency in Perception\|Trance: four hours of meditation counts as a long rest, and you may change your season
 RACE|Fairy|MPMM|0|0|0|0|0|0|30|Small|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Fairy Flight: a flying speed equal to your walking speed\|Fairy Magic: you know druidcraft; cast faerie fire from 3rd level and enlarge/reduce from 5th level, each once per long rest
-RACE|Firbolg|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Firbolg Magic: cast detect magic and disguise self, each once per short rest, using a spellcasting ability of your choice\|Hidden Step: turn invisible as a bonus action until the end of your next turn, a number of times equal to your proficiency bonus per long rest\|Powerful Build: you count as one size larger for carrying capacity\|Speech of Beast and Leaf: beasts and plants can understand you, and you have advantage on Charisma checks made to influence them
+RACE|Firbolg|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Firbolg Magic: cast detect magic and disguise self, each once per long rest, using a spellcasting ability of your choice\|Hidden Step: turn invisible as a bonus action until the start of your next turn, a number of times equal to your proficiency bonus per long rest\|Powerful Build: you count as one size larger for carrying capacity\|Speech of Beast and Leaf: beasts and plants can understand you, and you have advantage on Charisma checks made to influence them
 RACE|Genasi, Air|MPMM|0|0|0|0|0|0|35|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Unending Breath: you can hold your breath indefinitely while not incapacitated\|Lightning Resistance: resistance to lightning damage\|Air Genasi Magic: you know shocking grasp; cast feather fall from 3rd level and levitate from 5th level, each once per long rest
-RACE|Genasi, Earth|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Earth Walk: difficult terrain made of earth or stone costs no extra movement\|Merge with Stone: cast pass without trace once per long rest\|Earth Genasi Magic: you know blade ward
+RACE|Genasi, Earth|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Earth Walk: difficult terrain costs no extra movement while you use your walking speed on the ground or a floor\|Merge with Stone: you know blade ward and can cast it as a bonus action a number of times equal to your proficiency bonus per long rest; cast pass without trace from 5th level once per long rest
 RACE|Genasi, Fire|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fire Resistance: resistance to fire damage\|Reach to the Blaze: you know produce flame; cast burning hands from 3rd level once per long rest
 RACE|Genasi, Water|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Acid Resistance: resistance to acid damage\|Amphibious: you can breathe air and water\|Swim: a swimming speed equal to your walking speed\|Call to the Wave: you know acid splash; cast create or destroy water from 3rd level once per long rest
 RACE|Githyanki|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Astral Knowledge: after each long rest, gain proficiency in one skill of your choice until your next long rest\|Githyanki Psionics: you know mage hand, cast without components; from 3rd level jump and from 5th level misty step, each once per long rest\|Psychic Resilience: resistance to psychic damage
-RACE|Githzerai|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Githzerai Psionics: you know mage hand, cast without components; from 3rd level shield and from 5th level detect thoughts, each once per long rest\|Mental Discipline: resistance to psychic damage\|Psychic Resilience: advantage on saves against being charmed or frightened
-RACE|Goblin|MPMM|0|0|0|0|0|0|30|Small|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fury of the Small: once per short rest, deal extra damage equal to your proficiency bonus to a creature larger than you\|Fey: your creature type is fey\|Nimble Escape: Disengage or Hide as a bonus action
+RACE|Githzerai|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Githzerai Psionics: you know mage hand, cast without components; from 3rd level shield and from 5th level detect thoughts, each once per long rest\|Mental Discipline: advantage on saves to avoid or end the charmed or frightened condition\|Psychic Resilience: resistance to psychic damage
+RACE|Goblin|MPMM|0|0|0|0|0|0|30|Small|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fury of the Small: deal extra damage equal to your proficiency bonus to a creature larger than you, once per turn, a number of times equal to your proficiency bonus per long rest\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Nimble Escape: Disengage or Hide as a bonus action
 RACE|Goliath|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Little Giant: proficiency in Athletics, and you count as one size larger for carrying capacity\|Mountain Born: resistance to cold damage, and you are acclimated to high altitude\|Stone's Endurance: as a reaction, reduce damage by 1d12 plus your Constitution modifier, a number of times equal to your proficiency bonus per long rest
 RACE|Harengon|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Hare-Trigger: you can add your proficiency bonus to initiative rolls\|Leporine Senses: proficiency in Perception\|Lucky Footwork: as a reaction to a failed Dexterity save, add 1d4 to it, unless you are prone\|Rabbit Hop: as a bonus action, jump a number of feet equal to five times your proficiency bonus, without provoking
-RACE|Hobgoblin|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey: your creature type is fey\|Fey Gift: as a bonus action, grant a creature within 30 feet temporary hit points, or one of three other benefits, a number of times equal to your proficiency bonus per long rest\|Fortune from the Many: as a reaction to a failed attack or check, add a bonus equal to the number of allies within 30 feet, up to your proficiency bonus
-RACE|Kenku|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Expert Duplication: advantage on checks made to copy writing or craftwork you can see\|Kenku Recall: proficiency in two skills of your choice, and you can roll one of those checks with advantage a number of times equal to your proficiency bonus per long rest\|Mimicry: you can mimic sounds you have heard; a listener may see through it with an Insight check against your Deception
+RACE|Hobgoblin|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Fey Gift: take the Help action as a bonus action, a number of times equal to your proficiency bonus per long rest; from 3rd level choose Hospitality, Passage or Spite each time you do\|Fortune from the Many: when you miss an attack or fail an ability check or saving throw, add the number of allies you can see within 30 feet, up to +3, a number of times equal to your proficiency bonus per long rest
+RACE|Kenku|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Expert Duplication: advantage on checks made to produce an exact duplicate of writing or craftwork\|Kenku Recall: proficiency in two skills of your choice, and you can give yourself advantage on any check using a skill you are proficient in, a number of times equal to your proficiency bonus per long rest\|Mimicry: you can mimic sounds you have heard, including voices; a listener can tell it is an imitation only with an Insight check against DC 8 + your proficiency bonus + your Charisma modifier
 RACE|Kobold|MPMM|0|0|0|0|0|0|30|Small|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Draconic Cry: as a bonus action, enemies within 10 feet grant advantage on attacks against them until the start of your next turn, a number of times equal to your proficiency bonus per long rest\|Kobold Legacy: choose Craftiness (proficiency in one skill), Defiance (advantage on saves against being frightened) or Draconic Sorcery (one sorcerer cantrip)
-RACE|Lizardfolk|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Bite: unarmed strikes deal 1d6 piercing damage\|Cunning Artisan: craft a shield, club, javelin or darts from a corpse over a short rest\|Hold Breath: you can hold your breath for 15 minutes\|Hungry Jaws: as a bonus action, make a bite attack and gain temporary hit points, once per short rest\|Natural Armor: AC 13 plus your Dexterity modifier when unarmored\|Nature's Intuition: proficiency in two of Animal Handling, Nature, Perception, Stealth or Survival
-RACE|Minotaur|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Horns: unarmed strikes deal 1d6 piercing damage\|Goring Rush: after taking the Dash action, make a horn attack as a bonus action\|Hammering Horns: after hitting with a melee attack, shove a creature within 5 feet up to 10 feet as a bonus action\|Labyrinthine Recall: you always know which way is north, and have advantage on Survival checks to navigate or track
-RACE|Orc|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Adrenaline Rush: Dash as a bonus action and gain temporary hit points equal to your proficiency bonus, a number of times equal to your proficiency bonus per short rest\|Powerful Build: you count as one size larger for carrying capacity\|Relentless Endurance: drop to 1 hit point instead of 0, once per long rest
+RACE|Lizardfolk|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Bite: unarmed strikes deal 1d6 slashing damage\|Swim: a swimming speed equal to your walking speed\|Hold Breath: you can hold your breath for 15 minutes\|Hungry Jaws: as a bonus action, make a bite attack and gain temporary hit points, a number of times equal to your proficiency bonus per long rest\|Natural Armor: AC 13 plus your Dexterity modifier when unarmored\|Nature's Intuition: proficiency in two of Animal Handling, Medicine, Nature, Perception, Stealth or Survival
+RACE|Minotaur|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Horns: unarmed strikes deal 1d6 piercing damage\|Goring Rush: after taking the Dash action and moving at least 20 feet, make a horn attack as a bonus action\|Hammering Horns: after hitting with a melee attack, push a creature within 5 feet up to 10 feet as a bonus action, unless it succeeds on a Strength save\|Labyrinthine Recall: you always know which way is north, and have advantage on Survival checks to navigate or track
+RACE|Orc|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Adrenaline Rush: Dash as a bonus action and gain temporary hit points equal to your proficiency bonus, a number of times equal to your proficiency bonus per long rest\|Powerful Build: you count as one size larger for carrying capacity\|Relentless Endurance: drop to 1 hit point instead of 0, once per long rest
 RACE|Satyr|MPMM|0|0|0|0|0|0|35|Medium|0|Common|1|0|0|0|0|0|1|Fey: your creature type is fey\|Ram: unarmed strikes deal 1d6 bludgeoning damage\|Magic Resistance: advantage on saves against spells\|Mirthful Leaps: add a d8 to the distance of any jump\|Reveler: proficiency in Performance and Persuasion, and with one musical instrument
-RACE|Sea Elf|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Child of the Sea: you can breathe air and water, and have a swimming speed of 30 feet\|Friend of the Sea: you can communicate simple ideas to beasts with a swimming speed\|Keen Senses: proficiency in Perception\|Trance: four hours of meditation counts as a long rest
+RACE|Sea Elf|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Child of the Sea: you can breathe air and water, and have resistance to cold damage\|Swim: a swimming speed equal to your walking speed\|Friend of the Sea: you can communicate simple ideas to beasts with a swimming speed\|Keen Senses: proficiency in Perception\|Trance: four hours of meditation counts as a long rest
 RACE|Shadar-kai|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Fey Ancestry: advantage on saves to avoid or end the charmed condition\|Necrotic Resistance: resistance to necrotic damage\|Blessing of the Raven Queen: teleport 30 feet as a bonus action, a number of times equal to your proficiency bonus per long rest; from 3rd level you also gain resistance to all damage until your next turn\|Keen Senses: proficiency in Perception\|Trance: four hours of meditation counts as a long rest
 RACE|Shifter|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Shifting: as a bonus action, gain temporary hit points equal to twice your proficiency bonus for 1 minute, a number of times equal to your proficiency bonus per long rest\|Shifting Feature: choose Beasthide, Longtooth, Swiftstride or Wildhunt; each adds an effect while shifted
 RACE|Tabaxi|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Cat's Claws: a climbing speed equal to your walking speed, and unarmed strikes deal 1d6 slashing damage\|Cat's Talent: proficiency in Perception and Stealth\|Feline Agility: double your speed for a turn; you cannot do so again until you move 0 feet on one of your turns
-RACE|Tortle|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Claws: unarmed strikes deal 1d6 slashing damage\|Hold Breath: you can hold your breath for 1 hour\|Natural Armor: AC 17, unaffected by Dexterity, and you gain no benefit from wearing armor\|Shell Defense: withdraw into your shell as an action for +4 AC and advantage on Strength and Constitution saves, but prone and unable to move\|Survival Instinct: proficiency in Survival
-RACE|Triton|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Amphibious: you can breathe air and water\|Swim: a swimming speed of 30 feet\|Control Air and Water: cast fog cloud; from 3rd level gust of wind and from 5th level wall of water, each once per long rest\|Emissary of the Sea: you can communicate simple ideas to beasts and elementals that can breathe water\|Guardian of the Depths: resistance to cold damage
-RACE|Yuan-ti|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Innate Spellcasting: you know poison spray and animal friendship (snakes only, at will); cast suggestion once per long rest from 3rd level\|Magic Resistance: advantage on saves against spells\|Poison Resilience: immunity to poison damage and the poisoned condition
+RACE|Tortle|MPMM|0|0|0|0|0|0|30|Medium|0|Common|1|0|0|0|0|0|1|Claws: unarmed strikes deal 1d6 slashing damage\|Hold Breath: you can hold your breath for 1 hour\|Natural Armor: AC 17, unaffected by Dexterity, and you gain no benefit from wearing armor\|Shell Defense: withdraw into your shell as an action for +4 AC and advantage on Strength and Constitution saves, but prone and unable to move\|Nature's Intuition: proficiency in one of Animal Handling, Medicine, Nature, Perception, Stealth or Survival
+RACE|Triton|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Amphibious: you can breathe air and water\|Swim: a swimming speed of 30 feet\|Control Air and Water: cast fog cloud; from 3rd level gust of wind and from 5th level water walk, each once per long rest\|Emissary of the Sea: you can communicate simple ideas to beasts, elementals and monstrosities with a swimming speed\|Guardian of the Depths: resistance to cold damage
+RACE|Yuan-ti|MPMM|0|0|0|0|0|0|30|Medium|60|Common|1|0|0|0|0|0|1|Darkvision: 60 feet\|Serpentine Spellcasting: you know poison spray and animal friendship (snakes only, at will); cast suggestion once per long rest from 3rd level\|Magic Resistance: advantage on saves against spells\|Poison Resilience: advantage on saves to avoid or end the poisoned condition, and resistance to poison damage
 
 # SUBRACE | race | name | book | STR | DEX | CON | INT | WIS | CHA | speed_override | darkvision_override | extra_languages | choice_asi_count | extra_skills | bonus_feats | replaces_race_asi | traits
 SUBRACE|Dwarf|Hill Dwarf|PHB|0|0|0|0|1|0|0|0|0|0|0|0|0|Dwarven Toughness: your hit point maximum increases by 1, and by 1 again every time you gain a level
@@ -426,7 +426,7 @@ FEATURE|Cleric||5|Destroy Undead (CR 1/2)|Turned undead of CR 1/2 or lower are d
 FEATURE|Cleric||6|Channel Divinity (2/rest)|You may use Channel Divinity twice between rests.
 FEATURE|Cleric||8|Ability Score Improvement|Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
 FEATURE|Cleric||8|Destroy Undead (CR 1)|Turned undead of CR 1 or lower are destroyed.
-FEATURE|Cleric||10|Divine Intervention|Call on your deity for aid; succeeds on a percentile roll under your cleric level.
+FEATURE|Cleric||10|Divine Intervention|Call on your deity for aid; succeeds on a percentile roll equal to or under your cleric level.
 FEATURE|Cleric||11|Destroy Undead (CR 2)|Turned undead of CR 2 or lower are destroyed.
 FEATURE|Cleric||12|Ability Score Improvement|Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
 FEATURE|Cleric||14|Destroy Undead (CR 3)|Turned undead of CR 3 or lower are destroyed.
@@ -492,7 +492,7 @@ FEATURE|Druid||20|Archdruid|Unlimited Wild Shape uses; ignore verbal and somatic
 FEATURE|Druid|Circle of the Land|2|Bonus Cantrip|Learn one additional druid cantrip.
 FEATURE|Druid|Circle of the Land|2|Natural Recovery|Recover expended spell slots on a short rest, up to half your druid level.
 FEATURE|Druid|Circle of the Land|3|Circle Spells|Gain always-prepared spells tied to your chosen land, at 3rd, 5th, 7th and 9th level.
-FEATURE|Druid|Circle of the Land|6|Land's Stride|Difficult terrain from plants costs no extra movement; advantage on saves against magical plants.
+FEATURE|Druid|Circle of the Land|6|Land's Stride|Nonmagical difficult terrain costs no extra movement and nonmagical plants neither slow nor harm you; advantage on saves against magical plants.
 FEATURE|Druid|Circle of the Land|10|Nature's Ward|Immune to poison and disease; cannot be charmed or frightened by elementals or fey.
 FEATURE|Druid|Circle of the Land|14|Nature's Sanctuary|Beasts and plants must make a Wisdom save to attack you.
 FEATURE|Druid|Circle of the Moon|2|Combat Wild Shape|Wild Shape as a bonus action, and spend spell slots to heal in beast form.
@@ -527,8 +527,8 @@ FEATURE|Fighter|Battle Master|3|Combat Superiority|Learn three manoeuvres and ga
 FEATURE|Fighter|Battle Master|3|Student of War|Gain proficiency with one type of artisan's tools.
 FEATURE|Fighter|Battle Master|7|Know Your Enemy|Study a creature for 1 minute to learn how it compares to you.
 FEATURE|Fighter|Battle Master|10|Improved Combat Superiority|Your superiority dice become d10s.
-FEATURE|Fighter|Battle Master|15|Improved Combat Superiority|Your superiority dice become d12s.
-FEATURE|Fighter|Battle Master|18|Relentless|Regain one superiority die when you roll initiative with none left.
+FEATURE|Fighter|Battle Master|18|Improved Combat Superiority|Your superiority dice become d12s.
+FEATURE|Fighter|Battle Master|15|Relentless|Regain one superiority die when you roll initiative with none left.
 FEATURE|Fighter|Eldritch Knight|3|Spellcasting|You learn wizard spells, cast with Intelligence, as a third-caster.
 FEATURE|Fighter|Eldritch Knight|3|Weapon Bond|Bond with a weapon; you can summon it to your hand as a bonus action.
 FEATURE|Fighter|Eldritch Knight|7|War Magic|After casting a cantrip, make one weapon attack as a bonus action.
@@ -553,7 +553,7 @@ FEATURE|Monk||10|Purity of Body|You are immune to disease and poison.
 FEATURE|Monk||12|Ability Score Improvement|Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
 FEATURE|Monk||13|Tongue of the Sun and Moon|You understand and are understood by all speaking creatures.
 FEATURE|Monk||14|Diamond Soul|Proficiency in all saving throws; spend 1 ki to reroll a failed save.
-FEATURE|Monk||15|Timeless Body|You no longer age and need no food or water.
+FEATURE|Monk||15|Timeless Body|Old age does not weaken you and magic cannot age you, though you can still die of old age; you need no food or water.
 FEATURE|Monk||16|Ability Score Improvement|Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
 FEATURE|Monk||18|Empty Body|Spend 4 ki to become invisible for 1 minute, or 8 ki to cast astral projection.
 FEATURE|Monk||19|Ability Score Improvement|Increase one ability score by 2, or two scores by 1 (maximum 20), or take a feat instead.
@@ -592,7 +592,7 @@ FEATURE|Paladin|Oath of Devotion|3|Channel Divinity: Sacred Weapon|Add your Char
 FEATURE|Paladin|Oath of Devotion|3|Channel Divinity: Turn the Unholy|Turn fiends and undead within 30 feet.
 FEATURE|Paladin|Oath of Devotion|7|Aura of Devotion|You and allies within 10 feet cannot be charmed; 30 feet at 18th level.
 FEATURE|Paladin|Oath of Devotion|15|Purity of Spirit|You are always under the effect of protection from evil and good.
-FEATURE|Paladin|Oath of Devotion|20|Holy Nimbus|Emanate sunlight for 1 minute, damaging fiends and undead and granting advantage on saves against their spells.
+FEATURE|Paladin|Oath of Devotion|20|Holy Nimbus|Emanate sunlight for 1 minute: enemies that start their turn in it take 10 radiant damage, and you have advantage on saves against spells cast by fiends and undead.
 FEATURE|Paladin|Oath of the Ancients|3|Channel Divinity: Nature's Wrath|Restrain a creature with spectral vines.
 FEATURE|Paladin|Oath of the Ancients|3|Channel Divinity: Turn the Faithless|Turn fey and fiends within 30 feet, revealing their true forms.
 FEATURE|Paladin|Oath of the Ancients|7|Aura of Warding|You and allies within 10 feet have resistance to damage from spells; 30 feet at 18th level.
@@ -602,7 +602,7 @@ FEATURE|Paladin|Oath of Vengeance|3|Channel Divinity: Abjure Enemy|Frighten and 
 FEATURE|Paladin|Oath of Vengeance|3|Channel Divinity: Vow of Enmity|Gain advantage on attacks against one creature for 1 minute.
 FEATURE|Paladin|Oath of Vengeance|7|Relentless Avenger|Move up to half your speed after a successful opportunity attack.
 FEATURE|Paladin|Oath of Vengeance|15|Soul of Vengeance|Make a melee attack as a reaction against a creature bound by your Vow of Enmity.
-FEATURE|Paladin|Oath of Vengeance|20|Avenging Angel|Sprout wings for 1 minute, gaining a 60-foot flying speed and a frightful aura.
+FEATURE|Paladin|Oath of Vengeance|20|Avenging Angel|Sprout wings for 1 hour, gaining a 60-foot flying speed and a frightful aura.
 FEATURE|Ranger||1|Favored Enemy|Choose a favored enemy type: advantage on Survival checks to track them and on Intelligence checks to recall lore.
 FEATURE|Ranger||1|Natural Explorer|Choose a favored terrain: travel and foraging benefits, and doubled proficiency on Intelligence and Wisdom checks there.
 FEATURE|Ranger||2|Fighting Style|Choose Archery, Defense, Dueling or Two-Weapon Fighting.
@@ -631,7 +631,7 @@ FEATURE|Ranger|Beast Master|3|Ranger's Companion|Gain a beast companion of CR 1/
 FEATURE|Ranger|Beast Master|7|Exceptional Training|Your companion can Dash, Disengage, Dodge or Help as a bonus action; its attacks count as magical.
 FEATURE|Ranger|Beast Master|11|Bestial Fury|Your companion makes two attacks when it takes the Attack action.
 FEATURE|Ranger|Beast Master|15|Share Spells|Spells you cast on yourself also affect your companion within 30 feet.
-FEATURE|Rogue||1|Expertise|Double your proficiency bonus for two skill or tool proficiencies.
+FEATURE|Rogue||1|Expertise|Double your proficiency bonus for two skill proficiencies, or one skill and thieves' tools.
 FEATURE|Rogue||1|Sneak Attack|Deal an extra 1d6 damage to a target you have advantage against, or one adjacent to an ally, rising by 1d6 every odd level.
 FEATURE|Rogue||1|Thieves' Cant|You know a secret mix of dialect, jargon and code.
 FEATURE|Rogue||2|Cunning Action|Dash, Disengage or Hide as a bonus action.
@@ -742,7 +742,7 @@ FEATURE|Wizard|School of Enchantment|2|Enchantment Savant|Copying enchantment sp
 FEATURE|Wizard|School of Enchantment|2|Hypnotic Gaze|Charm and incapacitate a creature within 5 feet as an action.
 FEATURE|Wizard|School of Enchantment|6|Instinctive Charm|Redirect an attack against you to another creature, as a reaction.
 FEATURE|Wizard|School of Enchantment|10|Split Enchantment|Enchantment spells that target one creature can target a second.
-FEATURE|Wizard|School of Enchantment|14|Alter Memories|Make a charmed creature forget it was charmed, and erase up to your Charisma modifier in hours.
+FEATURE|Wizard|School of Enchantment|14|Alter Memories|Make a charmed creature forget it was charmed, and erase up to 1 + your Charisma modifier in hours.
 FEATURE|Wizard|School of Evocation|2|Evocation Savant|Copying evocation spells into your spellbook costs half the time and gold.
 FEATURE|Wizard|School of Evocation|2|Sculpt Spells|Choose allies to automatically succeed on saves against your evocation spells and take no damage.
 FEATURE|Wizard|School of Evocation|6|Potent Cantrip|Creatures that succeed on a save against your cantrips still take half damage.
@@ -783,13 +783,13 @@ FEATURE|Artificer||20|Soul of Artifice|+1 to saving throws for each attuned magi
 FEATURE|Artificer|Alchemist|3|Tool Proficiency|Gain proficiency with alchemist's supplies.
 FEATURE|Artificer|Alchemist|3|Experimental Elixir|Create a random elixir after a long rest, or by spending a spell slot: healing, swiftness, resilience, boldness, flight or transformation.
 FEATURE|Artificer|Alchemist|5|Alchemical Savant|Add your Intelligence modifier to one roll of any artificer spell that restores hit points or deals acid, fire, necrotic or poison damage.
-FEATURE|Artificer|Alchemist|9|Restorative Reagents|Elixirs also grant temporary hit points, and you can cast lesser restoration without a slot once per long rest.
+FEATURE|Artificer|Alchemist|9|Restorative Reagents|Elixirs also grant temporary hit points, and you can cast lesser restoration without a slot, Intelligence modifier times per long rest.
 FEATURE|Artificer|Alchemist|15|Chemical Mastery|Resistance to acid and poison damage, immunity to the poisoned condition, and you can cast greater restoration and heal once each per long rest.
 FEATURE|Artificer|Armorer|3|Tools of the Trade|Gain proficiency with heavy armor and smith's tools.
 FEATURE|Artificer|Armorer|3|Arcane Armor|Turn a suit of armor into arcane armor that needs no Strength, cannot be removed against your will, and replaces missing limbs.
 FEATURE|Artificer|Armorer|3|Armor Model|Choose the Guardian model (thunder gauntlets and a defensive field) or the Infiltrator model (lightning launcher and stealth benefits).
 FEATURE|Artificer|Armorer|5|Extra Attack|Attack twice when you take the Attack action.
-FEATURE|Artificer|Armorer|9|Armor Modifications|Your arcane armor counts as separate items for infusions, and you can swap models more quickly.
+FEATURE|Artificer|Armorer|9|Armor Modifications|Your arcane armor counts as four separate items for infusions, its infusions carry over when you change model, and you can infuse two more items, both part of the armor.
 FEATURE|Artificer|Armorer|15|Perfected Armor|Guardian armor pulls creatures towards you; infiltrator armor makes a struck target vulnerable to your next attack.
 FEATURE|Artificer|Artillerist|3|Tool Proficiency|Gain proficiency with woodcarver's tools.
 FEATURE|Artificer|Artillerist|3|Eldritch Cannon|Create a Small or Tiny cannon: flamethrower, force ballista or protector.
@@ -802,7 +802,7 @@ FEATURE|Artificer|Battle Smith|3|Steel Defender|Build a mechanical companion tha
 FEATURE|Artificer|Battle Smith|5|Extra Attack|Attack twice when you take the Attack action.
 FEATURE|Artificer|Battle Smith|9|Arcane Jolt|Once per turn, add 2d6 force damage to a magic weapon hit, or restore that many hit points to a creature within 30 feet.
 FEATURE|Artificer|Battle Smith|15|Improved Defender|Your Arcane Jolt and steel defender grow stronger, and the defender gains a deflecting reaction.
-FEATURE|Barbarian|Path of the Ancestral Guardian|3|Ancestral Protectors|The first creature you hit each rage is hindered: it has disadvantage against anyone but you, and its damage to others is halved.
+FEATURE|Barbarian|Path of the Ancestral Guardian|3|Ancestral Protectors|The first creature you hit on each turn while raging is hindered: it has disadvantage against anyone but you, and its damage to others is halved.
 FEATURE|Barbarian|Path of the Ancestral Guardian|6|Spirit Shield|As a reaction, reduce damage to an ally within 30 feet by 2d6, rising to 3d6 at 10th and 4d6 at 14th level.
 FEATURE|Barbarian|Path of the Ancestral Guardian|10|Consult the Spirits|Cast augury or clairvoyance without a slot, once per short or long rest.
 FEATURE|Barbarian|Path of the Ancestral Guardian|14|Vengeful Ancestors|Your Spirit Shield deals the prevented damage back to the attacker as force damage.
@@ -827,7 +827,7 @@ FEATURE|Bard|College of Swords|14|Master's Flourish|Roll a d6 for a flourish ins
 FEATURE|Bard|College of Whispers|3|Psychic Blades|Spend Bardic Inspiration to deal an extra 2d6 psychic damage, growing with your level.
 FEATURE|Bard|College of Whispers|3|Words of Terror|A minute of conversation leaves a creature frightened of you or another for an hour.
 FEATURE|Bard|College of Whispers|6|Mantle of Whispers|Capture a dying creature's shadow and wear its identity for an hour.
-FEATURE|Bard|College of Whispers|14|Shadow Lore|Whisper a dread secret to charm a creature for eight days.
+FEATURE|Bard|College of Whispers|14|Shadow Lore|Whisper a dread secret to charm a creature for eight hours.
 FEATURE|Cleric|Forge Domain|1|Bonus Proficiencies|Gain proficiency with heavy armor and smith's tools.
 FEATURE|Cleric|Forge Domain|1|Blessing of the Forge|Grant a weapon +1 to attack and damage, or armor +1 AC, after a long rest.
 FEATURE|Cleric|Forge Domain|2|Channel Divinity: Artisan's Blessing|Create a nonmagical metal item worth up to 100 gp in a one-hour ritual.
@@ -848,21 +848,21 @@ FEATURE|Druid|Circle of the Shepherd|2|Speech of the Woods|You learn Sylvan and 
 FEATURE|Druid|Circle of the Shepherd|2|Spirit Totem|Summon a bear, hawk or unicorn spirit that heals, aids attacks or bolsters allies.
 FEATURE|Druid|Circle of the Shepherd|6|Mighty Summoner|Creatures you conjure gain extra hit points and magical attacks.
 FEATURE|Druid|Circle of the Shepherd|10|Guardian Spirit|Summoned creatures near your totem regain hit points each turn.
-FEATURE|Druid|Circle of the Shepherd|14|Faithful Summons|When reduced to 0 hit points, four dire wolves are conjured to defend you.
+FEATURE|Druid|Circle of the Shepherd|14|Faithful Summons|When reduced to 0 hit points or incapacitated against your will, four beasts of your choice of challenge rating 2 or lower are conjured to defend you.
 FEATURE|Fighter|Arcane Archer|3|Arcane Archer Lore|Gain the Prestidigitation or Druidcraft cantrip and proficiency in Arcana or Nature.
 FEATURE|Fighter|Arcane Archer|3|Arcane Shot|Learn two Arcane Shot options -- banishing, beguiling, bursting, enfeebling, grasping, piercing, seeking or shadow arrow -- used twice per rest.
 FEATURE|Fighter|Arcane Archer|7|Magic Arrow|Your arrows count as magical, and you gain a third Arcane Shot option.
 FEATURE|Fighter|Arcane Archer|7|Curving Shot|Reroll a missed arrow attack against a different target as a bonus action.
 FEATURE|Fighter|Arcane Archer|15|Ever-Ready Shot|Regain an Arcane Shot use when you roll initiative with none left.
 FEATURE|Fighter|Arcane Archer|18|Arcane Shot Options|You know six Arcane Shot options in all, and their dice increase with level.
-FEATURE|Fighter|Cavalier|3|Bonus Proficiency|Gain proficiency in one skill, or with an artisan's tool or a gaming set.
+FEATURE|Fighter|Cavalier|3|Bonus Proficiency|Gain proficiency in Animal Handling, History, Insight, Performance or Persuasion, or learn one language.
 FEATURE|Fighter|Cavalier|3|Born to the Saddle|You mount and dismount cheaply and stay in the saddle when it would throw you.
 FEATURE|Fighter|Cavalier|3|Unwavering Mark|Mark a foe you hit; it suffers for attacking others and you can strike back harder.
 FEATURE|Fighter|Cavalier|7|Warding Maneuver|As a reaction, add 1d8 to an ally's AC against one attack, and grant resistance if it misses.
 FEATURE|Fighter|Cavalier|10|Hold the Line|Opportunity attacks stop a creature's movement for the turn.
 FEATURE|Fighter|Cavalier|15|Ferocious Charger|Knock a creature prone after moving 10 feet in a straight line.
 FEATURE|Fighter|Cavalier|18|Vigilant Defender|Make an opportunity attack on every other creature's turn.
-FEATURE|Fighter|Samurai|3|Bonus Proficiency|Gain proficiency with one skill or with calligrapher's supplies.
+FEATURE|Fighter|Samurai|3|Bonus Proficiency|Gain proficiency in History, Insight, Performance or Persuasion, or learn one language.
 FEATURE|Fighter|Samurai|3|Fighting Spirit|As a bonus action, gain advantage on weapon attacks this turn and 5 temporary hit points, three times per long rest.
 FEATURE|Fighter|Samurai|7|Elegant Courtier|Add your Wisdom modifier to Persuasion checks and gain proficiency in Wisdom saves.
 FEATURE|Fighter|Samurai|10|Tireless Spirit|Regain a use of Fighting Spirit when you roll initiative with none left.
@@ -873,11 +873,11 @@ FEATURE|Monk|Way of the Drunken Master|3|Drunken Technique|Flurry of Blows also 
 FEATURE|Monk|Way of the Drunken Master|6|Tipsy Sway|Redirect a missed attack to another creature, or stand from prone with 5 feet of movement.
 FEATURE|Monk|Way of the Drunken Master|11|Drunkard's Luck|Spend 2 ki to cancel disadvantage on a roll.
 FEATURE|Monk|Way of the Drunken Master|17|Intoxicated Frenzy|Flurry of Blows grants up to three extra attacks against different targets.
-FEATURE|Monk|Way of the Kensei|3|Path of the Kensei|Choose kensei weapons; gain an AC bonus when wielding them and a ranged bonus attack.
+FEATURE|Monk|Way of the Kensei|3|Path of the Kensei|Choose kensei weapons; gain +2 AC when your Attack action includes an unarmed strike and you hold a melee one, and a bonus action that adds 1d4 to your ranged kensei hits.
 FEATURE|Monk|Way of the Kensei|6|One with the Blade|Kensei weapons count as magical, and you can spend ki for extra damage.
 FEATURE|Monk|Way of the Kensei|11|Sharpen the Blade|Spend up to 3 ki to give a kensei weapon that bonus to attack and damage.
 FEATURE|Monk|Way of the Kensei|17|Unerring Accuracy|Reroll a missed monk weapon attack once per turn.
-FEATURE|Monk|Way of the Sun Soul|3|Radiant Sun Bolt|Make a ranged spell attack for 1d8 radiant damage as part of the Attack action, and spend ki for more.
+FEATURE|Monk|Way of the Sun Soul|3|Radiant Sun Bolt|Make a ranged spell attack as part of the Attack action for radiant damage equal to your Martial Arts die, and spend ki for more.
 FEATURE|Monk|Way of the Sun Soul|6|Searing Arc Strike|Spend ki to cast burning hands as a bonus action after the Attack action.
 FEATURE|Monk|Way of the Sun Soul|11|Searing Sunburst|Spend ki for a 20-foot sphere of 2d6 radiant damage.
 FEATURE|Monk|Way of the Sun Soul|17|Sun Shield|Shed bright light and answer melee attackers with radiant damage.
@@ -891,7 +891,7 @@ FEATURE|Paladin|Oath of Redemption|3|Channel Divinity: Rebuke the Violent|Deal a
 FEATURE|Paladin|Oath of Redemption|7|Aura of the Guardian|Take the damage an ally within 10 feet suffers, as a reaction; 30 feet at 18th level.
 FEATURE|Paladin|Oath of Redemption|15|Protective Spirit|Regain hit points each turn while below half your maximum.
 FEATURE|Paladin|Oath of Redemption|20|Emissary of Redemption|Resistance to all damage from others, and attackers take radiant damage back.
-FEATURE|Ranger|Gloom Stalker|3|Dread Ambusher|+10 initiative, an extra attack on your first turn dealing 1d8 more, and extra speed.
+FEATURE|Ranger|Gloom Stalker|3|Dread Ambusher|Add your Wisdom modifier to initiative, an extra attack on your first turn dealing 1d8 more, and +10 feet of speed on that turn.
 FEATURE|Ranger|Gloom Stalker|3|Umbral Sight|Darkvision 60 feet, and you are invisible to creatures relying on darkvision.
 FEATURE|Ranger|Gloom Stalker|7|Iron Mind|Gain proficiency in Wisdom saving throws.
 FEATURE|Ranger|Gloom Stalker|11|Stalker's Flurry|Make a second attack when you miss, once per turn.
@@ -963,19 +963,19 @@ FEATURE|Barbarian|Path of the Beast|6|Bestial Soul|Your natural weapons count as
 FEATURE|Barbarian|Path of the Beast|10|Infectious Fury|Force a creature you hit to attack an ally or take psychic damage.
 FEATURE|Barbarian|Path of the Beast|14|Call the Hunt|Grant several allies extra damage while you gain temporary hit points.
 FEATURE|Barbarian|Path of Wild Magic|3|Wild Surge|Rolling for rage triggers a random magical effect around you.
-FEATURE|Barbarian|Path of Wild Magic|3|Bolstering Magic|Grant an ally a bonus to attacks and checks, or restore a spell slot.
-FEATURE|Barbarian|Path of Wild Magic|6|Magic Awareness|Detect spells and magic items within 60 feet.
+FEATURE|Barbarian|Path of Wild Magic|6|Bolstering Magic|Grant an ally a bonus to attacks and checks, or restore a spell slot.
+FEATURE|Barbarian|Path of Wild Magic|3|Magic Awareness|Detect spells and magic items within 60 feet.
 FEATURE|Barbarian|Path of Wild Magic|10|Unstable Backlash|Reroll your Wild Surge as a reaction when you are hit or fail a save.
 FEATURE|Barbarian|Path of Wild Magic|14|Controlled Surge|Roll twice on the Wild Magic table and choose the effect.
 FEATURE|Bard|College of Creation|3|Mote of Potential|Your Bardic Inspiration die also damages, heals or shields nearby creatures.
-FEATURE|Bard|College of Creation|3|Performance of Creation|Create a nonmagical item out of song, sized by your bard level.
+FEATURE|Bard|College of Creation|3|Performance of Creation|Create a nonmagical item out of song, sized by your bard level and worth no more than 20 gp per level.
 FEATURE|Bard|College of Creation|6|Animating Performance|Animate a Large or smaller object as a Dancing Item that fights for you.
-FEATURE|Bard|College of Creation|14|Creative Crescendo|Performance of Creation makes several items at once, without a size limit.
+FEATURE|Bard|College of Creation|14|Creative Crescendo|Performance of Creation makes several items at once, with no gp limit; only one can be of your maximum size.
 FEATURE|Bard|College of Eloquence|3|Silver Tongue|Treat a Persuasion or Deception roll of 9 or lower as a 10.
 FEATURE|Bard|College of Eloquence|3|Unsettling Words|Spend Bardic Inspiration to subtract the die from a creature's next saving throw.
 FEATURE|Bard|College of Eloquence|6|Unfailing Inspiration|A Bardic Inspiration die that fails to help is not spent.
 FEATURE|Bard|College of Eloquence|14|Infectious Inspiration|When an inspiration die helps, grant another as a reaction.
-FEATURE|Bard|College of Eloquence|14|Universal Speech|Make yourself understood by creatures of your choice for an hour.
+FEATURE|Bard|College of Eloquence|6|Universal Speech|Make yourself understood by creatures of your choice for an hour.
 FEATURE|Cleric|Order Domain|1|Bonus Proficiencies|Gain heavy armor and proficiency in Intimidation or Persuasion.
 FEATURE|Cleric|Order Domain|1|Voice of Authority|When you cast a spell on an ally, it can attack as a reaction.
 FEATURE|Cleric|Order Domain|2|Channel Divinity: Order's Demand|Charm creatures within 30 feet and force them to drop what they hold.
@@ -998,7 +998,7 @@ FEATURE|Cleric|Twilight Domain|17|Twilight Shroud|Your Twilight Sanctuary also g
 FEATURE|Druid|Circle of Spores|2|Halo of Spores|Deal 1d4 necrotic damage to a creature that comes within 10 feet, as a reaction.
 FEATURE|Druid|Circle of Spores|2|Symbiotic Entity|Spend a Wild Shape use for temporary hit points and doubled spore damage.
 FEATURE|Druid|Circle of Spores|6|Fungal Infestation|Animate a slain beast or humanoid as a zombie for one hour, as a reaction.
-FEATURE|Druid|Circle of Spores|10|Spreading Spores|Hurl your spores into a 10-foot cube for 10 minutes.
+FEATURE|Druid|Circle of Spores|10|Spreading Spores|Hurl your spores up to 30 feet into a 10-foot cube for 1 minute.
 FEATURE|Druid|Circle of Spores|14|Fungal Body|You cannot be blinded, deafened, frightened or poisoned, and critical hits against you become normal hits.
 FEATURE|Druid|Circle of Stars|2|Star Map|A map that grants guidance at will and free castings of guiding bolt.
 FEATURE|Druid|Circle of Stars|2|Starry Form|Spend Wild Shape to take an Archer, Chalice or Dragon constellation form.
@@ -1009,8 +1009,8 @@ FEATURE|Druid|Circle of Wildfire|2|Summon Wildfire Spirit|Spend a Wild Shape use
 FEATURE|Druid|Circle of Wildfire|6|Enhanced Bond|Your fire and healing spells gain 1d8, and can be cast from the spirit.
 FEATURE|Druid|Circle of Wildfire|10|Cauterizing Flames|When a creature dies nearby, a flame heals or burns whoever enters it.
 FEATURE|Druid|Circle of Wildfire|14|Blazing Revival|When you drop to 0 hit points, the spirit is consumed to restore half your hit points.
-FEATURE|Fighter|Psi Warrior|3|Psionic Power|A pool of Psionic Energy dice for Protective Field, Psi-Powered Leap and Telekinetic Movement.
-FEATURE|Fighter|Psi Warrior|7|Telekinetic Adept|Move a creature with Psi-Powered Leap, or hurl a foe with Telekinetic Thrust.
+FEATURE|Fighter|Psi Warrior|3|Psionic Power|A pool of Psionic Energy dice for Protective Field, Psionic Strike and Telekinetic Movement.
+FEATURE|Fighter|Psi Warrior|7|Telekinetic Adept|Fly at twice your walking speed with Psi-Powered Leap, or knock a foe prone or move it 10 feet with Telekinetic Thrust.
 FEATURE|Fighter|Psi Warrior|10|Guarded Mind|Resistance to psychic damage, and you can end charm or fear on yourself.
 FEATURE|Fighter|Psi Warrior|15|Bulwark of Force|Grant several creatures half cover for one minute, once per long rest.
 FEATURE|Fighter|Psi Warrior|18|Telekinetic Master|Cast telekinesis and attack while concentrating on it.
@@ -1043,7 +1043,7 @@ FEATURE|Paladin|Oath of the Watchers|15|Vigilant Rebuke|Deal 2d8 + Charisma forc
 FEATURE|Paladin|Oath of the Watchers|20|Mortal Bulwark|Truesight, advantage against extraplanar creatures, and hits that banish them.
 FEATURE|Ranger|Fey Wanderer|3|Dreadful Strikes|Deal an extra 1d4 psychic damage once per turn, rising to 1d6 at 11th level.
 FEATURE|Ranger|Fey Wanderer|3|Otherworldly Glamour|Add your Wisdom modifier to Charisma checks and gain a social skill.
-FEATURE|Ranger|Fey Wanderer|7|Beguiling Twist|Impose disadvantage on charm and fear saves nearby, or redirect the effect.
+FEATURE|Ranger|Fey Wanderer|7|Beguiling Twist|Advantage on saves against being charmed or frightened; when such a save succeeds near you, a reaction forces another creature to save or be charmed or frightened by you.
 FEATURE|Ranger|Fey Wanderer|11|Fey Reinforcements|Cast summon fey without a slot once per long rest, and it becomes invisible.
 FEATURE|Ranger|Fey Wanderer|15|Misty Wanderer|Cast misty step without a slot, bringing a companion, Wisdom modifier times per long rest.
 FEATURE|Ranger|Swarmkeeper|3|Gathered Swarm|Your swarm moves, damages or shifts a creature you hit once per turn.
@@ -1054,7 +1054,7 @@ FEATURE|Rogue|Phantom|3|Whispers of the Dead|Gain any skill or tool proficiency 
 FEATURE|Rogue|Phantom|3|Wails from the Grave|When you Sneak Attack, deal half as many d6s of necrotic damage to a second creature.
 FEATURE|Rogue|Phantom|9|Tokens of the Departed|Capture a soul trinket that grants advantage on death and Constitution saves.
 FEATURE|Rogue|Phantom|13|Ghost Walk|Assume a spectral form with a flying speed that passes through creatures.
-FEATURE|Rogue|Phantom|17|Death's Friend|Wails from the Grave triggers every turn, and you gain a soul trinket each rest.
+FEATURE|Rogue|Phantom|17|Death's Friend|Wails from the Grave damages both the first and the second creature, and a soul trinket appears after a long rest if you have none.
 FEATURE|Rogue|Soulknife|3|Psionic Power|Psionic Energy dice powering Psi-Bolstered Knack and Psychic Whispers.
 FEATURE|Rogue|Soulknife|3|Psychic Blades|Manifest a psychic blade dealing 1d6 psychic damage, with a bonus-action second blade.
 FEATURE|Rogue|Soulknife|9|Soul Blades|Home in on a missed target, or teleport with Psychic Teleportation.
@@ -1081,7 +1081,7 @@ FEATURE|Warlock|The Genie|1|Genie's Vessel|A vessel you can use as a focus, to r
 FEATURE|Warlock|The Genie|1|Expanded Spells|Your genie's kind -- dao, djinni, efreeti or marid -- adds its own spells to your list.
 FEATURE|Warlock|The Genie|6|Elemental Gift|Resistance to your genie's damage type, and a flying speed for 10 minutes.
 FEATURE|Warlock|The Genie|10|Sanctuary Vessel|Take up to five companions into your vessel, where they gain the benefit of a short rest.
-FEATURE|Warlock|The Genie|14|Limited Wish|Cast any spell of 6th level or lower without components, once per long rest.
+FEATURE|Warlock|The Genie|14|Limited Wish|Cast any spell of 6th level or lower without components; you cannot do so again until you finish 1d4 long rests.
 FEATURE|Wizard|Bladesinging|2|Training in War and Song|Gain light armor, one one-handed melee weapon and proficiency in Performance.
 FEATURE|Wizard|Bladesinging|2|Bladesong|For 1 minute, gain +Intelligence to AC, +10 speed, advantage on Acrobatics and a concentration bonus.
 FEATURE|Wizard|Bladesinging|6|Extra Attack|Attack twice, and you can replace one attack with a cantrip.
@@ -1091,7 +1091,7 @@ FEATURE|Wizard|Order of Scribes|2|Wizardly Quill|A magical quill that copies spe
 FEATURE|Wizard|Order of Scribes|2|Awakened Spellbook|Change a spell's damage type, cast a ritual without preparing it, and reduce copying costs.
 FEATURE|Wizard|Order of Scribes|6|Manifest Mind|Send your spellbook's mind out as a spectral presence to scout and cast from.
 FEATURE|Wizard|Order of Scribes|10|Master Scrivener|Create a magic scroll from a spare spellbook after each long rest.
-FEATURE|Wizard|Order of Scribes|14|One with the Word|Sacrifice a spell slot to avoid damage; if the book is destroyed you may age instead.
+FEATURE|Wizard|Order of Scribes|14|One with the Word|Dismiss your spellbook's manifested mind as a reaction to prevent all damage; the book then temporarily loses spells totalling 3d6 levels. Once per long rest.
 FEATURE|Barbarian|Path of the Battlerager|3|Battlerager Armor|While raging in spiked armour, make a bonus-action attack with the spikes for 1d4 piercing, and a successful grapple deals 3 piercing.
 FEATURE|Barbarian|Path of the Battlerager|6|Reckless Abandon|Using Reckless Attack while raging also grants temporary hit points equal to your Constitution modifier, lost when the rage ends.
 FEATURE|Barbarian|Path of the Battlerager|10|Battlerager Charge|Take the Dash action as a bonus action while raging.
@@ -1122,18 +1122,18 @@ FEATURE|Warlock|The Undying|14|Indestructible Life|As a bonus action, regain 1d8
 # OPTFEATURE | class | book | level | name | replaces | summary
 OPTFEATURE|Barbarian|TCE|3|Primal Knowledge||Gain proficiency in one more barbarian skill, and while raging you can make Strength checks in place of Acrobatics, Intimidation, Perception, Stealth or Survival.
 OPTFEATURE|Barbarian|TCE|7|Instinctive Pounce||When you enter your rage as a bonus action, move up to half your speed.
-OPTFEATURE|Bard|TCE|1|Additional Bard Spells||Fourteen more spells are added to the bard spell list.
+OPTFEATURE|Bard|TCE|1|Additional Bard Spells||Fifteen more spells are added to the bard spell list.
 OPTFEATURE|Bard|TCE|2|Magical Inspiration||A creature can spend your Bardic Inspiration die to add it to a spell's damage or healing.
 OPTFEATURE|Bard|TCE|4|Bardic Versatility||Whenever you gain an Ability Score Improvement, you may swap a cantrip or replace one Expertise skill.
 OPTFEATURE|Cleric|TCE|1|Additional Cleric Spells||Eight more spells are added to the cleric spell list.
 OPTFEATURE|Cleric|TCE|2|Harness Divine Power||Expend a use of Channel Divinity to regain one expended spell slot.
 OPTFEATURE|Cleric|TCE|4|Cantrip Versatility||Whenever you gain an Ability Score Improvement, you may replace one cantrip with another from your class list.
 OPTFEATURE|Cleric|TCE|8|Blessed Strikes|Divine Strike or Potent Spellcasting|Once per turn, when you hit with a weapon or a cantrip, deal an extra 1d8 radiant damage.
-OPTFEATURE|Druid|TCE|1|Additional Druid Spells||Fifteen more spells are added to the druid spell list.
+OPTFEATURE|Druid|TCE|1|Additional Druid Spells||Sixteen more spells are added to the druid spell list.
 OPTFEATURE|Druid|TCE|2|Wild Companion||Expend a Wild Shape use to cast find familiar without material components; the familiar is a fey that lasts half your druid level in hours.
 OPTFEATURE|Druid|TCE|4|Cantrip Versatility||Whenever you gain an Ability Score Improvement, you may replace one cantrip with another from your class list.
 OPTFEATURE|Fighter|TCE|1|Fighting Style Options||Blind Fighting, Interception, Superior Technique, Thrown Weapon Fighting and Unarmed Fighting join your list of fighting styles.
-OPTFEATURE|Fighter|TCE|3|Maneuver Options||The Battle Master gains further manoeuvres: ambush, bait and switch, brace, commander's strike, grappling strike, quick toss, tactical assessment and the rest.
+OPTFEATURE|Fighter|TCE|3|Maneuver Options||The Battle Master gains seven further manoeuvres: ambush, bait and switch, brace, commanding presence, grappling strike, quick toss and tactical assessment.
 OPTFEATURE|Fighter|TCE|4|Martial Versatility||Whenever you gain an Ability Score Improvement, you may replace a fighting style or a Battle Master manoeuvre.
 OPTFEATURE|Monk|TCE|2|Dedicated Weapon||After a short or long rest, name a simple or martial weapon that lacks the heavy and special properties; it counts as a monk weapon.
 OPTFEATURE|Monk|TCE|3|Ki-Fueled Attack||After spending 1 ki or more on an action, make an unarmed strike or a monk weapon attack as a bonus action.
@@ -1150,21 +1150,21 @@ OPTFEATURE|Ranger|TCE|2|Fighting Style Options||Blind Fighting, Druidic Warrior 
 OPTFEATURE|Ranger|TCE|2|Spellcasting Focus||You can use a druidic focus as a spellcasting focus for your ranger spells.
 OPTFEATURE|Ranger|TCE|3|Primal Awareness|Primeval Awareness|You always have speak with animals, beast sense, speak with plants, locate creature and commune with nature prepared, each castable once per long rest without a slot.
 OPTFEATURE|Ranger|TCE|4|Martial Versatility||Whenever you gain an Ability Score Improvement, you may replace a fighting style.
-OPTFEATURE|Ranger|TCE|10|Nature's Veil|Hide in Plain Sight|As a bonus action, become invisible until the end of your next turn, proficiency-bonus times per long rest.
+OPTFEATURE|Ranger|TCE|10|Nature's Veil|Hide in Plain Sight|As a bonus action, become invisible until the start of your next turn, proficiency-bonus times per long rest.
 OPTFEATURE|Rogue|TCE|3|Steady Aim||As a bonus action, gain advantage on your next attack this turn; your speed becomes 0 until the end of the turn.
 OPTFEATURE|Sorcerer|TCE|1|Additional Sorcerer Spells||Twenty-one more spells are added to the sorcerer spell list.
-OPTFEATURE|Sorcerer|TCE|3|Metamagic Options||Seeking Spell and Transmuted Spell join your Metamagic choices, and you may swap one Metamagic option whenever you gain a sorcerer level.
+OPTFEATURE|Sorcerer|TCE|3|Metamagic Options||Seeking Spell and Transmuted Spell join your Metamagic choices: 2 sorcery points to reroll a missed spell attack, 1 to switch a spell's damage type among acid, cold, fire, lightning, poison and thunder.
 OPTFEATURE|Sorcerer|TCE|4|Sorcerous Versatility||Whenever you gain an Ability Score Improvement, you may swap a Metamagic option or a cantrip.
 OPTFEATURE|Sorcerer|TCE|5|Magical Guidance||Spend 1 sorcery point to reroll a failed ability check.
 OPTFEATURE|Warlock|TCE|1|Additional Warlock Spells||Twenty more spells are added to the warlock spell list.
-OPTFEATURE|Warlock|TCE|2|Eldritch Invocation Options||Further invocations become available, including Eldritch Smite, Gift of the Depths, Investment of the Chain Master, Rebuke of the Talisman and Undying Servitude.
+OPTFEATURE|Warlock|TCE|2|Eldritch Invocation Options||Further invocations become available, including Eldritch Mind, Far Scribe, Investment of the Chain Master, Rebuke of the Talisman and Undying Servitude.
 OPTFEATURE|Warlock|TCE|3|Pact Boon Option||The Pact of the Talisman: an amulet that lets its wearer add a d4 to a failed ability check.
-OPTFEATURE|Warlock|TCE|4|Eldritch Versatility||Whenever you gain an Ability Score Improvement, you may swap a cantrip, an invocation, or your Pact Boon.
+OPTFEATURE|Warlock|TCE|4|Eldritch Versatility||Whenever you gain an Ability Score Improvement, you may swap a cantrip, your Pact Boon, or, from 12th level, a Mystic Arcanum spell.
 OPTFEATURE|Wizard|TCE|1|Additional Wizard Spells||Twenty-three more spells are added to the wizard spell list.
 OPTFEATURE|Wizard|TCE|3|Cantrip Formulas||After each long rest, replace one wizard cantrip you know with another from your spellbook's formulas.
 
 # ADDSPELLS | class | spells added to the class list
-ADDSPELLS|Bard|color spray, command, aid, enlarge/reduce, mirror image, intellect fortress, mass healing word, phantasmal killer, rary's telepathic bond, heroes' feast, dream of the blue veil, prismatic spray, antipathy/sympathy, prismatic wall
+ADDSPELLS|Bard|color spray, command, aid, enlarge/reduce, mirror image, intellect fortress, mass healing word, slow, phantasmal killer, rary's telepathic bond, heroes' feast, dream of the blue veil, prismatic spray, antipathy/sympathy, prismatic wall
 ADDSPELLS|Cleric|aura of vitality, spirit shroud, aura of life, aura of purity, summon celestial, sunbeam, sunburst, power word heal
 ADDSPELLS|Druid|protection from evil and good, augury, continual flame, enlarge/reduce, summon beast, aura of vitality, elemental weapon, revivify, summon fey, divination, fire shield, summon elemental, cone of cold, flesh to stone, symbol, incendiary cloud
 ADDSPELLS|Paladin|gentle repose, prayer of healing, warding bond, spirit shroud, summon celestial
@@ -1187,23 +1187,23 @@ OPTIONSPELLS|Circle of the Land|Grassland|3,5,7,9|invisibility, pass without tra
 OPTIONSPELLS|Circle of the Land|Mountain|3,5,7,9|spider climb, spike growth\|lightning bolt, meld into stone\|stone shape, stoneskin\|passwall, wall of stone
 OPTIONSPELLS|Circle of the Land|Swamp|3,5,7,9|darkness, melf's acid arrow\|water walk, stinking cloud\|freedom of movement, locate creature\|insect plague, scrying
 OPTIONSPELLS|Circle of the Land|Underdark|3,5,7,9|spider climb, web\|gaseous form, stinking cloud\|greater invisibility, stone shape\|cloudkill, insect plague
-OPTIONSPELLS|The Genie|Dao (earth)|1,3,5,7,9|sanctuary\|spike growth\|meld into stone\|stoneskin\|wall of stone
+OPTIONSPELLS|The Genie|Dao (earth)|1,3,5,7,9|sanctuary\|spike growth\|meld into stone\|stone shape\|wall of stone
 OPTIONSPELLS|The Genie|Djinni (air)|1,3,5,7,9|thunderwave\|gust of wind\|wind wall\|greater invisibility\|seeming
 OPTIONSPELLS|The Genie|Efreeti (fire)|1,3,5,7,9|burning hands\|scorching ray\|fireball\|fire shield\|flame strike
 OPTIONSPELLS|The Genie|Marid (water)|1,3,5,7,9|fog cloud\|blur\|sleet storm\|control water\|cone of cold
 
 # INFUSION | name | prereq | min_level | item | summary
-INFUSION|Arcane Propulsion Armor|14th-level artificer|14|A suit of armor (requires attunement)|Walking speed +5 feet; the armor's gauntlets are magic thrown weapons dealing 1d8 force damage, it cannot be removed against your will, and it replaces missing limbs.
-INFUSION|Armor of Magical Strength||2|A suit of armor (requires attunement)|6 charges: spend one to add your Intelligence modifier to a Strength check or save, or to stand from prone without spending movement.
-INFUSION|Boots of the Winding Path|6th-level artificer|6|A pair of boots (requires attunement)|Teleport up to 15 feet to an unoccupied space you can see, as part of your movement.
+INFUSION|Arcane Propulsion Armor|14th-level artificer|14|A suit of armor (requires attunement)|Walking speed +5 feet; the armor's gauntlets are magic melee weapons with the thrown property (range 20/60) dealing 1d8 force damage, it cannot be removed against your will, and it replaces missing limbs.
+INFUSION|Armor of Magical Strength||2|A suit of armor (requires attunement)|6 charges: spend one to add your Intelligence modifier to a Strength check or save, or spend one as a reaction to avoid being knocked prone.
+INFUSION|Boots of the Winding Path|6th-level artificer|6|A pair of boots (requires attunement)|As a bonus action, teleport up to 15 feet to an unoccupied space you can see that you occupied at some point this turn.
 INFUSION|Enhanced Arcane Focus||2|A rod, staff, or wand (requires attunement)|+1 to spell attack rolls and you ignore half cover; the bonus rises to +2 at 10th level.
 INFUSION|Enhanced Defense||2|A suit of armor or a shield|+1 to Armor Class while worn or wielded; the bonus rises to +2 at 10th level.
 INFUSION|Enhanced Weapon||2|A simple or martial weapon|+1 to attack and damage rolls; the bonus rises to +2 at 10th level.
-INFUSION|Helm of Awareness|10th-level artificer|10|A helmet (requires attunement)|Advantage on initiative rolls, and you cannot be surprised while conscious.
-INFUSION|Homunculus Servant||2|A gem or crystal worth at least 100 gp (requires attunement)|Create a Tiny construct that obeys you, shares your proficiency bonus and can deliver a force-damage attack or channel your touch spells.
+INFUSION|Helm of Awareness|10th-level artificer|10|A helmet (requires attunement)|Advantage on initiative rolls, and you cannot be surprised unless you are incapacitated.
+INFUSION|Homunculus Servant||2|A gem or crystal worth at least 100 gp|Create a Tiny construct that obeys you, shares your proficiency bonus and can deliver a force-damage attack or channel your touch spells.
 INFUSION|Mind Sharpener||2|A suit of armor or robes|4 charges: as a reaction, spend one to succeed on a concentration saving throw you have just failed.
 INFUSION|Radiant Weapon|6th-level artificer|6|A simple or martial weapon (requires attunement)|+1 to attack and damage, sheds bright light, and 4 charges to blind an attacker as a reaction.
-INFUSION|Repeating Shot||2|A simple or martial weapon with the ammunition property|+1 to attack and damage, and it produces its own ammunition, so it needs no reloading and ignores the loading property.
+INFUSION|Repeating Shot||2|A simple or martial weapon with the ammunition property (requires attunement)|+1 to attack and damage on ranged attacks made with it; it ignores the loading property and produces its own ammunition when you load none.
 INFUSION|Replicate Magic Item||2|Varies by the item replicated|Reproduce one common magic item, or one from the Replicable Items tables for your level. This infusion alone may be learned more than once.
 INFUSION|Repulsion Shield|6th-level artificer|6|A shield (requires attunement)|+1 to Armor Class, and 4 charges to push an attacker 15 feet away as a reaction.
 INFUSION|Resistant Armor|6th-level artificer|6|A suit of armor (requires attunement)|Resistance to one damage type of your choice: acid, cold, fire, force, lightning, necrotic, poison, psychic, radiant or thunder.
@@ -1248,24 +1248,24 @@ OPTION|eldritch invocations|Voice of the Chain Master|PHB|0|Pact of the Chain|Yo
 OPTION|eldritch invocations|Whispers of the Grave|PHB|9||Cast speak with dead at will, without expending a spell slot.
 OPTION|eldritch invocations|Witch Sight|PHB|15||See the true form of any shapechanger or creature concealed by illusion or transmutation magic within 30 feet.
 OPTION|eldritch invocations|Aspect of the Moon|XGE|0|Pact of the Tome|You no longer need to sleep and cannot be forced to sleep by any means; you can keep watch through a long rest.
-OPTION|eldritch invocations|Cloak of Flies|XGE|5||As a bonus action, surround yourself with a 5-foot aura of buzzing flies: advantage on Intimidation, disadvantage on other Charisma checks, and poison damage equal to your Charisma modifier to creatures that end their turn in it.
+OPTION|eldritch invocations|Cloak of Flies|XGE|5||As a bonus action, surround yourself with a 5-foot aura of buzzing flies: advantage on Intimidation, disadvantage on other Charisma checks, and poison damage equal to your Charisma modifier to creatures that start their turn in it; once per short rest.
 OPTION|eldritch invocations|Eldritch Mind|TCE|0||You have advantage on Constitution saving throws made to maintain concentration on a spell.
 OPTION|eldritch invocations|Eldritch Smite|XGE|5|Pact of the Blade|Once per turn, when you hit with your pact weapon, expend a warlock spell slot to deal an extra 1d8 force damage per slot level, plus 1d8, and knock a Huge or smaller creature prone.
 OPTION|eldritch invocations|Far Scribe|TCE|5|Pact of the Tome|A new page appears in your Book of Shadows; write a creature's name on it and you can cast sending to that creature without a slot.
-OPTION|eldritch invocations|Ghostly Gaze|XGE|7||As an action, gain darkvision to 30 feet and see through 1 foot of stone or 3 feet of wood for 1 minute, once per short rest.
+OPTION|eldritch invocations|Ghostly Gaze|XGE|7||As an action, see through solid objects out to 30 feet and gain darkvision in that range for 1 minute or until your concentration ends; once per short rest.
 OPTION|eldritch invocations|Gift of the Depths|XGE|5||You can breathe underwater, gain a swimming speed equal to your walking speed, and cast water breathing once per long rest without a slot.
 OPTION|eldritch invocations|Gift of the Ever-Living Ones|XGE|0|Pact of the Chain|Whenever you regain hit points while your familiar is within 100 feet, you regain the maximum possible.
 OPTION|eldritch invocations|Gift of the Protectors|TCE|9|Pact of the Tome|A new page appears in your Book of Shadows; each creature whose name is written on it drops to 1 hit point instead of 0, once per long rest.
 OPTION|eldritch invocations|Grasp of Hadar|XGE|0|eldritch blast cantrip|Once per turn, when eldritch blast hits a creature, you can move it 10 feet closer to you in a straight line.
-OPTION|eldritch invocations|Improved Pact Weapon|XGE|0|Pact of the Blade|Your pact weapon counts as a magic weapon with +1 to attack and damage rolls, can be a shortbow or longbow, and can serve as a spellcasting focus.
-OPTION|eldritch invocations|Investment of the Chain Master|TCE|5|Pact of the Chain|Your familiar gains a flying or swimming speed of 40 feet, can attack as a bonus action, and its attacks count as magical.
+OPTION|eldritch invocations|Improved Pact Weapon|XGE|0|Pact of the Blade|Your pact weapon counts as a magic weapon with +1 to attack and damage rolls, can be a shortbow, longbow, light crossbow or heavy crossbow, and can serve as a spellcasting focus.
+OPTION|eldritch invocations|Investment of the Chain Master|TCE|0|Pact of the Chain|Your familiar gains a flying or swimming speed of 40 feet, can attack as a bonus action, and its attacks count as magical.
 OPTION|eldritch invocations|Lance of Lethargy|XGE|0|eldritch blast cantrip|Once per turn, when eldritch blast hits, you can reduce that creature's speed by 10 feet until the end of your next turn.
 OPTION|eldritch invocations|Maddening Hex|XGE|5|hex or a warlock curse feature|As a bonus action, deal psychic damage equal to your Charisma modifier to the cursed target and every creature within 5 feet of it.
-OPTION|eldritch invocations|Protection of the Talisman|TCE|7|Pact of the Talisman|The wearer of your talisman can add 1d4 to a failed saving throw, three times per long rest.
+OPTION|eldritch invocations|Protection of the Talisman|TCE|7|Pact of the Talisman|The wearer of your talisman can add 1d4 to a failed saving throw, a number of times per long rest equal to your proficiency bonus.
 OPTION|eldritch invocations|Rebuke of the Talisman|TCE|0|Pact of the Talisman|When the wearer of your talisman is hit, you can use your reaction to deal psychic damage equal to your proficiency bonus and push the attacker 10 feet.
 OPTION|eldritch invocations|Relentless Hex|XGE|7|hex or a warlock curse feature|As a bonus action, teleport up to 30 feet to a space within 5 feet of the creature you have cursed.
 OPTION|eldritch invocations|Shroud of Shadow|XGE|15||Cast invisibility at will, without expending a spell slot.
-OPTION|eldritch invocations|Tomb of Levistus|XGE|5||As a reaction when you take damage, gain 10 temporary hit points per warlock level, but your speed is 0 and you take 10 cold damage; once per short rest.
+OPTION|eldritch invocations|Tomb of Levistus|XGE|5||As a reaction when you take damage, gain 10 temporary hit points per warlock level, which absorb as much of that damage as possible; you also have vulnerability to fire, your speed is 0 and you are incapacitated; everything ends at the end of your next turn; once per short rest.
 OPTION|eldritch invocations|Trickster's Escape|XGE|7||Cast freedom of movement on yourself once per long rest, without a slot.
 OPTION|eldritch invocations|Undying Servitude|TCE|5||Cast animate dead once per long rest without a slot.
 OPTIONLIST|pact boons|Warlock||Pact Boon|pact boons|0
@@ -1313,14 +1313,14 @@ OPTION|maneuvers|Quick Toss|TCE|0||As a bonus action, draw and throw a thrown we
 OPTION|maneuvers|Tactical Assessment|TCE|0||Add the die to a History, Insight or Investigation check.
 OPTIONLIST|Arcane Shot options|Fighter|Arcane Archer|Arcane Shot option|Arcane Shot options|0
 PROGRESSION|Arcane Shot options|0,0,0,2,2,2,2,3,3,3,4,4,4,4,4,5,5,5,6,6,6
-OPTION|Arcane Shot options|Banishing Arrow|XGE|0||The target is banished to a harmless demiplane until the end of your next turn on a failed Charisma save, and its speed is 0.
-OPTION|Arcane Shot options|Beguiling Arrow|XGE|0||2d6 psychic damage; on a failed Wisdom save the target is charmed by an ally of your choice until the end of your next turn.
+OPTION|Arcane Shot options|Banishing Arrow|XGE|0||On a failed Charisma save the target is banished to a harmless location in the Feywild until the end of its next turn; its speed is 0 and it is incapacitated.
+OPTION|Arcane Shot options|Beguiling Arrow|XGE|0||2d6 psychic damage; on a failed Wisdom save the target is charmed by an ally of your choice until the start of your next turn.
 OPTION|Arcane Shot options|Bursting Arrow|XGE|0||The target and every creature within 10 feet of it take 2d6 force damage.
-OPTION|Arcane Shot options|Enfeebling Arrow|XGE|0||2d6 necrotic damage; on a failed Constitution save the target's weapon damage is halved until the end of your next turn.
+OPTION|Arcane Shot options|Enfeebling Arrow|XGE|0||2d6 necrotic damage; on a failed Constitution save the target's weapon damage is halved until the start of your next turn.
 OPTION|Arcane Shot options|Grasping Arrow|XGE|0||2d6 poison damage, the target's speed drops by 10 feet, and brambles deal 2d6 slashing damage if it moves.
 OPTION|Arcane Shot options|Piercing Arrow|XGE|0||The arrow passes through creatures in a 30-foot line, dealing its damage plus 1d6 piercing on a failed Dexterity save.
 OPTION|Arcane Shot options|Seeking Arrow|XGE|0||The arrow curves to find a creature you name that you have seen, ignoring cover, and reveals its location.
-OPTION|Arcane Shot options|Shadow Arrow|XGE|0||2d6 psychic damage; on a failed Wisdom save the target cannot see beyond 5 feet until the end of your next turn.
+OPTION|Arcane Shot options|Shadow Arrow|XGE|0||2d6 psychic damage; on a failed Wisdom save the target cannot see beyond 5 feet until the start of your next turn.
 OPTIONLIST|runes|Fighter|Rune Knight|Rune|runes|0
 PROGRESSION|runes|0,0,0,2,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,5,5
 OPTION|runes|Cloud Rune|TCE|0||Advantage on Sleight of Hand and Deception checks. As a reaction, when a creature you can see hits another, redirect the attack to a different creature within 30 feet, once per short rest.
@@ -1328,13 +1328,13 @@ OPTION|runes|Fire Rune|TCE|0||Double your proficiency bonus on tool checks. When
 OPTION|runes|Frost Rune|TCE|0||Advantage on Animal Handling and Intimidation checks. As a bonus action, gain +2 to Strength and Constitution checks and saves for 10 minutes, once per short rest.
 OPTION|runes|Stone Rune|TCE|0||Advantage on Insight checks and darkvision to 120 feet. As a reaction, charm a creature within 30 feet on a failed Wisdom save, once per short rest.
 OPTION|runes|Hill Rune|TCE|7||Advantage on saving throws against poison and resistance to poison damage. As a bonus action, gain resistance to bludgeoning, piercing and slashing damage for 1 minute, once per short rest.
-OPTION|runes|Storm Rune|TCE|7||Advantage on Arcana checks and you cannot be surprised while conscious. As a bonus action, enter a prophetic state for 1 minute, altering rolls made by others, once per short rest.
+OPTION|runes|Storm Rune|TCE|7||Advantage on Arcana checks and you cannot be surprised unless you are incapacitated. As a bonus action, enter a prophetic state for 1 minute, then use your reaction to give advantage or disadvantage to a roll by you or a creature you see within 60 feet, once per short rest.
 OPTIONLIST|elemental disciplines|Monk|Way of the Four Elements|Elemental Discipline|elemental disciplines|0
-PROGRESSION|elemental disciplines|0,0,0,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,7
+PROGRESSION|elemental disciplines|0,0,0,2,2,2,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5
 OPTION|elemental disciplines|Elemental Attunement|PHB|0||As an action, briefly control an elemental force: create a harmless sensory effect, light or snuff a small flame, chill or warm a pound of matter, or shape earth, fire, water or fog in a 1-foot cube.
 OPTION|elemental disciplines|Breath of Winter|PHB|17||Spend 6 ki points to cast cone of cold.
 OPTION|elemental disciplines|Clench of the North Wind|PHB|6||Spend 3 ki points to cast hold person.
-OPTION|elemental disciplines|Eternal Mountain Defense|PHB|17||Spend 5 ki points to cast stoneskin on yourself.
+OPTION|elemental disciplines|Eternal Mountain Defense|PHB|11||Spend 5 ki points to cast stoneskin on yourself.
 OPTION|elemental disciplines|Fangs of the Fire Snake|PHB|0||Spend 1 ki point when you use the Attack action to reach 10 feet further and deal fire damage, and 1 more for an extra 1d10.
 OPTION|elemental disciplines|Fist of Four Thunders|PHB|0||Spend 2 ki points to cast thunderwave.
 OPTION|elemental disciplines|Fist of Unbroken Air|PHB|0||Spend 2 ki points to strike at 30 feet for 3d10 bludgeoning, pushing and knocking prone on a failed Strength save.
@@ -1349,7 +1349,7 @@ OPTION|elemental disciplines|Sweeping Cinder Strike|PHB|0||Spend 2 ki points to 
 OPTION|elemental disciplines|Water Whip|PHB|0||Spend 2 ki points to lash a creature within 30 feet for 3d10 bludgeoning, pulling it or knocking it prone.
 OPTION|elemental disciplines|Wave of Rolling Earth|PHB|17||Spend 6 ki points to cast wall of stone.
 OPTIONLIST|favored enemies|Ranger||Favored Enemy|favored enemies|1
-PROGRESSION|favored enemies|0,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3
+PROGRESSION|favored enemies|0,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3
 OPTION|favored enemies|Aberrations|PHB|0||
 OPTION|favored enemies|Beasts|PHB|0||
 OPTION|favored enemies|Celestials|PHB|0||
@@ -1424,7 +1424,7 @@ BGFLAW|Charlatan|I cannot resist swindling people more powerful than me.
 BACKGROUND|Criminal|PHB|Deception|Stealth|0||One type of gaming set, thieves' tools|0|Crowbar, dark common clothes with a hood|15|Criminal Contact|You have a reliable contact in the criminal underworld who can carry messages for you across long distances.
 BGTRAIT|Criminal|I always have a plan for what to do when things go wrong.
 BGTRAIT|Criminal|I am always calm, no matter the situation.
-BGTRAIT|Criminal|The first thing I do in a new place is note the exits.
+BGTRAIT|Criminal|The first thing I do in a new place is note where the valuables are, and where they might be hidden.
 BGTRAIT|Criminal|I would rather make a new friend than a new enemy.
 BGTRAIT|Criminal|I blow up at the slightest insult.
 BGIDEAL|Criminal|Honour: I do not steal from others in the trade.
@@ -1442,7 +1442,7 @@ BGFLAW|Criminal|When faced with a choice between money and friends, I usually ch
 BGFLAW|Criminal|If there is a plan, I will forget it; if I do not, I will ignore it.
 BGFLAW|Criminal|I have a tell that reveals when I am lying.
 BGFLAW|Criminal|I turn tail and run when things look bad.
-BACKGROUND|Entertainer|PHB|Acrobatics|Performance|0||Disguise kit, one type of musical instrument|0|A musical instrument, the favour of an admirer, a costume|15|By Popular Demand|You can always find a place to perform, receiving free lodging and food of a modest standard in return.
+BACKGROUND|Entertainer|PHB|Acrobatics|Performance|0||Disguise kit, one type of musical instrument|0|A musical instrument, the favour of an admirer, a costume|15|By Popular Demand|You can always find a place to perform, receiving free lodging and food of a modest or comfortable standard in return.
 BGTRAIT|Entertainer|I know a story relevant to almost every situation.
 BGTRAIT|Entertainer|Whenever I come to a new place, I collect local rumours and gossip.
 BGTRAIT|Entertainer|I am a hopeless romantic, always searching for that special someone.
@@ -1483,11 +1483,11 @@ BGFLAW|Folk Hero|The tyrant who rules my land will stop at nothing to see me kil
 BGFLAW|Folk Hero|I am convinced of the significance of my destiny and blind to my shortcomings.
 BGFLAW|Folk Hero|The people who knew me when I was young know my shameful secret.
 BGFLAW|Folk Hero|I have a weakness for the vices of the city.
-BGFLAW|Folk Hero|I am inflexible in my thinking.
+BGFLAW|Folk Hero|I have trouble trusting in my allies.
 BACKGROUND|Guild Artisan|PHB|Insight|Persuasion|0||One type of artisan's tools|1|A set of artisan's tools, a letter of introduction from your guild, traveller's clothes|15|Guild Membership|Your guild provides lodging and food, supports you politically, and its members will aid you; dues are 5 gp per month.
 BGTRAIT|Guild Artisan|I believe that anything worth doing is worth doing right.
 BGTRAIT|Guild Artisan|I am well known for my work, and I want to make sure everyone appreciates it.
-BGTRAIT|Guild Artisan|I have a one-track mind and pursue my goals relentlessly.
+BGTRAIT|Guild Artisan|I always want to know how things work and what makes people tick.
 BGTRAIT|Guild Artisan|I am full of witty aphorisms and have a proverb for every occasion.
 BGTRAIT|Guild Artisan|I am rude to people who lack my commitment to hard work.
 BGIDEAL|Guild Artisan|Community: it is the duty of all civilised people to strengthen society.
@@ -1498,7 +1498,7 @@ BGIDEAL|Guild Artisan|Greed: I am only in it for the money.
 BGBOND|Guild Artisan|The workshop where I learned my trade is the most important place to me.
 BGBOND|Guild Artisan|I created a great work for someone and they didn't pay; I still want it.
 BGBOND|Guild Artisan|I owe my guild a great debt for forging me into the person I am.
-BGBOND|Guild Artisan|I pay an exorbitant sum to support my family.
+BGBOND|Guild Artisan|I pursue wealth to secure someone's love.
 BGBOND|Guild Artisan|I will get revenge on the evil forces that destroyed my business.
 BGFLAW|Guild Artisan|I will do anything to get my hands on something rare or priceless.
 BGFLAW|Guild Artisan|I am quick to assume that someone is trying to cheat me.
@@ -1654,13 +1654,13 @@ BGFLAW|Urchin|I would rather kill someone in their sleep than fight fair.
 BGFLAW|Urchin|It is not stealing if I need it more than someone else.
 BACKGROUND|City Watch|SCAG|Athletics|Insight|0|||2|A uniform in the style of your unit and indicative of your rank, a horn with which to summon help, a set of manacles|10|Watcher's Eye|You can easily find the local watch post, and just as easily pick out the dens of criminal activity in a community.
 BACKGROUND|Investigator (City Watch Variant)|SCAG|Investigation|Insight|0|||2|A uniform in the style of your unit and indicative of your rank, a horn with which to summon help, a set of manacles|10|Watcher's Eye|You can easily find the local watch post, and just as easily pick out the dens of criminal activity in a community.
-BACKGROUND|Clan Crafter|SCAG|History|Insight|0||One type of artisan's tools|1|A set of artisan's tools you are proficient with, a maker's mark chisel, traveler's clothes|5|Respect of the Stout Folk|You always have free room and board among shield dwarves or gold dwarves, who esteem clan crafters above all outsiders.
+BACKGROUND|Clan Crafter|SCAG|History|Insight|0||One type of artisan's tools|1|A set of artisan's tools you are proficient with, a maker's mark chisel, traveler's clothes, a gem worth 10 gp|5|Respect of the Stout Folk|You always have free room and board among shield dwarves or gold dwarves, who esteem clan crafters above all outsiders.
 BACKGROUND|Cloistered Scholar|SCAG|History|-|1|Arcana\|Nature\|Religion||2|The scholar's robes of your cloister, a writing kit, a borrowed book on the subject of your study|10|Library Access|You have free access to your cloister's library, bar its most secret holdings, and know how to navigate its people and bureaucracy.
 BACKGROUND|Courtier|SCAG|Insight|Persuasion|0|||2|A set of fine clothes|5|Court Functionary|You can reach the records and inner workings of any noble court or government: who its movers are, whom to ask for a favour, and what the current intrigues are.
 BACKGROUND|Faction Agent|SCAG|Insight|-|1|Arcana\|History\|Investigation\|Nature\|Religion\|Animal Handling\|Medicine\|Perception\|Survival\|Deception\|Intimidation\|Performance\|Persuasion||2|A badge or emblem of your faction, a copy of a seminal faction text or a code-book, common clothes|15|Safe Haven|Your faction's network can hide you, house you or find you information, though its agents will not risk their lives for you.
-BACKGROUND|Far Traveler|SCAG|Insight|Perception|0||One musical instrument or gaming set of your homeland|1|One set of traveler's clothes, any one musical instrument or gaming set you are proficient with, poorly wrought maps of your homeland|5|All Eyes on You|Everything about you marks you as foreign, which draws curiosity you can parley into access to people and places otherwise closed to you.
+BACKGROUND|Far Traveler|SCAG|Insight|Perception|0||One musical instrument or gaming set of your homeland|1|One set of traveler's clothes, any one musical instrument or gaming set you are proficient with, poorly wrought maps from your homeland, a small piece of jewelry worth 10 gp|5|All Eyes on You|Everything about you marks you as foreign, which draws curiosity you can parley into access to people and places otherwise closed to you.
 BACKGROUND|Inheritor|SCAG|Survival|-|1|Arcana\|History\|Religion|One gaming set or musical instrument|1|Your inheritance, a set of traveler's clothes, any tools you are proficient with|15|Inheritance|Something has come down to you: a document, a trinket, an heirloom or an article of clothing. Its full story is yours to discover with the DM.
-BACKGROUND|Knight of the Order|SCAG|Persuasion|-|1|Arcana\|History\|Nature\|Religion|One gaming set or musical instrument|1|One set of traveler's clothes, a signet, banner or seal representing your place or rank in the order|10|Knightly Regard|You receive shelter and aid from members of your order and those sympathetic to it, and can call on them for assistance short of open danger.
+BACKGROUND|Knight of the Order|SCAG|Persuasion|-|1|Arcana\|History\|Nature\|Religion|One gaming set or musical instrument|1|One set of traveler's clothes, a signet, banner or seal representing your place or rank in the order|10|Knightly Regard|You receive shelter, meals and healing from members of your order and those sympathetic to it, and sometimes even assistance that puts them at risk.
 BACKGROUND|Mercenary Veteran|SCAG|Athletics|Persuasion|0||One type of gaming set, vehicles (land)|0|A uniform of your company, an insignia of your rank, a gaming set of your choice|10|Mercenary Life|You can identify a mercenary company by its emblem, know where mercenaries drink in any town, and can find work between adventures.
 BACKGROUND|Urban Bounty Hunter|SCAG|-|-|2|Deception\|Insight\|Persuasion\|Stealth|Two of: one type of gaming set, one musical instrument, thieves' tools|0|A set of clothes appropriate to your duties|20|Ear to the Ground|You have a contact in any city you visit, drawn from the part of society your quarries move through, who tells you about local people and places.
 BACKGROUND|Uthgardt Tribe Member|SCAG|Athletics|Survival|0||One type of musical instrument or artisan's tools|1|A hunting trap, a totemic token or set of tattoos marking your tribal totem, a set of traveler's clothes|10|Uthgardt Heritage|You forage twice as much food and water as you otherwise would, and can call on the hospitality of your people and their allies.
@@ -1674,7 +1674,7 @@ FEAT|Charger|PHB||-|-|0||0|0|0|0|0|0|0|0|||After Dashing, use a bonus action to 
 FEAT|Crossbow Expert|PHB||-|-|0||0|0|0|0|0|0|0|0|||Ignore the loading property of crossbows you are proficient with, avoid disadvantage from adjacent foes, and add a hand crossbow attack as a bonus action after a one-handed attack.
 FEAT|Defensive Duelist|PHB|Dexterity 13 or higher|DEX|-|13||0|0|0|0|0|0|0|0|||When wielding a finesse weapon you are proficient with, add your proficiency bonus to AC against one melee attack as a reaction.
 FEAT|Dual Wielder|PHB||-|-|0||0|0|0|0|0|0|0|0|||+1 AC while wielding two weapons, two-weapon fighting with non-light weapons, and you can draw or stow two weapons at once.
-FEAT|Dungeon Delver|PHB||-|-|0||0|0|0|0|0|0|0|0|||Advantage on checks and saves against traps, resistance to trap damage, and you search for traps at a normal travel pace.
+FEAT|Dungeon Delver|PHB||-|-|0||0|0|0|0|0|0|0|0|||Advantage on checks to detect secret doors and on saves against traps, resistance to trap damage, and you search for traps at a normal travel pace.
 FEAT|Durable|PHB||-|-|0||0|0|0|1|0|0|0|0|||When you spend a Hit Die to regain hit points, the minimum regained is twice your Constitution modifier.
 FEAT|Elemental Adept|PHB|The ability to cast at least one spell|-|-|0||1|0|0|0|0|0|0|0|||Choose a damage type: your spells ignore resistance to it, and treat any 1 rolled on its damage dice as a 2.
 FEAT|Grappler|PHB|Strength 13 or higher|STR|-|13||0|0|0|0|0|0|0|0|||Advantage on attacks against creatures you grapple, and you can attempt to restrain a grappled creature.
@@ -1709,18 +1709,18 @@ FEAT|Tavern Brawler|PHB||-|-|0||0|0|0|0|0|0|0|1|STR,CON||Proficiency with improv
 FEAT|Tough|PHB||-|-|0||0|0|0|0|0|0|0|0|||Your hit point maximum increases by twice your level, and by 2 each time you gain a level.
 FEAT|War Caster|PHB|The ability to cast at least one spell|-|-|0||1|0|0|0|0|0|0|0|||Advantage on concentration saves, cast with hands full, and cast a one-action spell as an opportunity attack.
 FEAT|Weapon Master|PHB||-|-|0||0|0|0|0|0|0|0|1|STR,DEX||Gain proficiency with four weapons of your choice.
-FEAT|Artificer Initiate|TCE||-|-|0||0|0|0|0|0|0|0|0|||Learn one artificer cantrip and one 1st-level artificer spell, castable once per long rest without a slot, using Intelligence. You also gain proficiency with one kind of artisan's tools and can use them as a spellcasting focus for those spells.
-FEAT|Chef|TCE||-|-|0||0|0|0|0|0|0|0|1|CON,WIS||Proficiency with cook's utensils. Over an hour's short rest you can cook food for up to four plus your proficiency bonus creatures, each regaining an extra 1d8 hit points from Hit Dice; over a long rest you can bake treats that give 1d8 temporary hit points.
+FEAT|Artificer Initiate|TCE||-|-|0||0|0|0|0|0|0|0|0|||Learn one artificer cantrip and one 1st-level artificer spell, castable once per long rest without a slot, using Intelligence. You also gain proficiency with one kind of artisan's tools and can use them as a spellcasting focus for any spell you cast using Intelligence.
+FEAT|Chef|TCE||-|-|0||0|0|0|0|0|0|0|1|CON,WIS||Proficiency with cook's utensils. Over an hour's short rest you can cook food for up to four plus your proficiency bonus creatures, each regaining an extra 1d8 hit points from Hit Dice; with an hour's work or a long rest you can bake treats that each grant temporary hit points equal to your proficiency bonus.
 FEAT|Crusher|TCE||-|-|0||0|0|0|0|0|0|0|1|STR,CON||Once per turn, when you deal bludgeoning damage you can move the target 5 feet. When you score a critical hit with bludgeoning damage, attacks against that creature have advantage until the start of your next turn.
-FEAT|Eldritch Adept|TCE|Spellcasting or Pact Magic|-|-|0||1|0|0|0|0|0|0|0|||Learn one eldritch invocation of your choice that has no Pact Boon prerequisite. You can replace it whenever you gain a level.
+FEAT|Eldritch Adept|TCE|Spellcasting or Pact Magic|-|-|0||1|0|0|0|0|0|0|0|||Learn one eldritch invocation of your choice; one with any prerequisite requires you to be a warlock who meets it. You can replace it whenever you gain a level.
 FEAT|Fey Touched|TCE||-|-|0||0|0|0|0|0|0|0|1|INT,WIS,CHA||Learn misty step and one 1st-level divination or enchantment spell. You can cast each once per long rest without a slot, and otherwise with slots as normal, using the ability this feat raised.
-FEAT|Fighting Initiate|TCE|Proficiency with a martial weapon|-|-|0|Martial weapons|0|0|0|0|0|0|0|0|||Learn one Fighting Style option of your choice. You can replace it whenever you gain a level.
+FEAT|Fighting Initiate|TCE|Proficiency with a martial weapon|-|-|0|Martial weapons|0|0|0|0|0|0|0|0|||Learn one Fighting Style option of your choice. You can replace it whenever you reach a level that grants an Ability Score Improvement.
 FEAT|Gunner|TCE||-|-|0||0|0|1|0|0|0|0|0|||Proficiency with firearms, you ignore the loading property of firearms, and being within 5 feet of a hostile creature does not impose disadvantage on your ranged attacks.
-FEAT|Metamagic Adept|TCE|Spellcasting or Pact Magic|-|-|0||1|0|0|0|0|0|0|0|||Learn two Metamagic options from the sorcerer class and gain 2 sorcery points to spend on them, regained on a long rest. You can replace one option whenever you gain a level.
+FEAT|Metamagic Adept|TCE|Spellcasting or Pact Magic|-|-|0||1|0|0|0|0|0|0|0|||Learn two Metamagic options from the sorcerer class and gain 2 sorcery points to spend on them, regained on a long rest. You can replace one option whenever you reach a level that grants an Ability Score Improvement.
 FEAT|Piercer|TCE||-|-|0||0|0|0|0|0|0|0|1|STR,DEX||Once per turn, when you hit with an attack dealing piercing damage you can reroll one damage die. A critical hit with piercing damage adds one extra damage die to the critical's total.
-FEAT|Poisoner|TCE||-|-|0||0|0|0|0|0|0|0|0|||Your poison damage ignores resistance. You gain proficiency with the poisoner's kit and can apply a potent poison to a weapon as a bonus action: DC 14, 2d8 poison damage and poisoned for 1 minute. You can craft 50 gp of that poison over a long rest for 50 gp of materials.
+FEAT|Poisoner|TCE||-|-|0||0|0|0|0|0|0|0|0|||Your poison damage ignores resistance. You gain proficiency with the poisoner's kit and can apply a potent poison to a weapon as a bonus action: DC 14 Constitution save, 2d8 poison damage and poisoned until the end of your next turn. An hour's work and 50 gp of materials make doses of it equal to your proficiency bonus.
 FEAT|Shadow Touched|TCE||-|-|0||0|0|0|0|0|0|0|1|INT,WIS,CHA||Learn invisibility and one 1st-level illusion or necromancy spell. You can cast each once per long rest without a slot, and otherwise with slots as normal, using the ability this feat raised.
-FEAT|Skill Expert|TCE||-|-|0||0|0|0|0|0|0|0|1|||Gain proficiency in one skill of your choice, and choose one skill or tool you are proficient with to gain expertise in, doubling your proficiency bonus for it.
+FEAT|Skill Expert|TCE||-|-|0||0|0|0|0|0|0|0|1|||Gain proficiency in one skill of your choice, and choose one skill you are proficient with to gain expertise in, doubling your proficiency bonus for it.
 FEAT|Slasher|TCE||-|-|0||0|0|0|0|0|0|0|1|STR,DEX||Once per turn, when you deal slashing damage you can reduce the target's speed by 10 feet until the start of your next turn. A critical hit with slashing damage gives the target disadvantage on attack rolls until the start of your next turn.
 FEAT|Telekinetic|TCE||-|-|0||0|0|0|0|0|0|0|1|INT,WIS,CHA||Learn mage hand, or gain a 30-foot increase to its range if you already know it, and you can cast it without components. As a bonus action you can shove a creature within 30 feet 5 feet toward or away from you, on a failed Strength save.
 FEAT|Telepathic|TCE||-|-|0||0|0|0|0|0|0|0|1|INT,WIS,CHA||You can speak telepathically to any creature within 60 feet that understands a language you know, and you can cast detect thoughts once per long rest without a slot, using the ability this feat raised.
@@ -1730,13 +1730,13 @@ FEAT|Dragon Hide|XGE|Dragonborn|-|-|0||0|0|0|0|0|0|0|1|STR,CON,CHA|Dragonborn|Yo
 FEAT|Drow High Magic|XGE|Elf (drow)|-|-|0||0|0|0|0|0|0|0|0||Dark Elf (Drow)|You learn detect magic and can cast it at will. You also learn levitate and dispel magic, each castable once per long rest without a slot. Charisma is your spellcasting ability for all three.
 FEAT|Dwarven Fortitude|XGE|Dwarf|-|-|0||0|0|0|1|0|0|0|0||Dwarf|Whenever you take the Dodge action you can spend one Hit Die to heal yourself, rolling the die and adding your Constitution modifier.
 FEAT|Elven Accuracy|XGE|Elf or half-elf|-|-|0||0|0|0|0|0|0|0|1|DEX,INT,WIS,CHA|Elf\|Half-Elf|Whenever you have advantage on an attack roll using Dexterity, Intelligence, Wisdom or Charisma, you can reroll one of the dice once.
-FEAT|Fade Away|XGE|Gnome|-|-|0||0|0|0|0|0|0|0|1|DEX,INT|Gnome|Immediately after taking damage, you can use a reaction to become invisible until the end of your next turn or until you attack, deal damage or cast a spell. Once per short or long rest.
+FEAT|Fade Away|XGE|Gnome|-|-|0||0|0|0|0|0|0|0|1|DEX,INT|Gnome|Immediately after taking damage, you can use a reaction to become invisible until the end of your next turn or until you attack, deal damage or force someone to make a saving throw. Once per short or long rest.
 FEAT|Fey Teleportation|XGE|Elf (high)|-|-|0||0|0|0|0|0|0|0|1|INT,CHA|High Elf|You learn Sylvan, and you learn misty step, castable once per short or long rest without a slot as well as with any slot you have. Intelligence is your spellcasting ability for it.
 FEAT|Flames of Phlegethos|XGE|Tiefling|-|-|0||0|0|0|0|0|0|0|1|INT,CHA|Tiefling|When you roll fire damage for a spell, you can reroll any 1s, but must use the new roll. Casting a spell that deals fire damage wreathes you in flames until the end of your next turn, shedding light and burning any creature that hits you in melee for 1d4 fire damage.
 FEAT|Infernal Constitution|XGE|Tiefling|-|-|0||0|0|0|1|0|0|0|0||Tiefling|You have resistance to cold and poison damage, and advantage on saving throws against being poisoned.
-FEAT|Orcish Fury|XGE|Half-orc|-|-|0||0|0|0|0|0|0|0|1|STR,CON|Half-Orc|When you hit with a simple or martial weapon you are proficient with, you can add one extra damage die, once per short or long rest. When you use Relentless Endurance you can also make one weapon attack as a reaction.
+FEAT|Orcish Fury|XGE|Half-orc|-|-|0||0|0|0|0|0|0|0|1|STR,CON|Half-Orc|When you hit with a simple or martial weapon, you can add one extra damage die, once per short or long rest. When you use Relentless Endurance you can also make one weapon attack as a reaction.
 FEAT|Prodigy|XGE|Half-elf, half-orc or human|-|-|0||0|0|0|0|0|0|0|0||Half-Elf\|Half-Orc\|Human|You gain one skill proficiency, one tool proficiency and one language, and you gain expertise in one skill you are proficient with.
 FEAT|Second Chance|XGE|Halfling|-|-|0||0|0|0|0|0|0|0|1|DEX,CON,CHA|Halfling|When a creature you can see hits you with an attack, you can use your reaction to force it to reroll. Once per short or long rest, or after you roll initiative.
-FEAT|Squat Nimbleness|XGE|Dwarf or a Small race|-|-|0||0|0|0|0|0|0|0|1|STR,DEX|Dwarf\|Gnome\|Halfling|Your walking speed increases by 5 feet, you gain proficiency in Acrobatics or Athletics, and you have advantage on checks made to escape a grapple.
+FEAT|Squat Nimbleness|XGE|Dwarf or a Small race|-|-|0||0|0|0|0|0|0|0|1|STR,DEX|Dwarf\|Small|Your walking speed increases by 5 feet, you gain proficiency in Acrobatics or Athletics, and you have advantage on checks made to escape a grapple.
 FEAT|Wood Elf Magic|XGE|Elf (wood)|-|-|0||0|0|0|0|0|0|0|0||Wood Elf|You learn one druid cantrip, plus longstrider and pass without trace, each castable once per long rest without a slot. Wisdom is your spellcasting ability for them.
 FEAT|Svirfneblin Magic|SCAG|Gnome (deep gnome)|-|-|0||0|0|0|0|0|0|0|0||Svirfneblin (Deep Gnome)|You can cast nondetection on yourself at will, needing no material component, and can cast blindness/deafness, blur and disguise self once each, regaining them on a long rest. Intelligence is your spellcasting ability for them.

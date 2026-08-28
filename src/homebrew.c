@@ -19,6 +19,7 @@
 #include "data.h"
 #include "data_spells.h"
 #include "homebrew.h"
+#include "saveload.h"
 #include "reference.h"
 #include "ui.h"
 
@@ -45,9 +46,6 @@ static const char *keep(const char *s)
     return p;
 }
 
-int homebrew_item_count(void)  { return n_items; }
-int homebrew_magic_count(void) { return n_magic; }
-int homebrew_spell_count(void) { return n_spells; }
 
 int homebrew_total(void) { return n_items + n_magic + n_spells; }
 
@@ -67,6 +65,9 @@ static const char HOMEBREW_HEADER[] =
 "# One record per line: a tag, then '|' separated fields. A line starting\n"
 "# with '#' is a comment. Everything here is tagged as Homebrew, so the\n"
 "# settings menu can switch it all off at once.\n"
+"#\n"
+"# A field that needs a literal '|' writes it as \\p, and a literal\n"
+"# backslash as \\\\, the same as the character files.\n"
 "#\n"
 "# ITEM|name|category|cost_cp|weight_tenths|base_ac|dex_cap|str_req|\n"
 "#      stealth|damage|damage_type|properties|contents\n"
@@ -133,18 +134,6 @@ static void rebuild_banks(void)
 
 /* ---------------------------------------------------------------- the file */
 
-static int split_fields(char *line, char **out, int max)
-{
-    int n = 0;
-    char *p = line;
-
-    out[n++] = p;
-    while (*p && n < max) {
-        if (*p == '|') { *p = '\0'; out[n++] = p + 1; }
-        p++;
-    }
-    return n;
-}
 
 static void strip_newline(char *s)
 {
@@ -168,14 +157,28 @@ static int category_of(const char *s)
 {
     int n = item_category_by_name(s);
     if (n >= 0) return n;
-    return all_digits(s) ? atoi(s) : ITEM_GEAR;
+    /* A number is taken as the category index it names, but only one that
+       exists: CATEGORY_LABEL is indexed by this wherever an item is
+       printed, and a hand-written file naming category 999 read past the
+       end of it. */
+    if (all_digits(s)) {
+        n = atoi(s);
+        if (n >= 0 && n <= ITEM_MOUNT) return n;
+    }
+    return ITEM_GEAR;
 }
 
 static int school_of(const char *s)
 {
     int n = school_by_name(s);
     if (n >= 0) return n;
-    return all_digits(s) ? atoi(s) : SCHOOL_EVOCATION;
+    /* Bounded for the same reason as the category: SCHOOL_NAMES is indexed
+       by it on every sheet the spell appears on. */
+    if (all_digits(s)) {
+        n = atoi(s);
+        if (n >= 0 && n < SCHOOL_COUNT) return n;
+    }
+    return SCHOOL_EVOCATION;
 }
 
 static unsigned classes_of(const char *s)
@@ -194,11 +197,14 @@ int homebrew_load(void)
 
     while (fgets(line, sizeof line, f)) {
         char *fields[20];
-        int n;
+        int n, k;
 
         strip_newline(line);
         if (!line[0] || line[0] == '#') continue;
-        n = split_fields(line, fields, 20);
+        n = record_split(line, fields, 20);
+        /* Same record format as the character file: a field is stored with
+           the separator escaped, so a name with a '|' in it survives. */
+        for (k = 0; k < n; k++) record_unescape(fields[k]);
 
         if (!strcmp(fields[0], "ITEM") && n >= 13 && n_items < MAX_CUSTOM) {
             ItemData *it = &custom_items[n_items++];
@@ -206,12 +212,15 @@ int homebrew_load(void)
             it->name = keep(fields[1]);
             it->book = BOOK_HOMEBREW;
             it->category = (ItemCategory)category_of(fields[2]);
-            it->cost_cp = atoi(fields[3]);
-            it->weight_tenths = atoi(fields[4]);
-            it->base_ac = atoi(fields[5]);
-            it->dex_cap = atoi(fields[6]);
-            it->str_req = atoi(fields[7]);
-            it->stealth_disadvantage = atoi(fields[8]);
+            /* The same ranges the prompts that write this file ask for.
+               A DM is invited to edit it by hand, and a weight of two
+               billion is an overflowed pack rather than a heavy one. */
+            it->cost_cp = record_int(fields[3], 0, 10000000);
+            it->weight_tenths = record_int(fields[4], 0, 100009);
+            it->base_ac = record_int(fields[5], 0, 25);
+            it->dex_cap = record_int(fields[6], -1, 10);
+            it->str_req = record_int(fields[7], 0, 30);
+            it->stealth_disadvantage = record_int(fields[8], 0, 1);
             it->damage = keep(fields[9]);
             it->damage_type = keep(fields[10]);
             it->properties = keep(fields[11]);
@@ -230,7 +239,12 @@ int homebrew_load(void)
             SpellData *sp = &custom_spells[n_spells++];
             sp->name = keep(fields[1]);
             sp->book = BOOK_HOMEBREW;
-            sp->level = (unsigned char)atoi(fields[2]);
+            {   /* Spell levels run 0 (a cantrip) to 9; a level outside
+                    that belongs to no slot and no list, so it would be a
+                    spell that could be written down but never cast. */
+                int lv = atoi(fields[2]);
+                sp->level = (unsigned char)(lv < 0 ? 0 : lv > 9 ? 9 : lv);
+            }
             sp->school = (unsigned char)school_of(fields[3]);
             sp->ritual = (unsigned char)atoi(fields[4]);
             sp->concentration = (unsigned char)atoi(fields[5]);
@@ -260,28 +274,56 @@ int homebrew_save(void)
        file and no idea what goes in it. */
     fputs(HOMEBREW_HEADER, f);
 
+    /* Every field the DM typed goes through record_put, which escapes the
+       separator: an item called "Hammer|of Dawn" used to write a line with
+       one field too many and come back as "Hammer". */
     for (i = 0; i < n_items; i++) {
         const ItemData *it = &custom_items[i];
-        fprintf(f, "ITEM|%s|%s|%d|%d|%d|%d|%d|%d|%s|%s|%s|%s\n", it->name,
+        fputs("ITEM|", f);
+        record_put(f, it->name);
+        fprintf(f, "|%s|%d|%d|%d|%d|%d|%d|",
                 ITEM_CATEGORY_NAME[it->category], it->cost_cp,
-                it->weight_tenths,
-                it->base_ac, it->dex_cap, it->str_req,
-                it->stealth_disadvantage, it->damage, it->damage_type,
-                it->properties, it->contents);
+                it->weight_tenths, it->base_ac, it->dex_cap, it->str_req,
+                it->stealth_disadvantage);
+        record_put(f, it->damage);
+        fputc('|', f);
+        record_put(f, it->damage_type);
+        fputc('|', f);
+        record_put(f, it->properties);
+        fputc('|', f);
+        record_put(f, it->contents);
+        fputc('\n', f);
     }
     for (i = 0; i < n_magic; i++) {
         const MagicItem *m = &custom_magic[i];
-        fprintf(f, "MAGICITEM|%s|%s|%s|%s|%s\n", m->name, m->type, m->rarity,
-                m->attunement ? m->attunement : "", m->text);
+        fputs("MAGICITEM|", f);
+        record_put(f, m->name);
+        fputc('|', f);
+        record_put(f, m->type);
+        fputc('|', f);
+        record_put(f, m->rarity);
+        fputc('|', f);
+        record_put(f, m->attunement ? m->attunement : "");
+        fputc('|', f);
+        record_put(f, m->text);
+        fputc('\n', f);
     }
     for (i = 0; i < n_spells; i++) {
         const SpellData *sp = &custom_spells[i];
         char classes[160];
         spell_classes_text(sp->classes, classes, sizeof classes);
-        fprintf(f, "SPELL|%s|%d|%s|%d|%d|%s|%s|%s|%s|%s\n", sp->name,
-                sp->level, SCHOOL_NAMES[sp->school], sp->ritual,
-                sp->concentration, sp->casting_time, sp->range,
-                sp->components, sp->duration, classes);
+        fputs("SPELL|", f);
+        record_put(f, sp->name);
+        fprintf(f, "|%d|%s|%d|%d|", sp->level, SCHOOL_NAMES[sp->school],
+                sp->ritual, sp->concentration);
+        record_put(f, sp->casting_time);
+        fputc('|', f);
+        record_put(f, sp->range);
+        fputc('|', f);
+        record_put(f, sp->components);
+        fputc('|', f);
+        record_put(f, sp->duration);
+        fprintf(f, "|%s\n", classes);
     }
     fclose(f);
     return 0;
@@ -454,13 +496,9 @@ static void add_custom_item(void)
     it->name = keep(buf);
     it->book = BOOK_HOMEBREW;
 
-    {
-        const char *cats[13];
-        int i;
-        for (i = 0; i < 12; i++) cats[i] = CATEGORY_LABEL[i];
-        it->category = (ItemCategory)ui_menu("  What kind of thing is it?",
-                                             cats, NULL, 12);
-    }
+    it->category = (ItemCategory)ui_menu("  What kind of thing is it?",
+                                         CATEGORY_LABEL, NULL,
+                                         ITEM_CATEGORY_COUNT);
 
     it->cost_cp = ask_price();
     it->weight_tenths = ask_weight();
@@ -720,13 +758,8 @@ static void add_custom_spell(void)
     sp->level = (unsigned char)ui_menu("  What level is it?", SPELL_LEVELS,
                                        NULL, 10);
 
-    {
-        const char *schools[SCHOOL_COUNT];
-        int i;
-        for (i = 0; i < SCHOOL_COUNT; i++) schools[i] = SCHOOL_NAMES[i];
-        sp->school = (unsigned char)ui_menu("  School:", schools, NULL,
-                                            SCHOOL_COUNT);
-    }
+    sp->school = (unsigned char)ui_menu("  School:", SCHOOL_NAMES, NULL,
+                                        SCHOOL_COUNT);
 
     sp->ritual = (unsigned char)ui_yesno("  Can it be cast as a ritual?", 0);
     sp->concentration =

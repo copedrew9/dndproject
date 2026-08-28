@@ -22,7 +22,7 @@ SCHOOL|Transmutation
 
 # SPELL | name | book | level (0 = cantrip) | school | ritual | concentration | casting_time | range | components | duration | classes
 SPELL|Abi-dalzim's Horrid Wilting|XGE|8|Necromancy|0|0|1 action|150 feet|V, S, M (a bit of sponge)|Instantaneous|sorcerer,wizard
-SPELL|Absorb Elements|XGE|1|Abjuration|0|0|1 reaction, which you take when you take|Self|S|1 round|druid,ranger,sorcerer,wizard,artificer
+SPELL|Absorb Elements|XGE|1|Abjuration|0|0|1 reaction, which you take when you take acid, cold, fire, lightning, or thunder damage|Self|S|1 round|druid,ranger,sorcerer,wizard,artificer
 SPELL|Acid Splash|PHB|0|Conjuration|0|0|1 action|60 feet|V, S|Instantaneous|sorcerer,wizard,artificer
 SPELL|Aganazzar's Scorcher|XGE|2|Evocation|0|0|1 action|30 feet|V, S, M (a red dragon's scale)|Instantaneous|sorcerer,wizard
 SPELL|Aid|PHB|2|Abjuration|0|0|1 action|30 feet|V, S, M (a tiny strip of white cloth)|8 hours|cleric,paladin,artificer
@@ -84,7 +84,7 @@ SPELL|Chromatic Orb|PHB|1|Evocation|0|0|1 action|90 feet|V, S, M (a diamond wort
 SPELL|Circle of Death|PHB|6|Necromancy|0|0|1 action|150 feet|V, S, M (the powder of a crushed black pearl worth at least 500 gp)|Instantaneous|sorcerer,warlock,wizard
 SPELL|Circle of Power|PHB|5|Abjuration|0|1|1 action|Self (30-foot radius)|V|Concentration, up to 10 minutes|paladin
 SPELL|Clairvoyance|PHB|3|Divination|0|1|10 minutes|1 mile|V, S, M (a focus worth at least 100 gp, either a jeweled horn for hearing or a glass eye for seeing)|Concentration, up to 10 minutes|bard,cleric,sorcerer,wizard
-SPELL|Clone|PHB|8|Necromancy|0|0|1 hour|Touch|V, S, M (a diamond worth at least 1,000 gp and at least 1 cubic inch of flesh of the creature that is to be cloned, which the spell consumes, and a vessel worth at least 2,000 gp that has a sealable lid|Instantaneous|wizard
+SPELL|Clone|PHB|8|Necromancy|0|0|1 hour|Touch|V, S, M (a diamond worth at least 1,000 gp and at least 1 cubic inch of flesh of the creature that is to be cloned, which the spell consumes, and a vessel worth at least 2,000 gp that has a sealable lid and is large enough to hold a Medium creature, such as a huge urn, coffin, mud-filled cyst in the ground, or crystal container filled with salt water)|Instantaneous|wizard
 SPELL|Cloud of Daggers|PHB|2|Conjuration|0|1|1 action|60 feet|V, S, M (a sliver of glass)|Concentration, up to 1 minute|bard,sorcerer,warlock,wizard
 SPELL|Cloudkill|PHB|5|Conjuration|0|1|1 action|120 feet|V, S|Concentration, up to 10 minutes|sorcerer,wizard
 SPELL|Color Spray|PHB|1|Illusion|0|0|1 action|Self (15-foot cone)|V, S, M (a pinch of powder or sand that is colored red, yellow, and blue)|1 round|sorcerer,wizard
@@ -102,18 +102,18 @@ SPELL|Conjure Celestial|PHB|7|Conjuration|0|1|1 minute|90 feet|V, S|Concentratio
 SPELL|Conjure Elemental|PHB|5|Conjuration|0|1|1 minute|90 feet|V, S, M (burning incense for air, soft clay for earth, sulfur and phosphorus for fire, or water and sand for water)|Concentration, up to 1 hour|druid,wizard
 SPELL|Conjure Fey|PHB|6|Conjuration|0|1|1 minute|90 feet|V, S|Concentration, up to 1 hour|druid,warlock
 SPELL|Conjure Minor Elementals|PHB|4|Conjuration|0|1|1 minute|90 feet|V, S|Concentration, up to 1 hour|druid,wizard
-SPELL|Conjure Volley|PHB|5|Conjuration|0|0|1 action|150 feet|V. S, M (one piece of ammunition or one thrown weapon)|Instantaneous|ranger
+SPELL|Conjure Volley|PHB|5|Conjuration|0|0|1 action|150 feet|V, S, M (one piece of ammunition or one thrown weapon)|Instantaneous|ranger
 SPELL|Conjure Woodland Beings|PHB|4|Conjuration|0|1|1 action|60 feet|V, S, M (one holly berry per creature summoned)|Concentration, up to 1 hour|druid,ranger
 SPELL|Contact Other Plane|PHB|5|Divination|1|0|1 minute|Self|V|1 minute|warlock,wizard
 SPELL|Contagion|PHB|5|Necromancy|0|0|1 action|Touch|V, S|7 days|cleric,druid
 SPELL|Contingency|PHB|6|Evocation|0|0|10 minutes|Self|V, S, M (a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp)|10 days|wizard
 SPELL|Continual Flame|PHB|2|Evocation|0|0|1 action|Touch|V, S, M (ruby dust worth 50 gp, which the spell consumes)|Until dispelled|cleric,wizard,artificer
 SPELL|Control Flames|XGE|0|Transmutation|0|0|1 action|60 feet|S|Instantaneous or 1 hour (see below)|druid,sorcerer,wizard
-SPELL|Control Water|PHB|4|Transmutation|0|1|1 action|300 feet|V, S. M (a drop of water and a pinch of dust)|Concentration, up to 10 minutes|cleric,druid,wizard
-SPELL|Control Weather|PHB|8|Transmutation|0|1|10 minutes|Self (5-mile radius)|V, S, M (burning incense and bits of earth|Concentration, up to 8 hours|cleric,druid,wizard
+SPELL|Control Water|PHB|4|Transmutation|0|1|1 action|300 feet|V, S, M (a drop of water and a pinch of dust)|Concentration, up to 10 minutes|cleric,druid,wizard
+SPELL|Control Weather|PHB|8|Transmutation|0|1|10 minutes|Self (5-mile radius)|V, S, M (burning incense and bits of earth and wood mixed in water)|Concentration, up to 8 hours|cleric,druid,wizard
 SPELL|Control Winds|XGE|5|Transmutation|0|1|1 action|300 feet|V, S|Concentration, up to 1 hour|druid,sorcerer,wizard
-SPELL|Cordon of Arrows|PHB|2|Transmutation|0|0|1 action|5 feet|V, S, M (four|8 hours|ranger
-SPELL|Counterspell|PHB|3|Abjuration|0|0|1 reaction, which you take when you see|60 feet|S|Instantaneous|sorcerer,warlock,wizard
+SPELL|Cordon of Arrows|PHB|2|Transmutation|0|0|1 action|5 feet|V, S, M (four or more arrows or bolts)|8 hours|ranger
+SPELL|Counterspell|PHB|3|Abjuration|0|0|1 reaction, which you take when you see a creature within 60 feet of you casting a spell|60 feet|S|Instantaneous|sorcerer,warlock,wizard
 SPELL|Create Bonfire|XGE|0|Conjuration|0|1|1 action|60 feet|V, S|Concentration, up to 1 minute|druid,sorcerer,warlock,wizard,artificer
 SPELL|Create Food and Water|PHB|3|Conjuration|0|0|1 action|30 feet|V, S|Instantaneous|cleric,paladin,artificer
 SPELL|Create Homunculus|XGE|6|Transmutation|0|0|1 hour|Touch|V, S, M (clay, ash, and mandrake root, all of which the spell consumes, and a jewel-encrusted dagger worth at least 1,000 gp)|Instantaneous|wizard
@@ -156,7 +156,7 @@ SPELL|Dream|PHB|5|Illusion|0|0|1 minute|Special|V, S, M (a handful of sand, a da
 SPELL|Dream of the Blue Veil|TCE|7|Conjuration|0|0|10 minutes|20 feet|V, S, M (a magic item or a willing creature from the destination world)|6 hours|bard,sorcerer,warlock,wizard
 SPELL|Druid Grove|XGE|6|Abjuration|0|0|10 minutes|Touch|V, S, M (mistletoe, which the spell con- sumes, that was harvested with a golden sickle under the light of a full moon)|24 hours|druid
 SPELL|Druidcraft|PHB|0|Transmutation|0|0|1 action|30 feet|V, S|Instantaneous|druid
-SPELL|Dust Devil|XGE|2|Conjuration|0|1|1 action|60 feet|V, S, M (a pinch of dust)|Concentration, up to 1 minute|sorcerer,wizard
+SPELL|Dust Devil|XGE|2|Conjuration|0|1|1 action|60 feet|V, S, M (a pinch of dust)|Concentration, up to 1 minute|druid,sorcerer,wizard
 SPELL|Earth Tremor|XGE|1|Evocation|0|0|1 action|10 feet|V, S|Instantaneous|bard,druid,sorcerer,wizard
 SPELL|Earthbind|XGE|2|Transmutation|0|1|1 action|300 feet|V|Concentration, up to 1 minute|druid,sorcerer,warlock,wizard
 SPELL|Earthquake|PHB|8|Evocation|0|1|1 action|500 feet|V, S, M (a pinch of dirt, a piece of rock, and a lump of clay)|Concentration, up to 1 minute|cleric,druid,sorcerer
@@ -167,7 +167,7 @@ SPELL|Enemies Abound|XGE|3|Enchantment|0|1|1 action|120 feet|V, S|Concentration,
 SPELL|Enervation|XGE|5|Necromancy|0|1|1 action|60 feet|V, S|Concentration, up to 1 minute|sorcerer,warlock,wizard
 SPELL|Enhance Ability|PHB|2|Transmutation|0|1|1 action|Touch|V, S, M (fur or a feather from a beast)|Concentration, up to 1 hour|bard,cleric,druid,sorcerer,artificer
 SPELL|Enlarge/Reduce|PHB|2|Transmutation|0|1|1 action|30 feet|V, S, M (a pinch of powdered iron)|Concentration, up to 1 minute|sorcerer,wizard,artificer
-SPELL|Ensnaring Strike|PHB|1|Conjuration|0|1|I bonus action|Self|V|Concentration, up to 1 minute|ranger
+SPELL|Ensnaring Strike|PHB|1|Conjuration|0|1|1 bonus action|Self|V|Concentration, up to 1 minute|ranger
 SPELL|Entangle|PHB|1|Conjuration|0|1|1 action|90 feet|V, S|Concentration, up to 1 minute|druid
 SPELL|Enthrall|PHB|2|Enchantment|0|0|1 action|60 feet|V, S|1 minute|bard,warlock
 SPELL|Erupting Earth|XGE|3|Transmutation|0|0|1 action|120 feet|V, S, M (a piece of obsidian)|Instantaneous|druid,sorcerer,wizard
@@ -180,7 +180,7 @@ SPELL|Faerie Fire|PHB|1|Evocation|0|1|1 action|60 feet|V|Concentration, up to 1 
 SPELL|False Life|PHB|1|Necromancy|0|0|1 action|Self|V, S, M (a small amount of alcohol or distilled spirits)|1 hour|sorcerer,wizard,artificer
 SPELL|Far Step|XGE|5|Conjuration|0|1|1 bonus action|Self|V|Concentration, up to 1 minute|sorcerer,warlock,wizard
 SPELL|Fear|PHB|3|Illusion|0|1|1 action|Self (30-foot cone)|V, S, M (a white feather or the heart of a hen)|Concentration, up to 1 minute|bard,sorcerer,warlock,wizard
-SPELL|Feather Fall|PHB|1|Transmutation|0|0|1 reaction, which you take when you or a|60 feet|V, M (a small feather or piece of down)|1 minute|bard,sorcerer,wizard,artificer
+SPELL|Feather Fall|PHB|1|Transmutation|0|0|1 reaction, which you take when you or a creature within 60 feet of you falls|60 feet|V, M (a small feather or piece of down)|1 minute|bard,sorcerer,wizard,artificer
 SPELL|Feeblemind|PHB|8|Enchantment|0|0|1 action|150 feet|V, S, M (a handful of clay, crystal, glass, or mineral spheres)|Instantaneous|bard,druid,warlock,wizard
 SPELL|Feign Death|PHB|3|Necromancy|1|0|1 action|Touch|V, S, M (a pinch of graveyard dirt)|1 hour|bard,cleric,druid,wizard
 SPELL|Find Familiar|PHB|1|Conjuration|1|0|1 hour|10 feet|V, S, M (10 gp worth of charcoal, incense, and herbs that must be consumed by fire in a brass brazier)|Instantaneous|wizard
@@ -190,7 +190,7 @@ SPELL|Find the Path|PHB|6|Divination|0|1|1 minute|Self|V, S, M (a set of divinat
 SPELL|Find Traps|PHB|2|Divination|0|0|1 action|120 feet|V, S|Instantaneous|cleric,druid,ranger
 SPELL|Finger of Death|PHB|7|Necromancy|0|0|1 action|60 feet|V, S|Instantaneous|sorcerer,warlock,wizard
 SPELL|Fire Bolt|PHB|0|Evocation|0|0|1 action|120 feet|V, S|Instantaneous|sorcerer,wizard,artificer
-SPELL|Fire Shield|PHB|4|Evocation|0|0|1 action|Self|V. S, M (a bit of phosphorus or a firefly)|10 minutes|wizard
+SPELL|Fire Shield|PHB|4|Evocation|0|0|1 action|Self|V, S, M (a bit of phosphorus or a firefly)|10 minutes|wizard
 SPELL|Fire Storm|PHB|7|Evocation|0|0|1 action|150 feet|V, S|Instantaneous|cleric,druid,sorcerer
 SPELL|Fireball|PHB|3|Evocation|0|0|1 action|150 feet|V, S, M (a tiny ball of bat guano and sulfur)|Instantaneous|sorcerer,wizard
 SPELL|Flame Arrows|XGE|3|Transmutation|0|1|1 action|Touch|V,S|Concentration, up to 1 hour|druid,ranger,sorcerer,wizard,artificer
@@ -215,7 +215,7 @@ SPELL|Glibness|PHB|8|Transmutation|0|0|1 action|Self|V|1 hour|bard,warlock
 SPELL|Globe of Invulnerability|PHB|6|Abjuration|0|1|1 action|Self (10-foot radius)|V, S, M (a glass or crystal bead that shatters when the spell ends)|Concentration, up to 1 minute|sorcerer,wizard
 SPELL|Glyph of Warding|PHB|3|Abjuration|0|0|1 hour|Touch|V, S, M (incense and powdered diamond worth at least 200 gp, which the spell consumes)|Until dispelled or triggered|bard,cleric,wizard,artificer
 SPELL|Goodberry|PHB|1|Transmutation|0|0|1 action|Touch|V, S, M (a sprig of mistletoe)|Instantaneous|druid,ranger
-SPELL|Grasping Vine|PHB|4|Conjuration|0|1|1 bonus action|30 feet|V, S|Concentration, up to I minute|druid,ranger
+SPELL|Grasping Vine|PHB|4|Conjuration|0|1|1 bonus action|30 feet|V, S|Concentration, up to 1 minute|druid,ranger
 SPELL|Grease|PHB|1|Conjuration|0|0|1 action|60 feet|V, S, M (a bit of pork rind or butter)|1 minute|wizard,artificer
 SPELL|Greater Invisibility|PHB|4|Illusion|0|1|1 action|Touch|V, S|Concentration, up to 1 minute|bard,sorcerer,wizard
 SPELL|Greater Restoration|PHB|5|Abjuration|0|0|1 action|Touch|V, S, M (diamond dust worth at least 100 gp, which the spell consumes)|Instantaneous|bard,cleric,druid,artificer
@@ -233,10 +233,10 @@ SPELL|Hallucinatory Terrain|PHB|4|Illusion|0|0|10 minutes|300 feet|V, S, M (a st
 SPELL|Harm|PHB|6|Necromancy|0|0|1 action|60 feet|V, S|Instantaneous|cleric
 SPELL|Haste|PHB|3|Transmutation|0|1|1 action|30 feet|V, S, M (a shaving of licorice root)|Concentration, up to 1 minute|sorcerer,wizard,artificer
 SPELL|Heal|PHB|6|Evocation|0|0|1 action|60 feet|V, S|Instantaneous|cleric,druid
-SPELL|Healing Spirit|XGE|2|Conjuration|0|1|1 bonus action|60 feet|V,S|Concentration, up to 1 minute|ranger
+SPELL|Healing Spirit|XGE|2|Conjuration|0|1|1 bonus action|60 feet|V,S|Concentration, up to 1 minute|druid,ranger
 SPELL|Healing Word|PHB|1|Evocation|0|0|1 bonus action|60 feet|V|Instantaneous|bard,cleric,druid
 SPELL|Heat Metal|PHB|2|Transmutation|0|1|1 action|60 feet|V, S, M (a piece of iron and a flame)|Concentration, up to 1 minute|bard,druid,artificer
-SPELL|Hellish Rebuke|PHB|1|Evocation|0|0|1 reaction, which you take in response|60 feet|V, S|Instantaneous|warlock
+SPELL|Hellish Rebuke|PHB|1|Evocation|0|0|1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see|60 feet|V, S|Instantaneous|warlock
 SPELL|Heroes' Feast|PHB|6|Conjuration|0|0|10 minutes|30 feet|V, S , M (a gem-encrusted bowl worth at least 1,000 gp, which the spell consumes)|Instantaneous|cleric,druid
 SPELL|Heroism|PHB|1|Enchantment|0|1|1 action|Touch|V, S|Concentration, up to 1 minute|bard,paladin
 SPELL|Hex|PHB|1|Enchantment|0|1|1 bonus action|90 feet|V, S, M (the petrified eye of a newt)|Concentration, up to 1 hour|warlock
@@ -253,7 +253,7 @@ SPELL|Identify|PHB|1|Divination|1|0|1 minute|Touch|V, S, M (a pearl worth at lea
 SPELL|Illusory Dragon|XGE|8|Illusion|0|1|1 action|120 feet|S|Concentration, up to 1 minute|wizard
 SPELL|Illusory Script|PHB|1|Illusion|1|0|1 minute|Touch|S, M (a lead-based ink worth at least 10 gp, which the spell consumes)|10 days|bard,warlock,wizard
 SPELL|Immolation|XGE|5|Evocation|0|1|1 action|90 feet|V|Concentration, up to 1 minute|sorcerer,wizard
-SPELL|Imprisonment|PHB|9|Abjuration|0|0|1 minute|30 feet|V, S, M (a vellum depiction or a carved statuette in the likeness of the target, and a special component that varies according to the version of the spell you choose, worth at least 500 gp per Hit Die|Until dispelled|warlock,wizard
+SPELL|Imprisonment|PHB|9|Abjuration|0|0|1 minute|30 feet|V, S, M (a vellum depiction or a carved statuette in the likeness of the target, and a special component that varies according to the version of the spell you choose, worth at least 500 gp per Hit Die of the target)|Until dispelled|warlock,wizard
 SPELL|Incendiary Cloud|PHB|8|Conjuration|0|1|1 action|150 feet|V, S|Concentration, up to 1 minute|sorcerer,wizard
 SPELL|Infernal Calling|XGE|5|Conjuration|0|1|1 minute|90 feet|V, S, M (a ruby worth at least 999 gp)|Concentration, up to 1 hour|warlock,wizard
 SPELL|Infestation|XGE|0|Conjuration|0|0|1 action|30 feet|V, S, M (a living flea)|Instantaneous|druid,sorcerer,warlock,wizard
@@ -270,7 +270,7 @@ SPELL|Jump|PHB|1|Transmutation|0|0|1 action|Touch|V, S, M (a grasshopper's hind 
 SPELL|Knock|PHB|2|Transmutation|0|0|1 action|60 feet|V|Instantaneous|bard,sorcerer,wizard
 SPELL|Legend Lore|PHB|5|Divination|0|0|10 minutes|Self|V, S, M (incense worth at least 250 gp, which the spell consumes, and four ivory strips worth at least 50 gp each)|Instantaneous|bard,cleric,wizard
 SPELL|Leomund's Secret Chest|PHB|4|Conjuration|0|0|1 action|Touch|V, S, M (an exquisite chest, 3 feet by 2 feet by 2 feet, constructed from rare materials worth at least 5,000 gp, and a Tiny replica made from the same materials worth at least 50 gp)|Instantaneous|wizard,artificer
-SPELL|Leomund's Tiny Hut|PHB|3|Evocation|1|0|1 minute|Self (lO-foot-radius hemisphere)|V, S, M (a small crystal bead)|8 hours|bard,wizard
+SPELL|Leomund's Tiny Hut|PHB|3|Evocation|1|0|1 minute|Self (10-foot-radius hemisphere)|V, S, M (a small crystal bead)|8 hours|bard,wizard
 SPELL|Lesser Restoration|PHB|2|Abjuration|0|0|1 action|Touch|V, S|Instantaneous|bard,cleric,druid,paladin,ranger,artificer
 SPELL|Levitate|PHB|2|Transmutation|0|1|1 action|60 feet|V, S, M (either a small leather loop or a piece of golden wire bent into a cup shape with a long shank on one end)|Concentration, up to 10 minutes|sorcerer,wizard,artificer
 SPELL|Life Transference|XGE|3|Necromancy|0|0|1 action|30 feet|V, S|Instantaneous|cleric,wizard
@@ -287,7 +287,7 @@ SPELL|Maelstrom|XGE|5|Evocation|0|1|1 action|120 feet|V, S, M (paper or leaf in 
 SPELL|Mage Armor|PHB|1|Abjuration|0|0|1 action|Touch|V, S, M (a piece of cured leather)|8 hours|sorcerer,wizard
 SPELL|Mage Hand|PHB|0|Conjuration|0|0|1 action|30 feet|V, S|1 minute|bard,sorcerer,warlock,wizard,artificer
 SPELL|Magic Circle|PHB|3|Abjuration|0|0|1 minute|10 feet|V, S, M (holy water or powdered silver and iron worth at least 100 gp, which the spell consumes)|1 hour|cleric,paladin,warlock,wizard
-SPELL|Magic Jar|PHB|6|Necromancy|0|0|1 minute|Self|V, S, M (a gem, crystal, reliquary, or some|Until dispelled|wizard
+SPELL|Magic Jar|PHB|6|Necromancy|0|0|1 minute|Self|V, S, M (a gem, crystal, reliquary, or some other ornamental container worth at least 500 gp)|Until dispelled|wizard
 SPELL|Magic Missile|PHB|1|Evocation|0|0|1 action|120 feet|V, S|Instantaneous|sorcerer,wizard
 SPELL|Magic Mouth|PHB|2|Illusion|1|0|1 minute|30 feet|V, S, M (a small bit of honeycomb and jade dust worth at least 10 gp, which the spell consumes)|Until dispelled|bard,wizard,artificer
 SPELL|Magic Stone|XGE|0|Transmutation|0|0|1 bonus action|Touch|V, S|1 minute|druid,warlock,artificer
@@ -303,9 +303,9 @@ SPELL|Maze|PHB|8|Conjuration|0|1|1 action|60 feet|V, S|Concentration, up to 10 m
 SPELL|Meld into Stone|PHB|3|Transmutation|1|0|1 action|Touch|V, S|8 hours|cleric,druid
 SPELL|Melf's Acid Arrow|PHB|2|Evocation|0|0|1 action|90 feet|V, S, M (powdered rhubarb leaf and an adder's stomach)|Instantaneous|wizard
 SPELL|Melf's Minute Meteors|XGE|3|Evocation|0|1|1 action|Self|V, S, M (niter, sulfur, and pine tar formed into a bead)|Concentration, up to 10 minutes|sorcerer,wizard
-SPELL|Mending|PHB|0|Transmutation|0|0|1 minute|Touch|V. S, M (two lodestones)|Instantaneous|bard,cleric,druid,sorcerer,wizard,artificer
-SPELL|Mental Prison|XGE|6|Illusion|0|1|\| action|60 feet|S|Concentration, up to 1 minute|sorcerer,warlock,wizard
-SPELL|Message|PHB|0|Transmutation|0|0|1 action|120 feet|V. S, M (a short piece of copper wire)|1 round|bard,sorcerer,wizard,artificer
+SPELL|Mending|PHB|0|Transmutation|0|0|1 minute|Touch|V, S, M (two lodestones)|Instantaneous|bard,cleric,druid,sorcerer,wizard,artificer
+SPELL|Mental Prison|XGE|6|Illusion|0|1|1 action|60 feet|S|Concentration, up to 1 minute|sorcerer,warlock,wizard
+SPELL|Message|PHB|0|Transmutation|0|0|1 action|120 feet|V, S, M (a short piece of copper wire)|1 round|bard,sorcerer,wizard,artificer
 SPELL|Meteor Swarm|PHB|9|Evocation|0|0|1 action|1 mile|V, S|Instantaneous|sorcerer,wizard
 SPELL|Mighty Fortress|XGE|8|Conjuration|0|0|1 minute|1 mile|V, S, M (a diamond worth at least 500 gp, which the spell consumes)|Instantaneous|wizard
 SPELL|Mind Blank|PHB|8|Abjuration|0|0|1 action|Touch|V, S|24 hours|bard,wizard
@@ -321,14 +321,14 @@ SPELL|Mold Earth|XGE|0|Transmutation|0|0|1 action|30 feet|S|Instantaneous or 1 h
 SPELL|Moonbeam|PHB|2|Evocation|0|1|1 action|120 feet|V, S, M (several seeds of any moonseed plant and a piece of opalescent feldspar)|Concentration, up to 1 minute|druid
 SPELL|Mordenkainen's Faithful Hound|PHB|4|Conjuration|0|0|1 action|30 feet|V, S, M (a tiny silver whistle, a piece of bone, and a thread)|8 hours|wizard,artificer
 SPELL|Mordenkainen's Magnificent Mansion|PHB|7|Conjuration|0|0|1 minute|300 feet|V, S, M (a miniature portal carved from ivory, a small piece of polished marble, and a tiny silver spoon, each item worth at least 5 gp)|24 hours|bard,wizard
-SPELL|Mordenkainen's Private Sanctum|PHB|4|Abjuration|0|0|10 minutes|120 feet|V. S, M (a thin sheet of lead, a piece of opaque glass, a wad of cotton or cloth, and powdered chrysolite)|24 hours|wizard,artificer
-SPELL|Mordenkainen's Sword|PHB|7|Evocation|0|1|1 action|60 feet|V, S. M (a miniature platinum sword with a grip and pommel of copper and zinc, worth 250 gp)|Concentration, up to 1 minute|bard,wizard
+SPELL|Mordenkainen's Private Sanctum|PHB|4|Abjuration|0|0|10 minutes|120 feet|V, S, M (a thin sheet of lead, a piece of opaque glass, a wad of cotton or cloth, and powdered chrysolite)|24 hours|wizard,artificer
+SPELL|Mordenkainen's Sword|PHB|7|Evocation|0|1|1 action|60 feet|V, S, M (a miniature platinum sword with a grip and pommel of copper and zinc, worth 250 gp)|Concentration, up to 1 minute|bard,wizard
 SPELL|Move Earth|PHB|6|Transmutation|0|1|1 action|120 feet|V, S, M (an iron blade and a small bag containing a mixture of soils-clay, loam, and sand)|Concentration, up to 2 hours|druid,sorcerer,wizard
 SPELL|Negative Energy Flood|XGE|5|Necromancy|0|0|1 action|60 feet|V, M (a broken bone and a square of black silk)|Instantaneous|warlock,wizard
 SPELL|Nondetection|PHB|3|Abjuration|0|0|1 action|Touch|V, S, M (a pinch of diamond dust worth 25 gp sprinkled over the target, which the spell consumes)|8 hours|bard,ranger,wizard
 SPELL|Nystul's Magic Aura|PHB|2|Illusion|0|0|1 action|Touch|V, S, M (a small square of silk)|24 hours|wizard
 SPELL|Otiluke's Freezing Sphere|PHB|6|Evocation|0|0|1 action|300 feet|V, S, M (a small crystal sphere)|Instantaneous|wizard
-SPELL|Otiluke's Resilient Sphere|PHB|4|Evocation|0|1|1 action|30 feet|V, S, M (a hemispherical piece of clear crystal and a matching hemispherical piece of gum arable)|Concentration, up to 1 minute|wizard,artificer
+SPELL|Otiluke's Resilient Sphere|PHB|4|Evocation|0|1|1 action|30 feet|V, S, M (a hemispherical piece of clear crystal and a matching hemispherical piece of gum arabic)|Concentration, up to 1 minute|wizard,artificer
 SPELL|Otto's Irresistible Dance|PHB|6|Enchantment|0|1|1 action|30 feet|V|Concentration, up to 1 minute|bard,wizard
 SPELL|Pass without Trace|PHB|2|Abjuration|0|1|1 action|Self|V, S, M (ashes from a burned leaf of mistletoe and a sprig of spruce)|Concentration, up to 1 hour|druid,ranger
 SPELL|Passwall|PHB|5|Transmutation|0|0|1 action|30 feet|V, S, M (a pinch of sesame seeds)|1 hour|wizard
@@ -336,7 +336,7 @@ SPELL|Phantasmal Force|PHB|2|Illusion|0|1|1 action|60 feet|V, S, M (a bit of fle
 SPELL|Phantasmal Killer|PHB|4|Illusion|0|1|1 action|120 feet|V, S|Concentration, up to 1 minute|wizard
 SPELL|Phantom Steed|PHB|3|Illusion|1|0|1 minute|30 feet|V, S|1 hour|wizard
 SPELL|Planar Ally|PHB|6|Conjuration|0|0|10 minutes|60 feet|V, S|Instantaneous|cleric
-SPELL|Planar Binding|PHB|5|Abjuration|0|0|1 hour|60 feet|V, S, M (a jewel worth at least 1,000 gp,|24 hours|bard,cleric,druid,wizard
+SPELL|Planar Binding|PHB|5|Abjuration|0|0|1 hour|60 feet|V, S, M (a jewel worth at least 1,000 gp, which the spell consumes)|24 hours|bard,cleric,druid,wizard
 SPELL|Plane Shift|PHB|7|Conjuration|0|0|1 action|Touch|V, S, M (a forked, metal rod worth at least 250 gp, attuned to a particular plane of existence)|Instantaneous|cleric,druid,sorcerer,warlock,wizard
 SPELL|Plant Growth|PHB|3|Transmutation|0|0|1 action or 8 hours|150 feet|V, S|Instantaneous|bard,druid,ranger
 SPELL|Poison Spray|PHB|0|Conjuration|0|0|1 action|10 feet|V, S|Instantaneous|druid,sorcerer,warlock,wizard,artificer
@@ -359,12 +359,12 @@ SPELL|Protection from Evil and Good|PHB|1|Abjuration|0|1|1 action|Touch|V, S, M 
 SPELL|Protection from Poison|PHB|2|Abjuration|0|0|1 action|Touch|V, S|1 hour|cleric,druid,paladin,ranger,artificer
 SPELL|Psychic Scream|XGE|9|Enchantment|0|0|1 action|90 feet|S|Instantaneous|bard,sorcerer,warlock,wizard
 SPELL|Purify Food and Drink|PHB|1|Transmutation|1|0|1 action|10 feet|V, S|Instantaneous|cleric,druid,paladin,artificer
-SPELL|Pyrotechnics|XGE|2|Transmutation|0|0|\| action|60 feet|V, S|Instantaneous|bard,sorcerer,wizard,artificer
+SPELL|Pyrotechnics|XGE|2|Transmutation|0|0|1 action|60 feet|V, S|Instantaneous|bard,sorcerer,wizard,artificer
 SPELL|Raise Dead|PHB|5|Necromancy|0|0|1 hour|Touch|V, S, M (a diamond worth at least 500 gp, which the spell consumes)|Instantaneous|bard,cleric,paladin
 SPELL|Rary's Telepathic Bond|PHB|5|Divination|1|0|1 action|30 feet|V, S, M (pieces of eggshell from two different kinds of creatures)|1 hour|wizard
 SPELL|Ray of Enfeeblement|PHB|2|Necromancy|0|1|1 action|60 feet|V, S|Concentration, up to 1 minute|warlock,wizard
 SPELL|Ray of Frost|PHB|0|Evocation|0|0|1 action|60 feet|V, S|Instantaneous|sorcerer,wizard,artificer
-SPELL|Ray of Sickness|PHB|1|Necromancy|0|0|1 action|60 feet|Y, S|Instantaneous|sorcerer,wizard
+SPELL|Ray of Sickness|PHB|1|Necromancy|0|0|1 action|60 feet|V, S|Instantaneous|sorcerer,wizard
 SPELL|Regenerate|PHB|7|Transmutation|0|0|1 minute|Touch|V, S, M (a prayer wheel and holy water)|1 hour|bard,cleric,druid
 SPELL|Reincarnate|PHB|5|Transmutation|0|0|1 hour|Touch|V, S, M (rare oils and unguents worth at least 1,000 gp, which the spell consumes)|Instantaneous|druid
 SPELL|Remove Curse|PHB|3|Abjuration|0|0|1 action|Touch|V, S|Instantaneous|cleric,paladin,warlock,wizard
@@ -377,7 +377,7 @@ SPELL|Sacred Flame|PHB|0|Evocation|0|0|1 action|60 feet|V, S|Instantaneous|cleri
 SPELL|Sanctuary|PHB|1|Abjuration|0|0|1 bonus action|30 feet|V, S, M (a small silver mirror)|1 minute|cleric,artificer
 SPELL|Scatter|XGE|6|Conjuration|0|0|1 action|30 feet|V|Instantaneous|sorcerer,warlock,wizard
 SPELL|Scorching Ray|PHB|2|Evocation|0|0|1 action|120 feet|V, S|Instantaneous|sorcerer,wizard
-SPELL|Scrying|PHB|5|Divination|0|1|10 minutes|Self|V, S, M (a focus worth at least 1,000 gp, such as a crystal bail, a silver mirror, or a font filled with holy water)|Concentration, up to 10 minutes|bard,cleric,druid,warlock,wizard
+SPELL|Scrying|PHB|5|Divination|0|1|10 minutes|Self|V, S, M (a focus worth at least 1,000 gp, such as a crystal ball, a silver mirror, or a font filled with holy water)|Concentration, up to 10 minutes|bard,cleric,druid,warlock,wizard
 SPELL|Searing Smite|PHB|1|Evocation|0|1|1 bonus action|Self|V|Concentration, up to 1 minute|paladin
 SPELL|See Invisibility|PHB|2|Divination|0|0|1 action|Self|V, S, M (a pinch of talc and a small sprinkling of powdered silver)|1 hour|bard,sorcerer,wizard,artificer
 SPELL|Seeming|PHB|5|Illusion|0|0|1 action|30 feet|V, S|8 hours|bard,sorcerer,wizard
@@ -387,15 +387,15 @@ SPELL|Shadow Blade|XGE|2|Illusion|0|1|1 bonus action|Self|V,S|Concentration, up 
 SPELL|Shadow of Moil|XGE|4|Necromancy|0|1|1 action|Self|V, S, M (an undead eyeball encased in a gem worth at least 150 gp)|Concentration, up to 1 minute|warlock
 SPELL|Shape Water|XGE|0|Transmutation|0|0|1 action|30 feet|S|Instantaneous or 1 hour (see below)|druid,sorcerer,wizard
 SPELL|Shapechange|PHB|9|Transmutation|0|1|1 action|Self|V, S, M (a jade circlet worth at least 1,500 gp, which you must place on your head before you cast the spell)|Concentration, up to 1 hour|druid,wizard
-SPELL|Shatter|PHB|2|Evocation|0|0|1 action|60 feet|V, S. M (a chip of mica)|Instantaneous|bard,sorcerer,warlock,wizard
-SPELL|Shield|PHB|1|Abjuration|0|0|1 reaction, which you take when you are|Self|V, S|1 round|sorcerer,wizard
+SPELL|Shatter|PHB|2|Evocation|0|0|1 action|60 feet|V, S, M (a chip of mica)|Instantaneous|bard,sorcerer,warlock,wizard
+SPELL|Shield|PHB|1|Abjuration|0|0|1 reaction, which you take when you are hit by an attack or targeted by the magic missile spell|Self|V, S|1 round|sorcerer,wizard
 SPELL|Shield of Faith|PHB|1|Abjuration|0|1|1 bonus action|60 feet|V, S, M (a small parchment with a bit of holy text written on it)|Concentration, up to 10 minutes|cleric,paladin
-SPELL|Shillelagh|PHB|0|Transmutation|0|0|1 bonus action|Touch|V, S. M (mistletoe, a shamrock leaf, and a club or quarterstaff)|1 minute|druid
+SPELL|Shillelagh|PHB|0|Transmutation|0|0|1 bonus action|Touch|V, S, M (mistletoe, a shamrock leaf, and a club or quarterstaff)|1 minute|druid
 SPELL|Shocking Grasp|PHB|0|Evocation|0|0|1 action|Touch|V, S|Instantaneous|sorcerer,wizard,artificer
 SPELL|Sickening Radiance|XGE|4|Evocation|0|1|1 action|120 feet|V, S|Concentration, up to 10 minutes|sorcerer,warlock,wizard
 SPELL|Silence|PHB|2|Illusion|1|1|1 action|120 feet|V, S|Concentration, up to 10 minutes|bard,cleric,ranger
 SPELL|Silent Image|PHB|1|Illusion|0|1|1 action|60 feet|V, S, M (a bit of fleece)|Concentration, up to 10 minutes|bard,sorcerer,wizard
-SPELL|Simulacrum|PHB|7|Illusion|0|0|12 hours|Touch|V, S, M (snow or ice in quantities sufficient to made a life-size copy of the duplicated creature; some hair, fingernail clippings, or other piece of that creature's body placed inside the snow|Until dispelled|wizard
+SPELL|Simulacrum|PHB|7|Illusion|0|0|12 hours|Touch|V, S, M (snow or ice in quantities sufficient to made a life-size copy of the duplicated creature; some hair, fingernail clippings, or other piece of that creature's body placed inside the snow or ice; and powdered ruby worth 1,500 gp, sprinkled over the duplicate and consumed by the spell)|Until dispelled|wizard
 SPELL|Skill Empowerment|XGE|5|Transmutation|0|1|1 action|Touch|V,S|Concentration, up to 1 hour|bard,sorcerer,wizard,artificer
 SPELL|Skywrite|XGE|2|Transmutation|1|1|1 action|Sight|V, S|Concentration, up to 1 hour|bard,druid,wizard,artificer
 SPELL|Sleep|PHB|1|Enchantment|0|0|1 action|90 feet|V, S, M (a pinch of fine sand, rose petals, or a cricket)|1 minute|bard,sorcerer,wizard
@@ -421,7 +421,7 @@ SPELL|Stoneskin|PHB|4|Abjuration|0|1|1 action|Touch|V, S, M (diamond dust worth 
 SPELL|Storm of Vengeance|PHB|9|Conjuration|0|1|1 action|Sight|V, S|Concentration, up to 1 minute|druid
 SPELL|Storm Sphere|XGE|4|Evocation|0|1|1 action|150 feet|V, S|Concentration, up to 1 minute|sorcerer,wizard
 SPELL|Suggestion|PHB|2|Enchantment|0|1|1 action|30 feet|V, M (a snake's tongue and either a bit of honeycomb or a drop of sweet oil)|Concentration, up to 8 hours|bard,sorcerer,warlock,wizard
-SPELL|Summon Aberration|TCE|4|Conjuration|0|1|1 action|90 feet|V,.S, M (a pickled tentacle and an eye- ball in a platinum-inlaid vial worth at least 400 gp)|Concentration, up to 1 hour|warlock,wizard
+SPELL|Summon Aberration|TCE|4|Conjuration|0|1|1 action|90 feet|V, S, M (a pickled tentacle and an eyeball in a platinum-inlaid vial worth at least 400 gp)|Concentration, up to 1 hour|warlock,wizard
 SPELL|Summon Beast|TCE|2|Conjuration|0|1|1 action|90 feet|V, S, M (a feather, tuft of fur, and fish tail inside a gilded acorn worth at least 200 gp)|Concentration, up to 1 hour|druid,ranger
 SPELL|Summon Celestial|TCE|5|Conjuration|0|1|1 action|90 feet|V, S, M (a golden reliquary worth at least 500 gp)|Concentration, up to 1 hour|cleric,paladin
 SPELL|Summon Construct|TCE|4|Conjuration|0|1|1 action|90 feet|V, S, M (an ornate stone and metal lockbox worth at least 400 gp)|Concentration, up to 1 hour|wizard,artificer
@@ -436,8 +436,8 @@ SPELL|Sunbeam|PHB|6|Evocation|0|1|1 action|Self (60-foot line)|V, S, M (a magnif
 SPELL|Sunburst|PHB|8|Evocation|0|0|1 action|150 feet|V, S, M (fire and a piece of sunstone)|Instantaneous|druid,sorcerer,wizard
 SPELL|Swift Quiver|PHB|5|Transmutation|0|1|1 bonus action|Touch|V, S, M (a quiver containing at least one piece of ammunition)|Concentration, up to 1 minute|ranger
 SPELL|Sword Burst|TCE|0|Conjuration|0|0|1 action|Self (5-foot radius)|V|Instantaneous|sorcerer,warlock,wizard,artificer
-SPELL|Symbol|PHB|7|Abjuration|0|0|1 minute|Touch|V, S, M (mercury, phosphorus, and|Until dispelled or triggered|bard,cleric,wizard
-SPELL|Synaptic Static|XGE|5|Enchantment|0|0|1 action }|120 feet \||V, S \||Instantaneous|bard,sorcerer,warlock,wizard
+SPELL|Symbol|PHB|7|Abjuration|0|0|1 minute|Touch|V, S, M (mercury, phosphorus, and powdered diamond and opal with a total value of at least 1,000 gp, which the spell consumes)|Until dispelled or triggered|bard,cleric,wizard
+SPELL|Synaptic Static|XGE|5|Enchantment|0|0|1 action|120 feet|V, S|Instantaneous|bard,sorcerer,warlock,wizard
 SPELL|Tasha's Caustic Brew|TCE|1|Evocation|0|1|1 action|Self (30-foot line)|V, S, M (a bit of rotten food)|Concentration, up to 1 minute|sorcerer,wizard,artificer
 SPELL|Tasha's Hideous Laughter|PHB|1|Enchantment|0|1|1 action|30 feet|V, S, M (tiny tarts and a feather that is waved in the air)|Concentration, up to 1 minute|bard,wizard
 SPELL|Tasha's Mind Whip|TCE|2|Enchantment|0|0|1 action|90 feet|V|1 round|sorcerer,wizard
@@ -446,9 +446,9 @@ SPELL|Telekinesis|PHB|5|Transmutation|0|1|1 action|60 feet|V, S|Concentration, u
 SPELL|Telepathy|PHB|8|Evocation|0|0|1 action|Unlimited|V, S, M (a pair of linked silver rings)|24 hours|wizard
 SPELL|Teleport|PHB|7|Conjuration|0|0|1 action|10 feet|V|Instantaneous|bard,sorcerer,wizard
 SPELL|Teleportation Circle|PHB|5|Conjuration|0|0|1 minute|10 feet|V, M (rare chalks and inks infused with precious gems with 50 gp, which the spell consumes)|1 round|bard,sorcerer,wizard
-SPELL|Temple of the Gods|XGE|7|Conjuration|0|0|1 hour|120 feet \\\||V, S, M (a holy symbol worth at least 5 gp)|24 hours|cleric
+SPELL|Temple of the Gods|XGE|7|Conjuration|0|0|1 hour|120 feet|V, S, M (a holy symbol worth at least 5 gp)|24 hours|cleric
 SPELL|Tenser's Floating Disk|PHB|1|Conjuration|1|0|1 action|30 feet|V, S, M (a drop of mercury)|1 hour|wizard
-SPELL|Tenser's Transformation|XGE|6|Transmutation|0|1|\| action|Self|V, S, M (a few hairs from a bull)|Concentration, up to 10 minutes|wizard
+SPELL|Tenser's Transformation|XGE|6|Transmutation|0|1|1 action|Self|V, S, M (a few hairs from a bull)|Concentration, up to 10 minutes|wizard
 SPELL|Thaumaturgy|PHB|0|Transmutation|0|0|1 action|30 feet|V|Up to 1 minute|cleric
 SPELL|Thorn Whip|PHB|0|Transmutation|0|0|1 action|30 feet|V, S, M (the stem of a plant with thorns)|Instantaneous|druid,artificer
 SPELL|Thunder Step|XGE|3|Conjuration|0|0|1 action|90 feet|V|Instantaneous|sorcerer,warlock,wizard
@@ -463,8 +463,8 @@ SPELL|Tongues|PHB|3|Divination|0|0|1 action|Touch|V, M (a small clay model of a 
 SPELL|Transmute Rock|XGE|5|Transmutation|0|0|1 action|120 feet|V, S, M (clay and water)|Until dispelled|druid,wizard,artificer
 SPELL|Transport via Plants|PHB|6|Conjuration|0|0|1 action|10 feet|V, S|1 round|druid
 SPELL|Tree Stride|PHB|5|Conjuration|0|1|1 action|Self|V, S|Concentration, up to 1 minute|druid,ranger
-SPELL|True Polymorph|PHB|9|Transmutation|0|1|1 action|30 feet|V, S, M (a drop of mercury, a dollop of|Concentration, up to 1 hour|bard,warlock,wizard
-SPELL|True Resurrection|PHB|9|Necromancy|0|0|1 hour|Touch|V, S, M (a sprinkle of holy water and diamonds worth at least 25,000 gp. which the spell consumes)|Instantaneous|cleric,druid
+SPELL|True Polymorph|PHB|9|Transmutation|0|1|1 action|30 feet|V, S, M (a drop of mercury, a dollop of gum arabic, and a wisp of smoke)|Concentration, up to 1 hour|bard,warlock,wizard
+SPELL|True Resurrection|PHB|9|Necromancy|0|0|1 hour|Touch|V, S, M (a sprinkle of holy water and diamonds worth at least 25,000 gp, which the spell consumes)|Instantaneous|cleric,druid
 SPELL|True Seeing|PHB|6|Divination|0|0|1 action|Touch|V, S, M (an ointment for the eyes that costs 25 gp; is made from mushroom powder, saffron, and fat; and is consumed by the spell)|1 hour|bard,cleric,sorcerer,warlock,wizard
 SPELL|True Strike|PHB|0|Divination|0|1|1 action|30 feet|S|Concentration, up to 1 round|bard,sorcerer,warlock,wizard
 SPELL|Tsunami|PHB|8|Conjuration|0|1|1 minute|Sight|V, S|Concentration, up to 6 rounds|druid

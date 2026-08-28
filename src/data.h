@@ -411,7 +411,6 @@ typedef struct {
 
 extern const Deity DEITIES[];
 extern const int DEITY_COUNT;
-int find_deity(const char *name);
 
 /* Tasha's sidekicks: a creature of challenge 1/2 or lower given levels in
  * one of three simple classes. */
@@ -556,18 +555,41 @@ typedef struct {
     const char *item;           /* names a MAGIC_ITEMS entry */
     int ac_bonus;               /* flat, added to Armor Class */
     int save_bonus;             /* flat, added to every saving throw */
+    /* Flat, added to every ability check. Only the stone of good luck has
+       it, and it is separate from save_bonus because the stone is the one
+       item that raises both and most items that raise saves raise no
+       checks. */
+    int check_bonus;
     int armor_base;             /* >0 when the item is itself armour */
     int armor_dex;              /* -1 full modifier, 0 none, N a cap */
     int armor_str;              /* Strength needed to avoid being slowed */
     int armor_stealth;          /* disadvantage on Stealth */
     int shield;                 /* the whole shield bonus, its own +2 too */
     int only_unarmored;         /* applies only with no armour or shield */
+    /* Worn armour that states no Armor Class of its own. Armour of
+       resistance is "Armor (light, medium, or heavy)" and the copy could be
+       any of them, so the suit the character is actually wearing supplies
+       the Armor Class and this supplies only the resistance -- but it still
+       has to be worn to do that, which is what this says. */
+    int worn;
     int unarmored_base;         /* sets the unarmoured base AC instead */
     int variable;               /* the bonus is the copy's own +N */
     /* The bonus goes on attack and damage rolls rather than Armor Class.
        The inventory entry's variant names the weapon it is, since the
        book's entry covers every weapon at once. */
     int weapon;
+    /* A bonus to attack and damage the entry states outright, where
+       variable means the copy's own rarity decides it. Most named magic
+       weapons have one: a holy avenger is always +3, where a "Weapon, +1,
+       +2, or +3" is whichever its copy is. */
+    int weapon_plus;
+    /* The mundane weapon the item is wielded as, for an item whose own
+       type does not say. Only the staff of power needs it: the DMG files
+       it under "Staff" and the entry says it can be wielded as a magic
+       quarterstaff. Everything else names its weapon in its type, either
+       outright ("Weapon (longsword)") or as a choice the copy makes
+       ("Weapon (any sword)"). */
+    const char *weapon_as;
 
     /* Scores an item sets outright, rather than adding to. sets_ability is
        the ability plus one, so zero means none; sets_to of 0 means the copy
@@ -584,11 +606,49 @@ typedef struct {
        type, as armour and a ring of resistance do. */
     const char *resist;
     const char *immune;
+
+    /* The armour of vulnerability's curse: vulnerability to the types its
+       own list allows apart from the one the copy was made against. Those
+       types are the resist list, so this is a flag rather than a list of
+       its own -- a copy resistant to piercing is vulnerable to bludgeoning
+       and slashing, and which two that is falls out of the copy. */
+    int vulnerable_others;
 } MagicRule;
 
 extern const MagicRule MAGIC_RULES[];
 extern const int MAGIC_RULE_COUNT;
 const MagicRule *magic_rule_for(const char *name);
+
+/* True when the rule is armour or a shield: something that does nothing
+   until it is actually worn. */
+int magic_rule_is_worn(const MagicRule *r);
+
+/* The damage types a copy of this item may be made against, written into
+   out[] and counted by the return value; 0 when the item's type is fixed.
+   A "*" in the rule means any of the ten the game has. A comma-separated
+   list means only those, because the book says only those: dragon scale
+   mail takes its resistance from the dragon that grew the scales, and
+   armour of vulnerability is made against bludgeoning, piercing or
+   slashing and nothing else. */
+int magic_variant_types(const MagicRule *r, const char **out, int max);
+
+/* Whether a rule's resist or immune field is one the copy fills in. */
+int magic_type_is_variant(const char *what);
+
+/* Which mundane weapon a magic item is, read off its type line.
+ *
+ * The DMG writes it three ways and this tells them apart, writing what it
+ * found into out[]:
+ *
+ *   MAGIC_WEAPON_NAMED   "Weapon (longsword)" -- out[] is the weapon.
+ *   MAGIC_WEAPON_CHOICE  "Weapon (any sword)", "Weapon (any axe or sword)",
+ *                        "Weapon (any sword that deals slashing damage)" --
+ *                        the copy says which, and out[] is the phrase that
+ *                        narrows it, for asking with.
+ *   MAGIC_WEAPON_NONE    not a weapon, or the type names no weapon at all.
+ */
+enum { MAGIC_WEAPON_NONE = 0, MAGIC_WEAPON_NAMED, MAGIC_WEAPON_CHOICE };
+int magic_weapon_kind(const char *type, char *out, size_t n);
 
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;
@@ -629,6 +689,10 @@ extern const char *const ITEM_CATEGORY_NAME[];
 extern const int ITEM_CATEGORY_COUNT;
 extern const char *const SPELL_CLASS_NAME[];
 extern const int SPELL_CLASS_NAME_COUNT;
+
+/* Case-insensitive equality; strcasecmp is not in C99, and the tables are
+   searched by names that saved sheets may capitalise differently. */
+int same_fold(const char *a, const char *b);
 
 int item_category_by_name(const char *s);       /* -1 when unknown */
 int school_by_name(const char *s);              /* -1 when unknown */

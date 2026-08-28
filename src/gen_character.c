@@ -239,31 +239,35 @@ const RaceData RACES[] = {
       "Flight: a flying speed of 30 feet, but not while wearing "
       "medium or heavy armor|Talons: unarmed strikes deal 1d6 "
       "slashing damage|Wind Caller: cast gust of wind once per long "
-      "rest without a slot, from 5th level, using a spellcasting "
+      "rest without a slot, from 3rd level, using a spellcasting "
       "ability of your choice", 1 },
     { "Aasimar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Celestial Resistance: resistance to necrotic and radiant "
       "damage|Darkvision: 60 feet|Healing Hands: heal a creature "
-      "you touch for d4 per level, once per long rest|Light Bearer: "
-      "you know the light cantrip, cast with Charisma|Celestial "
-      "Revelation: from 3rd level, transform as a bonus action for "
-      "1 minute -- Heavenly Wings, Inner Radiance or Necrotic "
-      "Shroud -- once per long rest", 1 },
+      "you touch for a number of d4 equal to your proficiency "
+      "bonus, once per long rest|Light Bearer: you know the light "
+      "cantrip, cast with Charisma|Celestial Revelation: from 3rd "
+      "level, transform as a bonus action for 1 minute -- Necrotic "
+      "Shroud, Radiant Consumption or Radiant Soul -- once per long "
+      "rest", 1 },
     { "Bugbear", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 60 feet|Long-Limbed: your reach is 5 feet longer "
-      "for melee attacks on your turn|Powerful Build: you count as "
-      "one size larger for carrying capacity|Sneaky: proficiency in "
-      "Stealth, and you can move through the space of a creature "
-      "one size larger|Surprise Attack: once per turn, deal an "
-      "extra 2d6 damage to a creature that has not taken a turn yet "
-      "in combat", 1 },
+      "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
+      "avoid or end the charmed condition|Long-Limbed: your reach "
+      "is 5 feet longer for melee attacks on your turn|Powerful "
+      "Build: you count as one size larger for carrying "
+      "capacity|Sneaky: proficiency in Stealth, and without "
+      "squeezing you can move through and stop in a space large "
+      "enough for a Small creature|Surprise Attack: deal an extra "
+      "2d6 damage when you hit a creature that has not taken a turn "
+      "yet in combat", 1 },
     { "Centaur", BOOK_MPMM, {0,0,0,0,0,0}, 40, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Charge: after moving 30 feet "
-      "in a straight line, a melee weapon attack deals an extra 1d6 "
-      "damage|Equine Build: you count as one size larger for "
+      "straight toward a target and hitting it with a melee weapon "
+      "attack, make one hooves attack against it as a bonus "
+      "action|Equine Build: you count as one size larger for "
       "carrying capacity, and climbing costs extra movement|Hooves: "
       "unarmed strikes deal 1d6 bludgeoning damage|Natural "
       "Affinity: proficiency in one of Animal Handling, Medicine, "
@@ -278,17 +282,19 @@ const RaceData RACES[] = {
     { "Deep Gnome", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 120,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Gnomish Magic Resistance: "
-      "advantage on saving throws against spells|Gnomish Magic: "
-      "cast disguise self once per long rest from 3rd level, and "
-      "nondetection on yourself from 5th level, without a slot", 1 },
+      "advantage on Intelligence, Wisdom and Charisma saves against "
+      "spells|Gift of the Svirfneblin: cast disguise self once per "
+      "long rest from 3rd level, and nondetection from 5th level, "
+      "without a slot", 1 },
     { "Duergar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 120,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Dwarven Resilience: advantage "
-      "on saves against poison, and resistance to poison "
-      "damage|Duergar Magic: cast enlarge/reduce on yourself from "
-      "3rd level and invisibility on yourself from 5th level, each "
-      "once per long rest|Psionic Fortitude: advantage on saves "
-      "against being charmed or stunned", 1 },
+      "on saves to avoid or end the poisoned condition, and "
+      "resistance to poison damage|Duergar Magic: cast "
+      "enlarge/reduce on yourself from 3rd level and invisibility "
+      "on yourself from 5th level, each once per long rest|Psionic "
+      "Fortitude: advantage on saves to avoid or end the charmed or "
+      "stunned condition", 1 },
     { "Eladrin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Darkvision: 60 feet|Fey "
@@ -308,9 +314,9 @@ const RaceData RACES[] = {
     { "Firbolg", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Firbolg Magic: cast detect magic and disguise self, each "
-      "once per short rest, using a spellcasting ability of your "
+      "once per long rest, using a spellcasting ability of your "
       "choice|Hidden Step: turn invisible as a bonus action until "
-      "the end of your next turn, a number of times equal to your "
+      "the start of your next turn, a number of times equal to your "
       "proficiency bonus per long rest|Powerful Build: you count as "
       "one size larger for carrying capacity|Speech of Beast and "
       "Leaf: beasts and plants can understand you, and you have "
@@ -324,10 +330,12 @@ const RaceData RACES[] = {
       "and levitate from 5th level, each once per long rest", 1 },
     { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 60 feet|Earth Walk: difficult terrain made of "
-      "earth or stone costs no extra movement|Merge with Stone: "
-      "cast pass without trace once per long rest|Earth Genasi "
-      "Magic: you know blade ward", 1 },
+      "Darkvision: 60 feet|Earth Walk: difficult terrain costs no "
+      "extra movement while you use your walking speed on the "
+      "ground or a floor|Merge with Stone: you know blade ward and "
+      "can cast it as a bonus action a number of times equal to "
+      "your proficiency bonus per long rest; cast pass without "
+      "trace from 5th level once per long rest", 1 },
     { "Genasi, Fire", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fire Resistance: resistance to fire "
@@ -352,14 +360,16 @@ const RaceData RACES[] = {
       "Githzerai Psionics: you know mage hand, cast without "
       "components; from 3rd level shield and from 5th level detect "
       "thoughts, each once per long rest|Mental Discipline: "
-      "resistance to psychic damage|Psychic Resilience: advantage "
-      "on saves against being charmed or frightened", 1 },
+      "advantage on saves to avoid or end the charmed or frightened "
+      "condition|Psychic Resilience: resistance to psychic damage", 1 },
     { "Goblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 60 feet|Fury of the Small: once per short rest, "
-      "deal extra damage equal to your proficiency bonus to a "
-      "creature larger than you|Fey: your creature type is "
-      "fey|Nimble Escape: Disengage or Hide as a bonus action", 1 },
+      "Darkvision: 60 feet|Fury of the Small: deal extra damage "
+      "equal to your proficiency bonus to a creature larger than "
+      "you, once per turn, a number of times equal to your "
+      "proficiency bonus per long rest|Fey Ancestry: advantage on "
+      "saves to avoid or end the charmed condition|Nimble Escape: "
+      "Disengage or Hide as a bonus action", 1 },
     { "Goliath", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Little Giant: proficiency in Athletics, and you count as one "
@@ -379,22 +389,26 @@ const RaceData RACES[] = {
       "provoking", 1 },
     { "Hobgoblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 60 feet|Fey: your creature type is fey|Fey Gift: "
-      "as a bonus action, grant a creature within 30 feet temporary "
-      "hit points, or one of three other benefits, a number of "
-      "times equal to your proficiency bonus per long rest|Fortune "
-      "from the Many: as a reaction to a failed attack or check, "
-      "add a bonus equal to the number of allies within 30 feet, up "
-      "to your proficiency bonus", 1 },
+      "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
+      "avoid or end the charmed condition|Fey Gift: take the Help "
+      "action as a bonus action, a number of times equal to your "
+      "proficiency bonus per long rest; from 3rd level choose "
+      "Hospitality, Passage or Spite each time you do|Fortune from "
+      "the Many: when you miss an attack or fail an ability check "
+      "or saving throw, add the number of allies you can see within "
+      "30 feet, up to +3, a number of times equal to your "
+      "proficiency bonus per long rest", 1 },
     { "Kenku", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Expert Duplication: advantage on checks made to copy writing "
-      "or craftwork you can see|Kenku Recall: proficiency in two "
-      "skills of your choice, and you can roll one of those checks "
-      "with advantage a number of times equal to your proficiency "
+      "Expert Duplication: advantage on checks made to produce an "
+      "exact duplicate of writing or craftwork|Kenku Recall: "
+      "proficiency in two skills of your choice, and you can give "
+      "yourself advantage on any check using a skill you are "
+      "proficient in, a number of times equal to your proficiency "
       "bonus per long rest|Mimicry: you can mimic sounds you have "
-      "heard; a listener may see through it with an Insight check "
-      "against your Deception", 1 },
+      "heard, including voices; a listener can tell it is an "
+      "imitation only with an Insight check against DC 8 + your "
+      "proficiency bonus + your Charisma modifier", 1 },
     { "Kobold", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Draconic Cry: as a bonus action, enemies "
@@ -406,29 +420,30 @@ const RaceData RACES[] = {
       "sorcerer cantrip)", 1 },
     { "Lizardfolk", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Bite: unarmed strikes deal 1d6 piercing damage|Cunning "
-      "Artisan: craft a shield, club, javelin or darts from a "
-      "corpse over a short rest|Hold Breath: you can hold your "
-      "breath for 15 minutes|Hungry Jaws: as a bonus action, make a "
-      "bite attack and gain temporary hit points, once per short "
+      "Bite: unarmed strikes deal 1d6 slashing damage|Swim: a "
+      "swimming speed equal to your walking speed|Hold Breath: you "
+      "can hold your breath for 15 minutes|Hungry Jaws: as a bonus "
+      "action, make a bite attack and gain temporary hit points, a "
+      "number of times equal to your proficiency bonus per long "
       "rest|Natural Armor: AC 13 plus your Dexterity modifier when "
       "unarmored|Nature's Intuition: proficiency in two of Animal "
-      "Handling, Nature, Perception, Stealth or Survival", 1 },
+      "Handling, Medicine, Nature, Perception, Stealth or Survival", 1 },
     { "Minotaur", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Horns: unarmed strikes deal 1d6 piercing damage|Goring Rush: "
-      "after taking the Dash action, make a horn attack as a bonus "
-      "action|Hammering Horns: after hitting with a melee attack, "
-      "shove a creature within 5 feet up to 10 feet as a bonus "
-      "action|Labyrinthine Recall: you always know which way is "
-      "north, and have advantage on Survival checks to navigate or "
-      "track", 1 },
+      "after taking the Dash action and moving at least 20 feet, "
+      "make a horn attack as a bonus action|Hammering Horns: after "
+      "hitting with a melee attack, push a creature within 5 feet "
+      "up to 10 feet as a bonus action, unless it succeeds on a "
+      "Strength save|Labyrinthine Recall: you always know which way "
+      "is north, and have advantage on Survival checks to navigate "
+      "or track", 1 },
     { "Orc", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Adrenaline Rush: Dash as a bonus action "
       "and gain temporary hit points equal to your proficiency "
       "bonus, a number of times equal to your proficiency bonus per "
-      "short rest|Powerful Build: you count as one size larger for "
+      "long rest|Powerful Build: you count as one size larger for "
       "carrying capacity|Relentless Endurance: drop to 1 hit point "
       "instead of 0, once per long rest", 1 },
     { "Satyr", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 0,
@@ -442,8 +457,9 @@ const RaceData RACES[] = {
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
       "avoid or end the charmed condition|Child of the Sea: you can "
-      "breathe air and water, and have a swimming speed of 30 "
-      "feet|Friend of the Sea: you can communicate simple ideas to "
+      "breathe air and water, and have resistance to cold "
+      "damage|Swim: a swimming speed equal to your walking "
+      "speed|Friend of the Sea: you can communicate simple ideas to "
       "beasts with a swimming speed|Keen Senses: proficiency in "
       "Perception|Trance: four hours of meditation counts as a long "
       "rest", 1 },
@@ -480,25 +496,26 @@ const RaceData RACES[] = {
       "unaffected by Dexterity, and you gain no benefit from "
       "wearing armor|Shell Defense: withdraw into your shell as an "
       "action for +4 AC and advantage on Strength and Constitution "
-      "saves, but prone and unable to move|Survival Instinct: "
-      "proficiency in Survival", 1 },
+      "saves, but prone and unable to move|Nature's Intuition: "
+      "proficiency in one of Animal Handling, Medicine, Nature, "
+      "Perception, Stealth or Survival", 1 },
     { "Triton", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Amphibious: you can breathe air and "
       "water|Swim: a swimming speed of 30 feet|Control Air and "
       "Water: cast fog cloud; from 3rd level gust of wind and from "
-      "5th level wall of water, each once per long rest|Emissary of "
-      "the Sea: you can communicate simple ideas to beasts and "
-      "elementals that can breathe water|Guardian of the Depths: "
-      "resistance to cold damage", 1 },
+      "5th level water walk, each once per long rest|Emissary of "
+      "the Sea: you can communicate simple ideas to beasts, "
+      "elementals and monstrosities with a swimming speed|Guardian "
+      "of the Depths: resistance to cold damage", 1 },
     { "Yuan-ti", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
-      "Darkvision: 60 feet|Innate Spellcasting: you know poison "
+      "Darkvision: 60 feet|Serpentine Spellcasting: you know poison "
       "spray and animal friendship (snakes only, at will); cast "
       "suggestion once per long rest from 3rd level|Magic "
       "Resistance: advantage on saves against spells|Poison "
-      "Resilience: immunity to poison damage and the poisoned "
-      "condition", 1 },
+      "Resilience: advantage on saves to avoid or end the poisoned "
+      "condition, and resistance to poison damage", 1 },
 };
 const int RACE_COUNT =
     (int)(sizeof(RACES) / sizeof(RACES[0]));
@@ -620,11 +637,11 @@ static const unsigned char PROG_20[MAX_LEVEL + 1] = {
 };
 /* elemental disciplines */
 static const unsigned char PROG_21[MAX_LEVEL + 1] = {
-    0, 0, 0, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7
+    0, 0, 0, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5
 };
 /* favored enemies */
 static const unsigned char PROG_22[MAX_LEVEL + 1] = {
-    0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3
+    0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3
 };
 /* favored terrains */
 static const unsigned char PROG_23[MAX_LEVEL + 1] = {
@@ -1729,7 +1746,7 @@ const FeatureData FEATURES[] = {
       "Turned undead of CR 1 or lower are destroyed." },
     { 2, -1, 10, "Divine Intervention",
       "Call on your deity for aid; succeeds on a percentile roll "
-      "under your cleric level." },
+      "equal to or under your cleric level." },
     { 2, -1, 11, "Destroy Undead (CR 2)",
       "Turned undead of CR 2 or lower are destroyed." },
     { 2, -1, 12, "Ability Score Improvement",
@@ -1900,8 +1917,9 @@ const FeatureData FEATURES[] = {
       "Gain always-prepared spells tied to your chosen land, at "
       "3rd, 5th, 7th and 9th level." },
     { 3, 11, 6, "Land's Stride",
-      "Difficult terrain from plants costs no extra movement; "
-      "advantage on saves against magical plants." },
+      "Nonmagical difficult terrain costs no extra movement and "
+      "nonmagical plants neither slow nor harm you; advantage on "
+      "saves against magical plants." },
     { 3, 11, 10, "Nature's Ward",
       "Immune to poison and disease; cannot be charmed or "
       "frightened by elementals or fey." },
@@ -1991,9 +2009,9 @@ const FeatureData FEATURES[] = {
       "you." },
     { 4, 14, 10, "Improved Combat Superiority",
       "Your superiority dice become d10s." },
-    { 4, 14, 15, "Improved Combat Superiority",
+    { 4, 14, 18, "Improved Combat Superiority",
       "Your superiority dice become d12s." },
-    { 4, 14, 18, "Relentless",
+    { 4, 14, 15, "Relentless",
       "Regain one superiority die when you roll initiative with "
       "none left." },
     { 4, 15, 3, "Spellcasting",
@@ -2063,7 +2081,8 @@ const FeatureData FEATURES[] = {
       "Proficiency in all saving throws; spend 1 ki to reroll a "
       "failed save." },
     { 5, -1, 15, "Timeless Body",
-      "You no longer age and need no food or water." },
+      "Old age does not weaken you and magic cannot age you, though "
+      "you can still die of old age; you need no food or water." },
     { 5, -1, 16, "Ability Score Improvement",
       "Increase one ability score by 2, or two scores by 1 (maximum "
       "20), or take a feat instead." },
@@ -2167,8 +2186,9 @@ const FeatureData FEATURES[] = {
       "You are always under the effect of protection from evil and "
       "good." },
     { 6, 19, 20, "Holy Nimbus",
-      "Emanate sunlight for 1 minute, damaging fiends and undead "
-      "and granting advantage on saves against their spells." },
+      "Emanate sunlight for 1 minute: enemies that start their turn "
+      "in it take 10 radiant damage, and you have advantage on "
+      "saves against spells cast by fiends and undead." },
     { 6, 20, 3, "Channel Divinity: Nature's Wrath",
       "Restrain a creature with spectral vines." },
     { 6, 20, 3, "Channel Divinity: Turn the Faithless",
@@ -2195,8 +2215,8 @@ const FeatureData FEATURES[] = {
       "Make a melee attack as a reaction against a creature bound "
       "by your Vow of Enmity." },
     { 6, 21, 20, "Avenging Angel",
-      "Sprout wings for 1 minute, gaining a 60-foot flying speed "
-      "and a frightful aura." },
+      "Sprout wings for 1 hour, gaining a 60-foot flying speed and "
+      "a frightful aura." },
     { 7, -1, 1, "Favored Enemy",
       "Choose a favored enemy type: advantage on Survival checks to "
       "track them and on Intelligence checks to recall lore." },
@@ -2271,8 +2291,8 @@ const FeatureData FEATURES[] = {
       "Spells you cast on yourself also affect your companion "
       "within 30 feet." },
     { 8, -1, 1, "Expertise",
-      "Double your proficiency bonus for two skill or tool "
-      "proficiencies." },
+      "Double your proficiency bonus for two skill proficiencies, "
+      "or one skill and thieves' tools." },
     { 8, -1, 1, "Sneak Attack",
       "Deal an extra 1d6 damage to a target you have advantage "
       "against, or one adjacent to an ally, rising by 1d6 every odd "
@@ -2572,7 +2592,7 @@ const FeatureData FEATURES[] = {
       "second." },
     { 11, 35, 14, "Alter Memories",
       "Make a charmed creature forget it was charmed, and erase up "
-      "to your Charisma modifier in hours." },
+      "to 1 + your Charisma modifier in hours." },
     { 11, 36, 2, "Evocation Savant",
       "Copying evocation spells into your spellbook costs half the "
       "time and gold." },
@@ -2694,7 +2714,8 @@ const FeatureData FEATURES[] = {
       "or poison damage." },
     { 12, 40, 9, "Restorative Reagents",
       "Elixirs also grant temporary hit points, and you can cast "
-      "lesser restoration without a slot once per long rest." },
+      "lesser restoration without a slot, Intelligence modifier "
+      "times per long rest." },
     { 12, 40, 15, "Chemical Mastery",
       "Resistance to acid and poison damage, immunity to the "
       "poisoned condition, and you can cast greater restoration and "
@@ -2712,8 +2733,9 @@ const FeatureData FEATURES[] = {
     { 12, 41, 5, "Extra Attack",
       "Attack twice when you take the Attack action." },
     { 12, 41, 9, "Armor Modifications",
-      "Your arcane armor counts as separate items for infusions, "
-      "and you can swap models more quickly." },
+      "Your arcane armor counts as four separate items for "
+      "infusions, its infusions carry over when you change model, "
+      "and you can infuse two more items, both part of the armor." },
     { 12, 41, 15, "Perfected Armor",
       "Guardian armor pulls creatures towards you; infiltrator "
       "armor makes a struck target vulnerable to your next attack." },
@@ -2749,9 +2771,9 @@ const FeatureData FEATURES[] = {
       "Your Arcane Jolt and steel defender grow stronger, and the "
       "defender gains a deflecting reaction." },
     { 0, 44, 3, "Ancestral Protectors",
-      "The first creature you hit each rage is hindered: it has "
-      "disadvantage against anyone but you, and its damage to "
-      "others is halved." },
+      "The first creature you hit on each turn while raging is "
+      "hindered: it has disadvantage against anyone but you, and "
+      "its damage to others is halved." },
     { 0, 44, 6, "Spirit Shield",
       "As a reaction, reduce damage to an ally within 30 feet by "
       "2d6, rising to 3d6 at 10th and 4d6 at 14th level." },
@@ -2821,7 +2843,7 @@ const FeatureData FEATURES[] = {
       "Capture a dying creature's shadow and wear its identity for "
       "an hour." },
     { 1, 49, 14, "Shadow Lore",
-      "Whisper a dread secret to charm a creature for eight days." },
+      "Whisper a dread secret to charm a creature for eight hours." },
     { 2, 50, 1, "Bonus Proficiencies",
       "Gain proficiency with heavy armor and smith's tools." },
     { 2, 50, 1, "Blessing of the Forge",
@@ -2880,8 +2902,9 @@ const FeatureData FEATURES[] = {
       "Summoned creatures near your totem regain hit points each "
       "turn." },
     { 3, 53, 14, "Faithful Summons",
-      "When reduced to 0 hit points, four dire wolves are conjured "
-      "to defend you." },
+      "When reduced to 0 hit points or incapacitated against your "
+      "will, four beasts of your choice of challenge rating 2 or "
+      "lower are conjured to defend you." },
     { 4, 54, 3, "Arcane Archer Lore",
       "Gain the Prestidigitation or Druidcraft cantrip and "
       "proficiency in Arcana or Nature." },
@@ -2902,8 +2925,8 @@ const FeatureData FEATURES[] = {
       "You know six Arcane Shot options in all, and their dice "
       "increase with level." },
     { 4, 55, 3, "Bonus Proficiency",
-      "Gain proficiency in one skill, or with an artisan's tool or "
-      "a gaming set." },
+      "Gain proficiency in Animal Handling, History, Insight, "
+      "Performance or Persuasion, or learn one language." },
     { 4, 55, 3, "Born to the Saddle",
       "You mount and dismount cheaply and stay in the saddle when "
       "it would throw you." },
@@ -2921,8 +2944,8 @@ const FeatureData FEATURES[] = {
     { 4, 55, 18, "Vigilant Defender",
       "Make an opportunity attack on every other creature's turn." },
     { 4, 56, 3, "Bonus Proficiency",
-      "Gain proficiency with one skill or with calligrapher's "
-      "supplies." },
+      "Gain proficiency in History, Insight, Performance or "
+      "Persuasion, or learn one language." },
     { 4, 56, 3, "Fighting Spirit",
       "As a bonus action, gain advantage on weapon attacks this "
       "turn and 5 temporary hit points, three times per long rest." },
@@ -2951,8 +2974,9 @@ const FeatureData FEATURES[] = {
       "Flurry of Blows grants up to three extra attacks against "
       "different targets." },
     { 5, 58, 3, "Path of the Kensei",
-      "Choose kensei weapons; gain an AC bonus when wielding them "
-      "and a ranged bonus attack." },
+      "Choose kensei weapons; gain +2 AC when your Attack action "
+      "includes an unarmed strike and you hold a melee one, and a "
+      "bonus action that adds 1d4 to your ranged kensei hits." },
     { 5, 58, 6, "One with the Blade",
       "Kensei weapons count as magical, and you can spend ki for "
       "extra damage." },
@@ -2962,8 +2986,9 @@ const FeatureData FEATURES[] = {
     { 5, 58, 17, "Unerring Accuracy",
       "Reroll a missed monk weapon attack once per turn." },
     { 5, 59, 3, "Radiant Sun Bolt",
-      "Make a ranged spell attack for 1d8 radiant damage as part of "
-      "the Attack action, and spend ki for more." },
+      "Make a ranged spell attack as part of the Attack action for "
+      "radiant damage equal to your Martial Arts die, and spend ki "
+      "for more." },
     { 5, 59, 6, "Searing Arc Strike",
       "Spend ki to cast burning hands as a bonus action after the "
       "Attack action." },
@@ -2999,8 +3024,9 @@ const FeatureData FEATURES[] = {
       "Resistance to all damage from others, and attackers take "
       "radiant damage back." },
     { 7, 62, 3, "Dread Ambusher",
-      "+10 initiative, an extra attack on your first turn dealing "
-      "1d8 more, and extra speed." },
+      "Add your Wisdom modifier to initiative, an extra attack on "
+      "your first turn dealing 1d8 more, and +10 feet of speed on "
+      "that turn." },
     { 7, 62, 3, "Umbral Sight",
       "Darkvision 60 feet, and you are invisible to creatures "
       "relying on darkvision." },
@@ -3192,10 +3218,10 @@ const FeatureData FEATURES[] = {
     { 0, 76, 3, "Wild Surge",
       "Rolling for rage triggers a random magical effect around "
       "you." },
-    { 0, 76, 3, "Bolstering Magic",
+    { 0, 76, 6, "Bolstering Magic",
       "Grant an ally a bonus to attacks and checks, or restore a "
       "spell slot." },
-    { 0, 76, 6, "Magic Awareness",
+    { 0, 76, 3, "Magic Awareness",
       "Detect spells and magic items within 60 feet." },
     { 0, 76, 10, "Unstable Backlash",
       "Reroll your Wild Surge as a reaction when you are hit or "
@@ -3207,13 +3233,13 @@ const FeatureData FEATURES[] = {
       "nearby creatures." },
     { 1, 77, 3, "Performance of Creation",
       "Create a nonmagical item out of song, sized by your bard "
-      "level." },
+      "level and worth no more than 20 gp per level." },
     { 1, 77, 6, "Animating Performance",
       "Animate a Large or smaller object as a Dancing Item that "
       "fights for you." },
     { 1, 77, 14, "Creative Crescendo",
-      "Performance of Creation makes several items at once, without "
-      "a size limit." },
+      "Performance of Creation makes several items at once, with no "
+      "gp limit; only one can be of your maximum size." },
     { 1, 78, 3, "Silver Tongue",
       "Treat a Persuasion or Deception roll of 9 or lower as a 10." },
     { 1, 78, 3, "Unsettling Words",
@@ -3223,7 +3249,7 @@ const FeatureData FEATURES[] = {
       "A Bardic Inspiration die that fails to help is not spent." },
     { 1, 78, 14, "Infectious Inspiration",
       "When an inspiration die helps, grant another as a reaction." },
-    { 1, 78, 14, "Universal Speech",
+    { 1, 78, 6, "Universal Speech",
       "Make yourself understood by creatures of your choice for an "
       "hour." },
     { 2, 79, 1, "Bonus Proficiencies",
@@ -3287,7 +3313,8 @@ const FeatureData FEATURES[] = {
       "Animate a slain beast or humanoid as a zombie for one hour, "
       "as a reaction." },
     { 3, 82, 10, "Spreading Spores",
-      "Hurl your spores into a 10-foot cube for 10 minutes." },
+      "Hurl your spores up to 30 feet into a 10-foot cube for 1 "
+      "minute." },
     { 3, 82, 14, "Fungal Body",
       "You cannot be blinded, deafened, frightened or poisoned, and "
       "critical hits against you become normal hits." },
@@ -3319,11 +3346,12 @@ const FeatureData FEATURES[] = {
       "When you drop to 0 hit points, the spirit is consumed to "
       "restore half your hit points." },
     { 4, 85, 3, "Psionic Power",
-      "A pool of Psionic Energy dice for Protective Field, "
-      "Psi-Powered Leap and Telekinetic Movement." },
+      "A pool of Psionic Energy dice for Protective Field, Psionic "
+      "Strike and Telekinetic Movement." },
     { 4, 85, 7, "Telekinetic Adept",
-      "Move a creature with Psi-Powered Leap, or hurl a foe with "
-      "Telekinetic Thrust." },
+      "Fly at twice your walking speed with Psi-Powered Leap, or "
+      "knock a foe prone or move it 10 feet with Telekinetic "
+      "Thrust." },
     { 4, 85, 10, "Guarded Mind",
       "Resistance to psychic damage, and you can end charm or fear "
       "on yourself." },
@@ -3409,8 +3437,9 @@ const FeatureData FEATURES[] = {
       "Add your Wisdom modifier to Charisma checks and gain a "
       "social skill." },
     { 7, 91, 7, "Beguiling Twist",
-      "Impose disadvantage on charm and fear saves nearby, or "
-      "redirect the effect." },
+      "Advantage on saves against being charmed or frightened; when "
+      "such a save succeeds near you, a reaction forces another "
+      "creature to save or be charmed or frightened by you." },
     { 7, 91, 11, "Fey Reinforcements",
       "Cast summon fey without a slot once per long rest, and it "
       "becomes invisible." },
@@ -3441,8 +3470,9 @@ const FeatureData FEATURES[] = {
       "Assume a spectral form with a flying speed that passes "
       "through creatures." },
     { 8, 93, 17, "Death's Friend",
-      "Wails from the Grave triggers every turn, and you gain a "
-      "soul trinket each rest." },
+      "Wails from the Grave damages both the first and the second "
+      "creature, and a soul trinket appears after a long rest if "
+      "you have none." },
     { 8, 94, 3, "Psionic Power",
       "Psionic Energy dice powering Psi-Bolstered Knack and Psychic "
       "Whispers." },
@@ -3518,8 +3548,8 @@ const FeatureData FEATURES[] = {
       "Take up to five companions into your vessel, where they gain "
       "the benefit of a short rest." },
     { 10, 98, 14, "Limited Wish",
-      "Cast any spell of 6th level or lower without components, "
-      "once per long rest." },
+      "Cast any spell of 6th level or lower without components; you "
+      "cannot do so again until you finish 1d4 long rests." },
     { 11, 99, 2, "Training in War and Song",
       "Gain light armor, one one-handed melee weapon and "
       "proficiency in Performance." },
@@ -3547,8 +3577,9 @@ const FeatureData FEATURES[] = {
       "Create a magic scroll from a spare spellbook after each long "
       "rest." },
     { 11, 100, 14, "One with the Word",
-      "Sacrifice a spell slot to avoid damage; if the book is "
-      "destroyed you may age instead." },
+      "Dismiss your spellbook's manifested mind as a reaction to "
+      "prevent all damage; the book then temporarily loses spells "
+      "totalling 3d6 levels. Once per long rest." },
     { 0, 101, 3, "Battlerager Armor",
       "While raging in spiked armour, make a bonus-action attack "
       "with the spikes for 1d4 piercing, and a successful grapple "
@@ -3658,7 +3689,7 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
       "your speed." },
     { 1, BOOK_TCE, 1, "Additional Bard Spells",
       "",
-      "Fourteen more spells are added to the bard spell list." },
+      "Fifteen more spells are added to the bard spell list." },
     { 1, BOOK_TCE, 2, "Magical Inspiration",
       "",
       "A creature can spend your Bardic Inspiration die to add it "
@@ -3684,7 +3715,7 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
       "an extra 1d8 radiant damage." },
     { 3, BOOK_TCE, 1, "Additional Druid Spells",
       "",
-      "Fifteen more spells are added to the druid spell list." },
+      "Sixteen more spells are added to the druid spell list." },
     { 3, BOOK_TCE, 2, "Wild Companion",
       "",
       "Expend a Wild Shape use to cast find familiar without "
@@ -3701,9 +3732,9 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
       "fighting styles." },
     { 4, BOOK_TCE, 3, "Maneuver Options",
       "",
-      "The Battle Master gains further manoeuvres: ambush, bait and "
-      "switch, brace, commander's strike, grappling strike, quick "
-      "toss, tactical assessment and the rest." },
+      "The Battle Master gains seven further manoeuvres: ambush, "
+      "bait and switch, brace, commanding presence, grappling "
+      "strike, quick toss and tactical assessment." },
     { 4, BOOK_TCE, 4, "Martial Versatility",
       "",
       "Whenever you gain an Ability Score Improvement, you may "
@@ -3772,7 +3803,7 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
       "replace a fighting style." },
     { 7, BOOK_TCE, 10, "Nature's Veil",
       "Hide in Plain Sight",
-      "As a bonus action, become invisible until the end of your "
+      "As a bonus action, become invisible until the start of your "
       "next turn, proficiency-bonus times per long rest." },
     { 8, BOOK_TCE, 3, "Steady Aim",
       "",
@@ -3784,8 +3815,9 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
     { 9, BOOK_TCE, 3, "Metamagic Options",
       "",
       "Seeking Spell and Transmuted Spell join your Metamagic "
-      "choices, and you may swap one Metamagic option whenever you "
-      "gain a sorcerer level." },
+      "choices: 2 sorcery points to reroll a missed spell attack, 1 "
+      "to switch a spell's damage type among acid, cold, fire, "
+      "lightning, poison and thunder." },
     { 9, BOOK_TCE, 4, "Sorcerous Versatility",
       "",
       "Whenever you gain an Ability Score Improvement, you may swap "
@@ -3799,8 +3831,8 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
     { 10, BOOK_TCE, 2, "Eldritch Invocation Options",
       "",
       "Further invocations become available, including Eldritch "
-      "Smite, Gift of the Depths, Investment of the Chain Master, "
-      "Rebuke of the Talisman and Undying Servitude." },
+      "Mind, Far Scribe, Investment of the Chain Master, Rebuke of "
+      "the Talisman and Undying Servitude." },
     { 10, BOOK_TCE, 3, "Pact Boon Option",
       "",
       "The Pact of the Talisman: an amulet that lets its wearer add "
@@ -3808,7 +3840,8 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
     { 10, BOOK_TCE, 4, "Eldritch Versatility",
       "",
       "Whenever you gain an Ability Score Improvement, you may swap "
-      "a cantrip, an invocation, or your Pact Boon." },
+      "a cantrip, your Pact Boon, or, from 12th level, a Mystic "
+      "Arcanum spell." },
     { 11, BOOK_TCE, 1, "Additional Wizard Spells",
       "",
       "Twenty-three more spells are added to the wizard spell list." },
@@ -3823,9 +3856,10 @@ const int OPTIONAL_FEATURE_COUNT =
 const AdditionalSpells ADDITIONAL_SPELLS[] = {
     { 1,
       "color spray, command, aid, enlarge/reduce, mirror image, "
-      "intellect fortress, mass healing word, phantasmal killer, "
-      "rary's telepathic bond, heroes' feast, dream of the blue "
-      "veil, prismatic spray, antipathy/sympathy, prismatic wall" },
+      "intellect fortress, mass healing word, slow, phantasmal "
+      "killer, rary's telepathic bond, heroes' feast, dream of the "
+      "blue veil, prismatic spray, antipathy/sympathy, prismatic "
+      "wall" },
     { 2,
       "aura of vitality, spirit shroud, aura of life, aura of "
       "purity, summon celestial, sunbeam, sunburst, power word heal" },
@@ -3935,7 +3969,7 @@ const OptionSpells OPTION_SPELLS[] = {
     { "The Genie",
       "Dao (earth)",
       "1,3,5,7,9",
-      "sanctuary|spike growth|meld into stone|stoneskin|wall of "
+      "sanctuary|spike growth|meld into stone|stone shape|wall of "
       "stone" },
     { "The Genie",
       "Djinni (air)",
@@ -3958,18 +3992,19 @@ const int OPTION_SPELLS_COUNT =
 const InfusionData INFUSIONS[] = {
     { "Arcane Propulsion Armor", "14th-level artificer", 14,
       "A suit of armor (requires attunement)",
-      "Walking speed +5 feet; the armor's gauntlets are magic "
-      "thrown weapons dealing 1d8 force damage, it cannot be "
-      "removed against your will, and it replaces missing limbs." },
+      "Walking speed +5 feet; the armor's gauntlets are magic melee "
+      "weapons with the thrown property (range 20/60) dealing 1d8 "
+      "force damage, it cannot be removed against your will, and it "
+      "replaces missing limbs." },
     { "Armor of Magical Strength", "", 2,
       "A suit of armor (requires attunement)",
       "6 charges: spend one to add your Intelligence modifier to a "
-      "Strength check or save, or to stand from prone without "
-      "spending movement." },
+      "Strength check or save, or spend one as a reaction to avoid "
+      "being knocked prone." },
     { "Boots of the Winding Path", "6th-level artificer", 6,
       "A pair of boots (requires attunement)",
-      "Teleport up to 15 feet to an unoccupied space you can see, "
-      "as part of your movement." },
+      "As a bonus action, teleport up to 15 feet to an unoccupied "
+      "space you can see that you occupied at some point this turn." },
     { "Enhanced Arcane Focus", "", 2,
       "A rod, staff, or wand (requires attunement)",
       "+1 to spell attack rolls and you ignore half cover; the "
@@ -3985,9 +4020,9 @@ const InfusionData INFUSIONS[] = {
     { "Helm of Awareness", "10th-level artificer", 10,
       "A helmet (requires attunement)",
       "Advantage on initiative rolls, and you cannot be surprised "
-      "while conscious." },
+      "unless you are incapacitated." },
     { "Homunculus Servant", "", 2,
-      "A gem or crystal worth at least 100 gp (requires attunement)",
+      "A gem or crystal worth at least 100 gp",
       "Create a Tiny construct that obeys you, shares your "
       "proficiency bonus and can deliver a force-damage attack or "
       "channel your touch spells." },
@@ -4000,9 +4035,11 @@ const InfusionData INFUSIONS[] = {
       "+1 to attack and damage, sheds bright light, and 4 charges "
       "to blind an attacker as a reaction." },
     { "Repeating Shot", "", 2,
-      "A simple or martial weapon with the ammunition property",
-      "+1 to attack and damage, and it produces its own ammunition, "
-      "so it needs no reloading and ignores the loading property." },
+      "A simple or martial weapon with the ammunition property "
+      "(requires attunement)",
+      "+1 to attack and damage on ranged attacks made with it; it "
+      "ignores the loading property and produces its own ammunition "
+      "when you load none." },
     { "Replicate Magic Item", "", 2,
       "Varies by the item replicated",
       "Reproduce one common magic item, or one from the Replicable "
@@ -4130,7 +4167,8 @@ static const ClassOption OPTS_0[] = {
       "As a bonus action, surround yourself with a 5-foot aura of "
       "buzzing flies: advantage on Intimidation, disadvantage on "
       "other Charisma checks, and poison damage equal to your "
-      "Charisma modifier to creatures that end their turn in it." },
+      "Charisma modifier to creatures that start their turn in it; "
+      "once per short rest." },
     { "Eldritch Mind", BOOK_TCE, 0, "",
       "You have advantage on Constitution saving throws made to "
       "maintain concentration on a spell." },
@@ -4144,9 +4182,9 @@ static const ClassOption OPTS_0[] = {
       "creature's name on it and you can cast sending to that "
       "creature without a slot." },
     { "Ghostly Gaze", BOOK_XGE, 7, "",
-      "As an action, gain darkvision to 30 feet and see through 1 "
-      "foot of stone or 3 feet of wood for 1 minute, once per short "
-      "rest." },
+      "As an action, see through solid objects out to 30 feet and "
+      "gain darkvision in that range for 1 minute or until your "
+      "concentration ends; once per short rest." },
     { "Gift of the Depths", BOOK_XGE, 5, "",
       "You can breathe underwater, gain a swimming speed equal to "
       "your walking speed, and cast water breathing once per long "
@@ -4163,9 +4201,9 @@ static const ClassOption OPTS_0[] = {
       "move it 10 feet closer to you in a straight line." },
     { "Improved Pact Weapon", BOOK_XGE, 0, "Pact of the Blade",
       "Your pact weapon counts as a magic weapon with +1 to attack "
-      "and damage rolls, can be a shortbow or longbow, and can "
-      "serve as a spellcasting focus." },
-    { "Investment of the Chain Master", BOOK_TCE, 5, "Pact of the Chain",
+      "and damage rolls, can be a shortbow, longbow, light crossbow "
+      "or heavy crossbow, and can serve as a spellcasting focus." },
+    { "Investment of the Chain Master", BOOK_TCE, 0, "Pact of the Chain",
       "Your familiar gains a flying or swimming speed of 40 feet, "
       "can attack as a bonus action, and its attacks count as "
       "magical." },
@@ -4178,7 +4216,8 @@ static const ClassOption OPTS_0[] = {
       "within 5 feet of it." },
     { "Protection of the Talisman", BOOK_TCE, 7, "Pact of the Talisman",
       "The wearer of your talisman can add 1d4 to a failed saving "
-      "throw, three times per long rest." },
+      "throw, a number of times per long rest equal to your "
+      "proficiency bonus." },
     { "Rebuke of the Talisman", BOOK_TCE, 0, "Pact of the Talisman",
       "When the wearer of your talisman is hit, you can use your "
       "reaction to deal psychic damage equal to your proficiency "
@@ -4190,8 +4229,10 @@ static const ClassOption OPTS_0[] = {
       "Cast invisibility at will, without expending a spell slot." },
     { "Tomb of Levistus", BOOK_XGE, 5, "",
       "As a reaction when you take damage, gain 10 temporary hit "
-      "points per warlock level, but your speed is 0 and you take "
-      "10 cold damage; once per short rest." },
+      "points per warlock level, which absorb as much of that "
+      "damage as possible; you also have vulnerability to fire, "
+      "your speed is 0 and you are incapacitated; everything ends "
+      "at the end of your next turn; once per short rest." },
     { "Trickster's Escape", BOOK_XGE, 7, "",
       "Cast freedom of movement on yourself once per long rest, "
       "without a slot." },
@@ -4331,20 +4372,20 @@ static const ClassOption OPTS_3[] = {
 };
 static const ClassOption OPTS_4[] = {
     { "Banishing Arrow", BOOK_XGE, 0, "",
-      "The target is banished to a harmless demiplane until the end "
-      "of your next turn on a failed Charisma save, and its speed "
-      "is 0." },
+      "On a failed Charisma save the target is banished to a "
+      "harmless location in the Feywild until the end of its next "
+      "turn; its speed is 0 and it is incapacitated." },
     { "Beguiling Arrow", BOOK_XGE, 0, "",
       "2d6 psychic damage; on a failed Wisdom save the target is "
-      "charmed by an ally of your choice until the end of your next "
-      "turn." },
+      "charmed by an ally of your choice until the start of your "
+      "next turn." },
     { "Bursting Arrow", BOOK_XGE, 0, "",
       "The target and every creature within 10 feet of it take 2d6 "
       "force damage." },
     { "Enfeebling Arrow", BOOK_XGE, 0, "",
       "2d6 necrotic damage; on a failed Constitution save the "
-      "target's weapon damage is halved until the end of your next "
-      "turn." },
+      "target's weapon damage is halved until the start of your "
+      "next turn." },
     { "Grasping Arrow", BOOK_XGE, 0, "",
       "2d6 poison damage, the target's speed drops by 10 feet, and "
       "brambles deal 2d6 slashing damage if it moves." },
@@ -4357,7 +4398,7 @@ static const ClassOption OPTS_4[] = {
       "seen, ignoring cover, and reveals its location." },
     { "Shadow Arrow", BOOK_XGE, 0, "",
       "2d6 psychic damage; on a failed Wisdom save the target "
-      "cannot see beyond 5 feet until the end of your next turn." },
+      "cannot see beyond 5 feet until the start of your next turn." },
 };
 static const ClassOption OPTS_5[] = {
     { "Cloud Rune", BOOK_TCE, 0, "",
@@ -4383,9 +4424,11 @@ static const ClassOption OPTS_5[] = {
       "bludgeoning, piercing and slashing damage for 1 minute, once "
       "per short rest." },
     { "Storm Rune", BOOK_TCE, 7, "",
-      "Advantage on Arcana checks and you cannot be surprised while "
-      "conscious. As a bonus action, enter a prophetic state for 1 "
-      "minute, altering rolls made by others, once per short rest." },
+      "Advantage on Arcana checks and you cannot be surprised "
+      "unless you are incapacitated. As a bonus action, enter a "
+      "prophetic state for 1 minute, then use your reaction to give "
+      "advantage or disadvantage to a roll by you or a creature you "
+      "see within 60 feet, once per short rest." },
 };
 static const ClassOption OPTS_6[] = {
     { "Elemental Attunement", BOOK_PHB, 0, "",
@@ -4397,7 +4440,7 @@ static const ClassOption OPTS_6[] = {
       "Spend 6 ki points to cast cone of cold." },
     { "Clench of the North Wind", BOOK_PHB, 6, "",
       "Spend 3 ki points to cast hold person." },
-    { "Eternal Mountain Defense", BOOK_PHB, 17, "",
+    { "Eternal Mountain Defense", BOOK_PHB, 11, "",
       "Spend 5 ki points to cast stoneskin on yourself." },
     { "Fangs of the Fire Snake", BOOK_PHB, 0, "",
       "Spend 1 ki point when you use the Attack action to reach 10 "
@@ -4635,7 +4678,8 @@ const BackgroundData BACKGROUNDS[] = {
     {
       "I always have a plan for what to do when things go wrong.",
       "I am always calm, no matter the situation.",
-      "The first thing I do in a new place is note the exits.",
+      "The first thing I do in a new place is note where the "
+        "valuables are, and where they might be hidden.",
       "I would rather make a new friend than a new enemy.",
       "I blow up at the slightest insult.",
       NULL,
@@ -4677,7 +4721,8 @@ const BackgroundData BACKGROUNDS[] = {
       "A musical instrument, the favour of an admirer, a costume",
       15, "By Popular Demand",
       "You can always find a place to perform, receiving free "
-      "lodging and food of a modest standard in return.",
+      "lodging and food of a modest or comfortable standard in "
+      "return.",
     {
       "I know a story relevant to almost every situation.",
       "Whenever I come to a new place, I collect local rumours and "
@@ -4768,7 +4813,7 @@ const BackgroundData BACKGROUNDS[] = {
       "The people who knew me when I was young know my shameful "
         "secret.",
       "I have a weakness for the vices of the city.",
-      "I am inflexible in my thinking.",
+      "I have trouble trusting in my allies.",
       NULL
     }
     },
@@ -4785,7 +4830,8 @@ const BackgroundData BACKGROUNDS[] = {
       "I believe that anything worth doing is worth doing right.",
       "I am well known for my work, and I want to make sure "
         "everyone appreciates it.",
-      "I have a one-track mind and pursue my goals relentlessly.",
+      "I always want to know how things work and what makes people "
+        "tick.",
       "I am full of witty aphorisms and have a proverb for every "
         "occasion.",
       "I am rude to people who lack my commitment to hard work.",
@@ -4810,7 +4856,7 @@ const BackgroundData BACKGROUNDS[] = {
         "still want it.",
       "I owe my guild a great debt for forging me into the person I "
         "am.",
-      "I pay an exorbitant sum to support my family.",
+      "I pursue wealth to secure someone's love.",
       "I will get revenge on the evil forces that destroyed my "
         "business.",
       NULL
@@ -5298,7 +5344,7 @@ const BackgroundData BACKGROUNDS[] = {
       { SKL_HISTORY, SKL_INSIGHT }, 0, "",
       "One type of artisan's tools", 1,
       "A set of artisan's tools you are proficient with, a maker's "
-      "mark chisel, traveler's clothes",
+      "mark chisel, traveler's clothes, a gem worth 10 gp",
       5, "Respect of the Stout Folk",
       "You always have free room and board among shield dwarves or "
       "gold dwarves, who esteem clan crafters above all outsiders.",
@@ -5473,8 +5519,8 @@ const BackgroundData BACKGROUNDS[] = {
       { SKL_INSIGHT, SKL_PERCEPTION }, 0, "",
       "One musical instrument or gaming set of your homeland", 1,
       "One set of traveler's clothes, any one musical instrument or "
-      "gaming set you are proficient with, poorly wrought maps of "
-      "your homeland",
+      "gaming set you are proficient with, poorly wrought maps from "
+      "your homeland, a small piece of jewelry worth 10 gp",
       5, "All Eyes on You",
       "Everything about you marks you as foreign, which draws "
       "curiosity you can parley into access to people and places "
@@ -5564,9 +5610,9 @@ const BackgroundData BACKGROUNDS[] = {
       "One set of traveler's clothes, a signet, banner or seal "
       "representing your place or rank in the order",
       10, "Knightly Regard",
-      "You receive shelter and aid from members of your order and "
-      "those sympathetic to it, and can call on them for assistance "
-      "short of open danger.",
+      "You receive shelter, meals and healing from members of your "
+      "order and those sympathetic to it, and sometimes even "
+      "assistance that puts them at risk.",
     {
       NULL,
       NULL,
@@ -5842,9 +5888,9 @@ const FeatData FEATS[] = {
       "",
       ABL_COUNT, ABL_COUNT, 0, "", 0,
       {0,0,0,0,0,0}, 0, "",
-      "Advantage on checks and saves against traps, resistance to "
-      "trap damage, and you search for traps at a normal travel "
-      "pace.",
+      "Advantage on checks to detect secret doors and on saves "
+      "against traps, resistance to trap damage, and you search for "
+      "traps at a normal travel pace.",
       "" },
     { "Durable", BOOK_PHB,
       "",
@@ -6101,7 +6147,7 @@ const FeatData FEATS[] = {
       "spell, castable once per long rest without a slot, using "
       "Intelligence. You also gain proficiency with one kind of "
       "artisan's tools and can use them as a spellcasting focus for "
-      "those spells.",
+      "any spell you cast using Intelligence.",
       "" },
     { "Chef", BOOK_TCE,
       "",
@@ -6110,8 +6156,9 @@ const FeatData FEATS[] = {
       "Proficiency with cook's utensils. Over an hour's short rest "
       "you can cook food for up to four plus your proficiency bonus "
       "creatures, each regaining an extra 1d8 hit points from Hit "
-      "Dice; over a long rest you can bake treats that give 1d8 "
-      "temporary hit points.",
+      "Dice; with an hour's work or a long rest you can bake treats "
+      "that each grant temporary hit points equal to your "
+      "proficiency bonus.",
       "" },
     { "Crusher", BOOK_TCE,
       "",
@@ -6126,9 +6173,9 @@ const FeatData FEATS[] = {
       "Spellcasting or Pact Magic",
       ABL_COUNT, ABL_COUNT, 0, "", 1,
       {0,0,0,0,0,0}, 0, "",
-      "Learn one eldritch invocation of your choice that has no "
-      "Pact Boon prerequisite. You can replace it whenever you gain "
-      "a level.",
+      "Learn one eldritch invocation of your choice; one with any "
+      "prerequisite requires you to be a warlock who meets it. You "
+      "can replace it whenever you gain a level.",
       "" },
     { "Fey Touched", BOOK_TCE,
       "",
@@ -6144,7 +6191,8 @@ const FeatData FEATS[] = {
       ABL_COUNT, ABL_COUNT, 0, "Martial weapons", 0,
       {0,0,0,0,0,0}, 0, "",
       "Learn one Fighting Style option of your choice. You can "
-      "replace it whenever you gain a level.",
+      "replace it whenever you reach a level that grants an Ability "
+      "Score Improvement.",
       "" },
     { "Gunner", BOOK_TCE,
       "",
@@ -6160,7 +6208,8 @@ const FeatData FEATS[] = {
       {0,0,0,0,0,0}, 0, "",
       "Learn two Metamagic options from the sorcerer class and gain "
       "2 sorcery points to spend on them, regained on a long rest. "
-      "You can replace one option whenever you gain a level.",
+      "You can replace one option whenever you reach a level that "
+      "grants an Ability Score Improvement.",
       "" },
     { "Piercer", BOOK_TCE,
       "",
@@ -6177,9 +6226,10 @@ const FeatData FEATS[] = {
       {0,0,0,0,0,0}, 0, "",
       "Your poison damage ignores resistance. You gain proficiency "
       "with the poisoner's kit and can apply a potent poison to a "
-      "weapon as a bonus action: DC 14, 2d8 poison damage and "
-      "poisoned for 1 minute. You can craft 50 gp of that poison "
-      "over a long rest for 50 gp of materials.",
+      "weapon as a bonus action: DC 14 Constitution save, 2d8 "
+      "poison damage and poisoned until the end of your next turn. "
+      "An hour's work and 50 gp of materials make doses of it equal "
+      "to your proficiency bonus.",
       "" },
     { "Shadow Touched", BOOK_TCE,
       "",
@@ -6195,8 +6245,8 @@ const FeatData FEATS[] = {
       ABL_COUNT, ABL_COUNT, 0, "", 0,
       {0,0,0,0,0,0}, 1, "",
       "Gain proficiency in one skill of your choice, and choose one "
-      "skill or tool you are proficient with to gain expertise in, "
-      "doubling your proficiency bonus for it.",
+      "skill you are proficient with to gain expertise in, doubling "
+      "your proficiency bonus for it.",
       "" },
     { "Slasher", BOOK_TCE,
       "",
@@ -6283,8 +6333,8 @@ const FeatData FEATS[] = {
       {0,0,0,0,0,0}, 1, "DEX,INT",
       "Immediately after taking damage, you can use a reaction to "
       "become invisible until the end of your next turn or until "
-      "you attack, deal damage or cast a spell. Once per short or "
-      "long rest.",
+      "you attack, deal damage or force someone to make a saving "
+      "throw. Once per short or long rest.",
       "Gnome" },
     { "Fey Teleportation", BOOK_XGE,
       "Elf (high)",
@@ -6316,10 +6366,10 @@ const FeatData FEATS[] = {
       "Half-orc",
       ABL_COUNT, ABL_COUNT, 0, "", 0,
       {0,0,0,0,0,0}, 1, "STR,CON",
-      "When you hit with a simple or martial weapon you are "
-      "proficient with, you can add one extra damage die, once per "
-      "short or long rest. When you use Relentless Endurance you "
-      "can also make one weapon attack as a reaction.",
+      "When you hit with a simple or martial weapon, you can add "
+      "one extra damage die, once per short or long rest. When you "
+      "use Relentless Endurance you can also make one weapon attack "
+      "as a reaction.",
       "Half-Orc" },
     { "Prodigy", BOOK_XGE,
       "Half-elf, half-orc or human",
@@ -6344,7 +6394,7 @@ const FeatData FEATS[] = {
       "Your walking speed increases by 5 feet, you gain proficiency "
       "in Acrobatics or Athletics, and you have advantage on checks "
       "made to escape a grapple.",
-      "Dwarf|Gnome|Halfling" },
+      "Dwarf|Small" },
     { "Wood Elf Magic", BOOK_XGE,
       "Elf (wood)",
       ABL_COUNT, ABL_COUNT, 0, "", 0,

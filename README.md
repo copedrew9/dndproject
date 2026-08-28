@@ -226,6 +226,14 @@ levelling up a saved character possible. It stores *names* rather than table
 indices, so a file stays valid if the game data is extended, and it can be
 edited by hand as long as the field names and separators survive.
 
+Anything the player typed is written with the separator escaped: a `|` in a
+name, a note or a tool a table invented is stored as `\p`, a backslash as
+`\\`, and a newline inside a note as `\n`. Without that a single `|` shifted
+every field after it and the character came back as whatever preceded it.
+homebrew.txt uses the same convention, and a field carrying none of the three
+is stored exactly as typed, so a file written before any of this was escaped
+still reads correctly.
+
 Storing names is also what lets homebrew work at all, since a custom entry's
 position in a bank is not stable between runs. The cost is that a name the
 banks no longer hold — homebrew the DM has since removed, or a book switched
@@ -308,7 +316,11 @@ That text used to be OCR of scanned pages, and the difference is the
 difference between guessing and knowing. The OCR confused C with G and I with
 L, lost spaces inside words, read two-column stat blocks across the gutter,
 and dropped the PHB equipment table entirely -- not just the numbers, the
-names. Everything below became checkable when it was replaced.
+names. Everything below became checkable when it was replaced -- and most of
+what the checks have found since is that same OCR's fingerprints, left in
+rows typed up while it was still the only text to hand: "| action" for
+"1 action", "crystal bail" for "crystal ball", a casting time that stops
+where the page's line did.
 
 Three checks run over it:
 
@@ -340,9 +352,12 @@ has. It found seven magic items nobody had entered, the Axe of the Dwarvish
 Lords and the Eye and Hand of Vecna among them. It now reports none, for 434
 spells and 255 magic items.
 
-Names are the cheap check. `tools/verify_equipment.py`,
-`tools/verify_deities.py` and `tools/verify_races.py` do the expensive one,
-comparing the numbers:
+Names are the cheap check. Thirteen scripts do the expensive one, comparing the
+numbers and the words beside those names -- every spell's stat line, every
+magic item's kind and rarity, every beast's stat block, every class and
+subclass feature's level, every background's table of suggestions, every
+feat's prerequisite, and the races and equipment and gods that were checked
+before. Between them they found 65 rows the books settle differently:
 
 - **All 214 PHB equipment rows** -- cost, weight, damage die and type,
   armour class, the Dexterity cap, Strength requirement and stealth --
@@ -351,6 +366,65 @@ comparing the numbers:
   This found four items ten times too heavy: crossbow bolts, sling bullets, a
   steel mirror and an orb, each stored in pounds where the column reads a
   fraction.
+- **All 477 spells** -- level, school, ritual, casting time, range, the
+  V/S/M letters, the material component's text, duration and concentration,
+  against the fixed shape a spell entry has in the book. Level, school,
+  ritual and concentration were right for every one. Thirty-six rows were
+  not, all of it damage from the days when the book text was OCR rather than
+  a text layer: nine components punctuated "V. S, M"; eleven values cut off
+  where the page's line ended, five reaction casting times and six material
+  components left with an unclosed bracket; eight letters read for digits or
+  stray characters left in ("| action", "up to I minute", "Self
+  (lO-foot-radius"); and three misread words -- "gum arable" for gum arabic,
+  "crystal bail" for crystal ball. Shield's casting time was "1 reaction,
+  which you take when you are", stopping where the page did.
+- **All 88 beast stat blocks** -- size, armour class, hit points, speed, the
+  six ability scores, senses and challenge. Nine disagreed. The triceratops
+  was challenge 1/4 rather than 5, which put it within reach of a 2nd-level
+  druid's Wild Shape; the giant frog carried another creature's ability
+  scores and the giant sea horse's were a column out of step; three senses
+  lines read "bitndsight", "Hindsight" and a stray "^".
+- **274 of the 277 magic items** -- the kind, rarity and attunement clause
+  each entry opens with. Five were wrong: Whelm is a warhammer, not a maul;
+  Blackrazor, the Staff of the Adder and the Tome of the Stilled Tongue each
+  lost or widened an attunement restriction; and the Hammer of Thunderbolts
+  requires no attunement on its line, the book attaching it to the Giant's
+  Bane property alone. Two rows differ from the book on purpose and say so
+  rather than being counted as errors.
+- **936 rows of class and subclass data** -- hit dice, saving throws,
+  proficiencies, skill choices, which class and book each subclass belongs
+  to, and the level each feature is gained at, read out of the feature's own
+  opening line. Five features were filed at the wrong level: the Battle
+  Master's Improved Combat Superiority and Relentless were swapped, so were
+  the Path of Wild Magic's Magic Awareness and Bolstering Magic, and the
+  College of Eloquence's Universal Speech sat at 14th rather than 6th.
+- **All 26 backgrounds and their 261 suggested characteristics** -- skills,
+  tools, languages, feature, equipment, and every trait, ideal, bond and
+  flaw against the table it comes from. Three sentences were in no table in
+  the book: two under guild artisan, and a folk hero flaw that is the
+  acolyte's.
+- **All 73 feats and the 42 optional class features**, and **the 9 PHB races,
+  30 subraces and 10 draconic ancestries** -- prerequisites, ability
+  increases, speeds, sizes, darkvision, languages. Nothing wrong in either,
+  which is worth as much as a finding: the feat checker was run against 36
+  deliberately corrupted copies of its own rows first, and caught all 36.
+- **The tables that are nothing but numbers** -- the experience needed for
+  each level, the full caster's spell slots, the warlock's Pact Magic
+  columns, the height and weight table, the artificer's infusion levels, and
+  the cantrips and spells each class knows at each of its twenty levels:
+  306 rows, read back out of the book. All right, which took writing a
+  reader for the shape the extraction leaves a table in: one cell to a line,
+  an em dash for an empty column, and the header's own "1st" to "9th"
+  sitting above the rows like nine more of them. Two rows the extraction
+  garbles are named as unread rather than guessed at.
+- **The reference rows** -- prices, conditions, weapon properties, tool
+  groups, trinkets and the This Is Your Life tables. Two prices were in
+  silver in the book and stored as copper, a tenth of what the book asks.
+  The Childhood Home table was filed as 3d6 where Xanathar's rolls d100, and
+  since a 3d6 cannot reach past 18 and that table's first row runs to 20,
+  every character the program ever rolled a childhood for grew up in a
+  rundown shack. Two more of its rows were a page header and a footnote the
+  extraction had left in the table.
 - **All 195 deities of appendix B** -- title, alignment, suggested domains and
   symbol, compared pantheon by pantheon so that the two Tyrs, the two Surturs
   and the two Silvanuses are each checked against the right table. The
@@ -390,11 +464,101 @@ python3 tools/drive.py --runs 5 --keep out  # keep the sheets to inspect
 `--record FILE` writes the answers a run gave, so a failure can be replayed
 against the binary directly.
 
+`tools/stress.py` drives the rest of the program. The wizard is one of nine
+things the main menu offers, and drive.py only ever answers that one; this
+walks all of them in a single session, in an order the seed decides, so what
+each screen leaves behind is what the next one starts from -- the character
+the wizard saved is reloaded by the inventory screen, the homebrew just added
+is in the shop when the next character buys gear, the books switched off in
+the settings are gone from every menu after that. It looks for three things:
+a crash, a prompt that will not accept an answer inside its own stated
+bounds, and a sheet that does not survive being written and read back. A
+share of the free text it types is chosen to break the save format -- the
+separator, the escape, the block's own markers, a name longer than the field
+it goes in.
+
+```sh
+python3 tools/stress.py --runs 20 --ops 6   # 20 sessions, six screens each
+python3 tools/stress.py --runs 8 --hash     # a digest per session
+```
+
+Because every answer is a function of the seed, two builds fed the same seed
+produce the same transcript, and `--hash` turns the harness into a check that
+a change to the code changed nothing: the digests either match or they do not.
+
+`tools/fuzz_files.py` corrupts the files the program reads rather than the
+answers it is given -- the data block of a saved character, which this README
+invites you to edit by hand, and homebrew.txt, which a DM writes. It drops
+fields, repeats a record more times than the array it fills can hold, poisons
+numbers, overruns fixed members, and cuts the block off mid-way, then feeds
+each mutant back. It is worth the most against a sanitizer build, which is
+where it found the loader writing one entry before the start of the
+inventory, and a level of 99 in a hand-edited file reading past the end of
+the experience table.
+
+A sanitizer build has to be told to stop, though. Without
+`-fno-sanitize-recover` the undefined-behaviour checker prints its
+complaint and carries on, the program exits zero, and every harness above
+reports success -- which is how five signed overflows on numbers read out
+of a character file survived a whole round of this. `make asan` sets it
+now, and the numeric columns of both files are held to the ranges the
+program's own prompts ask for.
+
 `tools/selftest.c` (`make test`) asserts the rules engine directly: ability
 modifiers, proficiency bonus at every level, the PHB's own Bruenor example,
 Armor Class for each unarmoured option and armour category, the single-class
 and multiclass spell slot tables, Pact Magic, skills and expertise, and the
 integrity of the data tables.
+
+It also sweeps the whole of the data. Every race, every subrace, every class
+at every one of the twenty levels, every subclass, every spell, every item,
+every magic item and every beast -- about fourteen hundred characters -- is
+written to a file, read back and written again, and the two files have to be
+identical. Text the format cannot take at face value goes through every field
+that holds it, a note of two thousand characters has to come back whole, and
+the two item tables have to stay apart.
+
+`tools/combos.c` (`make combos`) crosses those sweeps. A bug that needs a
+particular race in a particular class at a particular level lives in the
+space between them, and nothing was looking there. It builds characters in
+memory rather than through the wizard, which is what makes the numbers
+affordable -- one costs microseconds -- so it can walk the whole cross
+product:
+
+```
+every race and subrace x every class x every level     1-20
+every race and subrace x every subclass x every level  it can be held at
+every subclass x every option it offers                totem, land, rune...
+every pair of classes x four level splits, and every three classes together
+every background x every class; every feat x every class and every race
+every spell x every class; every magic item x every class; every item carried
+every armour x seven Dexterities x two Strengths x shield or none
+every weapon x every class x three levels
+every beast x every kind of sidekick x every level
+a character sitting on every array limit at once
+all 8,192 combinations of the seven books and the six optional rules
+```
+
+That is 202,000 characters, measured in about a second, of which 2,278 go
+through the file and back. What it checks at each point is not that a number
+is a particular value -- the self-test does that against the book -- but that
+it is possible at all, and that the numbers the PHB states as formulas follow
+them: a carrying capacity of Strength x 15, a passive Perception of 10 plus
+the skill, an initiative of the Dexterity modifier, an unarmoured Armor Class
+at least what the class allows, and never more spell slots than the caster
+level permits. Breaking any of those in the engine on purpose -- Strength x
+14, say -- makes it fail within the first few hundred combinations.
+
+Three of the sweeps check an exact number rather than a range, by working it
+out a second way from the tables the character was built from: the speed,
+from the race and what is worn; the Armor Class, from the armour's own row
+and the Dexterity it admits; and each attack, from the class's proficiency
+line and the weapon's category. Those three found five of this round's bugs
+between them.
+
+Run under `make asan` it is the same walk with the address and
+undefined-behaviour sanitizers watching every table index, which is what it
+is really for.
 
 `tools/roundtrip.py` saves characters and reads them back through the
 program's view mode, checking the reprinted sheet is identical to the stored
@@ -420,8 +584,20 @@ tools/audit.py         checks every name in data/ against TextFiles/
 tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
 tools/verify_races.py      checks the MPMM race numbers
+tools/verify_spells.py     checks every spell's stat line
+tools/verify_magic_items.py  checks the DMG items' kind, rarity, attunement
+tools/verify_beasts.py     checks the MM stat blocks
+tools/verify_classes.py    checks the class tables and feature levels
+tools/verify_backgrounds.py  checks the backgrounds and their tables
+tools/verify_feats.py      checks feat prerequisites and Tasha's features
+tools/verify_races_phb.py  checks the PHB and SCAG races
+tools/verify_tables.py     checks the tables that are only numbers
+tools/verify_reference.py  checks prices, conditions and the life tables
 tools/verify_coverage.py   looks for book content data/ is missing
 tools/extract_deities.py   writes the DEITY rows from appendix B
+tools/stress.py            walks every menu, not just the wizard
+tools/combos.c             every combination of race, class, subclass, level
+tools/fuzz_files.py        corrupts the files the program reads
 
 src/dnd.h              core types and the Character struct
 src/data.h             game data table types

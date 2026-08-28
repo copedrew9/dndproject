@@ -14,6 +14,7 @@
 #include "data.h"
 #include "data_spells.h"
 #include "sidekick.h"
+#include "saveload.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -71,7 +72,6 @@ static int choose_creature(Sidekick *sk)
         {
             const BeastData *b = &BEASTS[map[pick]];
             int a;
-            sk->beast_id = map[pick];
             snprintf(sk->creature, sizeof sk->creature, "%s", b->name);
             for (a = 0; a < 6; a++) sk->abilities[a] = b->abilities[a];
             sk->hp = b->hp;
@@ -82,7 +82,6 @@ static int choose_creature(Sidekick *sk)
     }
     case 1: {
         int a;
-        sk->beast_id = -1;
         ui_line("  Creature name", sk->creature, sizeof sk->creature);
         if (!sk->creature[0]) return 0;
         printf("  Its stat block must be challenge 1/2 or lower.\n");
@@ -189,11 +188,19 @@ static int sk_max_spell_level(int level)
 
 static void pick_sidekick_spells(Sidekick *sk)
 {
-    unsigned bits = spell_bits_for_role(sk->role);
-    int want_cantrips = SPELLCASTER_CANTRIPS[sk->level];
-    int want_spells = SPELLCASTER_SPELLS_KNOWN[sk->level];
-    int maxlvl = sk_max_spell_level(sk->level);
+    unsigned bits;
+    int want_cantrips, want_spells, maxlvl;
     int have_cantrips = 0, have_spells = 0, i;
+
+    /* The role names a table this reads by index, and a sidekick whose
+       class was changed by hand in the file carries the -1 of a creature
+       that never had a role at all. */
+    if (sk->role < 0 || sk->role >= SK_ROLE_COUNT) sk->role = SK_MAGE;
+
+    bits = spell_bits_for_role(sk->role);
+    want_cantrips = SPELLCASTER_CANTRIPS[sk->level];
+    want_spells = SPELLCASTER_SPELLS_KNOWN[sk->level];
+    maxlvl = sk_max_spell_level(sk->level);
 
     for (i = 0; i < sk->spell_count; i++) {
         if (SPELLS[sk->spells[i]].level == 0) have_cantrips++;
@@ -335,7 +342,6 @@ int create_sidekick(Sidekick *sk, int party_level)
     int i, lvl;
 
     memset(sk, 0, sizeof *sk);
-    sk->beast_id = -1;
     sk->role = -1;
 
     ui_header("Add a Sidekick");
@@ -430,11 +436,21 @@ void print_sidekick(FILE *f, const Sidekick *sk, int indent)
  * not a second source of truth, and it says so. */
 static int export_sidekick(const Sidekick *sk, const Character *owner)
 {
-    char path[MAX_NAME + 8];
+    char path[MAX_NAME + 16], safe[MAX_NAME];
     FILE *f;
     int i;
 
-    snprintf(path, sizeof path, "%s.txt", sk->name);
+    /* The same sanitising the character files get -- this used to write
+       sk->name straight into a path -- and never over a character: a
+       sidekick may be named after its owner, or after somebody else's
+       character in the same folder, and this sheet is a printout rather
+       than the authoritative copy. Writing it over a character file would
+       lose that character. */
+    sheet_filename(sk->name, safe, sizeof safe);
+    snprintf(path, sizeof path, "%s.txt", safe);
+    if (file_is_character(path)) {
+        snprintf(path, sizeof path, "%s (sidekick).txt", safe);
+    }
     f = fopen(path, "w");
     if (!f) return -1;
 

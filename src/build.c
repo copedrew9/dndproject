@@ -1,11 +1,9 @@
 /* build.c -- the character creation wizard (PHB chapter 1, steps 1-6). */
 #include "build.h"
 #include "ui.h"
-#include "data_spells.h"
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 
 
@@ -143,22 +141,13 @@ static void grant_tool_phrase(Character *c, const char *phrase,
 /* Splits a tool proficiency line on commas and grants each piece. */
 static void grant_tool_line(Character *c, const char *line, const char *source)
 {
-    char buf[256], *p, *start;
+    char buf[256], *cursor = buf, *piece;
 
     if (!line || !*line) return;
     strncpy(buf, line, sizeof buf - 1);
     buf[sizeof buf - 1] = '\0';
-    start = buf;
-    for (p = buf;; p++) {
-        if (*p != ',' && *p != '\0') continue;
-        {
-            int end = (*p == '\0');
-            *p = '\0';
-            while (*start == ' ') start++;
-            grant_tool_phrase(c, start, source);
-            if (end) break;
-            start = p + 1;
-        }
+    while ((piece = next_csv(&cursor)) != NULL) {
+        grant_tool_phrase(c, piece, source);
     }
 }
 
@@ -166,14 +155,12 @@ static void grant_tool_line(Character *c, const char *line, const char *source)
 int has_prof(const Character *c, const char *prof)
 {
     int i;
+    /* A class granting "All armor" is proficient with every armour type. */
+    int armour = contains_ci(prof, "armor");
+
     for (i = 0; i < c->other_prof_count; i++) {
         if (contains_ci(c->other_profs[i], prof)) return 1;
-    }
-    /* A class granting "All armor" is proficient with every armour type. */
-    if (contains_ci(prof, "armor")) {
-        for (i = 0; i < c->other_prof_count; i++) {
-            if (contains_ci(c->other_profs[i], "all armor")) return 1;
-        }
+        if (armour && contains_ci(c->other_profs[i], "all armor")) return 1;
     }
     return 0;
 }
@@ -233,22 +220,14 @@ static void grant_prof_piece(Character *c, const char *piece,
 
 void add_prof_list(Character *c, const char *csv, const char *source)
 {
-    char buf[512], *p, *start;
+    char buf[512], *cursor = buf, *piece;
 
     if (!csv || !*csv || strcmp(csv, "None") == 0) return;
     strncpy(buf, csv, sizeof buf - 1);
     buf[sizeof buf - 1] = '\0';
 
-    start = buf;
-    for (p = buf;; p++) {
-        if (*p == ',' || *p == '\0') {
-            int end = (*p == '\0');
-            *p = '\0';
-            while (*start == ' ') start++;
-            if (*start) grant_prof_piece(c, start, source);
-            if (end) break;
-            start = p + 1;
-        }
+    while ((piece = next_csv(&cursor)) != NULL) {
+        if (*piece) grant_prof_piece(c, piece, source);
     }
 }
 
@@ -262,15 +241,66 @@ void add_choice(Character *c, const char *label, const char *value)
     c->choice_count++;
 }
 
+/* The choices list is scanned in exactly three ways: how many entries carry
+   a label, whether one of them starts with a given value, and whether one of
+   them is exactly that value. The prefix form is what the two lists that
+   record more than a name need -- an infusion is stored as "Replicate Magic
+   Item (Bag of Holding)" and an optional feature as "Name (replaces X)". */
+int count_choices(const Character *c, const char *label)
+{
+    int i, n = 0;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0) n++;
+    }
+    return n;
+}
+
+int has_choice_starting(const Character *c, const char *label,
+                        const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) != 0) continue;
+        if (strncmp(c->choices[i].value, value, strlen(value)) == 0) return 1;
+    }
+    return 0;
+}
+
+int has_choice_exactly(const Character *c, const char *label,
+                       const char *value)
+{
+    int i;
+    for (i = 0; i < c->choice_count; i++) {
+        if (strcmp(c->choices[i].label, label) == 0
+            && strcmp(c->choices[i].value, value) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Adds to a stack that is already there, and stops at MAX_STACK. Buying
+   ninety-nine of something twice over adds up, and nothing used to stop it
+   adding up past what the weight of a pack can be held in. */
+static void stack_up(int *held, int qty)
+{
+    if (qty > MAX_STACK - *held) *held = MAX_STACK;
+    else *held += qty;
+}
+
 void add_item(Character *c, int item_id, int qty, int equipped)
 {
     int i;
     if (item_id < 0 || item_id >= ITEM_COUNT || qty <= 0) return;
 
     for (i = 0; i < c->item_count; i++) {
-        if (c->inventory[i].item_id == item_id
+        /* item_id indexes ITEMS here and MAGIC_ITEMS in a magic entry, so
+           the two have to be told apart before the indices are compared:
+           without this, buying the scale mail whose row happens to sit at
+           the same index as the amulet already carried added a second
+           amulet instead. */
+        if (!c->inventory[i].is_magic
+            && c->inventory[i].item_id == item_id
             && c->inventory[i].equipped == equipped) {
-            c->inventory[i].quantity += qty;
+            stack_up(&c->inventory[i].quantity, qty);
             return;
         }
     }
@@ -293,7 +323,7 @@ void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
         if (c->inventory[i].is_magic && c->inventory[i].item_id == magic_id
             && c->inventory[i].attuned == attuned
             && c->inventory[i].plus == plus) {
-            c->inventory[i].quantity += qty;
+            stack_up(&c->inventory[i].quantity, qty);
             return;
         }
     }
@@ -406,20 +436,10 @@ static void choose_race(Character *c)
 
     /* Languages granted outright. */
     {
-        char buf[256], *p, *start;
+        char buf[256], *cursor = buf, *piece;
         strncpy(buf, RACES[pick].languages, sizeof buf - 1);
         buf[sizeof buf - 1] = '\0';
-        start = buf;
-        for (p = buf;; p++) {
-            if (*p == ',' || *p == '\0') {
-                int end = (*p == '\0');
-                *p = '\0';
-                while (*start == ' ') start++;
-                add_language(c, start);
-                if (end) break;
-                start = p + 1;
-            }
-        }
+        while ((piece = next_csv(&cursor)) != NULL) add_language(c, piece);
     }
 
     /* Fixed racial proficiencies that the traits text describes. */
@@ -659,14 +679,12 @@ static void point_buy(Character *c)
             "increases. Costs: 8=0, 9=1, 10=2, 11=3, 12=4, 13=5, 14=7, 15=9.");
 
     for (a = 0; a < ABL_COUNT; a++) {
-        int remaining_min = 0, i, lo = 8, hi = 15;
+        int lo = 8, hi = 15;
         char prompt[128];
 
-        /* Reserve nothing for later abilities: every one may stay at 8. */
-        for (i = a + 1; i < ABL_COUNT; i++) remaining_min += 0;
-
-        /* Highest score still affordable. */
-        while (hi > 8 && POINT_COST[hi] > points - remaining_min) hi--;
+        /* Nothing is reserved for the abilities still to come: every one of
+           them may stay at 8, so the whole purse is available here. */
+        while (hi > 8 && POINT_COST[hi] > points) hi--;
 
         snprintf(prompt, sizeof prompt, "%s (%d point%s left)",
                  ABILITY_NAME[a], points, points == 1 ? "" : "s");
@@ -1187,9 +1205,8 @@ static void choose_class_skills(Character *c)
 static void grant_class_tools(Character *c)
 {
     int i;
-    for (i = 0; i < c->class_count; i++) {
-        const ClassData *cd = &CLASSES[c->classes[i].class_id];
-        if (i > 0) continue;                    /* multiclass tools vary */
+    if (c->class_count > 0) {                   /* multiclass tools vary */
+        const ClassData *cd = &CLASSES[c->classes[0].class_id];
         grant_tool_line(c, cd->tool_profs, cd->name);
     }
     /* Rogues gain thieves' tools when multiclassing in as well. */

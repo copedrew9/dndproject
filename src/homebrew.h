@@ -8,9 +8,6 @@
 int  homebrew_load(void);
 int  homebrew_save(void);
 
-int  homebrew_item_count(void);
-int  homebrew_magic_count(void);
-int  homebrew_spell_count(void);
 int  homebrew_total(void);
 
 /* The DM's screen: add, list and remove. */

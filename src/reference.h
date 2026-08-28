@@ -13,6 +13,7 @@
 extern const char *const CATEGORY_LABEL[];
 
 void format_price(int cp, char *out, size_t n);
+void format_weight(int tenths, char *out, size_t n);
 
 void show_item_detail(int idx);          /* index into ITEMS */
 void show_magic_item_detail(int idx);    /* index into MAGIC_ITEMS */

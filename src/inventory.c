@@ -68,13 +68,19 @@ static void show_carried(const Character *c)
     }
 }
 
-/* Builds the menu of everything carried. Returns the number of entries. */
-static int carried_menu(const Character *c, const char **opts,
-                        char lines[][128], int *map, int max)
+/* Builds a menu of the carried entries `wanted` accepts -- everything, when
+   it is NULL. Returns how many there are; map[i] is the inventory index of
+   menu entry i. The three screens that ask about carried things differ only
+   in that filter and in what they say. */
+static int carried_menu(const Character *c, int (*wanted)(const Character *,
+                                                          int),
+                        const char **opts, char lines[][128], int *map,
+                        int max)
 {
     int i, n = 0;
 
     for (i = 0; i < c->item_count && n < max; i++) {
+        if (wanted && !wanted(c, i)) continue;
         entry_line(c, i, lines[n], 128);
         opts[n] = lines[n];
         map[n] = i;
@@ -91,11 +97,11 @@ static void add_from_catalogue(Character *c)
         const char *cats[16];
         int i, cat;
 
-        for (i = 0; i < 12; i++) cats[i] = CATEGORY_LABEL[i];
-        cats[12] = "Back";
+        for (i = 0; i < ITEM_CATEGORY_COUNT; i++) cats[i] = CATEGORY_LABEL[i];
+        cats[ITEM_CATEGORY_COUNT] = "Back";
 
-        cat = ui_menu("  Category:", cats, NULL, 13);
-        if (cat == 12) return;
+        cat = ui_menu("  Category:", cats, NULL, ITEM_CATEGORY_COUNT + 1);
+        if (cat == ITEM_CATEGORY_COUNT) return;
 
         {
             const char *opts[REF_MAX + 1];
@@ -121,7 +127,7 @@ static void add_from_catalogue(Character *c)
 
             show_item_detail(map[pick]);
             if (!ui_yesno("  Add it?", 1)) continue;
-            qty = ui_int("  How many", 1, 99);
+            qty = ui_int("  How many", 1, MAX_QUANTITY);
             add_item(c, map[pick], qty, 0);
             printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
             /* Back to the categories rather than the same long list, so
@@ -165,7 +171,7 @@ static void add_magic(Character *c)
         if (!ui_yesno("  Add it?", 1)) continue;
 
         {
-            int qty = ui_int("  How many", 1, 99);
+            int qty = ui_int("  How many", 1, MAX_QUANTITY);
             int attune = 0, plus = 0;
             const MagicItem *m = &MAGIC_ITEMS[map[pick]];
             const MagicRule *r = magic_rule_for(m->name);
@@ -197,45 +203,68 @@ static void add_magic(Character *c)
             }
             add_magic_item(c, map[pick], qty, attune, plus);
 
-            /* The book's magic weapon entry covers every weapon at once,
-               so the copy has to say which one it is before the attacks
-               block can add its bonus. */
-            if (r && r->weapon) {
-                const char *opts[64];
-                int k, wn = 0;
-                char answer[MAX_NAME];
+            /* An entry that covers a whole class of weapon at once --
+               "Weapon (any sword)" -- leaves the weapon to the copy, so
+               the copy has to say which before it can have a line in the
+               attacks block. An entry that names its weapon does not ask.
+               The question is put in the book's own words, so a sword of
+               sharpness asks for a sword that deals slashing damage rather
+               than for any weapon at all. */
+            {
+                char narrows[MAX_NAME];
+                if (magic_weapon_kind(m->type, narrows, sizeof narrows)
+                        == MAGIC_WEAPON_CHOICE) {
+                    const char *opts[64];
+                    const char *which = narrows;
+                    char ask[MAX_NAME + 32];
+                    char answer[MAX_NAME];
+                    int k, wn = 0;
 
-                for (k = 0; k < c->item_count && wn < 64; k++) {
-                    const ItemData *w;
-                    if (c->inventory[k].is_magic) continue;
-                    w = &ITEMS[c->inventory[k].item_id];
-                    if (w->category < ITEM_SIMPLE_MELEE
-                        || w->category > ITEM_MARTIAL_RANGED) continue;
-                    opts[wn++] = w->name;
+                    /* "any sword" asks for a sword; a bare "any" asks for
+                       a weapon. */
+                    if (!strncmp(which, "any", 3) || !strncmp(which, "Any", 3)) {
+                        which += 3;
+                        while (*which == ' ') which++;
+                    }
+                    snprintf(ask, sizeof ask, "  Which %s is it?",
+                             *which ? which : "weapon");
+
+                    for (k = 0; k < c->item_count && wn < 64; k++) {
+                        const ItemData *w;
+                        if (c->inventory[k].is_magic) continue;
+                        w = &ITEMS[c->inventory[k].item_id];
+                        if (w->category < ITEM_SIMPLE_MELEE
+                            || w->category > ITEM_MARTIAL_RANGED) continue;
+                        opts[wn++] = w->name;
+                    }
+                    if (wn) {
+                        ui_menu_custom(ask, opts, NULL, wn,
+                                       "A weapon you are not carrying yet",
+                                       answer, sizeof answer);
+                    } else {
+                        ui_line(ask, answer, sizeof answer);
+                    }
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s", answer);
                 }
-                if (wn) {
-                    ui_menu_custom("  Which weapon is it?", opts, NULL, wn,
-                                   "A weapon you are not carrying yet",
-                                   answer, sizeof answer);
-                } else {
-                    ui_line("  Which weapon is it?", answer, sizeof answer);
-                }
-                snprintf(c->inventory[c->item_count - 1].variant,
-                         sizeof c->inventory[0].variant, "%s", answer);
             }
 
             /* Armour and rings of resistance are made against one kind of
-               damage; which one is a property of the copy. */
-            if (r && ((r->resist && !strcmp(r->resist, "*"))
-                      || (r->immune && !strcmp(r->immune, "*")))) {
-                static const char *const types[] = {
-                    "acid", "cold", "fire", "force", "lightning", "necrotic",
-                    "poison", "psychic", "radiant", "thunder"
-                };
-                snprintf(c->inventory[c->item_count - 1].variant,
-                         sizeof c->inventory[0].variant, "%s",
-                         types[ui_menu("  Made against which damage?", types,
-                                       NULL, 10)]);
+               damage; which one is a property of the copy. Which kinds are
+               on offer is a property of the item: most take any of the ten,
+               but dragon scale mail takes the dragon's and armour of
+               vulnerability is made against bludgeoning, piercing or
+               slashing, and offering the ten there let a player build a
+               suit the DMG does not allow. */
+            {
+                const char *types[12];
+                int nt = magic_variant_types(r, types, 12);
+                if (nt > 0) {
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s",
+                             types[ui_menu("  Made against which damage?",
+                                           types, NULL, nt)]);
+                }
             }
             printf("  Added %d x %s.\n", qty, m->name);
             if (r && (r->armor_base || r->shield)) {
@@ -256,7 +285,7 @@ static void remove_gear(Character *c)
         static char lines[MAX_ITEMS][128];
         int map[MAX_ITEMS], n, pick, qty, have;
 
-        n = carried_menu(c, opts, lines, map, MAX_ITEMS);
+        n = carried_menu(c, NULL, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  Nothing to put down.\n");
             return;
@@ -296,28 +325,25 @@ static const char *entry_name(const Character *c, int i)
 
 /* Only one suit of armour and one shield can be worn at a time, so equipping
  * one takes the other off rather than silently stacking two armour bonuses. */
+/* Armour and shields, magical or not. */
+static int is_wearable(const Character *c, int i)
+{
+    if (c->inventory[i].is_magic) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+        return magic_rule_is_worn(r);
+    }
+    return ITEMS[c->inventory[i].item_id].category <= ITEM_SHIELD;
+}
+
 static void equip_gear(Character *c)
 {
     for (;;) {
         const char *opts[MAX_ITEMS + 1];
         static char lines[MAX_ITEMS][128];
-        int map[MAX_ITEMS], n = 0, i, pick;
+        int map[MAX_ITEMS], n, i, pick;
 
-        for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
-            if (c->inventory[i].is_magic) {
-                /* Magic armour and shields are worn like any other. */
-                const MagicRule *r =
-                    magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
-                if (!r || (!r->armor_base && !r->shield)) continue;
-            } else {
-                ItemCategory cat = ITEMS[c->inventory[i].item_id].category;
-                if (cat > ITEM_SHIELD) continue;  /* armour and shields only */
-            }
-            entry_line(c, i, lines[n], sizeof lines[n]);
-            opts[n] = lines[n];
-            map[n] = i;
-            n++;
-        }
+        n = carried_menu(c, is_wearable, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  You have no armor or shield to wear.\n");
             return;
@@ -357,21 +383,20 @@ static void equip_gear(Character *c)
 
 /* ---------------------------------------------------------------- attunement */
 
+static int needs_attunement(const Character *c, int i)
+{
+    return c->inventory[i].is_magic
+        && MAGIC_ITEMS[c->inventory[i].item_id].attunement != NULL;
+}
+
 static void attune_items(Character *c)
 {
     for (;;) {
         const char *opts[MAX_ITEMS + 1];
         static char lines[MAX_ITEMS][128];
-        int map[MAX_ITEMS], n = 0, i, pick;
+        int map[MAX_ITEMS], n, pick;
 
-        for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
-            if (!c->inventory[i].is_magic) continue;
-            if (!MAGIC_ITEMS[c->inventory[i].item_id].attunement) continue;
-            entry_line(c, i, lines[n], sizeof lines[n]);
-            opts[n] = lines[n];
-            map[n] = i;
-            n++;
-        }
+        n = carried_menu(c, needs_attunement, opts, lines, map, MAX_ITEMS);
         if (n == 0) {
             printf("  You carry nothing that needs attunement.\n");
             return;
@@ -406,11 +431,11 @@ static void adjust_coins(Character *c)
 {
     printf("\n  Enter the new totals; a treasure hoard or a night's "
            "spending both land here.\n");
-    c->platinum = ui_int("  Platinum", 0, 999999);
-    c->gold     = ui_int("  Gold",     0, 999999);
-    c->electrum = ui_int("  Electrum", 0, 999999);
-    c->silver   = ui_int("  Silver",   0, 999999);
-    c->copper   = ui_int("  Copper",   0, 999999);
+    c->platinum = ui_int("  Platinum", 0, MAX_COINS);
+    c->gold     = ui_int("  Gold",     0, MAX_COINS);
+    c->electrum = ui_int("  Electrum", 0, MAX_COINS);
+    c->silver   = ui_int("  Silver",   0, MAX_COINS);
+    c->copper   = ui_int("  Copper",   0, MAX_COINS);
 }
 
 /* --------------------------------------------------------------- the screen */

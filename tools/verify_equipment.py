@@ -137,6 +137,82 @@ ARMOUR_AC = re.compile(r"^(\d+)(?:\s*\+\s*Dex modifier(?:\s*\(max (\d+)\))?)?$")
 DAMAGE = re.compile(r"^(\d+d\d+|\d+)\s+(\w+)$")
 
 
+# data/ category -> the name the book's own don/doff table gives it.
+ARMOUR_CATEGORY = {
+    "light-armour": "Light Armor", "medium-armour": "Medium Armor",
+    "heavy-armour": "Heavy Armor", "shield": "Shield",
+}
+
+
+def donning(text):
+    """The PHB's Getting Into and Out of Armor table, read out of the dump.
+
+    Four rows of three cells, one cell to a line, under a header that is
+    itself three lines. Read rather than written down here, for the same
+    reason as everything else in this file.
+    """
+    lines = [l.strip() for l in text.split("\n")]
+    for i in range(len(lines) - 14):
+        if lines[i:i + 3] != ["Category", "Don", "Doff"]:
+            continue
+        out, at = {}, i + 3
+        for _ in range(4):
+            if at + 2 >= len(lines):
+                break
+            out[lines[at]] = (lines[at + 1], lines[at + 2])
+            at += 3
+        if len(out) == 4:
+            return out
+    return {}
+
+
+def check_notes(items, notes, times):
+    """The armour notes, against the table and against the item's own row.
+
+    A note is prose, so what is checked is what is fact: the time to put the
+    armour on and take it off, whether it says anything about Stealth, and
+    which Dexterity rule its category follows. Half plate said it took five
+    minutes to take off, which is heavy armour's figure, and nothing noticed
+    for as long as nothing read the notes.
+    """
+    if not times:
+        return 0, 0, ["the don and doff table is not in the dump"]
+    checked = bad = 0
+    problems = []
+    for r in items:
+        cat = ARMOUR_CATEGORY.get(r.str(2))
+        if cat is None or r.str(1) != "PHB":
+            continue
+        note = notes.get(r.str(0))
+        if note is None:
+            problems.append("%s has no note" % r.str(0))
+            continue
+        checked += 1
+        don, doff = times[cat]
+        low = note.lower()
+        mine = []
+        # "1 action" is written "an action" in the notes, which is the same
+        # thing said the way a sentence says it.
+        if don.endswith("action"):
+            if "action" not in low:
+                mine.append("the note does not say it takes an action")
+        else:
+            if don.lower() not in low:
+                mine.append("no %r, which is what %s takes to don" % (don, cat))
+            after = low.split("doff", 1)
+            if len(after) > 1 and doff.lower() not in after[1][:40]:
+                mine.append("doffing is not %r, which is what %s takes"
+                            % (doff, cat))
+        says_stealth = "stealth" in low
+        if says_stealth != (r.int(8) == 1):
+            mine.append("the row's stealth column is %d and the note %s it"
+                        % (r.int(8), "mentions" if says_stealth else "omits"))
+        if mine:
+            bad += 1
+            problems.append("%s\n      %s" % (r.str(0), "\n      ".join(mine)))
+    return checked, bad, problems
+
+
 def main():
     if not os.path.exists(DUMP):
         sys.exit("verify_equipment: no %s" % DUMP)
@@ -229,6 +305,14 @@ def main():
             print("  %s" % name)
             for p in problems:
                 print("      %s" % p)
+
+    notes = dict((r.str(0), r.str(1))
+                 for r in read_file("equipment.txt") if r.tag == "ITEMNOTE")
+    n_checked, n_bad, n_problems = check_notes(items, notes, donning(text))
+    for p in n_problems:
+        print("  %s" % p)
+    checked += n_checked
+    bad += n_bad
 
     print("\n%d PHB items checked against the tables, %d disagree, "
           "%d not found" % (checked, bad, missing))

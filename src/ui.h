@@ -74,6 +74,14 @@ int  ui_toggle_list(const char *prompt, const char *const *options,
 /* Case-insensitive substring test; returns 1 when needle is empty. */
 int  contains_ci(const char *haystack, const char *needle);
 
+/* Walks a comma-separated line in place. Set a cursor to the start of the
+   buffer and call this until it returns NULL; each call gives the next
+   piece with its leading spaces trimmed. An empty piece is returned as the
+   empty string rather than skipped, because the lines this reads are the
+   books' own and a caller that cares says so itself. The buffer is written
+   through, so it must be a copy the caller owns. */
+char *next_csv(char **cursor);
+
 /* Split a '|' separated list into pieces. Returns the number found.
    The caller supplies storage; pieces point into buf. */
 int  split_pipe(const char *src, char *buf, size_t bufsz,

@@ -14,7 +14,6 @@
 #include "reference.h"
 #include "saveload.h"
 #include "ui.h"
-#include "data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,24 +108,6 @@ static void do_level_up(void)
     save_and_report(&c);
 }
 
-static void do_view(void)
-{
-    Character c;
-    char name[MAX_NAME], path[MAX_NAME + 8];
-
-    ui_line("  Character name (or a path to the .txt file)", name, sizeof name);
-    if (!name[0]) return;
-
-    if (strstr(name, ".txt")) snprintf(path, sizeof path, "%s", name);
-    else snprintf(path, sizeof path, "%s.txt", name);
-
-    if (load_character(path, &c) != 0) {
-        printf("  Could not read %s\n", path);
-        return;
-    }
-    print_sheet(&c);
-}
-
 /* Loads a saved character by name or path. Returns 0 on success. */
 static int load_by_name(const char *prompt, Character *c)
 {
@@ -145,43 +126,28 @@ static int load_by_name(const char *prompt, Character *c)
     return 0;
 }
 
-static void do_details(void)
+static void do_view(void)
 {
     Character c;
 
-    ui_header("Notes and Character Details");
     if (load_by_name("  Character name (or a path to the .txt file)", &c))
         return;
-    printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
-
-    edit_details(&c);
-    if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
+    print_sheet(&c);
 }
 
-static void do_sidekicks(void)
+/* The three screens that work on a character already saved -- its notes,
+   its sidekicks, its gear -- differ only in their heading and in what they
+   then open, so they share the loading, the report and the offer to save. */
+static void edit_saved(const char *heading, void (*screen)(Character *))
 {
     Character c;
 
-    ui_header("Manage a Character's Sidekicks");
+    ui_header(heading);
     if (load_by_name("  Character name (or a path to the .txt file)", &c))
         return;
     printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
 
-    manage_sidekicks(&c);
-    if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
-}
-
-/* Loading a character purely to change what they carry, then saving. */
-static void do_inventory(void)
-{
-    Character c;
-
-    ui_header("Manage a Character's Gear");
-    if (load_by_name("  Character name (or a path to the .txt file)", &c))
-        return;
-    printf("  Loaded %s (level %d).\n", c.name, total_level(&c));
-
-    manage_inventory(&c);
+    screen(&c);
     if (ui_yesno("\n  Save the changes?", 1)) save_and_report(&c);
 }
 
@@ -242,10 +208,13 @@ int main(int argc, char **argv)
         case 2: do_view(); break;
         case 3: settings_menu(&SETTINGS); break;
         case 4: reference_menu(); break;
-        case 5: do_inventory(); break;
-        case 6: do_sidekicks(); break;
+        case 5: edit_saved("Manage a Character's Gear", manage_inventory);
+                break;
+        case 6: edit_saved("Manage a Character's Sidekicks", manage_sidekicks);
+                break;
         case 7: homebrew_menu(); break;
-        case 8: do_details(); break;
+        case 8: edit_saved("Notes and Character Details", edit_details);
+                break;
         default: return 0;
         }
     }

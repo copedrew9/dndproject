@@ -20,6 +20,15 @@
 #define MAX_CHOICES 48
 #define MAX_LEVEL 20
 
+/* How many of one thing a prompt will take at once, how many one line of
+   the inventory may hold, and how many of one coin. Buying twice adds up,
+   so a stack may stand higher than a single purchase -- but not without a
+   ceiling: ninety-six lines of an unbounded quantity of the heaviest thing
+   in the book is not a heavy pack, it is an overflowed weight. */
+#define MAX_QUANTITY 99
+#define MAX_STACK 999
+#define MAX_COINS 999999
+
 /* ---------------------------------------------------------------- abilities */
 
 typedef enum {
@@ -110,7 +119,6 @@ typedef struct {
 typedef struct {
     char name[MAX_NAME];
     char creature[MAX_NAME];    /* the stat block it is built on */
-    int  beast_id;              /* index into BEASTS, or -1 when typed in */
     int  cls;                   /* SidekickClass */
     int  level;
     int  role;                  /* SpellcasterRole, -1 when not a caster */

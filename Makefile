@@ -57,7 +57,33 @@ verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py
+	python3 tools/verify_spells.py
+	python3 tools/verify_magic_items.py
+	python3 tools/verify_magic_rules.py
+	python3 tools/verify_beasts.py
+	python3 tools/verify_classes.py
+	python3 tools/verify_backgrounds.py
+	python3 tools/verify_feats.py
+	python3 tools/verify_races_phb.py
+	python3 tools/verify_tables.py
+	python3 tools/verify_options.py
+	python3 tools/verify_spell_lists.py
+	python3 tools/verify_reference.py
+	python3 tools/verify_sidekicks.py
+	python3 tools/verify_small_tables.py
 	python3 tools/verify_coverage.py
+
+# Every combination of race, class, subclass, level, background, feat, spell,
+# item and setting the tables allow, measured for a number that cannot be
+# right. Worth the most under the sanitizers, which is what `make asan` does
+# with it.
+COMBOBIN = combosweep
+
+$(COMBOBIN): tools/combos.c $(TESTOBJS)
+	$(CC) $(CFLAGS) -I$(SRCDIR) -MMD -MP -o $@ tools/combos.c $(TESTOBJS)
+
+combos: $(COMBOBIN)
+	./$(COMBOBIN)
 
 # Assertions on the rules engine.
 TESTBIN  = selftest
@@ -70,25 +96,50 @@ test: $(TESTBIN)
 
 # Build many characters at random and check none of them crash, that a saved
 # character reloads unchanged, and that it all holds under valgrind.
-check: test dataverify verify $(BIN)
+#
+# drive.py answers the creation wizard; stress.py wanders the rest of the
+# main menu -- settings, reference, inventory, sidekicks, homebrew, notes --
+# in one session, and fuzz_files.py corrupts the files the program reads
+# rather than the answers it is given.
+check: test combos dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
+	python3 tools/stress.py --runs 1 --seed 11 --tour --ops 9 --grace 0.02
+	python3 tools/stress.py --runs 4 --seed 20 --ops 4 --grace 0.02
+	python3 tools/fuzz_files.py --runs 150 --seed 1
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race
 # menu writing past the end of its array; a plain build did not notice, and
 # neither did valgrind, the array being on the stack.
+#
+# -fno-sanitize-recover matters as much as the sanitizers do. Without it the
+# undefined-behaviour checker prints its complaint and carries on, the
+# program exits zero, and every harness below reports success: five signed
+# overflows on numbers read out of a character file went that way for a
+# whole round of testing. With it, the first one aborts and is seen.
+SANFLAGS = -std=c99 -O1 -g -fsanitize=address,undefined \
+	   -fno-sanitize-recover=all -fno-omit-frame-pointer
+SANENV = ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1
+
 asan:
 	$(MAKE) clean
-	$(MAKE) CFLAGS="-std=c99 -O1 -g -fsanitize=address,undefined \
-	  -fno-omit-frame-pointer"
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 25 --seed 1
-	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 10 --seed 500 \
+	$(MAKE) CFLAGS="$(SANFLAGS)" all $(COMBOBIN) $(TESTBIN)
+	$(SANENV) ./$(TESTBIN)
+	$(SANENV) ./$(COMBOBIN)
+	$(SANENV) python3 tools/drive.py --runs 25 --seed 1
+	$(SANENV) python3 tools/drive.py --runs 10 --seed 500 \
 	  --levelup
+	$(SANENV) python3 tools/stress.py --runs 1 --seed 11 \
+	  --tour --ops 9 --nasty 0.3 --grace 0.02 --seconds 1800
+	$(SANENV) python3 tools/stress.py --runs 3 --seed 20 \
+	  --ops 5 --nasty 0.3 --grace 0.02 --seconds 1800
+	$(SANENV) python3 tools/fuzz_files.py --runs 200 --seed 1
 	$(MAKE) clean
 
 clean:
-	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) $(DUMPBIN).d
+	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) \
+	  $(DUMPBIN).d $(COMBOBIN) $(COMBOBIN).d
 
-.PHONY: all clean check test data dataverify audit verify asan
+.PHONY: all clean check test combos data dataverify audit verify asan

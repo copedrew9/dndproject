@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /* --------------------------------------------------------------- printing */
 
@@ -569,21 +568,26 @@ static void dump_equipment(void)
         static const struct { const char *key; size_t off; } INTS[] = {
             { "ac_bonus",        offsetof(MagicRule, ac_bonus) },
             { "save_bonus",      offsetof(MagicRule, save_bonus) },
+            { "check_bonus",     offsetof(MagicRule, check_bonus) },
             { "armor_base",      offsetof(MagicRule, armor_base) },
             { "armor_dex",       offsetof(MagicRule, armor_dex) },
             { "armor_str",       offsetof(MagicRule, armor_str) },
             { "armor_stealth",   offsetof(MagicRule, armor_stealth) },
             { "shield",          offsetof(MagicRule, shield) },
             { "only_unarmored",  offsetof(MagicRule, only_unarmored) },
+            { "worn",            offsetof(MagicRule, worn) },
             { "unarmored_base",  offsetof(MagicRule, unarmored_base) },
             { "variable",        offsetof(MagicRule, variable) },
             { "weapon",          offsetof(MagicRule, weapon) },
+            { "weapon_plus",     offsetof(MagicRule, weapon_plus) },
             { "sets_ability",    offsetof(MagicRule, sets_ability) },
             { "sets_to",         offsetof(MagicRule, sets_to) },
             { "sets_speed",      offsetof(MagicRule, sets_speed) },
             { "fly_speed",       offsetof(MagicRule, fly_speed) },
             { "swim_speed",      offsetof(MagicRule, swim_speed) },
             { "climb_speed",     offsetof(MagicRule, climb_speed) },
+            { "vulnerable_others",
+                                 offsetof(MagicRule, vulnerable_others) },
         };
         size_t k;
         char buf[64];
@@ -601,6 +605,9 @@ static void dump_equipment(void)
             field(f, buf);
         }
         if (r->sets_ability && !r->sets_to) field(f, "sets_to=0");
+        if (r->weapon_as) { snprintf(buf, sizeof buf, "weapon_as=%s",
+                                     r->weapon_as);
+                            field(f, buf); }
         if (r->resist)  { snprintf(buf, sizeof buf, "resist=%s", r->resist);
                           field(f, buf); }
         if (r->immune)  { snprintf(buf, sizeof buf, "immune=%s", r->immune);

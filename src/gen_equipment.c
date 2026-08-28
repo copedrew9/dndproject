@@ -217,7 +217,7 @@ const ItemData BOOK_ITEMS[] = {
       "2 flasks of oil, 5 days rations, tinderbox, waterskin, 50 "
       "feet of hempen rope" },
     { "Diplomat's pack", BOOK_PHB, ITEM_PACK,
-      3900, 390, 0, 0, 0, 0,
+      3900, 360, 0, 0, 0, 0,
       "", "", "",
       "Chest, 2 cases for maps and scrolls, fine clothes, bottle of "
       "ink, ink pen, lamp, 2 flasks of oil, 5 sheets of paper, vial "
@@ -908,10 +908,10 @@ const ItemNote ITEM_NOTES[] = {
       "Dexterity. Don 5 minutes, doff 1 minute." },
     { "Half plate",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
-      "doff 5 minutes. Disadvantage on Stealth." },
+      "doff 1 minute. Disadvantage on Stealth." },
     { "Spiked Armor",
       "Medium armor: add up to +2 from Dexterity. Don 5 minutes, "
-      "doff 5 minutes. Disadvantage on Stealth. A rare dwarven make "
+      "doff 1 minute. Disadvantage on Stealth. A rare dwarven make "
       "-- a leather coat and leggings studded with metal spikes -- "
       "and the armour a Path of the Battlerager barbarian needs "
       "before any of its features do anything." },
@@ -954,14 +954,13 @@ const ItemNote ITEM_NOTES[] = {
       "As an action, scatter them over a 5-foot square. A creature "
       "entering must make a DC 15 Dexterity save or take 1 piercing "
       "damage and stop moving, its speed reduced by 10 feet until "
-      "healed." },
+      "healed; moving through at half speed avoids the save." },
     { "Block and tackle",
       "Pulleys and a hook that let you hoist up to four times the "
       "weight you could normally lift." },
     { "Book",
-      "A hundred pages of poetry, history, lore or diagrams. "
-      "Studying one can grant advantage on an Intelligence check "
-      "about its subject, at the DM's discretion." },
+      "Writing or pictures of any kind -- poetry, history, lore, "
+      "diagrams. Spells go in a spellbook instead." },
     { "Candle",
       "Burns for 1 hour, shedding bright light in a 5-foot radius "
       "and dim light for 5 feet beyond." },
@@ -989,8 +988,7 @@ const ItemNote ITEM_NOTES[] = {
     { "Rod (arcane focus)",
       "An arcane focus for a sorcerer, warlock or wizard." },
     { "Staff (arcane focus)",
-      "An arcane focus for a sorcerer, warlock or wizard; it also "
-      "functions as a quarterstaff." },
+      "An arcane focus for a sorcerer, warlock or wizard." },
     { "Wand (arcane focus)",
       "An arcane focus for a sorcerer, warlock or wizard." },
     { "Sprig of mistletoe (druidic focus)",
@@ -998,7 +996,7 @@ const ItemNote ITEM_NOTES[] = {
       "the material components of their spells, except those with a "
       "listed cost." },
     { "Wooden staff (druidic focus)",
-      "A druidic focus; it also functions as a quarterstaff." },
+      "A druidic focus for a druid." },
     { "Yew wand (druidic focus)",
       "A druidic focus for a druid or ranger." },
     { "Amulet (holy symbol)",
@@ -1038,8 +1036,9 @@ const ItemNote ITEM_NOTES[] = {
       "Comes with one key. Without it, picking the lock needs "
       "thieves' tools and a successful DC 15 Dexterity check." },
     { "Magnifying glass",
-      "Doubles the apparent size of small objects, and can start a "
-      "fire in sunlight given tinder and about 5 minutes." },
+      "Grants advantage on any check to appraise or inspect a small "
+      "or highly detailed item. In sunlight it can also start a "
+      "fire, given tinder and about 5 minutes." },
     { "Manacles",
       "Bind a Small or Medium creature. Escaping needs a DC 20 "
       "Dexterity check; breaking them a DC 20 Strength check. Each "
@@ -1251,11 +1250,11 @@ const ItemNote ITEM_NOTES[] = {
     { "Warhorse",
       "Speed 60 ft., carrying capacity 540 lb. Trained for battle; "
       "a draft horse counts as a warhorse for carrying capacity." },
-    { "Saddle, riding",
-      "A riding saddle grants advantage on any check made to remain "
-      "mounted." },
+    { "Saddle, military",
+      "Braces you on an active mount: advantage on any check made "
+      "to remain mounted." },
     { "Saddlebags",
-      "Holds a third of a cubic foot or 8 pounds of gear." },
+      "Bags for carrying gear on a mount." },
     { "Feed (per day)",
       "A day's fodder for one mount or beast of burden." },
 };
@@ -1486,9 +1485,10 @@ const Lifestyle LIFESTYLES[] = {
       "boarding house. You have shelter from the elements but live "
       "in a desperate and often violent place." },
     { "Poor", 20,
-      "Shabby surroundings and threadbare clothing, in a warren of "
-      "cheap tenements. Most people treat you with contempt, and "
-      "the law is unlikely to be on your side." },
+      "Simple food and threadbare clothing, in a flophouse room or "
+      "the common room over a tavern. You have some legal "
+      "protection, but still contend with violence, crime and "
+      "disease." },
     { "Modest", 100,
       "Out of the slums, in an older part of town, renting a room "
       "or living over a shop. You are not fashionable, but you are "
@@ -1535,10 +1535,10 @@ const PriceEntry SERVICES[] = {
     { "Coach cab, between towns (per mile)", 3 },
     { "Coach cab, within a city", 1 },
     { "Hireling, skilled (per day)", 200 },
-    { "Hireling, untrained (per day)", 2 },
+    { "Hireling, untrained (per day)", 20 },
     { "Messenger (per mile)", 2 },
     { "Road or gate toll", 1 },
-    { "Ship's passage (per mile)", 1 },
+    { "Ship's passage (per mile)", 10 },
     { "Stabling (per day)", 50 },
 };
 const int SERVICE_COUNT =
@@ -1591,11 +1591,13 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Amulet of the Planes", BOOK_DMG,
       "Wondrous item", "very rare",
       "requires attunement",
-      "As an action, name a plane of existence you are familiar "
-      "with and make a DC 15 Intelligence check. On a success you "
-      "cast plane shift; on a failure you and each creature "
-      "travelling with you take 4d6 psychic damage and the amulet "
-      "sends you to a random plane." },
+      "As an action, name a location you are familiar with on "
+      "another plane of existence and make a DC 15 Intelligence "
+      "check. On a success you cast plane shift; on a failure you "
+      "and each creature and object within 15 feet of you travel to "
+      "a random destination: roll d100, and on a 1-60 you arrive at "
+      "a random spot on the plane you named, on a 61-100 on a "
+      "randomly determined plane." },
     { "Animated Shield", BOOK_DMG,
       "Armor (shield)", "very rare",
       "requires attunement",
@@ -1607,12 +1609,20 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Apparatus of Kwalish", BOOK_DMG,
       "Wondrous item", "legendary",
       NULL,
-      "A sealed iron barrel, 500 lb., that opens into a crab-like "
-      "vehicle seating two. It is AC 20, 200 hit points, immune to "
-      "poison and psychic damage, has a walking speed of 30 ft. and "
-      "a swimming speed of 30 ft., and can breathe underwater "
-      "indefinitely for its occupants. Ten levers inside control "
-      "the legs, claws, windows, lamp and propulsion." },
+      "A Large sealed iron barrel, 500 lb.; a hidden catch, found "
+      "with a DC 20 Intelligence (Investigation) check, opens a "
+      "hatch that admits two Medium or smaller creatures. Working "
+      "its ten levers turns it into a lobster-like vehicle with AC "
+      "20, 200 hit points, immunity to poison and psychic damage, "
+      "and a speed of 30 ft. and swim 30 ft. while the legs and "
+      "tail are extended. With the hatch closed the compartment is "
+      "airtight and watertight and holds 10 hours of breathing air "
+      "divided by the number of breathing creatures inside. It "
+      "floats on water, and below 900 feet underwater it takes 2d6 "
+      "bludgeoning damage per minute from pressure. A creature "
+      "inside can use an action to move up to two levers, which "
+      "work the legs, windows, claws, lamp, movement and rear "
+      "hatch." },
     { "Armor, +1, +2, or +3", BOOK_DMG,
       "Armor (light, medium or heavy)", "rare (+1), very rare (+2), legendary (+3)",
       NULL,
@@ -1668,12 +1678,18 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Bag of Devouring", BOOK_DMG,
       "Wondrous item", "very rare",
       NULL,
-      "Looks like a bag of holding but is the gullet of an "
-      "extradimensional creature. Anything put wholly inside is "
-      "swallowed; a creature inside must make a DC 15 Strength "
-      "check to escape as an action, and there is a cumulative 50 "
-      "percent chance each turn that it is eaten and lost. The bag "
-      "weighs 15 lb." },
+      "It passes for a bag of holding, but its mouth is the feeding "
+      "orifice of a huge extradimensional creature; turn the bag "
+      "inside out and the mouth closes. Plant or animal matter put "
+      "all the way in is gone for good, and anyone who puts part of "
+      "a living body inside, as by reaching in, has a 50 percent "
+      "chance of being dragged in whole. A creature in the bag can "
+      "use its action to try to climb out on a DC 15 Strength "
+      "check, or another creature can use its action to haul it out "
+      "on a DC 20 Strength check, but anything that starts its turn "
+      "inside is destroyed. The bag holds a cubic foot of inanimate "
+      "objects, though once a day it swallows what is inside and "
+      "spits it out onto another plane." },
     { "Bag of Holding", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -1740,9 +1756,9 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "requires attunement",
       "As a bonus action you can click the heels together to double "
       "your walking speed, and opportunity attacks against you are "
-      "at disadvantage. Clicking again ends the effect. It lasts up "
-      "to 10 minutes of walking, and recovers 2 hours of use for "
-      "every 6 hours the boots are not used." },
+      "at disadvantage. Clicking again ends the effect. Once the "
+      "boots have been used for a total of 10 minutes, they stop "
+      "working until you finish a long rest." },
     { "Boots of Striding and Springing", BOOK_DMG,
       "Wondrous item", "uncommon",
       "requires attunement",
@@ -1864,7 +1880,7 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "With the hood up, Wisdom (Perception) checks made to see you "
       "have disadvantage and you have advantage on Dexterity "
       "(Stealth) checks made to hide. Pulling the hood up or down "
-      "is a bonus action." },
+      "is an action." },
     { "Cloak of Invisibility", BOOK_DMG,
       "Wondrous item", "legendary",
       "requires attunement",
@@ -1887,18 +1903,21 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Wondrous item", "uncommon",
       NULL,
       "With the hood up you can breathe underwater and gain a "
-      "swimming speed of 60 feet. Pulling the hood up or down is a "
-      "bonus action." },
+      "swimming speed of 60 feet. Pulling the hood up or down is an "
+      "action." },
     { "Crystal Ball", BOOK_DMG,
       "Wondrous item", "very rare to legendary",
       "requires attunement",
-      "About 6 inches across. While touching it you can cast "
-      "scrying. The greater versions add: reading the surface "
-      "thoughts of creatures seen through it (crystal ball of mind "
-      "reading), casting detect magic or detect thoughts through "
-      "the sensor (crystal ball of true seeing adds true seeing), "
-      "or telepathic communication with a creature seen through it "
-      "(crystal ball of telepathy)." },
+      "About 6 inches across. Touching it lets you cast scrying "
+      "(save DC 17). The legendary versions each add something "
+      "while you are scrying with it: an action to cast detect "
+      "thoughts (save DC 17) on creatures you can see within 30 "
+      "feet of the sensor (crystal ball of mind reading); "
+      "telepathic speech with creatures you can see within 30 feet "
+      "of the sensor, plus one casting of suggestion (save DC 17) "
+      "through the sensor per dawn (crystal ball of telepathy); or "
+      "truesight out to 120 feet centered on the sensor (crystal "
+      "ball of true seeing)." },
     { "Cube of Force", BOOK_DMG,
       "Wondrous item", "rare",
       "requires attunement",
@@ -1933,20 +1952,30 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Decanter of Endless Water", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
-      "As an action, speak one of three command words: stream "
-      "produces 1 gallon, fountain 5 gallons, and geyser a 30-foot "
-      "line that knocks a creature prone on a failed DC 13 Strength "
-      "save and can push a Large or smaller container. It can be "
-      "used until the start of your next turn each time." },
+      "As an action, pull the stopper and speak one of three "
+      "command words to pour out fresh or salt water, your choice: "
+      "stream gives 1 gallon, fountain 5 gallons, and geyser 30 "
+      "gallons in a jet 30 feet long and 1 foot wide. While holding "
+      "the decanter you can spend a bonus action to aim that geyser "
+      "at a creature you can see within 30 feet, dealing 1d4 "
+      "bludgeoning damage and leaving it prone on a failed DC 13 "
+      "Strength save, or at an object nobody is wearing or carrying "
+      "that weighs 200 pounds or less, toppling it or shoving it up "
+      "to 15 feet from you. Water flows until the start of your "
+      "next turn." },
     { "Deck of Illusions", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
-      "A box of 34 parchment cards. Drawing one at random and "
-      "throwing it makes an illusion of one or more creatures, "
-      "which lasts until dispelled. The illusion looks and sounds "
-      "real but can deal no damage and is revealed by a successful "
-      "Intelligence (Investigation) check against your spell save "
-      "DC, or by physical interaction." },
+      "A box of 34 parchment cards. As an action you draw one at "
+      "random and throw it to a point within 30 feet, and an "
+      "illusion of one or more creatures forms over it, appearing "
+      "real but able to do no harm. While within 120 feet of it and "
+      "able to see it, you can use an action to move it anywhere "
+      "within 30 feet of its card. It lasts until its card is moved "
+      "or the illusion is dispelled, and is revealed by physical "
+      "interaction or by a creature that uses an action to inspect "
+      "it and succeeds on a DC 15 Intelligence (Investigation) "
+      "check." },
     { "Deck of Many Things", BOOK_DMG,
       "Wondrous item", "legendary",
       NULL,
@@ -1974,12 +2003,16 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Dimensional Shackles", BOOK_DMG,
       "Wondrous item", "rare",
       NULL,
-      "You can put them on an incapacitated creature; they adjust "
-      "to fit any size from Small to Large. While worn the creature "
-      "cannot planeshift, teleport, or use extradimensional travel, "
-      "and cannot be moved by such means. Escaping requires an "
-      "action and a DC 30 Strength (Athletics) check, and only you "
-      "or a creature you allow can remove them." },
+      "Placing them on an incapacitated creature takes an action, "
+      "and they resize themselves for anything from Small to Large. "
+      "They work as ordinary manacles and also block the bound "
+      "creature from teleporting, plane shifting, or using any "
+      "other extradimensional movement, though it can still pass "
+      "through an interdimensional portal. You, and anyone you name "
+      "when you use them, can take an action to remove them. Every "
+      "30 days the prisoner gets one DC 30 Strength (Athletics) "
+      "check; on a success it breaks loose and the shackles are "
+      "destroyed." },
     { "Dragon Scale Mail", BOOK_DMG,
       "Armor (scale mail)", "very rare",
       "requires attunement",
@@ -1999,11 +2032,14 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Driftglobe", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
-      "A glass sphere the size of a large marble, 1 lb. You can "
-      "cast light or daylight from it; the daylight use recharges "
-      "at dawn. While it is shedding light you can speak a command "
-      "word to make it rise and hover up to 5 feet off the ground, "
-      "following you at up to 30 feet away." },
+      "A small sphere of thick glass, 1 lb. While you are within 60 "
+      "feet of it you can speak its command word to make it emanate "
+      "light or daylight; the daylight use recharges at dawn. "
+      "Another command word, as an action, makes the lit globe rise "
+      "and float no more than 5 feet off the ground until you or "
+      "another creature grasps it, and if you move more than 60 "
+      "feet from it, it follows you until it is within 60 feet "
+      "again." },
     { "Dust of Disappearance", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -2045,24 +2081,28 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Efreeti Bottle", BOOK_DMG,
       "Wondrous item", "very rare",
       NULL,
-      "Opening it as an action releases an efreeti in a cloud of "
-      "smoke. Roll d100: it may attack you, grant three wishes, "
-      "serve you for 1 hour, or serve you for 101 days. Once "
-      "opened, it cannot be opened again for 24 hours." },
+      "Removing the stopper as an action pours out thick smoke, and "
+      "at the end of your turn an efreeti appears in an unoccupied "
+      "space within 30 feet of you. The first opening is settled on "
+      "a d100: on 01-10 it attacks you and disappears after 5 "
+      "rounds, leaving the bottle mundane; on 11-90 it serves you "
+      "for 1 hour and then returns to the bottle, whose new stopper "
+      "cannot be removed for 24 hours, and this repeats twice more "
+      "before a fourth opening frees it and spends the bottle; on "
+      "91-00 it casts wish three times for you and then departs." },
     { "Efreeti Chain", BOOK_DMG,
       "Armor (chain mail)", "legendary",
       "requires attunement",
-      "You gain +3 AC, immunity to fire damage, the ability to "
-      "understand and speak Primordial, and a walking speed of 30 "
-      "feet that works over molten rock and lava as though it were "
-      "solid ground." },
+      "You gain +3 AC, immunity to fire damage, and the ability to "
+      "understand and speak Primordial, and you can stand on and "
+      "walk across molten rock as though it were solid ground." },
     { "Elemental Gem", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
       "Breaking it as an action summons an elemental as though you "
       "had cast conjure elemental, and destroys the gem. The kind "
       "depends on the gem: blue sapphire an air elemental, yellow "
-      "topaz an earth elemental, red corundum a fire elemental, "
+      "diamond an earth elemental, red corundum a fire elemental, "
       "emerald a water elemental." },
     { "Elven Chain", BOOK_DMG,
       "Armor (chain shirt)", "rare",
@@ -2072,11 +2112,15 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Eversmoking Bottle", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
-      "Smoke pours from it, filling a 60-foot radius with heavily "
-      "obscuring fog that spreads 10 feet more each round to 120 "
-      "feet, until stoppered. A wind of at least 10 miles an hour "
-      "disperses it in 1 minute of moderate wind, or 1 round of "
-      "strong wind." },
+      "Removing the stopper as an action pours out thick smoke in a "
+      "60-foot radius that is heavily obscured, and each minute the "
+      "open bottle remains within the cloud the radius grows by 10 "
+      "feet, to a maximum of 120 feet. The cloud lasts as long as "
+      "the bottle is open; closing it takes an action and its "
+      "command word, after which the cloud disperses in 10 minutes. "
+      "A moderate wind of 11 to 20 miles an hour also disperses it "
+      "after 1 minute, and a strong wind of 21 or more after 1 "
+      "round." },
     { "Eyes of Charming", BOOK_DMG,
       "Wondrous item", "uncommon",
       "requires attunement",
@@ -2145,12 +2189,16 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "effect if your Strength is already 19 or higher." },
     { "Gem of Brightness", BOOK_DMG,
       "Wondrous item", "uncommon",
-      "requires attunement",
-      "A prism with 50 charges. One charge makes it shed bright "
-      "light in a 30-foot radius for 10 minutes. Two charges fire a "
-      "beam at a creature within 60 feet, blinding it for 1 minute "
-      "unless it succeeds on a DC 15 Constitution save. It becomes "
-      "nonmagical when the last charge is spent." },
+      NULL,
+      "A prism with 50 charges. One command word makes it shed "
+      "bright light in a 30-foot radius and dim light for another "
+      "30, spending no charge, until you speak the word again or "
+      "use it another way. A second spends a charge to fire a beam "
+      "at a creature within 60 feet, blinding it for 1 minute "
+      "unless it succeeds on a DC 15 Constitution save, which it "
+      "may repeat at the end of each of its turns. A third spends "
+      "five charges to flare in a 30-foot cone, against the same "
+      "save. With the last charge spent it is a jewel worth 50 gp." },
     { "Gem of Seeing", BOOK_DMG,
       "Wondrous item", "rare",
       "requires attunement",
@@ -2197,13 +2245,20 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "darkvision, wearing them increases its range by 60 feet." },
     { "Hammer of Thunderbolts", BOOK_DMG,
       "Weapon (maul)", "legendary",
-      "requires attunement",
-      "+1 to attack and damage rolls. If you have a belt of giant "
-      "strength and gauntlets of ogre power attuned, your Strength "
-      "score increases by 4 to a maximum of 30 while you hold the "
-      "hammer. On a hit against a giant, the giant must succeed on "
-      "a DC 17 Constitution save or die. The hammer has five "
-      "charges for a thunderclap that can kill." },
+      NULL,
+      "+1 to attack and damage rolls. Attuning to it requires "
+      "wearing a belt of giant strength and gauntlets of ogre "
+      "power, and while you are attuned and holding it your "
+      "Strength score increases by 4 and may exceed 20, to a "
+      "maximum of 30. When you roll a 20 on an attack roll with it "
+      "against a giant, the giant must succeed on a DC 17 "
+      "Constitution save or die. It also has five charges, "
+      "regaining 1d4+1 daily at dawn: while attuned you can spend "
+      "one to hurl it as though it had the thrown property with a "
+      "range of 20/60 feet, and on a hit it looses a thunderclap "
+      "audible 300 feet away, stunning the target and each creature "
+      "within 30 feet of it until the end of your next turn unless "
+      "they succeed on a DC 17 Constitution save." },
     { "Heward's Handy Haversack", BOOK_DMG,
       "Wondrous item", "rare",
       NULL,
@@ -2225,12 +2280,27 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Helm of Brilliance", BOOK_DMG,
       "Wondrous item", "very rare",
       "requires attunement",
-      "Set with diamonds, rubies, fire opals and opals, each of "
-      "which powers a spell: daylight, fireball, prismatic spray, "
-      "and scorching ray. While it holds at least one opal you can "
-      "use an action to make it shed bright light in a 30-foot "
-      "radius, and while it holds a ruby you have resistance to "
-      "fire damage." },
+      "Set with 1d10 diamonds, 2d10 rubies, 3d10 fire opals and "
+      "4d10 opals, and it loses its magic when the last gem is "
+      "gone. As an action you can destroy one of its gems to cast "
+      "the spell keyed to that stone, save DC 18: daylight from an "
+      "opal, fireball from a fire opal, prismatic spray from a "
+      "diamond, or wall of fire from a ruby. While it holds at "
+      "least one diamond it sheds dim light in a 30-foot radius "
+      "whenever undead are within that area, and any undead that "
+      "starts its turn there takes 1d6 radiant damage; while it "
+      "holds at least one ruby you have resistance to fire damage; "
+      "while it holds at least one fire opal you can use an action "
+      "and a command word to set one weapon you hold ablaze with "
+      "flames that are harmless to you and it, add 1d6 fire damage "
+      "to each hit, and shed bright light in a 10-foot radius and "
+      "dim light for another 10 feet until you repeat the word as a "
+      "bonus action or drop or stow the weapon. If you take fire "
+      "damage from a failed save against a spell while wearing the "
+      "helm, roll a d20; on a 1 each other creature within 60 feet "
+      "must succeed on a DC 17 Dexterity save or take radiant "
+      "damage equal to the number of gems in the helm, and the helm "
+      "and its gems are then destroyed." },
     { "Helm of Comprehending Languages", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -2238,10 +2308,15 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Helm of Telepathy", BOOK_DMG,
       "Wondrous item", "uncommon",
       "requires attunement",
-      "You can cast detect thoughts from it, once per dawn, with a "
-      "save DC of 13. While a creature is affected, you can "
-      "communicate telepathically with it as long as you are within "
-      "60 feet, and once per dawn you can cast suggestion on it." },
+      "While wearing it you can use an action to cast detect "
+      "thoughts from the helm, save DC 13. As long as you keep "
+      "concentration on that spell you can use a bonus action to "
+      "send a telepathic message to a creature you are focused on, "
+      "and it can reply with a bonus action of its own while your "
+      "focus holds. While focused on a creature this way you can "
+      "also use an action to cast suggestion on it from the helm, "
+      "save DC 13; that property then cannot be used again until "
+      "the next dawn." },
     { "Helm of Teleportation", BOOK_DMG,
       "Wondrous item", "rare",
       "requires attunement",
@@ -2259,22 +2334,29 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Horn of Blasting", BOOK_DMG,
       "Wondrous item", "rare",
       NULL,
-      "As an action you can blow it: each creature in a 30-foot "
-      "cone makes a DC 15 Constitution save, taking 5d6 thunder "
-      "damage and being deafened for 1 minute on a failure, or half "
-      "damage on a success. Each use after the first in the same "
-      "day has a 20 percent cumulative chance of exploding for 10d6 "
-      "fire damage to the blower." },
+      "As an action you speak its command word and blow it, loosing "
+      "a blast in a 30-foot cone audible 600 feet away. Each "
+      "creature in the cone makes a DC 15 Constitution save, taking "
+      "5d6 thunder damage and being deafened for 1 minute on a "
+      "failure, or half damage and no deafness on a success; "
+      "creatures and objects made of glass or crystal have "
+      "disadvantage on the save and take 10d6 thunder damage "
+      "instead. Each use of the horn's magic has a 20 percent "
+      "chance of making it explode, dealing 10d6 fire damage to the "
+      "blower and destroying the horn." },
     { "Horn of Valhalla", BOOK_DMG,
       "Wondrous item", "rare to legendary",
       NULL,
-      "Blowing it summons 3d4+3 berserkers who fight for 1 hour or "
-      "until dismissed. The silver horn has no requirement, the "
-      "brass requires proficiency with all simple weapons, the "
-      "bronze proficiency with all medium armor, and the iron "
-      "proficiency with all martial weapons; blowing one without "
-      "meeting its requirement turns the berserkers on you. Once "
-      "used, it cannot be used again for 7 days." },
+      "Blowing it as an action calls warrior spirits from Ysgard, "
+      "who appear within 60 feet and fight with berserker "
+      "statistics until they drop to 0 hit points or an hour "
+      "passes. The silver horn summons 2d4+2 and has no "
+      "requirement, the brass 3d4+3 and requires proficiency with "
+      "all simple weapons, the bronze 4d4+4 and proficiency with "
+      "all medium armor, and the iron 5d4+5 and proficiency with "
+      "all martial weapons; blowing one without meeting its "
+      "requirement turns the berserkers on you. Once used, it "
+      "cannot be used again for 7 days." },
     { "Horseshoes of a Zephyr", BOOK_DMG,
       "Wondrous item", "very rare",
       NULL,
@@ -2368,10 +2450,11 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Mace of Smiting", BOOK_DMG,
       "Weapon (mace)", "rare",
       NULL,
-      "+1 to attack and damage rolls, or +3 against constructs. On "
-      "a hit against a construct it deals an extra 2d6 bludgeoning "
-      "damage, and a roll of 20 destroys the construct outright if "
-      "it has 25 hit points or fewer after the damage." },
+      "+1 to attack and damage rolls, or +3 against constructs. "
+      "When you roll a 20 on an attack roll with it, the target "
+      "takes an extra 7 bludgeoning damage, or an extra 14 if it is "
+      "a construct, and a construct left with 25 hit points or "
+      "fewer after that damage is destroyed." },
     { "Mace of Terror", BOOK_DMG,
       "Weapon (mace)", "rare",
       "requires attunement",
@@ -2415,11 +2498,12 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Nolzur's Marvelous Pigments", BOOK_DMG,
       "Wondrous item", "very rare",
       NULL,
-      "1d4 pots and a brush. Painting a two-dimensional object on a "
-      "surface makes the real thing, up to 1,000 cubic feet, using "
-      "10 minutes and one pot per 100 square feet. Objects made "
-      "this way are real but ordinary; no creatures or magic items "
-      "can be created." },
+      "1d4 pots and a brush. Painting an object or terrain feature "
+      "in two dimensions on a surface makes it real, up to 10,000 "
+      "cubic feet, at 10 minutes per 100 square feet painted, and "
+      "one pot covers 1,000 square feet of surface. What you make "
+      "is inanimate and nonmagical, and nothing created this way "
+      "can be worth more than 25 gp." },
     { "Mariner's Armor", BOOK_DMG,
       "Armor (light, medium or heavy)", "uncommon",
       NULL,
@@ -2436,12 +2520,17 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Mirror of Life Trapping", BOOK_DMG,
       "Wondrous item", "very rare",
       NULL,
-      "A 4-foot-wide mirror with twelve extradimensional cells. Any "
-      "creature other than you that sees its reflection while "
-      "within 30 feet must succeed on a DC 15 Charisma save or be "
-      "trapped in a cell. You can free a trapped creature by "
-      "speaking the command word, or shatter the mirror to free "
-      "them all." },
+      "A 4-foot-tall mirror with twelve extradimensional cells. "
+      "While it hangs on a vertical surface you can use an action "
+      "within 5 feet of it to speak its command word and activate "
+      "it. Any creature but you that sees its reflection in the "
+      "activated mirror from within 30 feet must succeed on a DC 15 "
+      "Charisma save or be trapped in a cell with everything it "
+      "wears and carries; the save has advantage if the creature "
+      "knows what the mirror is, and constructs always succeed. A "
+      "second command word, spoken as an action from within 5 feet, "
+      "frees one prisoner, and shattering the mirror frees them "
+      "all." },
     { "Mithral Armor", BOOK_DMG,
       "Armor (medium or heavy, not hide)", "uncommon",
       NULL,
@@ -2472,21 +2561,26 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Nine Lives Stealer", BOOK_DMG,
       "Weapon (any sword)", "very rare",
       "requires attunement",
-      "+1 to attack and damage rolls. It has 1d8+1 charges. When "
+      "+2 to attack and damage rolls. It has 1d8+1 charges. When "
       "you score a critical hit against a creature with fewer than "
       "100 hit points, it must succeed on a DC 15 Constitution save "
-      "or die, spending a charge. With no charges left the sword "
-      "keeps its bonus." },
+      "or be slain outright, spending a charge only if it dies; "
+      "constructs and undead are immune. With no charges left the "
+      "sword loses that property but keeps its bonus." },
     { "Oathbow", BOOK_DMG,
       "Weapon (longbow)", "very rare",
       "requires attunement",
-      "Nocking an arrow and saying \"Swift defeat to my enemies\" "
-      "names your sworn enemy. Against it your attacks with this "
-      "bow never suffer disadvantage and deal an extra 3d6 piercing "
-      "damage, or 3d10 against a creature immune to piercing "
-      "damage. The oath ends when the enemy dies or when you swear "
-      "a new one, and while sworn you have disadvantage on attacks "
-      "with other weapons." },
+      "Nocking an arrow makes the bow whisper \"Swift defeat to my "
+      "enemies\" in Elvish. Saying \"Swift death to you who have "
+      "wronged me\" as you make a ranged attack with it makes the "
+      "target your sworn enemy until it dies or until dawn seven "
+      "days later, and you can have only one at a time, choosing a "
+      "new one after the next dawn once it dies. Ranged attack "
+      "rolls against your sworn enemy have advantage, it gains no "
+      "benefit from cover short of total cover, long range imposes "
+      "no disadvantage, and a hit deals an extra 3d6 piercing "
+      "damage. While it lives you have disadvantage on attack rolls "
+      "with all other weapons." },
     { "Oil of Etherealness", BOOK_DMG,
       "Potion", "rare",
       NULL,
@@ -2550,12 +2644,18 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Pipes of the Sewers", BOOK_DMG,
       "Wondrous item", "uncommon",
       "requires attunement",
-      "Three charges, regaining 1d3 daily at dawn. While you play "
-      "them, ordinary rats and giant rats within 1/2 mile come to "
-      "you. As an action you can spend a charge to command those "
-      "within 30 feet, and while you keep playing they follow your "
-      "telepathic commands. You must be proficient with wind "
-      "instruments to use them." },
+      "Three charges, regaining 1d3 daily at dawn, and you must be "
+      "proficient with wind instruments to use them. While you are "
+      "attuned, ordinary rats and giant rats are indifferent toward "
+      "you and will not attack unless you threaten or harm them. "
+      "Playing them as an action lets you spend 1 to 3 charges as a "
+      "bonus action, calling one swarm of rats per charge if enough "
+      "rats are within half a mile, though the swarms only move "
+      "toward the music and are not under your control. When such a "
+      "swarm comes within 30 feet while you play, make a Charisma "
+      "check contested by its Wisdom check: win and it is friendly "
+      "for as long as you keep playing each round, lose and it "
+      "cannot be swayed by the pipes for 24 hours." },
     { "Plate Armor of Etherealness", BOOK_DMG,
       "Armor (plate)", "legendary",
       "requires attunement",
@@ -2626,10 +2726,10 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Potion of Healing", BOOK_DMG,
       "Potion", "common to very rare",
       NULL,
-      "Drinking it as an action restores hit points: healing 2d4+2 "
-      "(common, 50 gp), greater healing 4d4+4 (uncommon, 100 gp), "
-      "superior healing 8d4+8 (rare, 500 gp), supreme healing "
-      "10d4+20 (very rare, 5,000 gp)." },
+      "Drinking it as an action restores hit points, the number set "
+      "by the potion's rarity: healing 2d4+2 (common), greater "
+      "healing 4d4+4 (uncommon), superior healing 8d4+8 (rare), "
+      "supreme healing 10d4+20 (very rare)." },
     { "Potion of Heroism", BOOK_DMG,
       "Potion", "rare",
       NULL,
@@ -2662,12 +2762,15 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Potion of Poison", BOOK_DMG,
       "Potion", "uncommon",
       NULL,
-      "It looks, smells and tastes like a healing potion, and "
-      "identify reveals only that. Drinking it deals 3d6 poison "
-      "damage on a failed DC 13 Constitution save and poisons you "
-      "for 1 hour, or half damage with no poisoning on a success. "
-      "While poisoned this way you take 3d6 poison damage at the "
-      "start of each of your turns." },
+      "It looks, smells and tastes like a potion of healing or some "
+      "other helpful potion, but it is poison masked by illusion, "
+      "and an identify spell reveals its true nature. Drinking it "
+      "deals 3d6 poison damage, and you must succeed on a DC 13 "
+      "Constitution save or be poisoned. While poisoned this way "
+      "you take 3d6 poison damage at the start of each of your "
+      "turns; you can repeat the save at the end of each of your "
+      "turns, and each success lowers that ongoing damage by 1d6, "
+      "the poison ending when it reaches 0." },
     { "Potion of Resistance", BOOK_DMG,
       "Potion", "uncommon",
       NULL,
@@ -2695,24 +2798,26 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       NULL,
       "A jar of 1d4+1 doses. As an action, one dose can be "
       "swallowed or applied to the skin: it restores 2d8+2 hit "
-      "points, cures any disease or poison, and ends the blinded "
-      "and deafened conditions." },
+      "points, ends the poisoned condition, and cures any disease." },
     { "Ring of Animal Influence", BOOK_DMG,
       "Ring", "rare",
       NULL,
-      "Three charges, regaining all daily at dawn. You can spend a "
-      "charge to cast animal friendship (save DC 13), fear on "
-      "beasts only (save DC 13), or speak with animals." },
+      "Three charges, regaining 1d3 daily at dawn. As an action you "
+      "can spend a charge to cast animal friendship (save DC 13), "
+      "fear (save DC 13) targeting only beasts of Intelligence 3 or "
+      "lower, or speak with animals." },
     { "Ring of Djinni Summoning", BOOK_DMG,
       "Ring", "legendary",
       "requires attunement",
       "You can speak its command word as an action to summon a "
-      "particular djinni from the Elemental Plane of Air. It "
-      "appears in an unoccupied space within 120 feet, is friendly "
-      "to you and your companions, obeys your commands, and "
-      "vanishes after 1 hour, when it drops to 0 hit points, or "
-      "when you dismiss it. Once used, it cannot be used again "
-      "until the next dawn." },
+      "particular djinni from the Elemental Plane of Air into an "
+      "unoccupied space you choose within 120 feet. It is friendly "
+      "to you and your companions and obeys your commands whatever "
+      "language you use, and it stays while you concentrate on it "
+      "as you would a spell, up to 1 hour, or until it drops to 0 "
+      "hit points, then returns to its home plane. Once it departs "
+      "you cannot summon it again for 24 hours, and if the djinni "
+      "dies the ring becomes nonmagical." },
     { "Ring of Elemental Command", BOOK_DMG,
       "Ring", "legendary",
       "requires attunement",
@@ -2732,8 +2837,8 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Ring of Feather Falling", BOOK_DMG,
       "Ring", "rare",
       "requires attunement",
-      "When you fall more than 10 feet you descend 60 feet per "
-      "round and take no damage from the fall." },
+      "When you fall while wearing it you descend 60 feet per round "
+      "and take no damage from the fall." },
     { "Ring of Free Action", BOOK_DMG,
       "Ring", "rare",
       "requires attunement",
@@ -2744,9 +2849,9 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Ring", "legendary",
       "requires attunement",
       "As an action you can turn invisible, along with anything you "
-      "wear or carry, until you use an action to become visible, "
-      "until you attack or cast a spell, or until you take the ring "
-      "off." },
+      "wear or carry, until you use a bonus action to become "
+      "visible, until you attack or cast a spell, or until you take "
+      "the ring off." },
     { "Ring of Jumping", BOOK_DMG,
       "Ring", "uncommon",
       "requires attunement",
@@ -2799,10 +2904,11 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Ring", "legendary",
       "requires attunement",
       "You have advantage on saving throws against any spell that "
-      "targets only you, not an area. If you succeed on the save "
-      "against a spell of 7th level or lower, the spell has no "
-      "effect on you and is turned back on the caster, using the "
-      "caster's own slot level and DC." },
+      "targets only you, not an area. If you roll a 20 on the save "
+      "and the spell is 7th level or lower, the spell has no effect "
+      "on you and instead targets the caster, using the caster's "
+      "own slot level, save DC, attack bonus, and spellcasting "
+      "ability." },
     { "Ring of Swimming", BOOK_DMG,
       "Ring", "uncommon",
       NULL,
@@ -2848,20 +2954,27 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Robe of Eyes", BOOK_DMG,
       "Wondrous item", "rare",
       "requires attunement",
-      "You have advantage on Wisdom (Perception) checks that rely "
-      "on sight, darkvision to 120 feet, and you can see invisible "
-      "creatures and into the Ethereal Plane within 120 feet. You "
-      "cannot be blinded, but a light or daylight spell cast on the "
-      "robe blinds you for 1 minute." },
+      "You see in every direction, you have advantage on Wisdom "
+      "(Perception) checks that rely on sight, you have darkvision "
+      "out to 120 feet, and out to that same 120 feet you can see "
+      "invisible creatures and objects and see into the Ethereal "
+      "Plane. The robe's own eyes never shut or turn away, so while "
+      "you wear it you never count as having closed or averted your "
+      "eyes. A light spell cast on the robe, or a daylight spell "
+      "cast within 5 feet of it, blinds you for 1 minute, but at "
+      "the end of each of your turns you can throw the blindness "
+      "off with a Constitution save, DC 11 against light and DC 15 "
+      "against daylight." },
     { "Robe of Scintillating Colors", BOOK_DMG,
       "Wondrous item", "very rare",
       "requires attunement",
       "Three charges, regaining 1d3 daily at dawn. As an action you "
       "can spend a charge to make the robe display shifting colors "
-      "for 1 minute: you shed bright light in a 30-foot radius, "
-      "creatures that can see you have disadvantage on attack rolls "
-      "against you, and any creature within 30 feet that starts its "
-      "turn able to see you must succeed on a DC 15 Wisdom save or "
+      "until the end of your next turn: it sheds bright light in a "
+      "30-foot radius and dim light for another 30 feet, creatures "
+      "that can see you have disadvantage on attack rolls against "
+      "you, and any creature in the bright light that can see you "
+      "when you activate it must succeed on a DC 15 Wisdom save or "
       "be stunned until the effect ends." },
     { "Robe of Stars", BOOK_DMG,
       "Wondrous item", "very rare",
@@ -2877,10 +2990,11 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       NULL,
       "Patches on the robe become real objects. It begins with two "
       "each of dagger, bullseye lantern (filled and lit), steel "
-      "mirror, 10-foot pole, hempen rope and sack, plus 4d4 more "
-      "rolled at random from a table ranging from a bag of 100 gp "
-      "to a portable ram or a 24-foot sailing boat. Detaching a "
-      "patch is an action." },
+      "mirror, 10-foot pole, 50-foot coil of hempen rope and sack, "
+      "plus 4d4 more that the DM picks or rolls at random from a "
+      "table ranging from a bag of 100 gp to a portable ram. "
+      "Detaching a patch is an action, and with the last patch gone "
+      "the robe is ordinary clothing." },
     { "Robe of the Archmagi", BOOK_DMG,
       "Wondrous item", "legendary",
       "requires attunement by a sorcerer, warlock or wizard",
@@ -2900,12 +3014,18 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Rod of Alertness", BOOK_DMG,
       "Rod", "very rare",
       "requires attunement",
-      "You gain advantage on Wisdom (Perception) checks and on "
-      "rolls for initiative. While holding it you can cast detect "
-      "evil and good, detect magic, detect poison and disease, or "
-      "see invisibility. As an action you can plant it in the "
-      "ground for a 600-foot aura of light and a +1 bonus to AC and "
-      "saving throws for allies within 10 feet." },
+      "While you hold the rod you have advantage on Wisdom "
+      "(Perception) checks and on rolls for initiative, and you can "
+      "use an action to cast detect evil and good, detect magic, "
+      "detect poison and disease, or see invisibility from it. As "
+      "an action you can plant it in the ground, where its head "
+      "sheds bright light in a 60-foot radius and dim light for "
+      "another 60 feet; while in that bright light, you and "
+      "creatures friendly to you gain a +1 bonus to AC and saving "
+      "throws and can sense where any invisible hostile creature in "
+      "it is. The glow and its effects end after 10 minutes, or "
+      "when a creature uses an action to pull the rod free, and "
+      "this property cannot be used again until the next dawn." },
     { "Rod of Lordly Might", BOOK_DMG,
       "Rod", "legendary",
       "requires attunement",
@@ -2924,19 +3044,26 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Rod of Rulership", BOOK_DMG,
       "Rod", "rare",
       "requires attunement",
-      "As an action you can command obedience: each creature of "
-      "your choice within 120 feet that can see and hear you must "
-      "succeed on a DC 15 Wisdom save or be charmed by you for 8 "
-      "minutes, or until you or your companions harm it. Once used, "
-      "it cannot be used again until the next dawn." },
+      "As an action you present the rod and demand obedience from "
+      "each creature of your choice that you can see within 120 "
+      "feet. Each must succeed on a DC 15 Wisdom save or be charmed "
+      "for 8 hours, treating you as a leader it trusts. The charm "
+      "ends on a target that you or your companions harm, or that "
+      "you order to act against its nature. Once used, the rod "
+      "cannot be used again until the next dawn." },
     { "Rod of Security", BOOK_DMG,
       "Rod", "very rare",
       NULL,
-      "As an action you can transport yourself and up to 199 other "
-      "willing creatures to a paradise on a demiplane, where time "
-      "passes slowly and creatures do not age. You can stay up to "
-      "200 days divided by the number of creatures. Once used, it "
-      "cannot be used again for 10 days." },
+      "As an action you can whisk yourself and up to 199 other "
+      "willing creatures you can see into a paradise in an "
+      "extraplanar space, shaped however you like and stocked with "
+      "food and water for everyone in it. Every hour spent inside "
+      "heals a visitor as though it had spent 1 Hit Die, and nobody "
+      "ages there even though time runs at its normal pace. The "
+      "stay lasts up to 200 days divided by the number of creatures "
+      "present, and when that runs out, or you spend an action to "
+      "end it early, everyone returns to the spot they left. The "
+      "rod is then inert for ten days." },
     { "Rod of the Pact Keeper", BOOK_DMG,
       "Rod", "uncommon (+1), rare (+2), very rare (+3)",
       "requires attunement by a warlock",
@@ -3005,11 +3132,17 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Scroll", "common (cantrip) to legendary (9th level)",
       NULL,
       "A single spell written on the scroll. If the spell is on "
-      "your class's list you can cast it from the scroll without a "
-      "slot or material components; otherwise you must make a DC 10 "
-      "+ spell level ability check with your spellcasting ability, "
-      "and the scroll is destroyed either way. The scroll's save DC "
-      "is 13 + half the spell's level rounded down." },
+      "your class's list you can use an action to read it and cast "
+      "it, with no spell slot and none of the spell's components; "
+      "otherwise the writing is unintelligible to you. If it is on "
+      "your list but of a higher level than you can normally cast, "
+      "make an ability check with your spellcasting ability against "
+      "a DC of 10 + the spell's level, and on a failure the spell "
+      "simply vanishes from the scroll. Once cast, the scroll "
+      "crumbles to dust. The spell's level sets its save DC and "
+      "attack bonus: 13 and +5 through 2nd, 15 and +7 at 3rd and "
+      "4th, 17 and +9 at 5th and 6th, 18 and +10 at 7th and 8th, 19 "
+      "and +11 at 9th." },
     { "Spellguard Shield", BOOK_DMG,
       "Armor (shield)", "very rare",
       "requires attunement",
@@ -3019,12 +3152,16 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Sphere of Annihilation", BOOK_DMG,
       "Wondrous item", "legendary",
       NULL,
-      "A 2-foot black sphere that annihilates all matter it "
-      "touches. As an action you can control it with a DC 25 "
-      "Intelligence (Arcana) check, moving it 5 feet per 5 points "
-      "by which you beat the DC; on a failure it moves 10 feet "
-      "toward you. A creature it touches takes 4d10 force damage on "
-      "a failed DC 13 Dexterity save." },
+      "A 2-foot black sphere that destroys any matter passing "
+      "through it, artifacts aside; anything that touches it "
+      "without being wholly consumed takes 4d10 force damage. It "
+      "stays put until controlled: within 60 feet of an "
+      "uncontrolled sphere you can use an action to make a DC 25 "
+      "Intelligence (Arcana) check, on a success moving it in one "
+      "direction of your choice up to 5 feet times your "
+      "Intelligence modifier, minimum 5 feet, and on a failure it "
+      "drifts 10 feet toward you. A creature whose space it enters "
+      "takes 4d10 force damage on a failed DC 13 Dexterity save." },
     { "Staff of Charming", BOOK_DMG,
       "Staff", "rare",
       "requires attunement by a bard, cleric, druid, sorcerer, "
@@ -3075,19 +3212,27 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Staff", "rare",
       "requires attunement by a bard, cleric, druid, sorcerer, "
       "warlock or wizard",
-      "Ten charges, regaining 1d6+4 daily at dawn: giant insect (4 "
-      "charges), insect plague (5), or a swarm of insects around "
-      "you for 1 charge that deals 2d10 piercing damage and blocks "
-      "sight. Spending the last charge risks the staff being "
-      "devoured by insects." },
+      "Ten charges, regaining 1d6+4 daily at dawn. As an action you "
+      "can cast giant insect (4 charges) or insect plague (5) from "
+      "it using your spell save DC, or spend 1 charge to spread "
+      "harmless flying insects in a 30-foot radius around you for "
+      "10 minutes, heavily obscuring the area for everyone but you "
+      "and moving with you until a wind of at least 10 miles per "
+      "hour disperses them. Spending the last charge risks the "
+      "staff being devoured by insects." },
     { "Staff of the Adder", BOOK_DMG,
       "Staff", "uncommon",
-      "requires attunement",
-      "As a bonus action you can turn the head into a poisonous "
-      "snake for 1 minute; you can attack with it at +9 to hit, "
-      "reach 5 feet, dealing 1d6 piercing damage and 3d6 poison "
-      "damage. The head has AC 15 and 20 hit points, and destroying "
-      "it destroys the staff." },
+      "requires attunement by a cleric, druid, or warlock",
+      "As a bonus action you can speak the command word to turn the "
+      "head into an animate poisonous snake for 1 minute, and "
+      "another bonus action returns it to its inanimate form. You "
+      "can make a melee attack with the head at reach 5 feet, "
+      "adding your proficiency bonus to the roll, dealing 1d6 "
+      "piercing damage plus 3d6 poison damage unless the target "
+      "succeeds on a DC 15 Constitution save. The head has AC 15 "
+      "and 20 hit points; if it drops to 0 the staff is destroyed, "
+      "and otherwise it regains all lost hit points when it "
+      "reverts." },
     { "Staff of the Magi", BOOK_DMG,
       "Staff", "legendary",
       "requires attunement by a sorcerer, warlock or wizard",
@@ -3117,10 +3262,16 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Staff", "very rare",
       "requires attunement",
       "A quarterstaff granting +2 to attack and damage rolls, plus "
-      "five properties each usable once per dawn: extra 2d6 "
-      "lightning damage on a hit, a thunderclap for 2d6 thunder "
-      "damage, a lightning bolt for 9d6, a thunderclap for 2d6 and "
-      "stunning, or both at once." },
+      "five properties each usable once per dawn: an extra 2d6 "
+      "lightning damage on a melee hit; a crack of thunder on a "
+      "melee hit that stuns the target until the end of your next "
+      "turn on a failed DC 17 Constitution save; an action for a "
+      "line of lightning 5 feet wide and 120 feet long dealing 9d6, "
+      "halved on a successful DC 17 Dexterity save; an action for a "
+      "thunderclap that deals 2d6 thunder damage and 1 minute of "
+      "deafness to each other creature within 60 feet on a failed "
+      "DC 17 Constitution save, half damage and no deafness on a "
+      "success; and an action to use those last two at once." },
     { "Staff of Withering", BOOK_DMG,
       "Staff", "rare",
       "requires attunement by a cleric, druid or warlock",
@@ -3155,22 +3306,30 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "requires attunement",
       "When you roll a 20 on an attack roll with it, the target "
       "takes an extra 3d6 necrotic damage if it is not a construct "
-      "or undead, and you gain temporary hit points equal to that "
-      "extra damage." },
+      "or undead, and you gain 10 temporary hit points." },
     { "Sword of Sharpness", BOOK_DMG,
       "Weapon (any sword that deals slashing damage)", "very rare",
       "requires attunement",
-      "On a hit you can speak the command word to deal an extra 4d6 "
-      "slashing damage. A roll of 20 severs one of the target's "
-      "limbs or appendages, if it has any. The sword also sheds "
-      "bright light in a 10-foot radius on command." },
+      "When you hit an object with it, your weapon damage dice are "
+      "maximized. When you roll a 20 on an attack roll against a "
+      "creature, it takes an extra 4d6 slashing damage, and you "
+      "then roll another d20 to see whether you lop off one of its "
+      "limbs, or a portion of its body if it has none, the effect "
+      "left to the DM. On its command word the blade sheds bright "
+      "light in a 10-foot radius and dim light for another 10 feet "
+      "until you speak the word again or sheathe it." },
     { "Sword of Wounding", BOOK_DMG,
       "Weapon (any sword)", "rare",
       "requires attunement",
-      "A creature hit by it takes 1d4 necrotic damage at the start "
-      "of each of its turns, and can only end this by succeeding on "
-      "a DC 15 Constitution save at the end of its turn. Hit points "
-      "lost this way can be regained only by a short or long rest." },
+      "Once per turn when you hit a creature with this weapon you "
+      "can wound it. At the start of each of its turns a wounded "
+      "creature takes 1d4 necrotic damage for each wound you have "
+      "dealt it, and can then attempt a DC 15 Constitution save to "
+      "end all of them; alternatively the creature, or another "
+      "within 5 feet of it, can use an action on a DC 15 Wisdom "
+      "(Medicine) check to end them. Hit points lost to this weapon "
+      "come back only from a short or long rest, not from "
+      "regeneration or other magic." },
     { "Talisman of Pure Good", BOOK_DMG,
       "Wondrous item", "legendary",
       "requires attunement by a creature of good alignment",
@@ -3183,10 +3342,11 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Talisman of the Sphere", BOOK_DMG,
       "Wondrous item", "legendary",
       "requires attunement",
-      "While you hold it, you have advantage on Intelligence "
-      "(Arcana) checks made to control a sphere of annihilation, "
-      "and you double the distance the sphere moves on a successful "
-      "check." },
+      "While you hold it, you double your proficiency bonus on "
+      "Intelligence (Arcana) checks made to control a sphere of "
+      "annihilation. When you start your turn in control of one, "
+      "you can use an action to levitate it 10 feet plus 10 feet "
+      "times your Intelligence modifier." },
     { "Talisman of Ultimate Evil", BOOK_DMG,
       "Wondrous item", "legendary",
       "requires attunement by a creature of evil alignment",
@@ -3242,11 +3402,13 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Wand of Binding", BOOK_DMG,
       "Wand", "rare",
       "requires attunement by a spellcaster",
-      "Seven charges, regaining 1d6+1 daily at dawn. You can spend "
-      "charges to cast hold monster (5 charges) or hold person (2), "
-      "or spend 5 charges as a reaction to gain advantage on a save "
-      "against paralysis or restraint. Spending the last charge "
-      "risks the wand crumbling to ashes." },
+      "Seven charges, regaining 1d6+1 daily at dawn. As an action "
+      "you can spend charges to cast hold monster (5 charges) or "
+      "hold person (2), save DC 17, or spend 1 charge as a reaction "
+      "to gain advantage on a save against being paralyzed or "
+      "restrained, or 1 charge for advantage on a check to escape a "
+      "grapple. Spending the last charge risks the wand crumbling "
+      "to ashes." },
     { "Wand of Enemy Detection", BOOK_DMG,
       "Wand", "rare",
       "requires attunement",
@@ -3260,9 +3422,11 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "requires attunement",
       "Seven charges, regaining 1d6+1 daily at dawn. One charge "
       "commands a creature within 60 feet to flee or grovel on a "
-      "failed DC 15 Wisdom save; three charges frighten each "
-      "creature in a 60-foot cone. Spending the last charge risks "
-      "the wand crumbling to ashes." },
+      "failed DC 15 Wisdom save; two charges emit a 60-foot cone of "
+      "amber light that frightens each creature in it for 1 minute "
+      "on a failed DC 15 Wisdom save, which it may repeat at the "
+      "end of each of its turns. Spending the last charge risks the "
+      "wand crumbling to ashes." },
     { "Wand of Fireballs", BOOK_DMG,
       "Wand", "rare",
       "requires attunement by a spellcaster",
@@ -3293,10 +3457,12 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "Wand", "rare",
       "requires attunement by a spellcaster",
       "Seven charges, regaining 1d6+1 daily at dawn. As an action "
-      "you can spend a charge to fire a thin blue ray at a creature "
-      "within 60 feet, which must succeed on a DC 15 Constitution "
-      "save or be paralyzed for 1 minute, repeating the save at the "
-      "end of each of its turns." },
+      "you can spend a charge to send a thin blue ray at a creature "
+      "you can see within 60 feet, making a ranged attack roll "
+      "against it with your spell attack bonus; on a hit the target "
+      "is paralyzed for 1 minute, and at the end of each of its "
+      "turns it can attempt a saving throw to end the effect. "
+      "Spending the last charge risks the wand crumbling to ashes." },
     { "Wand of Polymorph", BOOK_DMG,
       "Wand", "very rare",
       "requires attunement by a spellcaster",
@@ -3338,17 +3504,21 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Weapon of Warning", BOOK_DMG,
       "Weapon (any)", "uncommon",
       "requires attunement",
-      "You and your companions within 30 feet gain advantage on "
-      "initiative rolls while you carry it. You and any of them "
-      "cannot be surprised while sleeping, unless incapacitated by "
-      "something other than normal sleep, and the weapon wakes you "
-      "when it senses danger." },
+      "While the weapon is on your person you have advantage on "
+      "initiative rolls, and neither you nor any companion within "
+      "30 feet can be surprised, unless incapacitated by something "
+      "other than nonmagical sleep. If any of you is asleep "
+      "naturally when combat begins, the weapon wakes everyone "
+      "within that range." },
     { "Well of Many Worlds", BOOK_DMG,
       "Wondrous item", "legendary",
       NULL,
-      "A circle of black cloth that opens a two-way portal to a "
-      "random plane when spread out; folding it closes the portal. "
-      "It can be opened no more than once per dawn." },
+      "A circle of black cloth 6 feet across, folded down to the "
+      "size of a handkerchief. As an action you can unfold it onto "
+      "a solid surface to open a two-way portal to another world or "
+      "plane, chosen by the DM; an action spent taking hold of the "
+      "edges and folding it up closes the portal. Once it has "
+      "opened a portal, it cannot open another for 1d8 hours." },
     { "Wind Fan", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -3369,8 +3539,9 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "requires attunement",
       "As an action you can speak the command word to turn the "
       "cloak into a pair of bat or bird wings, giving you a flying "
-      "speed of 60 feet for up to 1 hour. They recover 1 hour of "
-      "flight for every 12 hours they are not used." },
+      "speed of 60 feet for 1 hour or until you repeat the command "
+      "word as an action. Once the wings disappear, you cannot use "
+      "them again for 1d12 hours." },
     { "Elixir of Health", BOOK_DMG,
       "Potion", "rare",
       NULL,
@@ -3379,13 +3550,19 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Instrument of the Bards", BOOK_DMG,
       "Wondrous item", "uncommon to very rare",
       "requires attunement by a bard",
-      "A masterwork instrument that grants +2 to the saving throw "
-      "DCs of your bard spells while you play it, and lets you cast "
-      "a fixed list of spells from it, each once per dawn. The "
-      "seven kinds, in ascending power, are the Doss lute, "
-      "Fochlucan bandore, Mac-Fuirmidh cittern, Cli lyre, Anstruth "
-      "harp, Ollamh harp and Canaith mandolin. A creature not a "
-      "bard that plays one takes 2d4 psychic damage." },
+      "A masterwork instrument named for one of seven bardic "
+      "colleges: in ascending rarity the Doss lute, Fochlucan "
+      "bandore and Mac-Fuirmidh cittern, then the Canaith mandolin "
+      "and Cli lyre, then the Anstruth harp, then the Ollamh harp. "
+      "As an action you can play it to cast fly, invisibility, "
+      "levitate, protection from evil and good, or one of the "
+      "spells particular to that instrument, each once per dawn and "
+      "using your own spellcasting ability and spell save DC. "
+      "Targets a spell of yours would charm have disadvantage on "
+      "that save, whether the instrument is the spell's source or "
+      "only your focus. A creature that tries to play it without "
+      "being attuned takes 2d4 psychic damage unless it succeeds on "
+      "a DC 15 Wisdom save." },
     { "Saddle of the Cavalier", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -3396,13 +3573,15 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Scroll of Protection", BOOK_DMG,
       "Scroll", "rare",
       NULL,
-      "Reading it as an action for 1 minute protects you against "
-      "one type of creature -- aberrations, beasts, celestials, "
-      "elementals, fey, fiends or undead. For 5 minutes, creatures "
-      "of that type cannot willingly come within 5 feet of you, and "
-      "have disadvantage on attack rolls against you, unless they "
-      "succeed on a DC 15 Charisma save; even then they cannot "
-      "charm, frighten or possess you." },
+      "It works against one creature type: aberrations, beasts, "
+      "celestials, elementals, fey, fiends, plants or undead. "
+      "Reading it as an action encloses you in an invisible "
+      "cylinder 5 feet in radius and 10 feet high that moves with "
+      "you, and for 5 minutes creatures of that type cannot enter "
+      "it or affect anything inside. The effect ends if you move so "
+      "that such a creature would be inside it, and a creature can "
+      "escape the barrier by using an action to succeed on a DC 15 "
+      "Charisma check." },
     { "Sending Stones", BOOK_DMG,
       "Wondrous item", "uncommon",
       NULL,
@@ -3439,15 +3618,18 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
       "creature made by a drow." },
     { "Tome of the Stilled Tongue", BOOK_DMG,
       "Wondrous item", "legendary",
-      "requires attunement by a spellcaster",
-      "Vecna's own spellbook, with a severed tongue in its front "
-      "cover. It acts as a spellbook, and any spell you write in it "
-      "costs half the usual gold and time. It holds five charges, "
-      "regaining 1d4+1 daily at dawn, which can be spent to cast a "
-      "spell inscribed on its pages without expending a slot." },
+      "requires attunement by a wizard",
+      "A leather-bound volume with a desiccated tongue pinned to "
+      "its cover, one of five such tomes. It serves as a spellbook "
+      "and an arcane focus, and while holding it you can use a "
+      "bonus action to cast one spell written in it without "
+      "expending a slot or using verbal or somatic components, "
+      "which you cannot do again until the next dawn. Pulling the "
+      "tongue free while attuned permanently erases every spell in "
+      "the book." },
     { "Blackrazor", BOOK_DMG,
       "Weapon (greatsword)", "legendary",
-      "requires attunement",
+      "requires attunement by a creature of non-lawful alignment",
       "A sentient blade that devours souls. +3 to attack and damage "
       "rolls. When you kill a creature with it that is not a "
       "construct or undead, the sword absorbs its soul and you gain "
@@ -3459,73 +3641,113 @@ const MagicItem BOOK_MAGIC_ITEMS[] = {
     { "Book of Exalted Deeds", BOOK_DMG,
       "Wondrous item", "artifact",
       "requires attunement by a creature of good alignment",
-      "Studying it for 80 hours over at least 10 days raises your "
-      "Wisdom by 2 and your Wisdom maximum by 2, and grants a "
-      "bless-like aura and other boons of good. Reading it as an "
-      "evil creature deals 24d6 radiant damage." },
+      "Studying it for 80 hours raises your Wisdom by 2, to a "
+      "maximum of 24, lets any spell slot you expend on a cleric or "
+      "paladin spell count as one level higher, and grants a halo "
+      "you can manifest or dismiss as a bonus action. The benefits "
+      "end if you willingly perform an evil act, or if 10 days pass "
+      "without an act of kindness or generosity from you. An evil "
+      "creature that tries to read the book takes 24d6 radiant "
+      "damage." },
     { "Book of Vile Darkness", BOOK_DMG,
       "Wondrous item", "artifact",
       "requires attunement",
-      "Studying it for 80 hours over at least 10 days grants a "
-      "permanent boon: an ability score increase, a lich "
-      "transformation, or a dark gift, along with a curse. Reading "
-      "it as a good creature deals 24d6 psychic damage." },
+      "A non-evil creature attuning to it must succeed on a DC 17 "
+      "Charisma saving throw or turn neutral evil. Studying it for "
+      "80 hours raises one ability score of your choice by 2, to a "
+      "maximum of 24, drops another of your choice by 2, to a "
+      "minimum of 3, and leaves you with a disfiguring mark of "
+      "darkness. The book vanishes if you willingly perform a good "
+      "act, or if 10 days pass without an evil act from you." },
     { "Eye and Hand of Vecna", BOOK_DMG,
       "Wondrous item", "artifact",
       "requires attunement",
-      "Grafted onto your own body in place of your eye or hand. The "
-      "Eye grants truesight to 120 feet and spells including "
-      "clairvoyance and true seeing; the Hand grants a chilling "
-      "touch for 5d8 cold damage, a Strength of 20, and spells up "
-      "to finger of death. Wearing both grants further powers, and "
-      "both carry Vecna's curse." },
+      "Grafted onto your body in place of your gouged-out eye or "
+      "severed left hand, and either turns your alignment neutral "
+      "evil. The Eye grants truesight and X-ray vision, and 8 "
+      "charges for spells at save DC 18 such as clairvoyance, "
+      "disintegrate and dominate monster, with a 5 percent chance "
+      "per casting that Vecna devours your soul. The Hand raises "
+      "your Strength to 20 unless it is already higher, adds 2d8 "
+      "cold damage to a melee spell attack made with it or a melee "
+      "weapon attack made with a weapon it holds, and holds 8 "
+      "charges for spells up to finger of death, each casting "
+      "subjecting you to suggestion (save DC 18) to commit an evil "
+      "act. Both regain 1d4+4 charges daily at dawn, and attuning "
+      "to both grants further powers." },
     { "Orb of Dragonkind", BOOK_DMG,
       "Wondrous item", "artifact",
       "requires attunement",
-      "One of five orbs made to control dragons. It grants AC 16, "
-      "resistance to one damage type, +1 to spell attack rolls, and "
-      "the ability to speak with and dominate dragons within 1 "
-      "mile. It has charges for spells including cure wounds, "
-      "daylight, death ward and detect magic, and carries a curse "
-      "toward evil." },
+      "One of five orbs forged on Krynn to lure and destroy "
+      "dragons, of which three are thought to survive. Speaking its "
+      "command word as an action calls for a DC 15 Charisma check: "
+      "on a success you control the orb while attuned, on a failure "
+      "the evil dragon essence inside charms you for as long as you "
+      "remain attuned, you cannot end that attunement voluntarily, "
+      "and the orb casts suggestion on you at will (save DC 18). "
+      "While you control it, you can spend from its 7 charges, "
+      "regaining 1d4+3 at dawn, to cast cure wounds, daylight, "
+      "death ward or scrying at save DC 18, cast detect magic "
+      "without a charge, or take an action to call evil dragons "
+      "within 40 miles to the orb, which you cannot do again for 1 "
+      "hour." },
     { "Sword of Kas", BOOK_DMG,
-      "Weapon (longsword)", "artifact",
+      "Wondrous item", "artifact",
       "requires attunement",
-      "The blade Vecna's lieutenant turned against him. +3 to "
-      "attack and damage rolls, an extra 2d10 slashing damage "
-      "against undead, and a roll of 20 forces a DC 15 Constitution "
-      "save or the target takes an extra 4d12 necrotic damage and "
-      "dies at 0 hit points. It is sentient and drives its wielder "
-      "to destruction." },
+      "The longsword Vecna's lieutenant turned against him. +3 to "
+      "attack and damage rolls, a critical hit on a 19 or 20, and "
+      "an extra 2d10 slashing damage against undead. Drawn and not "
+      "bathed in blood within a minute, it demands its due: a DC 15 "
+      "Charisma save, 3d6 psychic damage on a success and "
+      "domination until the demand is met on a failure. It adds a "
+      "d10 to your initiative, lets you move its attack bonus to "
+      "your Armor Class for a turn, and casts call lightning, "
+      "divine word or finger of death at save DC 18, each once a "
+      "dawn. It is sentient and chaotic evil, and its purpose is "
+      "Vecna's ruin." },
     { "Wand of Orcus", BOOK_DMG,
       "Wand", "artifact",
       "requires attunement",
-      "The skull-topped mace of the demon prince of undeath. A "
-      "magic mace granting +3 to attack and damage rolls, an extra "
-      "2d12 necrotic damage on a hit, +3 to AC and saving throws, "
-      "and immunity to necrotic and poison damage. It can animate "
-      "the dead and summon undead, and it is cursed to draw Orcus's "
-      "attention." },
+      "The skull-topped bone wand of the demon prince of undeath. "
+      "Any creature but Orcus attuning to it must make a DC 17 "
+      "Constitution save, taking 10d6 necrotic damage on a success "
+      "and dying and rising as a zombie on a failure. Wielded as a "
+      "magic mace it grants +3 to attack and damage rolls, an extra "
+      "2d12 necrotic damage on a hit, and +3 to Armor Class while "
+      "held. It holds 7 charges, regaining 1d4+3 at dawn, for "
+      "spells at save DC 18 such as animate dead, finger of death "
+      "and power word kill, and once a dawn it calls up 500 hit "
+      "points worth of skeletons and zombies. It is sentient and "
+      "chaotic evil." },
     { "Wave", BOOK_DMG,
       "Weapon (trident)", "legendary",
       "requires attunement by a creature that worships a god of the "
       "sea",
-      "A sentient trident. +3 to attack and damage rolls, it "
-      "returns to your hand when thrown, and it grants you the "
-      "ability to breathe underwater and a swimming speed equal to "
-      "your walking speed. A hit forces a DC 15 Constitution save "
-      "or the target takes an extra 3d6 necrotic damage and its hit "
-      "point maximum is reduced by the same amount; you regain that "
-      "many hit points." },
+      "A sentient trident. +3 to attack and damage rolls, and on a "
+      "critical hit the target takes extra necrotic damage equal to "
+      "half its hit point maximum. It also functions as a trident "
+      "of fish command, a weapon of warning and a cube of force, "
+      "and while you hold it you gain the benefit of a cap of water "
+      "breathing." },
     { "Whelm", BOOK_DMG,
-      "Weapon (maul)", "legendary",
+      "Weapon (warhammer)", "legendary",
       "requires attunement by a dwarf",
-      "A sentient maul. +3 to attack and damage rolls, an extra 1d8 "
-      "damage against giants, and it can be thrown 20 feet, "
-      "returning to your hand. It grants tremorsense to 30 feet and "
-      "detect evil and good, and a shock wave on a hit that stuns a "
-      "creature on a failed DC 15 Constitution save. It makes its "
-      "dwarven wielder reluctant to leave underground." },
+      "A sentient warhammer. +3 to attack and damage rolls, with "
+      "the thrown property at a range of 20/60 feet, returning to "
+      "your hand after a thrown attack; a thrown hit deals an extra "
+      "1d8 bludgeoning damage, or 2d8 against a giant. As an action "
+      "you can strike the ground with it: each creature you choose "
+      "that is on the ground within 60 feet of the impact is "
+      "stunned for 1 minute on a failed DC 15 Constitution save, "
+      "repeating the save at the end of each of its turns. While "
+      "you hold it you sense where any secret or concealed door "
+      "within 30 feet is, and as an action you can cast detect evil "
+      "and good or locate object from it. The shock wave and each "
+      "of those spells recharge at the next dawn. At dawn the day "
+      "after your first attack roll with it you become afraid of "
+      "the outdoors for as long as you stay attuned, giving you "
+      "disadvantage on attack rolls, ability checks, and saving "
+      "throws whenever you can see the daytime sky." },
     { "Axe of the Dwarvish Lords", BOOK_DMG,
       "Weapon (battleaxe)", "artifact",
       "requires attunement",
@@ -3621,17 +3843,26 @@ int MAGIC_ITEM_COUNT =
 const MagicRule MAGIC_RULES[] = {
     { "Ring of Protection", .ac_bonus = 1, .save_bonus = 1 },
     { "Cloak of Protection", .ac_bonus = 1, .save_bonus = 1 },
-    { "Staff of Power", .ac_bonus = 2, .save_bonus = 2 },
+    { "Staff of Power",
+      .ac_bonus = 2,
+      .save_bonus = 2,
+      .weapon = 1,
+      .weapon_plus = 2,
+      .weapon_as = "Quarterstaff" },
     { "Bracers of Defense", .ac_bonus = 2, .only_unarmored = 1 },
-    { "Robe of the Archmagi", .only_unarmored = 1, .unarmored_base = 15 },
+    { "Robe of the Archmagi", .unarmored_base = 15 },
     { "Demon Armor", .armor_base = 19, .armor_str = 15, .armor_stealth = 1 },
     { "Dragon Scale Mail",
       .armor_base = 15,
       .armor_dex = 2,
       .armor_stealth = 1,
-      .resist = "*" },
+      .resist = "acid,cold,fire,lightning,poison" },
     { "Dwarven Plate", .armor_base = 20, .armor_str = 15, .armor_stealth = 1 },
-    { "Efreeti Chain", .armor_base = 19, .immune = "fire" },
+    { "Efreeti Chain",
+      .armor_base = 19,
+      .armor_str = 13,
+      .armor_stealth = 1,
+      .immune = "fire" },
     { "Elven Chain", .armor_base = 14, .armor_dex = 2 },
     { "Glamoured Studded Leather", .armor_base = 13, .armor_dex = -1 },
     { "Plate Armor of Etherealness", .armor_base = 18, .armor_str = 15, .armor_stealth = 1 },
@@ -3644,12 +3875,9 @@ const MagicRule MAGIC_RULES[] = {
       .armor_base = 18,
       .armor_str = 15,
       .armor_stealth = 1,
-      .resist = "*" },
-    { "Armor of Resistance",
-      .armor_base = 18,
-      .armor_str = 15,
-      .armor_stealth = 1,
-      .resist = "*" },
+      .vulnerable_others = 1,
+      .resist = "bludgeoning,piercing,slashing" },
+    { "Armor of Resistance", .worn = 1, .resist = "*" },
     { "Armor, +1, +2, or +3", .variable = 1 },
     { "Animated Shield", .shield = 2 },
     { "Arrow-Catching Shield", .shield = 2 },
@@ -3657,6 +3885,34 @@ const MagicRule MAGIC_RULES[] = {
     { "Spellguard Shield", .shield = 2 },
     { "Shield, +1, +2, or +3", .shield = 2, .variable = 1 },
     { "Weapon, +1, +2, or +3", .variable = 1, .weapon = 1 },
+    { "Berserker Axe", .weapon = 1, .weapon_plus = 1 },
+    { "Dagger of Venom", .weapon = 1, .weapon_plus = 1 },
+    { "Defender", .weapon = 1, .weapon_plus = 3 },
+    { "Dragon Slayer", .weapon = 1, .weapon_plus = 1 },
+    { "Dwarven Thrower", .weapon = 1, .weapon_plus = 3 },
+    { "Giant Slayer", .weapon = 1, .weapon_plus = 1 },
+    { "Hammer of Thunderbolts", .weapon = 1, .weapon_plus = 1 },
+    { "Holy Avenger", .weapon = 1, .weapon_plus = 3 },
+    { "Luck Blade", .weapon = 1, .weapon_plus = 1 },
+    { "Mace of Smiting", .weapon = 1, .weapon_plus = 1 },
+    { "Nine Lives Stealer", .weapon = 1, .weapon_plus = 2 },
+    { "Scimitar of Speed", .weapon = 1, .weapon_plus = 2 },
+    { "Sun Blade", .weapon = 1, .weapon_plus = 2 },
+    { "Vorpal Sword", .weapon = 1, .weapon_plus = 3 },
+    { "Sword of Answering", .weapon = 1, .weapon_plus = 3 },
+    { "Sword of Vengeance", .weapon = 1, .weapon_plus = 1 },
+    { "Blackrazor", .weapon = 1, .weapon_plus = 3 },
+    { "Wave", .weapon = 1, .weapon_plus = 3 },
+    { "Whelm", .weapon = 1, .weapon_plus = 3 },
+    { "Axe of the Dwarvish Lords", .weapon = 1, .weapon_plus = 3 },
+    { "Moonblade", .weapon = 1, .weapon_plus = 1 },
+    { "Staff of Striking", .weapon = 1, .weapon_plus = 3, .weapon_as = "Quarterstaff" },
+    { "Staff of the Magi", .weapon = 1, .weapon_plus = 2, .weapon_as = "Quarterstaff" },
+    { "Staff of the Woodlands", .weapon = 1, .weapon_plus = 2, .weapon_as = "Quarterstaff" },
+    { "Staff of Thunder and Lightning", .weapon = 1, .weapon_plus = 2, .weapon_as = "Quarterstaff" },
+    { "Rod of Lordly Might", .weapon = 1, .weapon_plus = 3, .weapon_as = "Mace" },
+    { "Wand of Orcus", .weapon = 1, .weapon_plus = 3, .weapon_as = "Mace" },
+    { "Sword of Kas", .weapon = 1, .weapon_plus = 3, .weapon_as = "Longsword" },
     { "Amulet of Health", .sets_ability = 3, .sets_to = 19 },
     { "Headband of Intellect", .sets_ability = 4, .sets_to = 19 },
     { "Gauntlets of Ogre Power", .sets_ability = 1, .sets_to = 19 },
@@ -3674,7 +3930,7 @@ const MagicRule MAGIC_RULES[] = {
     { "Frost Brand", .resist = "fire" },
     { "Periapt of Proof against Poison", .immune = "poison" },
     { "Sentinel Shield", .shield = 2 },
-    { "Stone of Good Luck (Luckstone)", .save_bonus = 1 },
+    { "Stone of Good Luck (Luckstone)", .save_bonus = 1, .check_bonus = 1 },
     { "Hand of Vecna", .sets_ability = 1, .sets_to = 20 },
 };
 const int MAGIC_RULE_COUNT =

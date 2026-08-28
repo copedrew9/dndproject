@@ -12,8 +12,8 @@
 
 # DEITY | name | title | pantheon | alignment | domains | symbol
 DEITY|Auril|goddess of winter|Forgotten Realms|NE|Nature, Tempest|Six-pointed snowflake
-DEITY|Azuth|god of wizards|Forgotten Realms|LN|Knowledge|
-DEITY|Bane|god of tyranny|Forgotten Realms|LE|War|
+DEITY|Azuth|god of wizards|Forgotten Realms|LN|Knowledge|Left hand pointing upward, outlined in fire
+DEITY|Bane|god of tyranny|Forgotten Realms|LE|War|Upright black right hand, thumb and fingers together
 DEITY|Beshaba|goddess of misfortune|Forgotten Realms|CE|Trickery|Black antlers
 DEITY|Bhaal|god of murder|Forgotten Realms|NE|Death|Skull surrounded by a ring of blood droplets
 DEITY|Chauntea|goddess of agriculture|Forgotten Realms|NG|Life|Sheaf of grain or a blooming rose over grain
@@ -33,7 +33,7 @@ DEITY|Mask|god of thieves|Forgotten Realms|CN|Trickery|Black mask
 DEITY|Mielikki|goddess of forests|Forgotten Realms|NG|Nature|Unicorn's head
 DEITY|Milil|god of poetry and song|Forgotten Realms|NG|Light|Five-stringed harp made of leaves
 DEITY|Myrkul|god of death|Forgotten Realms|NE|Death|White human skull
-DEITY|Mystra|goddess of magic|Forgotten Realms|NG|Knowledge|Circle of seven stars, or nine stars encircling a
+DEITY|Mystra|goddess of magic|Forgotten Realms|NG|Knowledge|Circle of seven stars, or nine stars encircling a flowing red mist, or a single star
 DEITY|Oghma|god of knowledge|Forgotten Realms|N|Knowledge|Blank scroll
 DEITY|Savras|god of divination and fate|Forgotten Realms|LN|Knowledge|Crystal ball containing many kinds of eyes
 DEITY|Selune|goddess of the moon|Forgotten Realms|CG|Knowledge, Life|Pair of eyes surrounded by seven stars
@@ -194,7 +194,7 @@ DEITY|Frey|god of fertility and the sun|Norse|NG|Life, Light|Ice-blue greatsword
 DEITY|Freya|goddess of fertility and love|Norse|NG|Life|Falcon
 DEITY|Frigga|goddess of birth and fertility|Norse|N|Life, Light|Cat
 DEITY|Heimdall|god of watchfulness and loyalty|Norse|LG|Light, War|Curling musical horn
-DEITY|Hel|goddess of the underworld|Norse|NE|Death|
+DEITY|Hel|goddess of the underworld|Norse|NE|Death|Woman's face, rotting on one side
 DEITY|Hermod|god of luck|Norse|CN|Trickery|Winged scroll
 DEITY|Loki|god of thieves and trickery|Norse|CE|Trickery|Flame
 DEITY|Njord|god of sea and wind|Norse|NG|Nature, Tempest|Gold coin
@@ -230,7 +230,7 @@ BEAST|Brown Bear|Large|11|34|8|40 ft., climb 30 ft|19|10|16|2|13|7|1|passive Per
 BEAST|Camel|Large|9|15|1|50 ft|16|8|14|2|8|5|1/8|passive Perception 9
 BEAST|Cat|Tiny|12|2|0|40 ft., climb 30 ft|3|15|10|3|12|7|0|passive Perception 13
 BEAST|Constrictor Snake|Large|12|13|2|30 ft., swim 30 ft|15|14|12|1|10|3|1/4|blindsight 10 ft., passive Perception 10
-BEAST|Crab|Tiny|11|2|0|20 ft., swim 20 ft|2|11|10|1|8|2|0|bitndsight 30 ft., passive Perception 9
+BEAST|Crab|Tiny|11|2|0|20 ft., swim 20 ft|2|11|10|1|8|2|0|blindsight 30 ft., passive Perception 9
 BEAST|Crocodile|Large|12|19|4|20 ft., swim 30 ft|15|10|13|2|10|5|1/2|passive Perception 10
 BEAST|Deer|Medium|13|4|0|50 ft|11|16|11|2|14|5|0|passive Perception 12
 BEAST|Dire Wolf|Large|14|37|8|50 ft|17|15|15|3|12|7|1|passive Perception 13
@@ -239,7 +239,7 @@ BEAST|Eagle|Small|12|3|0|10 ft., fly 60 ft|6|15|10|2|14|7|0|passive Perception 1
 BEAST|Elephant|Huge|12|76|32|40 ft|22|9|17|3|11|6|4|passive Perception 10
 BEAST|Elk|Large|10|13|2|50 ft|16|10|12|2|10|6|1/4|passive Perception 10
 BEAST|Flying Snake|Tiny|14|5|1|30 ft., fly 60 ft., swim 30 ft|4|18|11|2|12|5|1/8|blindsight 10 ft., passive Perception 11
-BEAST|Frog|Tiny|11|1|0|20 ft., swim 20 ft|1|13|8|1|3|3|0|darkvision 30 ft., passive Perception 11
+BEAST|Frog|Tiny|11|1|0|20 ft., swim 20 ft|1|13|8|1|8|3|0|darkvision 30 ft., passive Perception 11
 BEAST|Giant Ape|Huge|12|157|56|40 ft., climb 40 ft|23|14|18|7|12|7|7|passive Perception 14
 BEAST|Giant Badger|Medium|10|13|2|30 ft., burrow 10 ft|13|10|15|2|12|5|1/4|darkvision 30 ft., passive Perception 11
 BEAST|Giant Bat|Large|13|22|2|10 ft., fly 60 ft|15|16|11|2|12|6|1/4|blindsight 60 ft., passive Perception 11
@@ -251,18 +251,18 @@ BEAST|Giant Crocodile|Huge|14|85|40|30 ft., swim 50 ft|21|9|17|2|10|7|5|passive 
 BEAST|Giant Eagle|Large|13|26|8|10 ft., fly 80 ft|16|17|13|8|14|10|1|passive Perception 14
 BEAST|Giant Elk|Huge|14|42|16|60 ft|19|16|14|7|14|10|2|passive Perception 14
 BEAST|Giant Fire Beetle|Small|13|4|0|30 ft|8|10|12|1|7|3|0|blindsight 30 ft., passive Perception 8
-BEAST|Giant Frog|Medium|11|18|2|30 ft., swim|19|16|14|7|14|10|1/4|darkvision 30 ft., passive Perception 12
+BEAST|Giant Frog|Medium|11|18|2|30 ft., swim 30 ft|12|13|11|2|10|3|1/4|darkvision 30 ft., passive Perception 12
 BEAST|Giant Goat|Large|11|19|4|40 ft|17|11|12|3|12|6|1/2|passive Perception 11
 BEAST|Giant Hyena|Large|12|45|8|50 ft|16|14|14|2|12|7|1|passive Perception 13
 BEAST|Giant Lizard|Large|12|19|2|30 ft., climb 30 ft|15|12|13|2|10|5|1/4|darkvision 30 ft., passive Perception 10
 BEAST|Giant Octopus|Large|11|52|8|10 ft., swim 60 ft|17|13|13|4|10|4|1|darkvision 60 ft., passive Perception 14
-BEAST|Giant Owl|Large|12|19|2|5 ft., fly 60 ft|13|15|12|13|10|10|1/4|darkvision 120 ft., passive Perception 15
+BEAST|Giant Owl|Large|12|19|2|5 ft., fly 60 ft|13|15|12|8|13|10|1/4|darkvision 120 ft., passive Perception 15
 BEAST|Giant Poisonous Snake|Medium|14|11|2|30 ft., swim 30 ft|10|18|13|2|10|3|1/4|blindsight 10 ft., passive Perception 12
 BEAST|Giant Rat|Small|12|7|1|30 ft|7|15|11|2|10|4|1/8|darkvision 60 ft., passive Perception 10
 BEAST|Giant Scorpion|Large|15|52|24|40 ft|15|13|15|1|9|3|3|blindsight 60 ft., passive Perception 9
-BEAST|Giant Sea Horse|Large|13|16|4|0 ft., swim 40 ft|12|15|2|12|5|5|1/2|passive Perception 11
+BEAST|Giant Sea Horse|Large|13|16|4|0 ft., swim 40 ft|12|15|11|2|12|5|1/2|passive Perception 11
 BEAST|Giant Shark|Huge|13|126|40|0 ft., swim 50 ft|23|11|21|1|10|5|5|blindsight 60 ft., passive Perception 13
-BEAST|Giant Spider|Large|14|26|8|30 ft., climb 30 ft|14|16|12|2|11|4|1|Hindsight 10 ft., darkvision 60 ft., passive Perception 10
+BEAST|Giant Spider|Large|14|26|8|30 ft., climb 30 ft|14|16|12|2|11|4|1|blindsight 10 ft., darkvision 60 ft., passive Perception 10
 BEAST|Giant Toad|Large|11|39|8|20 ft., swim 40 ft|15|13|13|2|10|3|1|darkvision 30 ft., passive Perception 10
 BEAST|Giant Vulture|Large|10|22|8|10 ft., fly 60 ft|15|10|15|6|12|7|1|passive Perception 13
 BEAST|Giant Wasp|Medium|12|13|4|10 ft., fly 50 ft|10|14|10|1|10|3|1/2|passive Perception 10
@@ -273,9 +273,9 @@ BEAST|Hawk|Tiny|13|1|0|10 ft., fly 60 ft|5|16|8|2|14|6|0|passive Perception 14
 BEAST|Hunter Shark|Large|12|45|16|0 ft., swim 40 ft|18|13|15|1|10|4|2|blindsight 30 ft., passive Perception 12
 BEAST|Hyena|Medium|11|5|0|50 ft|11|13|12|2|12|5|0|passive Perception 13
 BEAST|Jackal|Small|12|3|0|40 ft|8|15|11|3|12|6|0|passive Perception 13
-BEAST|Killer Whale|Huge|12|90|24|0 ft., swim 60 ft|19|10|13|3|12|7|3|blindsight 120 ft., passive Perception 13^
+BEAST|Killer Whale|Huge|12|90|24|0 ft., swim 60 ft|19|10|13|3|12|7|3|blindsight 120 ft., passive Perception 13
 BEAST|Lion|Large|12|26|8|50 ft|17|15|13|3|12|8|1|passive Perception 13
-BEAST|Lizard|Tiny|10|2|0|20 ft., climb 20 ft|2|11|10|1|3|5|0|darkvision 30 ft., passive Perception 9
+BEAST|Lizard|Tiny|10|2|0|20 ft., climb 20 ft|2|11|10|1|8|3|0|darkvision 30 ft., passive Perception 9
 BEAST|Mammoth|Huge|13|126|48|40 ft|24|9|21|3|11|6|6|passive Perception 10
 BEAST|Mastiff|Medium|12|5|1|40 ft|13|14|12|3|12|7|1/8|passive Perception 13
 BEAST|Mule|Medium|10|11|1|40 ft|14|10|13|2|10|5|1/8|passive Perception 10
@@ -298,7 +298,7 @@ BEAST|Scorpion|Tiny|11|1|0|10 ft|2|11|8|1|8|2|0|blindsight 10 ft., passive Perce
 BEAST|Sea Horse|Tiny|11|1|0|0 ft., swim 20 ft|1|12|8|1|10|2|0|passive Perception 10
 BEAST|Spider|Tiny|12|1|0|20 ft., climb 20 ft|2|14|8|1|10|2|0|darkvision 30 ft., passive Perception 10
 BEAST|Tiger|Large|12|37|8|40 ft|17|15|14|3|12|8|1|darkvision 60 ft., passive Perception 13
-BEAST|Triceratops|Huge|13|95|2|50 ft|22|9|17|2|11|5|1/4|passive Perception 10
+BEAST|Triceratops|Huge|13|95|40|50 ft|22|9|17|2|11|5|5|passive Perception 10
 BEAST|Tyrannosaurus Rex|Huge|13|136|64|50 ft|25|10|19|2|12|9|8|passive Perception 14
 BEAST|Vulture|Medium|10|5|0|10 ft., fly 50 ft|7|10|13|2|12|4|0|passive Perception 13
 BEAST|Warhorse|Large|11|19|4|60 ft|18|12|13|2|12|7|1/2|passive Perception 11
@@ -341,7 +341,7 @@ SIDEKICKFEATURE|Spellcaster|8|Ability Score Improvement|Raise one ability by 2, 
 SIDEKICKFEATURE|Spellcaster|12|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
 SIDEKICKFEATURE|Spellcaster|14|Empowered Spells|Choose a school of magic; add its spellcasting ability modifier to the damage or healing of any spell of that school cast with a slot.
 SIDEKICKFEATURE|Spellcaster|16|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
-SIDEKICKFEATURE|Spellcaster|19|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|18|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
 SIDEKICKFEATURE|Spellcaster|20|Focused Casting|Taking damage cannot break its concentration on a spell.
 SIDEKICKFEATURE|Warrior|1|Bonus Proficiencies|Proficiency in one saving throw of Strength, Dexterity or Constitution; two skills from Acrobatics, Animal Handling, Athletics, Intimidation, Nature, Perception and Survival; all armor; and, if a humanoid or armed, shields and all simple and martial weapons.
 SIDEKICKFEATURE|Warrior|1|Martial Role|Attacker: +2 to all attack rolls. Defender: use its reaction to impose disadvantage on an attack by a creature within 5 feet aimed at someone else.
@@ -444,26 +444,27 @@ LIFEROW|Family lifestyle|9|12|Modest (+0)
 LIFEROW|Family lifestyle|13|15|Comfortable (+10)
 LIFEROW|Family lifestyle|16|17|Wealthy (+20)
 LIFEROW|Family lifestyle|18|18|Aristocratic (+40)
-LIFETABLE|Childhood home|3d6
+LIFETABLE|Childhood home|d100 + Family lifestyle mod
+LIFEROW|Childhood home|0|0|On the streets
 LIFEROW|Childhood home|1|20|Rundown shack
 LIFEROW|Childhood home|21|30|No permanent residence; you moved around a lot
 LIFEROW|Childhood home|31|40|Encampment or village in the wilderness
 LIFEROW|Childhood home|41|50|Apartment in a rundown neighborhood
 LIFEROW|Childhood home|51|70|Small house
 LIFEROW|Childhood home|71|90|Large house
-LIFEROW|Childhood home|91|110|Mansion ll orhigher Palace or castle style table to arrive at the result
-LIFETABLE|Childhood memories|3d6
-LIFEROW|Childhood memories|3|3|I amstill haunted by my childhood, when I was treated badly by my peers
+LIFEROW|Childhood home|91|110|Mansion
+LIFEROW|Childhood home|111|111|Palace or castle
+LIFETABLE|Childhood memories|3d6 + Cha mod
+LIFEROW|Childhood memories|3|3|I am still haunted by my childhood, when I was treated badly by my peers
 LIFEROW|Childhood memories|4|5|I spent most of my childhood alone, with no close friends
 LIFEROW|Childhood memories|6|8|Others saw me as being different or strange, and so I had few companions
-LIFEROW|Childhood memories|9|12|I had a few close friends and lived an ordinary childhood jah
+LIFEROW|Childhood memories|9|12|I had a few close friends and lived an ordinary childhood
 LIFEROW|Childhood memories|13|15|I had several friends, and my childhood was generally a happy one
 LIFEROW|Childhood memories|16|17|I always found it easy to make friends, and I loved being around people
 LIFEROW|Childhood memories|18|18|Everyone knew who I was, and I had friends everywhere I went
-LIFEROW|Childhood memories|64|64|NX CHAPTER 1 I'CHARACTER OPTIONS
 LIFETABLE|Occupation|d100
 LIFEROW|Occupation|1|5|Academic
-LIFEROW|Occupation|6|10|Adventurer (roll on the Class table) an Aristocrat
+LIFEROW|Occupation|6|10|Adventurer (roll on the Class table)
 LIFEROW|Occupation|11|11|Aristocrat
 LIFEROW|Occupation|12|26|Artisan or guild member
 LIFEROW|Occupation|27|31|Criminal
@@ -477,7 +478,7 @@ LIFEROW|Occupation|76|80|Merchant
 LIFEROW|Occupation|81|85|Politician or bureaucrat
 LIFEROW|Occupation|86|90|Priest
 LIFEROW|Occupation|91|95|Sailor
-LIFEROW|Occupation|96|100|Soldier es
+LIFEROW|Occupation|96|100|Soldier
 LIFETABLE|Status|3d6
 LIFEROW|Status|3|3|Dead (roll on the Cause of Death table)
 LIFEROW|Status|4|5|Missing or unknown
@@ -485,7 +486,7 @@ LIFEROW|Status|6|8|Alive, but doing poorly due to injury, financial trouble, or 
 LIFEROW|Status|9|12|Alive and well
 LIFEROW|Status|13|15|Alive and quite successful
 LIFEROW|Status|16|17|Alive and infamous
-LIFEROW|Status|18|18|Alive and famous collection of facts and notes that-at a minimum-encapsulate what your character has been doing in the world
+LIFEROW|Status|18|18|Alive and famous
 LIFETABLE|Relationship|3d4
 LIFEROW|Relationship|3|4|Hostile
 LIFEROW|Relationship|5|10|Friendly

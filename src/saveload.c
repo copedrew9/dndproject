@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #define DATA_BEGIN "#BEGIN-DNDDATA v1"
 #define DATA_END   "#END-DNDDATA"
@@ -42,20 +41,6 @@ static int index_of_background(const char *n)
     }
     return -1;
 }
-static int index_of_class(const char *n)
-{
-    int i;
-    for (i = 0; i < CLASS_COUNT; i++) if (!strcmp(CLASSES[i].name, n)) return i;
-    return -1;
-}
-static int index_of_subclass(const char *n)
-{
-    int i;
-    for (i = 0; i < SUBCLASS_COUNT; i++) {
-        if (!strcmp(SUBCLASSES[i].name, n)) return i;
-    }
-    return -1;
-}
 static int index_of_feat(const char *n)
 {
     int i;
@@ -66,12 +51,6 @@ static int index_of_spell(const char *n)
 {
     int i;
     for (i = 0; i < SPELL_COUNT; i++) if (!strcmp(SPELLS[i].name, n)) return i;
-    return -1;
-}
-static int index_of_skill(const char *n)
-{
-    int i;
-    for (i = 0; i < SKL_COUNT; i++) if (!strcmp(SKILL_NAME[i], n)) return i;
     return -1;
 }
 static int index_of_alignment(const char *n)
@@ -110,10 +89,10 @@ static void warn_unknown(const char *kind, const char *name)
                     "current data; it was left out.\n", kind, name);
 }
 
-static void wrap_from(FILE *f, const char *text, int indent, int start_col)
+static void wrap_to(FILE *f, const char *text, int indent)
 {
     const int width = 76;
-    int col = start_col;
+    int col = 0;
     const char *p = text;
 
     while (*p) {
@@ -137,11 +116,6 @@ static void wrap_from(FILE *f, const char *text, int indent, int start_col)
         col += len;
     }
     if (col) fputc('\n', f);
-}
-
-static void wrap_to(FILE *f, const char *text, int indent)
-{
-    wrap_from(f, text, indent, 0);
 }
 
 
@@ -252,8 +226,7 @@ static void write_spells(FILE *f, const Character *c)
             fprintf(f, "        Casting Time: %-18s Range: %s\n",
                     s->casting_time, s->range);
             fprintf(f, "        Components:   %s\n", s->components);
-            fprintf(f, "        Duration:     %s%s\n", s->duration,
-                    s->concentration ? "" : "");
+            fprintf(f, "        Duration:     %s\n", s->duration);
         }
     }
 }
@@ -334,7 +307,7 @@ static void write_sheet(FILE *f, const Character *c)
            the advancement table is what tells a player how far off the
            next one is. */
         int lv = total_level(c);
-        if (SETTINGS.experience) {
+        if (SETTINGS.experience && lv >= 0 && lv <= MAX_LEVEL) {
             fprintf(f, "  Experience       %d needed for level %d",
                     XP_FOR_LEVEL[lv], lv);
             if (lv < MAX_LEVEL) {
@@ -629,6 +602,49 @@ static void write_sheet(FILE *f, const Character *c)
 
 /* -------------------------------------------------------- the data block */
 
+/* The block is one record per line and '|' separated, so any text the player
+   typed has to be written with those two characters escaped, and with the
+   escape itself escaped. Notes did this from the start, a note being the one
+   field expected to run to paragraphs. Everything else was written raw, and
+   a single '|' in a name, an appearance or a tool a table invented shifted
+   every field after it: the character came back as whatever was left before
+   the stray separator, silently, with the rest dropped. */
+void record_put(FILE *f, const char *s)
+{
+    for (; s && *s; s++) {
+        if (*s == '\n')      fputs("\\n", f);
+        else if (*s == '|')  fputs("\\p", f);
+        else if (*s == '\\') fputs("\\\\", f);
+        else                 fputc(*s, f);
+    }
+}
+
+/* A record of one text field, which is most of them. */
+static void put_line(FILE *f, const char *tag, const char *text)
+{
+    fprintf(f, "%s|", tag);
+    record_put(f, text);
+    fputc('\n', f);
+}
+
+/* Reverses put_text() in place; the result is never longer than the input.
+   An escape the writer never emits keeps the character and loses the
+   backslash, which is what notes have always done. */
+void record_unescape(char *s)
+{
+    char *out = s;
+
+    for (; *s; s++) {
+        if (*s == '\\' && s[1]) {
+            s++;
+            *out++ = (*s == 'n') ? '\n' : (*s == 'p') ? '|' : *s;
+        } else {
+            *out++ = *s;
+        }
+    }
+    *out = '\0';
+}
+
 static void write_data(FILE *f, const Character *c)
 {
     int i;
@@ -655,8 +671,8 @@ static void write_data(FILE *f, const Character *c)
     fprintf(f, "|%d|%d|%d|%d|%d|%d\n", SETTINGS.custom_origins,
             SETTINGS.optional_features, SETTINGS.multiclassing,
             SETTINGS.feats, SETTINGS.experience, SETTINGS.manual_dice);
-    fprintf(f, "NAME|%s\n", c->name);
-    fprintf(f, "PLAYER|%s\n", c->player);
+    put_line(f, "NAME", c->name);
+    put_line(f, "PLAYER", c->player);
     if (c->race_id >= 0) fprintf(f, "RACE|%s\n", RACES[c->race_id].name);
     if (c->subrace_id >= 0) {
         fprintf(f, "SUBRACE|%s\n", SUBRACES[c->subrace_id].name);
@@ -666,9 +682,15 @@ static void write_data(FILE *f, const Character *c)
     } else if (c->background_name[0]) {
         /* A background built with the customization rules has no table row
            to point at, so everything it granted is written out. */
-        fprintf(f, "CUSTOMBG|%s|%s|%s|%s\n", c->background_name,
-                c->background_feature, c->background_feature_text,
-                c->background_equipment);
+        fputs("CUSTOMBG|", f);
+        record_put(f, c->background_name);
+        fputc('|', f);
+        record_put(f, c->background_feature);
+        fputc('|', f);
+        record_put(f, c->background_feature_text);
+        fputc('|', f);
+        record_put(f, c->background_equipment);
+        fputc('\n', f);
     }
     fprintf(f, "ALIGNMENT|%s\n", ALIGNMENT_NAME[c->alignment]);
     if (c->ancestry_id >= 0) {
@@ -702,31 +724,38 @@ static void write_data(FILE *f, const Character *c)
     }
 
     for (i = 0; i < c->language_count; i++) {
-        fprintf(f, "LANG|%s\n", c->languages[i]);
+        put_line(f, "LANG", c->languages[i]);
     }
     for (i = 0; i < c->tool_prof_count; i++) {
-        fprintf(f, "TOOL|%s\n", c->tool_profs[i]);
+        put_line(f, "TOOL", c->tool_profs[i]);
     }
     for (i = 0; i < c->other_prof_count; i++) {
-        fprintf(f, "PROF|%s\n", c->other_profs[i]);
+        put_line(f, "PROF", c->other_profs[i]);
     }
     for (i = 0; i < c->feat_count; i++) {
         fprintf(f, "FEAT|%s\n", FEATS[c->feats[i]].name);
     }
     for (i = 0; i < c->choice_count; i++) {
-        fprintf(f, "CHOICE|%s|%s\n", c->choices[i].label, c->choices[i].value);
+        fprintf(f, "CHOICE|");
+        record_put(f, c->choices[i].label);
+        fputc('|', f);
+        record_put(f, c->choices[i].value);
+        fputc('\n', f);
     }
     for (i = 0; i < c->item_count; i++) {
         if (c->inventory[i].is_magic) {
-            fprintf(f, "MAGICITEM|%d|%d|%s|%d|%d|%s\n",
-                    c->inventory[i].quantity, c->inventory[i].attuned,
-                    MAGIC_ITEMS[c->inventory[i].item_id].name,
-                    c->inventory[i].plus, c->inventory[i].equipped,
-                    c->inventory[i].variant);
+            fprintf(f, "MAGICITEM|%d|%d|", c->inventory[i].quantity,
+                    c->inventory[i].attuned);
+            record_put(f, MAGIC_ITEMS[c->inventory[i].item_id].name);
+            fprintf(f, "|%d|%d|", c->inventory[i].plus,
+                    c->inventory[i].equipped);
+            record_put(f, c->inventory[i].variant);
+            fputc('\n', f);
         } else {
-            fprintf(f, "ITEM|%d|%d|%s\n", c->inventory[i].quantity,
-                    c->inventory[i].equipped,
-                    ITEMS[c->inventory[i].item_id].name);
+            fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
+                    c->inventory[i].equipped);
+            record_put(f, ITEMS[c->inventory[i].item_id].name);
+            fputc('\n', f);
         }
     }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
@@ -734,19 +763,35 @@ static void write_data(FILE *f, const Character *c)
     for (i = 0; i < c->sidekick_count; i++) {
         const Sidekick *sk = &c->sidekicks[i];
         int k;
-        fprintf(f, "SIDEKICK|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%s\n",
-                sk->name, sk->creature, SIDEKICK_CLASS_NAME[sk->cls],
+        fputs("SIDEKICK|", f);
+        record_put(f, sk->name);
+        fputc('|', f);
+        record_put(f, sk->creature);
+        fprintf(f, "|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|",
+                SIDEKICK_CLASS_NAME[sk->cls],
                 sk->level, sk->role, sk->abilities[0], sk->abilities[1],
                 sk->abilities[2], sk->abilities[3], sk->abilities[4],
-                sk->abilities[5], sk->hp, sk->speed);
-        fprintf(f, "SKAC|%s|%d\n", sk->name, sk->ac);
+                sk->abilities[5], sk->hp);
+        record_put(f, sk->speed);
+        fputc('\n', f);
+        fputs("SKAC|", f);
+        record_put(f, sk->name);
+        fprintf(f, "|%d\n", sk->ac);
         for (k = 0; k < sk->choice_count; k++) {
-            fprintf(f, "SKCHOICE|%s|%s|%s\n", sk->name,
-                    sk->choices[k].label, sk->choices[k].value);
+            fputs("SKCHOICE|", f);
+            record_put(f, sk->name);
+            fputc('|', f);
+            record_put(f, sk->choices[k].label);
+            fputc('|', f);
+            record_put(f, sk->choices[k].value);
+            fputc('\n', f);
         }
         for (k = 0; k < sk->spell_count; k++) {
-            fprintf(f, "SKSPELL|%s|%s\n", sk->name,
-                    SPELLS[sk->spells[k]].name);
+            fputs("SKSPELL|", f);
+            record_put(f, sk->name);
+            fputc('|', f);
+            record_put(f, SPELLS[sk->spells[k]].name);
+            fputc('\n', f);
         }
     }
     for (i = 0; i < c->spell_count; i++) {
@@ -763,38 +808,53 @@ static void write_data(FILE *f, const Character *c)
     for (i = 0; i < c->hp_roll_count; i++) fprintf(f, "|%d", c->hp_rolls[i]);
     fprintf(f, "\n");
 
-    fprintf(f, "BODY|%d|%d|%d|%s|%s|%s\n", c->age, c->height_in, c->weight_lb,
-            c->eyes, c->skin, c->hair);
-    fprintf(f, "TRAIT|%s\n", c->trait);
-    fprintf(f, "IDEAL|%s\n", c->ideal);
-    fprintf(f, "BOND|%s\n", c->bond);
-    fprintf(f, "FLAW|%s\n", c->flaw);
-    fprintf(f, "APPEARANCE|%s\n", c->appearance);
+    fprintf(f, "BODY|%d|%d|%d|", c->age, c->height_in, c->weight_lb);
+    record_put(f, c->eyes);
+    fputc('|', f);
+    record_put(f, c->skin);
+    fputc('|', f);
+    record_put(f, c->hair);
+    fputc('\n', f);
+    put_line(f, "TRAIT", c->trait);
+    put_line(f, "IDEAL", c->ideal);
+    put_line(f, "BOND", c->bond);
+    put_line(f, "FLAW", c->flaw);
+    put_line(f, "APPEARANCE", c->appearance);
     {
         int k;
         for (k = 0; k < c->note_count; k++) {
-            const char *p;
-            fprintf(f, "NOTE|%s|", c->notes[k].title);
-            /* The format is one record per line and '|' separated, so a
-               note's own newlines and pipes are escaped rather than
-               allowed to break it. */
-            for (p = c->notes[k].body; *p; p++) {
-                if (*p == '\n')      fputs("\\n", f);
-                else if (*p == '|')  fputs("\\p", f);
-                else if (*p == '\\') fputs("\\\\", f);
-                else                 fputc(*p, f);
-            }
+            fputs("NOTE|", f);
+            record_put(f, c->notes[k].title);
+            fputc('|', f);
+            record_put(f, c->notes[k].body);
             fputc('\n', f);
         }
     }
-    fprintf(f, "BACKSTORY|%s\n", c->backstory);
+    put_line(f, "BACKSTORY", c->backstory);
 
     fprintf(f, "%s\n", DATA_END);
 }
 
 /* ------------------------------------------------------------------ saving */
 
-static void sanitise_filename(const char *name, char *out, size_t n)
+/* Whether a file already holds a character. Used before writing a sheet
+   that is not one, so that it cannot be written over the top of one. */
+int file_is_character(const char *path)
+{
+    char line[256];
+    FILE *f = fopen(path, "r");
+    int found = 0;
+
+    if (!f) return 0;
+    while (!found && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (!strcmp(line, DATA_BEGIN)) found = 1;
+    }
+    fclose(f);
+    return found;
+}
+
+void sheet_filename(const char *name, char *out, size_t n)
 {
     size_t i, k = 0;
     for (i = 0; name[i] && k + 1 < n; i++) {
@@ -817,7 +877,7 @@ int save_character(const Character *c, char *path, size_t pathsz)
     char safe[MAX_NAME];
     FILE *f;
 
-    sanitise_filename(c->name, safe, sizeof safe);
+    sheet_filename(c->name, safe, sizeof safe);
     snprintf(path, pathsz, "%s.txt", safe);
 
     f = fopen(path, "w");
@@ -837,7 +897,23 @@ void print_sheet(const Character *c)
 /* ----------------------------------------------------------------- loading */
 
 /* Splits a '|' separated record in place. Returns the field count. */
-static int split_fields(char *line, char **out, int max)
+/* A number out of one of those fields, held to a range. A hand-edited file
+ * is not an attack, but it is not checked either, and an unbounded number
+ * here became undefined behaviour further on: a quantity of two billion
+ * multiplied by an item's weight, five coin counts of two billion added
+ * together, a hit point roll of two billion added to the last. strtol
+ * rather than atoi because atoi is itself undefined on a number too large
+ * to hold, which is the case this exists for.
+ */
+int record_int(const char *field, int lo, int hi)
+{
+    long v = strtol(field, NULL, 10);
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return (int)v;
+}
+
+int record_split(char *line, char **out, int max)
 {
     int n = 0;
     char *p = line;
@@ -856,10 +932,39 @@ static void copy_field(char *dst, size_t n, const char *src)
     dst[n - 1] = '\0';
 }
 
+/* The sidekick a SKAC, SKCHOICE or SKSPELL record belongs to.
+ *
+ * The writer emits a SIDEKICK record and then that sidekick's own records
+ * immediately after it, so the one being read is almost always the one most
+ * recently added -- and that is what has to decide it, because a name does
+ * not. Two sidekicks may share a name, and when they did, every record for
+ * either was applied to both: the first of them ended up with the last one's
+ * Armor Class, and with both of their choices and spells. Matching by name
+ * is kept only as the answer for a file whose records were reordered by
+ * hand, which the program itself never writes. */
+static Sidekick *sidekick_named(Character *c, const char *name)
+{
+    int k;
+
+    if (c->sidekick_count > 0) {
+        Sidekick *last = &c->sidekicks[c->sidekick_count - 1];
+        if (!strcmp(last->name, name)) return last;
+    }
+    for (k = 0; k < c->sidekick_count; k++) {
+        if (!strcmp(c->sidekicks[k].name, name)) return &c->sidekicks[k];
+    }
+    return NULL;
+}
+
 int load_character(const char *path, Character *c)
 {
     FILE *f = fopen(path, "r");
-    char line[1024];
+    /* Long enough for the longest record the writer can produce: a note,
+       whose title and body are both escaped and so can double in length.
+       At 1024 a note of more than about a thousand characters was cut in
+       half, and the half that was left over was read as a record of its
+       own. */
+    char line[2 * MAX_LORE + 2 * MAX_NAME + 64];
     int in_data = 0;
 
     if (!f) return -1;
@@ -869,8 +974,19 @@ int load_character(const char *path, Character *c)
 
     while (fgets(line, sizeof line, f)) {
         char *fields[32];
-        int n;
+        int n, field;
 
+        /* A hand-edited record longer than the buffer would arrive as two,
+           and its tail would be read as a record of its own. Drop the tail
+           and say so rather than inventing a record out of it. */
+        if (!strchr(line, '\n')) {
+            int ch, dropped = 0;
+            while ((ch = fgetc(f)) != EOF && ch != '\n') dropped++;
+            if (dropped) {
+                fprintf(stderr, "  note: a line in %s was too long to read; "
+                                "%d characters were dropped.\n", path, dropped);
+            }
+        }
         line[strcspn(line, "\r\n")] = '\0';
 
         if (!in_data) {
@@ -880,8 +996,12 @@ int load_character(const char *path, Character *c)
         if (!strcmp(line, DATA_END)) break;
         if (line[0] == '\0') continue;
 
-        n = split_fields(line, fields, 32);
+        n = record_split(line, fields, 32);
         if (n < 1) continue;
+        /* Every field is written escaped, so every field is read unescaped.
+           One that carries no escape is unchanged, which is what makes a
+           file written before this still read correctly. */
+        for (field = 0; field < n; field++) record_unescape(fields[field]);
 
         if (!strcmp(fields[0], "SETTINGS") && n >= 2) {
             /* Two shapes. Files written now name the books they allow. Older
@@ -954,23 +1074,10 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "NOTE") && n >= 2) {
             if (c->note_count < MAX_NOTES) {
                 Note *nt = &c->notes[c->note_count++];
-                char *out = nt->body;
-                const char *p = (n >= 3) ? fields[2] : "";
-                size_t room = sizeof nt->body - 1;
 
                 snprintf(nt->title, sizeof nt->title, "%s", fields[1]);
-                while (*p && room) {
-                    if (*p == '\\' && p[1]) {
-                        p++;
-                        *out++ = (*p == 'n') ? '\n'
-                               : (*p == 'p') ? '|' : *p;
-                        p++;
-                    } else {
-                        *out++ = *p++;
-                    }
-                    room--;
-                }
-                *out = '\0';
+                snprintf(nt->body, sizeof nt->body, "%s",
+                         (n >= 3) ? fields[2] : "");
                 /* Notes written before they had a title and a body of
                    their own are a single line; keep it as both. */
                 if (!nt->body[0]) {
@@ -989,30 +1096,42 @@ int load_character(const char *path, Character *c)
             }
         } else if (!strcmp(fields[0], "CLASS") && n >= 5) {
             if (c->class_count < MAX_CLASSES) {
-                int id = index_of_class(fields[1]);
+                int id = class_by_name(fields[1]);
                 if (id >= 0) {
                     int k = c->class_count++;
+                    int lvl = atoi(fields[2]);
                     c->classes[k].class_id = id;
-                    c->classes[k].level = atoi(fields[2]);
+                    /* Every table shaped like a level runs 0 to MAX_LEVEL,
+                       and several are read with a class level as the index.
+                       A hand-edited file claiming level 99 read past the end
+                       of the experience table. */
+                    c->classes[k].level = lvl < 0 ? 0
+                                        : lvl > MAX_LEVEL ? MAX_LEVEL : lvl;
                     c->classes[k].subclass_id =
-                        strcmp(fields[3], "-") ? index_of_subclass(fields[3]) : -1;
+                        strcmp(fields[3], "-") ? subclass_by_name(fields[3]) : -1;
                     c->classes[k].subclass_option = atoi(fields[4]);
                 }
             }
         } else if (!strcmp(fields[0], "BASE") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->base_score[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->base_score[i] = record_int(fields[i + 1], 1, 30);
+            }
         } else if (!strcmp(fields[0], "RACIALBONUS") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->racial_bonus[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->racial_bonus[i] = record_int(fields[i + 1], -10, 10);
+            }
         } else if (!strcmp(fields[0], "ASIBONUS") && n >= 7) {
             int i;
-            for (i = 0; i < ABL_COUNT; i++) c->asi_bonus[i] = atoi(fields[i + 1]);
+            for (i = 0; i < ABL_COUNT; i++) {
+                c->asi_bonus[i] = record_int(fields[i + 1], -10, 20);
+            }
         } else if (!strcmp(fields[0], "SAVEPROF") && n >= 7) {
             int i;
             for (i = 0; i < ABL_COUNT; i++) c->save_prof[i] = atoi(fields[i + 1]);
         } else if (!strcmp(fields[0], "SKILL") && n >= 4) {
-            int s = index_of_skill(fields[1]);
+            int s = skill_by_name(fields[1]);
             if (s >= 0) {
                 c->skill_prof[s] = atoi(fields[2]);
                 c->skill_expertise[s] = atoi(fields[3]);
@@ -1032,7 +1151,10 @@ int load_character(const char *path, Character *c)
             add_choice(c, fields[1], fields[2]);
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
-            if (id >= 0) add_item(c, id, atoi(fields[1]), atoi(fields[2]));
+            if (id >= 0) {
+                add_item(c, id, record_int(fields[1], 1, MAX_STACK),
+                         record_int(fields[2], 0, 1));
+            }
             else warn_unknown("item", fields[3]);
         } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
             if (c->sidekick_count < MAX_SIDEKICKS) {
@@ -1041,30 +1163,33 @@ int load_character(const char *path, Character *c)
                 memset(sk, 0, sizeof *sk);
                 snprintf(sk->name, sizeof sk->name, "%s", fields[1]);
                 snprintf(sk->creature, sizeof sk->creature, "%s", fields[2]);
-                sk->beast_id = find_beast(fields[2]);
-                sk->cls = SK_EXPERT;
+                        sk->cls = SK_EXPERT;
                 for (k = 0; k < SK_CLASS_COUNT; k++) {
                     if (!strcmp(SIDEKICK_CLASS_NAME[k], fields[3])) sk->cls = k;
                 }
-                sk->level = atoi(fields[4]);
-                sk->role  = atoi(fields[5]);
-                for (k = 0; k < 6; k++) sk->abilities[k] = atoi(fields[6 + k]);
-                sk->hp = atoi(fields[12]);
+                {   /* Bounded for the same reason: the sidekick's spells
+                       known are read out of tables indexed by its level. */
+                    int lvl = atoi(fields[4]);
+                    sk->level = lvl < 0 ? 0
+                              : lvl > MAX_LEVEL ? MAX_LEVEL : lvl;
+                }
+                /* The role indexes the role tables, and -1 is what a
+                   sidekick that is not a spellcaster carries. */
+                sk->role  = record_int(fields[5], -1, SK_ROLE_COUNT - 1);
+                /* Zero is what a stat block the program has not filled
+                   in carries, so the floor is nothing rather than one. */
+                for (k = 0; k < 6; k++) {
+                    sk->abilities[k] = record_int(fields[6 + k], 0, 30);
+                }
+                sk->hp = record_int(fields[12], 0, 1000);
                 snprintf(sk->speed, sizeof sk->speed, "%s", fields[13]);
             }
         } else if (!strcmp(fields[0], "SKAC") && n >= 3) {
-            int k;
-            for (k = 0; k < c->sidekick_count; k++) {
-                if (!strcmp(c->sidekicks[k].name, fields[1])) {
-                    c->sidekicks[k].ac = atoi(fields[2]);
-                }
-            }
+            Sidekick *sk = sidekick_named(c, fields[1]);
+            if (sk) sk->ac = record_int(fields[2], 0, 40);
         } else if (!strcmp(fields[0], "SKCHOICE") && n >= 4) {
-            int k;
-            for (k = 0; k < c->sidekick_count; k++) {
-                Sidekick *sk = &c->sidekicks[k];
-                if (strcmp(sk->name, fields[1])) continue;
-                if (sk->choice_count >= MAX_SK_CHOICES) break;
+            Sidekick *sk = sidekick_named(c, fields[1]);
+            if (sk && sk->choice_count < MAX_SK_CHOICES) {
                 snprintf(sk->choices[sk->choice_count].label,
                          sizeof sk->choices[0].label, "%s", fields[2]);
                 snprintf(sk->choices[sk->choice_count].value,
@@ -1072,41 +1197,59 @@ int load_character(const char *path, Character *c)
                 sk->choice_count++;
             }
         } else if (!strcmp(fields[0], "SKSPELL") && n >= 3) {
-            int k, id = index_of_spell(fields[2]);
-            if (id < 0) warn_unknown("sidekick spell", fields[2]);
-            for (k = 0; k < c->sidekick_count && id >= 0; k++) {
-                Sidekick *sk = &c->sidekicks[k];
-                if (strcmp(sk->name, fields[1])) continue;
-                if (sk->spell_count >=
-                    (int)(sizeof sk->spells / sizeof sk->spells[0])) break;
-                sk->spells[sk->spell_count++] = id;
+            int id = index_of_spell(fields[2]);
+            if (id < 0) {
+                warn_unknown("sidekick spell", fields[2]);
+            } else {
+                Sidekick *sk = sidekick_named(c, fields[1]);
+                int max = (int)(sizeof sk->spells / sizeof sk->spells[0]);
+                if (sk && sk->spell_count < max) {
+                    sk->spells[sk->spell_count++] = id;
+                }
             }
         } else if (!strcmp(fields[0], "MAGICITEM") && n >= 4) {
             int id = find_magic_item(fields[3]);
             if (id >= 0) {
+                int before = c->item_count;
                 /* Older files have no plus or worn column; both read as 0. */
-                add_magic_item(c, id, atoi(fields[1]), atoi(fields[2]),
-                               n >= 5 ? atoi(fields[4]) : 0);
-                if (n >= 6 && atoi(fields[5])) {
-                    c->inventory[c->item_count - 1].equipped = 1;
-                }
-                if (n >= 7) {
-                    snprintf(c->inventory[c->item_count - 1].variant,
-                             sizeof c->inventory[0].variant, "%s", fields[6]);
+                /* You cannot be attuned to something that asks for no
+                   attunement. A file written before an item's row lost its
+                   clause -- the gem of brightness had one it should never
+                   have had -- would otherwise keep spending one of the
+                   three slots on it. */
+                add_magic_item(c, id,
+                               record_int(fields[1], 1, MAX_STACK),
+                               MAGIC_ITEMS[id].attunement
+                                   ? record_int(fields[2], 0, 1) : 0,
+                               /* The copy's plus -- except for a belt of
+                                  giant strength, whose column carries the
+                                  Strength it sets instead. */
+                               n >= 5 ? record_int(fields[4], 0, 30) : 0);
+                /* A row the bank declines -- a quantity of zero or less, or
+                   an inventory already full -- adds nothing, and the columns
+                   after the name then have no entry of their own to land on.
+                   Writing them anyway indexed one before the array. */
+                if (c->item_count > before) {
+                    InventoryEntry *e = &c->inventory[c->item_count - 1];
+                    if (n >= 6 && atoi(fields[5])) e->equipped = 1;
+                    if (n >= 7) {
+                        snprintf(e->variant, sizeof e->variant, "%s",
+                                 fields[6]);
+                    }
                 }
             } else {
                 warn_unknown("magic item", fields[3]);
             }
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
-            c->copper   = atoi(fields[1]);
-            c->silver   = atoi(fields[2]);
-            c->electrum = atoi(fields[3]);
-            c->gold     = atoi(fields[4]);
-            c->platinum = atoi(fields[5]);
+            c->copper   = record_int(fields[1], 0, MAX_COINS);
+            c->silver   = record_int(fields[2], 0, MAX_COINS);
+            c->electrum = record_int(fields[3], 0, MAX_COINS);
+            c->gold     = record_int(fields[4], 0, MAX_COINS);
+            c->platinum = record_int(fields[5], 0, MAX_COINS);
         } else if (!strcmp(fields[0], "SPELL") && n >= 5) {
             int id = index_of_spell(fields[4]);
             int from_feat = !strcmp(fields[3], "-");
-            int owner = from_feat ? -1 : index_of_class(fields[3]);
+            int owner = from_feat ? -1 : class_by_name(fields[3]);
             if (id < 0) warn_unknown("spell", fields[4]);
             if (id >= 0 && c->spell_count < MAX_SPELLS) {
                 c->spells[c->spell_count].spell_id = id;
@@ -1117,15 +1260,18 @@ int load_character(const char *path, Character *c)
                 c->spell_count++;
             }
         } else if (!strcmp(fields[0], "HPROLLS") && n >= 2) {
-            int count = atoi(fields[1]), i;
-            for (i = 0; i < count && i < MAX_LEVEL && i + 2 < n; i++) {
-                c->hp_rolls[i] = atoi(fields[i + 2]);
+            int count = record_int(fields[1], 0, MAX_LEVEL), i;
+            for (i = 0; i < count && i + 2 < n; i++) {
+                /* A hit die rolls at most 12, and the first level takes it
+                   whole; a homebrew class may state a larger one, so the
+                   ceiling is generous rather than exact. */
+                c->hp_rolls[i] = record_int(fields[i + 2], 0, 100);
             }
-            c->hp_roll_count = (count > MAX_LEVEL) ? MAX_LEVEL : count;
+            c->hp_roll_count = count;
         } else if (!strcmp(fields[0], "BODY") && n >= 7) {
-            c->age = atoi(fields[1]);
-            c->height_in = atoi(fields[2]);
-            c->weight_lb = atoi(fields[3]);
+            c->age = record_int(fields[1], 0, 100000);
+            c->height_in = record_int(fields[2], 0, 10000);
+            c->weight_lb = record_int(fields[3], 0, 100000);
             copy_field(c->eyes, sizeof c->eyes, fields[4]);
             copy_field(c->skin, sizeof c->skin, fields[5]);
             copy_field(c->hair, sizeof c->hair, fields[6]);

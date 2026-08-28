@@ -122,8 +122,17 @@ def rows():
                 break
             if j + 1 < len(lines) and lines[j + 1] in ALIGNMENTS:
                 break
+            # A deity whose name wraps puts the comma on the first line and
+            # the tail on the second, so the alignment lands two lines down:
+            #     "Hathor, goddess of love, music, and" / "motherhood" / "NG"
+            # A symbol that happens to contain a comma sits in the same shape
+            # -- "Woman's face, rotting on one side" / "Hermod, god of luck"
+            # / "CN" -- and used to be thrown away with it, which cost Azuth,
+            # Bane and Hel their symbols and cut Mystra's in half. The tail of
+            # a wrapped name carries no comma of its own, which tells the two
+            # apart; a real next-deity line is caught by the test above.
             if j + 2 < len(lines) and lines[j + 2] in ALIGNMENTS \
-                    and "," in nxt:
+                    and "," in nxt and "," not in lines[j + 1]:
                 break
             symbol.append(nxt)
             j += 1
