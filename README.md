@@ -352,7 +352,7 @@ has. It found seven magic items nobody had entered, the Axe of the Dwarvish
 Lords and the Eye and Hand of Vecna among them. It now reports none, for 434
 spells and 255 magic items.
 
-Names are the cheap check. Eleven scripts do the expensive one, comparing the
+Names are the cheap check. Thirteen scripts do the expensive one, comparing the
 numbers and the words beside those names -- every spell's stat line, every
 magic item's kind and rarity, every beast's stat block, every class and
 subclass feature's level, every background's table of suggestions, every

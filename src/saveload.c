@@ -917,7 +917,7 @@ int load_character(const char *path, Character *c)
 
     while (fgets(line, sizeof line, f)) {
         char *fields[32];
-        int n, k;
+        int n, field;
 
         /* A hand-edited record longer than the buffer would arrive as two,
            and its tail would be read as a record of its own. Drop the tail
@@ -944,7 +944,7 @@ int load_character(const char *path, Character *c)
         /* Every field is written escaped, so every field is read unescaped.
            One that carries no escape is unchanged, which is what makes a
            file written before this still read correctly. */
-        for (k = 0; k < n; k++) record_unescape(fields[k]);
+        for (field = 0; field < n; field++) record_unescape(fields[field]);
 
         if (!strcmp(fields[0], "SETTINGS") && n >= 2) {
             /* Two shapes. Files written now name the books they allow. Older
