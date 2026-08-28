@@ -156,7 +156,7 @@ SPELL|Dream|PHB|5|Illusion|0|0|1 minute|Special|V, S, M (a handful of sand, a da
 SPELL|Dream of the Blue Veil|TCE|7|Conjuration|0|0|10 minutes|20 feet|V, S, M (a magic item or a willing creature from the destination world)|6 hours|bard,sorcerer,warlock,wizard
 SPELL|Druid Grove|XGE|6|Abjuration|0|0|10 minutes|Touch|V, S, M (mistletoe, which the spell con- sumes, that was harvested with a golden sickle under the light of a full moon)|24 hours|druid
 SPELL|Druidcraft|PHB|0|Transmutation|0|0|1 action|30 feet|V, S|Instantaneous|druid
-SPELL|Dust Devil|XGE|2|Conjuration|0|1|1 action|60 feet|V, S, M (a pinch of dust)|Concentration, up to 1 minute|sorcerer,wizard
+SPELL|Dust Devil|XGE|2|Conjuration|0|1|1 action|60 feet|V, S, M (a pinch of dust)|Concentration, up to 1 minute|druid,sorcerer,wizard
 SPELL|Earth Tremor|XGE|1|Evocation|0|0|1 action|10 feet|V, S|Instantaneous|bard,druid,sorcerer,wizard
 SPELL|Earthbind|XGE|2|Transmutation|0|1|1 action|300 feet|V|Concentration, up to 1 minute|druid,sorcerer,warlock,wizard
 SPELL|Earthquake|PHB|8|Evocation|0|1|1 action|500 feet|V, S, M (a pinch of dirt, a piece of rock, and a lump of clay)|Concentration, up to 1 minute|cleric,druid,sorcerer
@@ -233,7 +233,7 @@ SPELL|Hallucinatory Terrain|PHB|4|Illusion|0|0|10 minutes|300 feet|V, S, M (a st
 SPELL|Harm|PHB|6|Necromancy|0|0|1 action|60 feet|V, S|Instantaneous|cleric
 SPELL|Haste|PHB|3|Transmutation|0|1|1 action|30 feet|V, S, M (a shaving of licorice root)|Concentration, up to 1 minute|sorcerer,wizard,artificer
 SPELL|Heal|PHB|6|Evocation|0|0|1 action|60 feet|V, S|Instantaneous|cleric,druid
-SPELL|Healing Spirit|XGE|2|Conjuration|0|1|1 bonus action|60 feet|V,S|Concentration, up to 1 minute|ranger
+SPELL|Healing Spirit|XGE|2|Conjuration|0|1|1 bonus action|60 feet|V,S|Concentration, up to 1 minute|druid,ranger
 SPELL|Healing Word|PHB|1|Evocation|0|0|1 bonus action|60 feet|V|Instantaneous|bard,cleric,druid
 SPELL|Heat Metal|PHB|2|Transmutation|0|1|1 action|60 feet|V, S, M (a piece of iron and a flame)|Concentration, up to 1 minute|bard,druid,artificer
 SPELL|Hellish Rebuke|PHB|1|Evocation|0|0|1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see|60 feet|V, S|Instantaneous|warlock

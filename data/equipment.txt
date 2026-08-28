@@ -63,7 +63,7 @@ ITEM|Heavy crossbow|PHB|martial-ranged|5000|180|0|0|0|0|1d10|piercing|Ammunition
 ITEM|Longbow|PHB|martial-ranged|5000|20|0|0|0|0|1d8|piercing|Ammunition (range 150/600), heavy, two-handed|
 ITEM|Net|PHB|martial-ranged|100|30|0|0|0|0|-|-|Special, thrown (range 5/15)|
 ITEM|Burglar's pack|PHB|pack|1600|470|0|0|0|0||||Backpack, bag of 1000 ball bearings, 10 feet of string, bell, 5 candles, crowbar, hammer, 10 pitons, hooded lantern, 2 flasks of oil, 5 days rations, tinderbox, waterskin, 50 feet of hempen rope
-ITEM|Diplomat's pack|PHB|pack|3900|390|0|0|0|0||||Chest, 2 cases for maps and scrolls, fine clothes, bottle of ink, ink pen, lamp, 2 flasks of oil, 5 sheets of paper, vial of perfume, sealing wax, soap
+ITEM|Diplomat's pack|PHB|pack|3900|360|0|0|0|0||||Chest, 2 cases for maps and scrolls, fine clothes, bottle of ink, ink pen, lamp, 2 flasks of oil, 5 sheets of paper, vial of perfume, sealing wax, soap
 ITEM|Dungeoneer's pack|PHB|pack|1200|610|0|0|0|0||||Backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50 feet of hempen rope
 ITEM|Entertainer's pack|PHB|pack|4000|380|0|0|0|0||||Backpack, bedroll, 2 costumes, 5 candles, 5 days rations, waterskin, disguise kit
 ITEM|Explorer's pack|PHB|pack|1000|590|0|0|0|0||||Backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50 feet of hempen rope
@@ -248,7 +248,7 @@ ITEMNOTE|Antitoxin (vial)|Drinking it grants advantage on saving throws against 
 ITEMNOTE|Ball bearings (bag of 1,000)|As an action, spill them across a level 10-foot square. A creature moving through must make a DC 10 Dexterity save or fall prone; moving at half speed avoids the save.
 ITEMNOTE|Caltrops (bag of 20)|As an action, scatter them over a 5-foot square. A creature entering must make a DC 15 Dexterity save or take 1 piercing damage and stop moving, its speed reduced by 10 feet until healed; moving through at half speed avoids the save.
 ITEMNOTE|Block and tackle|Pulleys and a hook that let you hoist up to four times the weight you could normally lift.
-ITEMNOTE|Book|A hundred pages of poetry, history, lore or diagrams. Studying one can grant advantage on an Intelligence check about its subject, at the DM's discretion.
+ITEMNOTE|Book|Writing or pictures of any kind -- poetry, history, lore, diagrams. Spells go in a spellbook instead.
 ITEMNOTE|Candle|Burns for 1 hour, shedding bright light in a 5-foot radius and dim light for 5 feet beyond.
 ITEMNOTE|Chain (10 feet)|Has 10 hit points and can be burst with a DC 20 Strength check.
 ITEMNOTE|Climber's kit|Pitons, boot tips, gloves and a harness. As an action you can anchor yourself, after which you cannot fall more than 25 feet from that point and cannot move more than 25 feet from it without unanchoring.
@@ -257,10 +257,10 @@ ITEMNOTE|Crowbar|Grants advantage on Strength checks where its leverage applies.
 ITEMNOTE|Crystal (arcane focus)|An arcane focus: a sorcerer, warlock or wizard can use it in place of the material components of their spells, except those with a listed cost.
 ITEMNOTE|Orb (arcane focus)|An arcane focus for a sorcerer, warlock or wizard.
 ITEMNOTE|Rod (arcane focus)|An arcane focus for a sorcerer, warlock or wizard.
-ITEMNOTE|Staff (arcane focus)|An arcane focus for a sorcerer, warlock or wizard; it also functions as a quarterstaff.
+ITEMNOTE|Staff (arcane focus)|An arcane focus for a sorcerer, warlock or wizard.
 ITEMNOTE|Wand (arcane focus)|An arcane focus for a sorcerer, warlock or wizard.
 ITEMNOTE|Sprig of mistletoe (druidic focus)|A druidic focus: a druid or ranger can use it in place of the material components of their spells, except those with a listed cost.
-ITEMNOTE|Wooden staff (druidic focus)|A druidic focus; it also functions as a quarterstaff.
+ITEMNOTE|Wooden staff (druidic focus)|A druidic focus for a druid.
 ITEMNOTE|Yew wand (druidic focus)|A druidic focus for a druid or ranger.
 ITEMNOTE|Amulet (holy symbol)|A holy symbol: a cleric or paladin can use it in place of the material components of their spells. It must be held, worn visibly, or borne on a shield.
 ITEMNOTE|Emblem (holy symbol)|A holy symbol emblazoned on a shield or worn visibly.
@@ -273,7 +273,7 @@ ITEMNOTE|Lamp|Bright light in a 15-foot radius and dim light for 30 feet beyond.
 ITEMNOTE|Lantern, bullseye|Bright light in a 60-foot cone and dim light for 60 feet beyond. Burns 6 hours on a pint of oil.
 ITEMNOTE|Lantern, hooded|Bright light in a 30-foot radius and dim light for 30 feet beyond. Burns 6 hours on a pint of oil; as an action you can lower the hood to dim it to a 5-foot radius.
 ITEMNOTE|Lock|Comes with one key. Without it, picking the lock needs thieves' tools and a successful DC 15 Dexterity check.
-ITEMNOTE|Magnifying glass|Doubles the apparent size of small objects, and can start a fire in sunlight given tinder and about 5 minutes.
+ITEMNOTE|Magnifying glass|Grants advantage on any check to appraise or inspect a small or highly detailed item. In sunlight it can also start a fire, given tinder and about 5 minutes.
 ITEMNOTE|Manacles|Bind a Small or Medium creature. Escaping needs a DC 20 Dexterity check; breaking them a DC 20 Strength check. Each set comes with one key.
 ITEMNOTE|Mess kit|A tin box holding a cup and cutlery, with one side serving as a pan and the other as a plate.
 ITEMNOTE|Oil (flask)|A pint. Thrown as an improvised weapon it shatters and coats a creature, which then takes 5 fire damage if set alight; or pour it on the ground to cover a 5-foot square.
@@ -334,8 +334,8 @@ ITEMNOTE|Mastiff|Speed 40 ft., carrying capacity 195 lb. Small enough to fit whe
 ITEMNOTE|Pony|Speed 40 ft., carrying capacity 225 lb.
 ITEMNOTE|Riding horse|Speed 60 ft., carrying capacity 480 lb.
 ITEMNOTE|Warhorse|Speed 60 ft., carrying capacity 540 lb. Trained for battle; a draft horse counts as a warhorse for carrying capacity.
-ITEMNOTE|Saddle, riding|A riding saddle grants advantage on any check made to remain mounted.
-ITEMNOTE|Saddlebags|Holds a third of a cubic foot or 8 pounds of gear.
+ITEMNOTE|Saddle, military|Braces you on an active mount: advantage on any check made to remain mounted.
+ITEMNOTE|Saddlebags|Bags for carrying gear on a mount.
 ITEMNOTE|Feed (per day)|A day's fodder for one mount or beast of burden.
 
 # WEAPONPROP | property | what it means
@@ -493,7 +493,7 @@ TRINKET|A metal urn containing the ashes of a hero
 # LIFESTYLE | name | cost_cp_per_day | text
 LIFESTYLE|Wretched|0|No home at all. You shelter in barns and crates and rely on the good graces of others. Violence, disease and hunger follow you, and you are beneath the notice of most people.
 LIFESTYLE|Squalid|10|A leaky stable, a mud-floored hut or a vermin-ridden boarding house. You have shelter from the elements but live in a desperate and often violent place.
-LIFESTYLE|Poor|20|Shabby surroundings and threadbare clothing, in a warren of cheap tenements. Most people treat you with contempt, and the law is unlikely to be on your side.
+LIFESTYLE|Poor|20|Simple food and threadbare clothing, in a flophouse room or the common room over a tavern. You have some legal protection, but still contend with violence, crime and disease.
 LIFESTYLE|Modest|100|Out of the slums, in an older part of town, renting a room or living over a shop. You are not fashionable, but you are respectable enough for soldiers, labourers and families.
 LIFESTYLE|Comfortable|200|Fine clothing and no trouble paying for maintenance. You live in a small cottage in a middle-class neighbourhood or a comfortable apartment, and can associate with merchants and officials.
 LIFESTYLE|Wealthy|400|A life of luxury, though not the highest circles of society. A spacious home, a staff, and connections among the rich and powerful -- along with the attention of thieves.

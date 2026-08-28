@@ -217,7 +217,7 @@ const ItemData BOOK_ITEMS[] = {
       "2 flasks of oil, 5 days rations, tinderbox, waterskin, 50 "
       "feet of hempen rope" },
     { "Diplomat's pack", BOOK_PHB, ITEM_PACK,
-      3900, 390, 0, 0, 0, 0,
+      3900, 360, 0, 0, 0, 0,
       "", "", "",
       "Chest, 2 cases for maps and scrolls, fine clothes, bottle of "
       "ink, ink pen, lamp, 2 flasks of oil, 5 sheets of paper, vial "
@@ -959,9 +959,8 @@ const ItemNote ITEM_NOTES[] = {
       "Pulleys and a hook that let you hoist up to four times the "
       "weight you could normally lift." },
     { "Book",
-      "A hundred pages of poetry, history, lore or diagrams. "
-      "Studying one can grant advantage on an Intelligence check "
-      "about its subject, at the DM's discretion." },
+      "Writing or pictures of any kind -- poetry, history, lore, "
+      "diagrams. Spells go in a spellbook instead." },
     { "Candle",
       "Burns for 1 hour, shedding bright light in a 5-foot radius "
       "and dim light for 5 feet beyond." },
@@ -989,8 +988,7 @@ const ItemNote ITEM_NOTES[] = {
     { "Rod (arcane focus)",
       "An arcane focus for a sorcerer, warlock or wizard." },
     { "Staff (arcane focus)",
-      "An arcane focus for a sorcerer, warlock or wizard; it also "
-      "functions as a quarterstaff." },
+      "An arcane focus for a sorcerer, warlock or wizard." },
     { "Wand (arcane focus)",
       "An arcane focus for a sorcerer, warlock or wizard." },
     { "Sprig of mistletoe (druidic focus)",
@@ -998,7 +996,7 @@ const ItemNote ITEM_NOTES[] = {
       "the material components of their spells, except those with a "
       "listed cost." },
     { "Wooden staff (druidic focus)",
-      "A druidic focus; it also functions as a quarterstaff." },
+      "A druidic focus for a druid." },
     { "Yew wand (druidic focus)",
       "A druidic focus for a druid or ranger." },
     { "Amulet (holy symbol)",
@@ -1038,8 +1036,9 @@ const ItemNote ITEM_NOTES[] = {
       "Comes with one key. Without it, picking the lock needs "
       "thieves' tools and a successful DC 15 Dexterity check." },
     { "Magnifying glass",
-      "Doubles the apparent size of small objects, and can start a "
-      "fire in sunlight given tinder and about 5 minutes." },
+      "Grants advantage on any check to appraise or inspect a small "
+      "or highly detailed item. In sunlight it can also start a "
+      "fire, given tinder and about 5 minutes." },
     { "Manacles",
       "Bind a Small or Medium creature. Escaping needs a DC 20 "
       "Dexterity check; breaking them a DC 20 Strength check. Each "
@@ -1251,11 +1250,11 @@ const ItemNote ITEM_NOTES[] = {
     { "Warhorse",
       "Speed 60 ft., carrying capacity 540 lb. Trained for battle; "
       "a draft horse counts as a warhorse for carrying capacity." },
-    { "Saddle, riding",
-      "A riding saddle grants advantage on any check made to remain "
-      "mounted." },
+    { "Saddle, military",
+      "Braces you on an active mount: advantage on any check made "
+      "to remain mounted." },
     { "Saddlebags",
-      "Holds a third of a cubic foot or 8 pounds of gear." },
+      "Bags for carrying gear on a mount." },
     { "Feed (per day)",
       "A day's fodder for one mount or beast of burden." },
 };
@@ -1486,9 +1485,10 @@ const Lifestyle LIFESTYLES[] = {
       "boarding house. You have shelter from the elements but live "
       "in a desperate and often violent place." },
     { "Poor", 20,
-      "Shabby surroundings and threadbare clothing, in a warren of "
-      "cheap tenements. Most people treat you with contempt, and "
-      "the law is unlikely to be on your side." },
+      "Simple food and threadbare clothing, in a flophouse room or "
+      "the common room over a tavern. You have some legal "
+      "protection, but still contend with violence, crime and "
+      "disease." },
     { "Modest", 100,
       "Out of the slums, in an older part of town, renting a room "
       "or living over a shop. You are not fashionable, but you are "

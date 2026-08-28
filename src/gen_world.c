@@ -10,10 +10,10 @@ const Deity DEITIES[] = {
       "Nature, Tempest", "Six-pointed snowflake" },
     { "Azuth", "god of wizards",
       "Forgotten Realms", "LN",
-      "Knowledge", "" },
+      "Knowledge", "Left hand pointing upward, outlined in fire" },
     { "Bane", "god of tyranny",
       "Forgotten Realms", "LE",
-      "War", "" },
+      "War", "Upright black right hand, thumb and fingers together" },
     { "Beshaba", "goddess of misfortune",
       "Forgotten Realms", "CE",
       "Trickery", "Black antlers" },
@@ -73,7 +73,8 @@ const Deity DEITIES[] = {
       "Death", "White human skull" },
     { "Mystra", "goddess of magic",
       "Forgotten Realms", "NG",
-      "Knowledge", "Circle of seven stars, or nine stars encircling a" },
+      "Knowledge", "Circle of seven stars, or nine stars encircling a flowing "
+      "red mist, or a single star" },
     { "Oghma", "god of knowledge",
       "Forgotten Realms", "N",
       "Knowledge", "Blank scroll" },
@@ -558,7 +559,7 @@ const Deity DEITIES[] = {
       "Light, War", "Curling musical horn" },
     { "Hel", "goddess of the underworld",
       "Norse", "NE",
-      "Death", "" },
+      "Death", "Woman's face, rotting on one side" },
     { "Hermod", "god of luck",
       "Norse", "CN",
       "Trickery", "Winged scroll" },
@@ -1150,7 +1151,7 @@ const SidekickFeature SIDEKICK_FEATURES[] = {
     { SK_SPELLCASTER, 16, "Ability Score Improvement",
       "Raise one ability by 2, or two abilities by 1, to a maximum "
       "of 20." },
-    { SK_SPELLCASTER, 19, "Ability Score Improvement",
+    { SK_SPELLCASTER, 18, "Ability Score Improvement",
       "Raise one ability by 2, or two abilities by 1, to a maximum "
       "of 20." },
     { SK_SPELLCASTER, 20, "Focused Casting",
@@ -1312,7 +1313,7 @@ static const LifeEntry LIFEROWS_7[] = {
 };
 static const LifeEntry LIFEROWS_8[] = {
     { 1, 5, "Academic" },
-    { 6, 10, "Adventurer (roll on the Class table) an Aristocrat" },
+    { 6, 10, "Adventurer (roll on the Class table)" },
     { 11, 11, "Aristocrat" },
     { 12, 26, "Artisan or guild member" },
     { 27, 31, "Criminal" },
@@ -1326,7 +1327,7 @@ static const LifeEntry LIFEROWS_8[] = {
     { 81, 85, "Politician or bureaucrat" },
     { 86, 90, "Priest" },
     { 91, 95, "Sailor" },
-    { 96, 100, "Soldier es" },
+    { 96, 100, "Soldier" },
 };
 static const LifeEntry LIFEROWS_9[] = {
     { 3, 3, "Dead (roll on the Cause of Death table)" },
@@ -1336,9 +1337,7 @@ static const LifeEntry LIFEROWS_9[] = {
     { 9, 12, "Alive and well" },
     { 13, 15, "Alive and quite successful" },
     { 16, 17, "Alive and infamous" },
-    { 18, 18, "Alive and famous collection of facts and notes that-at a "
-      "minimum-encapsulate what your character has been doing in "
-      "the world" },
+    { 18, 18, "Alive and famous" },
 };
 static const LifeEntry LIFEROWS_10[] = {
     { 3, 4, "Hostile" },
@@ -1390,9 +1389,9 @@ const LifeTable LIFE_TABLES[] = {
       LIFEROWS_4, (int)(sizeof(LIFEROWS_4) / sizeof(LIFEROWS_4[0])) },
     { "Family lifestyle", "3d6",
       LIFEROWS_5, (int)(sizeof(LIFEROWS_5) / sizeof(LIFEROWS_5[0])) },
-    { "Childhood home", "d100",
+    { "Childhood home", "d100 + Family lifestyle mod",
       LIFEROWS_6, (int)(sizeof(LIFEROWS_6) / sizeof(LIFEROWS_6[0])) },
-    { "Childhood memories", "3d6",
+    { "Childhood memories", "3d6 + Cha mod",
       LIFEROWS_7, (int)(sizeof(LIFEROWS_7) / sizeof(LIFEROWS_7[0])) },
     { "Occupation", "d100",
       LIFEROWS_8, (int)(sizeof(LIFEROWS_8) / sizeof(LIFEROWS_8[0])) },

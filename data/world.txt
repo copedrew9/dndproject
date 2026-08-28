@@ -12,8 +12,8 @@
 
 # DEITY | name | title | pantheon | alignment | domains | symbol
 DEITY|Auril|goddess of winter|Forgotten Realms|NE|Nature, Tempest|Six-pointed snowflake
-DEITY|Azuth|god of wizards|Forgotten Realms|LN|Knowledge|
-DEITY|Bane|god of tyranny|Forgotten Realms|LE|War|
+DEITY|Azuth|god of wizards|Forgotten Realms|LN|Knowledge|Left hand pointing upward, outlined in fire
+DEITY|Bane|god of tyranny|Forgotten Realms|LE|War|Upright black right hand, thumb and fingers together
 DEITY|Beshaba|goddess of misfortune|Forgotten Realms|CE|Trickery|Black antlers
 DEITY|Bhaal|god of murder|Forgotten Realms|NE|Death|Skull surrounded by a ring of blood droplets
 DEITY|Chauntea|goddess of agriculture|Forgotten Realms|NG|Life|Sheaf of grain or a blooming rose over grain
@@ -33,7 +33,7 @@ DEITY|Mask|god of thieves|Forgotten Realms|CN|Trickery|Black mask
 DEITY|Mielikki|goddess of forests|Forgotten Realms|NG|Nature|Unicorn's head
 DEITY|Milil|god of poetry and song|Forgotten Realms|NG|Light|Five-stringed harp made of leaves
 DEITY|Myrkul|god of death|Forgotten Realms|NE|Death|White human skull
-DEITY|Mystra|goddess of magic|Forgotten Realms|NG|Knowledge|Circle of seven stars, or nine stars encircling a
+DEITY|Mystra|goddess of magic|Forgotten Realms|NG|Knowledge|Circle of seven stars, or nine stars encircling a flowing red mist, or a single star
 DEITY|Oghma|god of knowledge|Forgotten Realms|N|Knowledge|Blank scroll
 DEITY|Savras|god of divination and fate|Forgotten Realms|LN|Knowledge|Crystal ball containing many kinds of eyes
 DEITY|Selune|goddess of the moon|Forgotten Realms|CG|Knowledge, Life|Pair of eyes surrounded by seven stars
@@ -194,7 +194,7 @@ DEITY|Frey|god of fertility and the sun|Norse|NG|Life, Light|Ice-blue greatsword
 DEITY|Freya|goddess of fertility and love|Norse|NG|Life|Falcon
 DEITY|Frigga|goddess of birth and fertility|Norse|N|Life, Light|Cat
 DEITY|Heimdall|god of watchfulness and loyalty|Norse|LG|Light, War|Curling musical horn
-DEITY|Hel|goddess of the underworld|Norse|NE|Death|
+DEITY|Hel|goddess of the underworld|Norse|NE|Death|Woman's face, rotting on one side
 DEITY|Hermod|god of luck|Norse|CN|Trickery|Winged scroll
 DEITY|Loki|god of thieves and trickery|Norse|CE|Trickery|Flame
 DEITY|Njord|god of sea and wind|Norse|NG|Nature, Tempest|Gold coin
@@ -341,7 +341,7 @@ SIDEKICKFEATURE|Spellcaster|8|Ability Score Improvement|Raise one ability by 2, 
 SIDEKICKFEATURE|Spellcaster|12|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
 SIDEKICKFEATURE|Spellcaster|14|Empowered Spells|Choose a school of magic; add its spellcasting ability modifier to the damage or healing of any spell of that school cast with a slot.
 SIDEKICKFEATURE|Spellcaster|16|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
-SIDEKICKFEATURE|Spellcaster|19|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
+SIDEKICKFEATURE|Spellcaster|18|Ability Score Improvement|Raise one ability by 2, or two abilities by 1, to a maximum of 20.
 SIDEKICKFEATURE|Spellcaster|20|Focused Casting|Taking damage cannot break its concentration on a spell.
 SIDEKICKFEATURE|Warrior|1|Bonus Proficiencies|Proficiency in one saving throw of Strength, Dexterity or Constitution; two skills from Acrobatics, Animal Handling, Athletics, Intimidation, Nature, Perception and Survival; all armor; and, if a humanoid or armed, shields and all simple and martial weapons.
 SIDEKICKFEATURE|Warrior|1|Martial Role|Attacker: +2 to all attack rolls. Defender: use its reaction to impose disadvantage on an attack by a creature within 5 feet aimed at someone else.
@@ -444,7 +444,7 @@ LIFEROW|Family lifestyle|9|12|Modest (+0)
 LIFEROW|Family lifestyle|13|15|Comfortable (+10)
 LIFEROW|Family lifestyle|16|17|Wealthy (+20)
 LIFEROW|Family lifestyle|18|18|Aristocratic (+40)
-LIFETABLE|Childhood home|d100
+LIFETABLE|Childhood home|d100 + Family lifestyle mod
 LIFEROW|Childhood home|0|0|On the streets
 LIFEROW|Childhood home|1|20|Rundown shack
 LIFEROW|Childhood home|21|30|No permanent residence; you moved around a lot
@@ -454,7 +454,7 @@ LIFEROW|Childhood home|51|70|Small house
 LIFEROW|Childhood home|71|90|Large house
 LIFEROW|Childhood home|91|110|Mansion
 LIFEROW|Childhood home|111|111|Palace or castle
-LIFETABLE|Childhood memories|3d6
+LIFETABLE|Childhood memories|3d6 + Cha mod
 LIFEROW|Childhood memories|3|3|I am still haunted by my childhood, when I was treated badly by my peers
 LIFEROW|Childhood memories|4|5|I spent most of my childhood alone, with no close friends
 LIFEROW|Childhood memories|6|8|Others saw me as being different or strange, and so I had few companions
@@ -464,7 +464,7 @@ LIFEROW|Childhood memories|16|17|I always found it easy to make friends, and I l
 LIFEROW|Childhood memories|18|18|Everyone knew who I was, and I had friends everywhere I went
 LIFETABLE|Occupation|d100
 LIFEROW|Occupation|1|5|Academic
-LIFEROW|Occupation|6|10|Adventurer (roll on the Class table) an Aristocrat
+LIFEROW|Occupation|6|10|Adventurer (roll on the Class table)
 LIFEROW|Occupation|11|11|Aristocrat
 LIFEROW|Occupation|12|26|Artisan or guild member
 LIFEROW|Occupation|27|31|Criminal
@@ -478,7 +478,7 @@ LIFEROW|Occupation|76|80|Merchant
 LIFEROW|Occupation|81|85|Politician or bureaucrat
 LIFEROW|Occupation|86|90|Priest
 LIFEROW|Occupation|91|95|Sailor
-LIFEROW|Occupation|96|100|Soldier es
+LIFEROW|Occupation|96|100|Soldier
 LIFETABLE|Status|3d6
 LIFEROW|Status|3|3|Dead (roll on the Cause of Death table)
 LIFEROW|Status|4|5|Missing or unknown
@@ -486,7 +486,7 @@ LIFEROW|Status|6|8|Alive, but doing poorly due to injury, financial trouble, or 
 LIFEROW|Status|9|12|Alive and well
 LIFEROW|Status|13|15|Alive and quite successful
 LIFEROW|Status|16|17|Alive and infamous
-LIFEROW|Status|18|18|Alive and famous collection of facts and notes that-at a minimum-encapsulate what your character has been doing in the world
+LIFEROW|Status|18|18|Alive and famous
 LIFETABLE|Relationship|3d4
 LIFEROW|Relationship|3|4|Hostile
 LIFEROW|Relationship|5|10|Friendly
