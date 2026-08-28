@@ -410,11 +410,13 @@ before. Between them they found 65 rows the books settle differently:
   deliberately corrupted copies of its own rows first, and caught all 36.
 - **The tables that are nothing but numbers** -- the experience needed for
   each level, the full caster's spell slots, the warlock's Pact Magic
-  columns, the height and weight table and the artificer's infusion levels,
-  90 rows, read back out of the book. All right, which took writing a reader
-  for the shape the extraction leaves a table in: one cell to a line, an em
-  dash for an empty column, and the header's own "1st" to "9th" sitting
-  above the rows like nine more of them.
+  columns, the height and weight table, the artificer's infusion levels, and
+  the cantrips and spells each class knows at each of its twenty levels:
+  306 rows, read back out of the book. All right, which took writing a
+  reader for the shape the extraction leaves a table in: one cell to a line,
+  an em dash for an empty column, and the header's own "1st" to "9th"
+  sitting above the rows like nine more of them. Two rows the extraction
+  garbles are named as unread rather than guessed at.
 - **The reference rows** -- prices, conditions, weapon properties, tool
   groups, trinkets and the This Is Your Life tables. Two prices were in
   silver in the book and stored as copper, a tenth of what the book asks.

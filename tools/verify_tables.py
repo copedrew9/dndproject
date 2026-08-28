@@ -4,7 +4,8 @@
 These are the rows that are nothing but numbers, and until now nothing
 checked any of them: the experience needed for each level, the full caster's
 spell slots, the warlock's Pact Magic columns, the PHB's Random Height and
-Weight table, and each artificer infusion's minimum level.
+Weight table, each artificer infusion's minimum level, and the cantrips and
+spells each class knows at each of its twenty levels.
 
 A table in the extracted text is not laid out as a table. The extraction
 emits one cell per line, reading down the columns of the printed row, so the
@@ -227,6 +228,68 @@ def check_pact_slots(rows, lines, report):
             report.ok()
 
 
+# Each class table's spell columns: the heading it sits under, how many
+# numeric cells a whole row of it has, and which of those cells each
+# PROGRESSION row in data/character.txt should equal.
+#
+# The Sorcerer is the one that needs a note. Its table puts Sorcery Points
+# between the proficiency bonus and the Features column, so on a level whose
+# feature is an em dash the reader takes the points for the feature and the
+# dash for a number, and the row comes back one cell long with a nought at
+# the front. Its numbers are the last eleven either way, which is why that
+# shape is read from the back rather than reported.
+#
+# The artificer's own table is not here: it is in Tasha's, and the extraction
+# shreds its columns into a single run of cells that cannot be read as rows.
+KNOWN_COLUMNS = [
+    ("The Bard", 11, {"Bard cantrips": 0, "Bard spells known": 1}),
+    ("The Cleric", 10, {"Cleric cantrips": 0}),
+    ("The Druid", 10, {"Druid cantrips": 0}),
+    ("The Ranger", 6, {"Ranger spells known": 0}),
+    ("The Sorcerer", 11, {"Sorcerer cantrips": 0, "Sorcerer spells known": 1}),
+    ("The Warlock", 5, {"Warlock cantrips": 0, "Warlock spells known": 1,
+                        "eldritch invocations": 4}),
+    ("The Wizard", 10, {"Wizard cantrips": 0}),
+]
+
+
+def check_known(rows, lines, report):
+    """The cantrips and spells each class knows, level by level.
+
+    Two hundred numbers that nothing checked: how many cantrips a cleric
+    has at 10th, how many spells a bard knows at 19th, how many invocations
+    a warlock has at 12th. They are what the level-up counts out, so a wrong
+    one is a character with the wrong number of spells.
+    """
+    ours = {}
+    for r in rows:
+        ours[r.str(0)] = [int(x) for x in r.str(1).split(",")]
+
+    for heading, width, columns in KNOWN_COLUMNS:
+        at = find_heading(lines, heading)
+        if at < 0:
+            report.unchecked(heading, "no heading in the dump")
+            continue
+        book = rows_under(lines, at)
+        for level in range(1, 21):
+            cells = cell_numbers(book.get(level, []))
+            if len(cells) == width + 1 and heading == "The Sorcerer":
+                cells = cells[-width:]
+            if len(cells) != width:
+                report.unchecked("%s at level %d" % (heading, level),
+                                 "the row has %d numeric cells, not %d"
+                                 % (len(cells), width))
+                continue
+            for name, column in columns.items():
+                if name not in ours:
+                    report.unchecked(name, "no row of that name in data/")
+                elif ours[name][level] != cells[column]:
+                    report.bad("%s at level %d" % (name, level),
+                               ours[name][level], cells[column])
+                else:
+                    report.ok()
+
+
 # The table names the races the way the book does, not the way the data does.
 BODY_NAME = {
     "Human": "Human", "Hill Dwarf": "Dwarf, hill",
@@ -317,6 +380,7 @@ def main():
     check_pact_slots(by_tag.get("PACTSLOTS", []), phb, report)
     check_body(by_tag.get("BODY", []), phb, report)
     check_infusions(by_tag.get("INFUSION", []), tce_text, report)
+    check_known(by_tag.get("PROGRESSION", []), phb, report)
 
     for what, ours, theirs in report.problems:
         print("  %s" % what)
