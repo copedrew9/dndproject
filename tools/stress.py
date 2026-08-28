@@ -182,8 +182,8 @@ class Session:
             return "Smith's tools"
         if "type it" in low or "name one your table uses" in low:
             return self.nasty_or("Table's own option")
-        # A blank line is what ends a text block and what accepts a default,
-        # so it has to stay the common answer.
+        # An empty answer is what accepts a default, and most of the free
+        # text the program asks for has one, so it stays the common answer.
         if self.rng.random() < 0.25:
             return self.nasty_or("something")
         return ""
