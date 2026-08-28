@@ -481,24 +481,6 @@ static int weapon_proficient(const Character *c, const ItemData *it)
     return 0;
 }
 
-/* The +N of a magic weapon the character has said this one is. The book's
-   entry covers every weapon at once, so the copy names which. */
-static int magic_weapon_bonus(const Character *c, const char *weapon)
-{
-    int i;
-    for (i = 0; i < c->item_count; i++) {
-        const MagicRule *r;
-        if (!c->inventory[i].is_magic) continue;
-        r = magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
-        if (!r || !r->weapon) continue;
-        if (!c->inventory[i].variant[0]) continue;
-        if (same_weapon(c->inventory[i].variant, weapon)) {
-            return c->inventory[i].plus;
-        }
-    }
-    return 0;
-}
-
 /* The monk's Martial Arts die, which replaces an unarmed strike's damage
    and that of any monk weapon. Zero for anyone else. */
 static int martial_arts_die(const Character *c)
@@ -524,93 +506,195 @@ static void add_note(char *note, size_t n, const char *text)
     snprintf(note + used, n - used, "%s%s", used ? ", " : "", text);
 }
 
-int attacks_of(const Character *c, Attack *out, int max)
+/* One weapon's line. The arithmetic is the same whether the weapon came
+ * out of the equipment list or out of a magic item, so both go through
+ * here: the ability modifier, proficiency where the character has it, the
+ * Archery style on a ranged weapon, and whatever bonus the weapon carries.
+ *
+ * `shown` is the name the line is filed under, which is not always the
+ * weapon's: a holy avenger is a longsword, and the sheet says holy
+ * avenger. `also` is a note put ahead of the weapon's own properties,
+ * used to say which weapon that is.
+ */
+static void weapon_attack(const Character *c, const ItemData *it, int plus,
+                          const char *shown, const char *also, Attack *a)
 {
     int prof = proficiency_bonus(c);
     int str = ability_mod(c, ABL_STR);
     int dex = ability_mod(c, ABL_DEX);
     int monk_die = martial_arts_die(c);
     int archery = has_choice_containing(c, "Fighting Style", "Archery");
+    const char *props = it->properties;
+    int ranged = (it->category == ITEM_SIMPLE_RANGED
+                  || it->category == ITEM_MARTIAL_RANGED);
+    int finesse = contains_ci(props, "finesse");
+    /* The PHB's weapons table prints a dash where a weapon deals no
+       damage, and the net is the one that does. Its attack is real --
+       throwing a net is a ranged weapon attack -- so it stays in the
+       block, with the damage said in words rather than run through the
+       format below, which would have written it "-+3 -". */
+    int no_damage = (!it->damage[0] || !strcmp(it->damage, "-"));
+    int ability, hit, dmg, die;
+
+    /* Finesse lets either modifier be used, so the sheet shows the better
+       one; a ranged weapon uses Dexterity and everything else Strength. */
+    ability = ranged ? dex : str;
+    if (finesse && dex > ability) ability = dex;
+    if (finesse && str > ability) ability = str;
+
+    hit = ability + plus;
+    if (weapon_proficient(c, it)) hit += prof;
+    if (archery && ranged) hit += 2;
+
+    snprintf(a->name, sizeof a->name, "%s", shown);
+    a->bonus = hit;
+    a->proficient = weapon_proficient(c, it);
+
+    die = die_of(it->damage);
+    dmg = ability + plus;
+    {
+        /* A monk weapon -- a simple melee weapon that is neither
+           two-handed nor heavy, and the shortsword -- may use the Martial
+           Arts die when it is the larger one. */
+        const char *dice = it->damage;
+        char monk[8];
+        if (monk_die && die && die < monk_die
+            && (it->category == ITEM_SIMPLE_MELEE
+                || same_weapon(it->name, "Shortsword"))
+            && !contains_ci(props, "two-handed")
+            && !contains_ci(props, "heavy")) {
+            snprintf(monk, sizeof monk, "1d%d", monk_die);
+            dice = monk;
+        }
+        if (no_damage) {
+            snprintf(a->damage, sizeof a->damage, "no damage");
+        } else if (dmg) {
+            snprintf(a->damage, sizeof a->damage, "%s%+d %s",
+                     dice, dmg, it->damage_type);
+        } else {
+            snprintf(a->damage, sizeof a->damage, "%s %s",
+                     dice, it->damage_type);
+        }
+    }
+
+    a->note[0] = '\0';
+    if (also) add_note(a->note, sizeof a->note, also);
+    if (props[0]) add_note(a->note, sizeof a->note, props);
+    if (!a->proficient) {
+        add_note(a->note, sizeof a->note,
+                 "you are not proficient with it");
+    }
+    if (plus) {
+        char buf[32];
+        snprintf(buf, sizeof buf, "+%d weapon", plus);
+        add_note(a->note, sizeof a->note, buf);
+    }
+}
+
+/* The mundane weapon a carried magic item is wielded as, or NULL when the
+ * item is not a weapon at all.
+ *
+ * Which weapon it is comes from the item's own type line, which the DMG
+ * writes three ways. "Weapon (longsword)" names it outright. "Weapon (any
+ * sword)", "Weapon (any axe or sword)" and "Weapon (any sword that deals
+ * slashing damage)" leave it to the copy, and the copy says which in the
+ * variant the inventory asked for. And a staff of power is filed under
+ * "Staff" while its entry says it may be wielded as a magic quarterstaff,
+ * which no parenthetical covers -- that one is what weapon_as is for.
+ *
+ * Ammunition falls out on its own: an arrow is not a weapon category, so
+ * "Weapon (any ammunition)" and "Weapon (arrow)" resolve to nothing and
+ * get no line, which is right. You attack with the bow.
+ */
+static const ItemData *magic_weapon_of(const Character *c, int i, int *plus)
+{
+    const MagicItem *m = &MAGIC_ITEMS[c->inventory[i].item_id];
+    const MagicRule *r = magic_rule_for(m->name);
+    const MagicRule *live = rule_in_effect(c, i);
+    int id = -1;
+
+    /* The weapon is the weapon whether or not the item is attuned; the
+       bonus is not, so it comes from the rule only once it is in effect. */
+    *plus = 0;
+    if (live) *plus = live->variable ? c->inventory[i].plus
+                                     : live->weapon_plus;
+
+    if (r && r->weapon_as) {
+        id = find_item(r->weapon_as);
+    } else {
+        char inner[MAX_NAME];
+        switch (magic_weapon_kind(m->type, inner, sizeof inner)) {
+        case MAGIC_WEAPON_NAMED:
+            id = find_item(inner);
+            break;
+        case MAGIC_WEAPON_CHOICE:
+            /* Nothing to show until the copy has said which weapon it is. */
+            if (!c->inventory[i].variant[0]) return NULL;
+            id = find_item(c->inventory[i].variant);
+            break;
+        default:
+            return NULL;
+        }
+    }
+
+    if (id < 0) return NULL;
+    if (ITEMS[id].category < ITEM_SIMPLE_MELEE
+        || ITEMS[id].category > ITEM_MARTIAL_RANGED) return NULL;
+    return &ITEMS[id];
+}
+
+int attacks_of(const Character *c, Attack *out, int max)
+{
+    int prof = proficiency_bonus(c);
+    int str = ability_mod(c, ABL_STR);
+    int dex = ability_mod(c, ABL_DEX);
+    int monk_die = martial_arts_die(c);
     int i, n = 0;
 
     for (i = 0; i < c->item_count && n < max; i++) {
         const ItemData *it;
-        const char *props;
-        int ranged, finesse, ability, plus, hit, dmg, die, no_damage;
-        Attack *a;
 
         if (c->inventory[i].is_magic) continue;
         it = &ITEMS[c->inventory[i].item_id];
         if (it->category < ITEM_SIMPLE_MELEE
             || it->category > ITEM_MARTIAL_RANGED) continue;
+        weapon_attack(c, it, 0, it->name, NULL, &out[n++]);
+    }
 
-        /* The PHB's weapons table prints a dash where a weapon deals no
-           damage, and the net is the one that does. Its attack is real --
-           throwing a net is a ranged weapon attack -- so it stays in the
-           block, with the damage said in words rather than run through the
-           format below, which would have written it "-+3 -". */
-        no_damage = (!it->damage[0] || !strcmp(it->damage, "-"));
+    /* A magic weapon is a weapon, and gets a line of its own rather than
+       lifting the bonus of a mundane one of the same name. That is what it
+       used to do, and it meant a +1 longsword showed its +1 only if the
+       character happened to be carrying an ordinary longsword as well --
+       and showed nothing at all for a frost brand or a holy avenger, which
+       are not "some weapon, plus one" but weapons in their own right. */
+    for (i = 0; i < c->item_count && n < max; i++) {
+        const ItemData *it;
+        const MagicItem *m;
+        const MagicRule *r;
+        const char *shown;
+        char also[MAX_NAME + 8];
+        int plus;
 
-        props = it->properties;
-        ranged = (it->category == ITEM_SIMPLE_RANGED
-                  || it->category == ITEM_MARTIAL_RANGED);
-        finesse = contains_ci(props, "finesse");
+        if (!c->inventory[i].is_magic) continue;
+        it = magic_weapon_of(c, i, &plus);
+        if (!it) continue;
 
-        /* Finesse lets either modifier be used, so the sheet shows the
-           better one; a ranged weapon uses Dexterity and everything else
-           Strength. */
-        ability = ranged ? dex : str;
-        if (finesse && dex > ability) ability = dex;
-        if (finesse && str > ability) ability = str;
-
-        plus = magic_weapon_bonus(c, it->name);
-        hit = ability + plus;
-        if (weapon_proficient(c, it)) hit += prof;
-        if (archery && ranged) hit += 2;
-
-        a = &out[n++];
-        snprintf(a->name, sizeof a->name, "%s", it->name);
-        a->bonus = hit;
-        a->proficient = weapon_proficient(c, it);
-
-        die = die_of(it->damage);
-        dmg = ability + plus;
-        {
-            /* A monk weapon -- a simple melee weapon that is neither
-               two-handed nor heavy, and the shortsword -- may use the
-               Martial Arts die when it is the larger one. */
-            const char *dice = it->damage;
-            char monk[8];
-            if (monk_die && die && die < monk_die
-                && (it->category == ITEM_SIMPLE_MELEE
-                    || same_weapon(it->name, "Shortsword"))
-                && !contains_ci(props, "two-handed")
-                && !contains_ci(props, "heavy")) {
-                snprintf(monk, sizeof monk, "1d%d", monk_die);
-                dice = monk;
-            }
-            if (no_damage) {
-                snprintf(a->damage, sizeof a->damage, "no damage");
-            } else if (dmg) {
-                snprintf(a->damage, sizeof a->damage, "%s%+d %s",
-                         dice, dmg, it->damage_type);
-            } else {
-                snprintf(a->damage, sizeof a->damage, "%s %s",
-                         dice, it->damage_type);
-            }
+        /* "Weapon, +1, +2, or +3" is the book's name for the entry, not
+           for the thing: what the character owns is a longsword. A named
+           weapon is the other way round, so it keeps its own name and says
+           which weapon it is. */
+        m = &MAGIC_ITEMS[c->inventory[i].item_id];
+        r = magic_rule_for(m->name);
+        if (r && r->variable) {
+            shown = it->name;
+            also[0] = '\0';
+        } else {
+            shown = m->name;
+            snprintf(also, sizeof also, "a %s", it->name);
+            /* Mid-sentence in a note, so it is not a proper noun here. */
+            if (also[2] >= 'A' && also[2] <= 'Z') also[2] += 32;
         }
-
-        a->note[0] = '\0';
-        if (props[0]) add_note(a->note, sizeof a->note, props);
-        if (!a->proficient) {
-            add_note(a->note, sizeof a->note,
-                     "you are not proficient with it");
-        }
-        if (plus) {
-            char buf[32];
-            snprintf(buf, sizeof buf, "+%d weapon", plus);
-            add_note(a->note, sizeof a->note, buf);
-        }
+        weapon_attack(c, it, plus, shown, also[0] ? also : NULL, &out[n++]);
     }
 
     /* Everyone can punch, and for a monk it is a real attack. */

@@ -203,31 +203,50 @@ static void add_magic(Character *c)
             }
             add_magic_item(c, map[pick], qty, attune, plus);
 
-            /* The book's magic weapon entry covers every weapon at once,
-               so the copy has to say which one it is before the attacks
-               block can add its bonus. */
-            if (r && r->weapon) {
-                const char *opts[64];
-                int k, wn = 0;
-                char answer[MAX_NAME];
+            /* An entry that covers a whole class of weapon at once --
+               "Weapon (any sword)" -- leaves the weapon to the copy, so
+               the copy has to say which before it can have a line in the
+               attacks block. An entry that names its weapon does not ask.
+               The question is put in the book's own words, so a sword of
+               sharpness asks for a sword that deals slashing damage rather
+               than for any weapon at all. */
+            {
+                char narrows[MAX_NAME];
+                if (magic_weapon_kind(m->type, narrows, sizeof narrows)
+                        == MAGIC_WEAPON_CHOICE) {
+                    const char *opts[64];
+                    const char *which = narrows;
+                    char ask[MAX_NAME + 32];
+                    char answer[MAX_NAME];
+                    int k, wn = 0;
 
-                for (k = 0; k < c->item_count && wn < 64; k++) {
-                    const ItemData *w;
-                    if (c->inventory[k].is_magic) continue;
-                    w = &ITEMS[c->inventory[k].item_id];
-                    if (w->category < ITEM_SIMPLE_MELEE
-                        || w->category > ITEM_MARTIAL_RANGED) continue;
-                    opts[wn++] = w->name;
+                    /* "any sword" asks for a sword; a bare "any" asks for
+                       a weapon. */
+                    if (!strncmp(which, "any", 3) || !strncmp(which, "Any", 3)) {
+                        which += 3;
+                        while (*which == ' ') which++;
+                    }
+                    snprintf(ask, sizeof ask, "  Which %s is it?",
+                             *which ? which : "weapon");
+
+                    for (k = 0; k < c->item_count && wn < 64; k++) {
+                        const ItemData *w;
+                        if (c->inventory[k].is_magic) continue;
+                        w = &ITEMS[c->inventory[k].item_id];
+                        if (w->category < ITEM_SIMPLE_MELEE
+                            || w->category > ITEM_MARTIAL_RANGED) continue;
+                        opts[wn++] = w->name;
+                    }
+                    if (wn) {
+                        ui_menu_custom(ask, opts, NULL, wn,
+                                       "A weapon you are not carrying yet",
+                                       answer, sizeof answer);
+                    } else {
+                        ui_line(ask, answer, sizeof answer);
+                    }
+                    snprintf(c->inventory[c->item_count - 1].variant,
+                             sizeof c->inventory[0].variant, "%s", answer);
                 }
-                if (wn) {
-                    ui_menu_custom("  Which weapon is it?", opts, NULL, wn,
-                                   "A weapon you are not carrying yet",
-                                   answer, sizeof answer);
-                } else {
-                    ui_line("  Which weapon is it?", answer, sizeof answer);
-                }
-                snprintf(c->inventory[c->item_count - 1].variant,
-                         sizeof c->inventory[0].variant, "%s", answer);
             }
 
             /* Armour and rings of resistance are made against one kind of

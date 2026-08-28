@@ -133,6 +133,32 @@ int magic_type_is_variant(const char *what)
     return what && (!strcmp(what, "*") || strchr(what, ',') != NULL);
 }
 
+int magic_weapon_kind(const char *type, char *out, size_t n)
+{
+    const char *open, *close;
+    size_t len;
+
+    if (out && n) out[0] = '\0';
+    if (!type || strncmp(type, "Weapon", 6) != 0) return MAGIC_WEAPON_NONE;
+
+    open = strchr(type, '(');
+    close = open ? strchr(open, ')') : NULL;
+    if (!close || close <= open + 1) return MAGIC_WEAPON_NONE;
+
+    len = (size_t)(close - open - 1);
+    if (!out || !n) return MAGIC_WEAPON_NONE;
+    if (len >= n) len = n - 1;
+    memcpy(out, open + 1, len);
+    out[len] = '\0';
+
+    /* "any", "any sword", "any axe or sword", "any sword that deals
+       slashing damage" -- all of them leave the weapon to the copy. */
+    if (!strncmp(out, "any", 3) || !strncmp(out, "Any", 3)) {
+        return MAGIC_WEAPON_CHOICE;
+    }
+    return MAGIC_WEAPON_NAMED;
+}
+
 int magic_variant_types(const MagicRule *r, const char **out, int max)
 {
     static const char *const ANY[] = {

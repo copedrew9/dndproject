@@ -38,6 +38,14 @@ What is checked and what is not:
   Checked against the PHB table: the four armour numbers, and a shield's
   +2.
 
+  Checked in both directions, and swept across every magic item rather
+  than only the rows: the bonus a magic weapon puts on attack and damage
+  rolls. Doing it row by row would miss the case that matters, an item
+  whose entry grants a bonus and which has no rule at all -- there is no
+  row there to find fault with. Twenty-nine items were in exactly that
+  state, the staves and rods among them, because nothing had ever needed
+  the number before.
+
   Not checked, because they say how the program should read the row rather
   than what the book says: variable, weapon, worn, only_unarmored. Each is
   still tested for internal sense -- a row with only_unarmored has to say
@@ -72,6 +80,24 @@ ABILITIES = ["Strength", "Dexterity", "Constitution",
              "Intelligence", "Wisdom", "Charisma"]
 
 # Rows the DMG gives no entry of its own, with the reason.
+# A weapon bonus the row states and the extraction cannot settle, with why.
+# Every name here has to be a rule carrying weapon_plus, so an entry cannot
+# outlive what it excuses.
+UNCONFIRMED = {
+    "Sun Blade": "the entry breaks off at \"you are proficient with the sun "
+                 "blade\" and the extraction does not carry the sentence "
+                 "that grants the bonus",
+}
+
+# Entries that state a weapon bonus without the item being a weapon. Every
+# name here has to be an item whose entry states one and which has no rule,
+# so an entry cannot outlive the case it excuses either.
+NOT_A_WEAPON = {
+    "Oil of Sharpness": "a potion rather than a weapon: it coats a slashing "
+                        "or piercing weapon for an hour and the bonus "
+                        "belongs to whatever it was poured on",
+}
+
 NO_ENTRY = {
     "Hand of Vecna": "described inside EYE AND HAND OF VECNA, which gives "
                      "the hand no heading of its own",
@@ -86,6 +112,10 @@ RUNNING = re.compile(r"CHAPTER\s+\d|APPENDIX\s+[A-Z]|^\d+\s*$")
 
 # "Armor (plate)", "Armor (shield)", "Armor (light, medium, or heavy)".
 ARMOUR_KIND = re.compile(r"rmor\s*\(([^)]*)\)", re.I)
+
+# "+3 bonus to attack and damage rolls", which is how the DMG states a
+# magic weapon's bonus wherever the weapon has a fixed one.
+WEAPON_PLUS = re.compile(r"\+\s*(\d)\s+bonus to attack and damage", re.I)
 
 
 def flat(s):
@@ -243,7 +273,7 @@ CHOICE = re.compile(r"one (?:type of damage|damage type|of the following "
                     r"damage types)|resistance to one", re.I)
 
 
-def check(kv, line, body):
+def check(name, kv, line, body):
     """A row against its entry, as (disagreements, things left unchecked)."""
     bad, open_ = [], []
 
@@ -277,6 +307,24 @@ def check(kv, line, body):
     elif grants and not cb:
         bad.append("the entry gives a +%s bonus to ability checks and the "
                    "row carries no check_bonus" % grants.group(1))
+
+    wp = number(kv, "weapon_plus")
+    swings = WEAPON_PLUS.search(body)
+    if wp and not swings:
+        if name in UNCONFIRMED:
+            open_.append("weapon_plus=%d, which %s" % (wp, UNCONFIRMED[name]))
+        else:
+            bad.append("weapon_plus=%d: the entry gives no +%d bonus to "
+                       "attack and damage rolls" % (wp, wp))
+    elif wp and int(swings.group(1)) != wp:
+        bad.append("weapon_plus=%d, and the entry gives +%s"
+                   % (wp, swings.group(1)))
+    elif swings and not wp and not number(kv, "variable"):
+        bad.append("the entry gives a +%s bonus to attack and damage rolls "
+                   "and the row carries no weapon_plus" % swings.group(1))
+    if (wp or kv.get("weapon_as")) and not number(kv, "weapon"):
+        bad.append("a row with weapon_plus or weapon_as is a weapon's rule "
+                   "and has to say weapon=1")
 
     curses = re.search(r"vulnerability to two of the three damage type",
                        body, re.I)
@@ -419,7 +467,7 @@ def main():
         kv = settings(r)
         line, body = found[name]
         checked += 1
-        bad, open_ = check(kv, line, body)
+        bad, open_ = check(name, kv, line, body)
         for why in open_:
             unchecked.append((name, why))
         if number(kv, "variable") or number(kv, "weapon") or \
@@ -430,6 +478,41 @@ def main():
             print("  %s" % name)
             for b in bad:
                 print("      %s" % b)
+
+    # And the sweep the row-by-row pass cannot do: a magic weapon whose
+    # entry states a bonus and which has no MAGICRULE at all is invisible
+    # above, because there is no row to check. This walks every magic item
+    # instead, so an entry that grants a bonus has to have a row carrying
+    # it.
+    named = {r.str(0) for r in rules}
+    for r in read_file("equipment.txt"):
+        if r.tag != "MAGICITEM" or r.str(0) in named:
+            continue
+        got = found.get(r.str(0))
+        if not got:
+            continue
+        swings = WEAPON_PLUS.search(got[1])
+        if swings and r.str(0) in NOT_A_WEAPON:
+            unchecked.append((r.str(0), NOT_A_WEAPON[r.str(0)]))
+        elif swings:
+            wrong += 1
+            print("  %s" % r.str(0))
+            print("      the entry gives a +%s bonus to attack and damage "
+                  "rolls and the item has no rule at all"
+                  % swings.group(1))
+
+    carry = {r.str(0) for r in rules if "weapon_plus=" in "|".join(r.f[1:])}
+    for name in sorted(UNCONFIRMED):
+        if name not in carry:
+            wrong += 1
+            print("  %s\n      is excused a weapon bonus the extraction "
+                  "cannot settle, and carries no weapon_plus" % name)
+    for name in sorted(NOT_A_WEAPON):
+        got = found.get(name)
+        if name in named or not got or not WEAPON_PLUS.search(got[1]):
+            wrong += 1
+            print("  %s\n      is excused as not a weapon, and is no longer "
+                  "an entry that states a bonus without a rule" % name)
 
     if unchecked:
         print("\n  %d left unchecked:" % len(unchecked))

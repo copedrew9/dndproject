@@ -698,7 +698,8 @@ def build_equipment():
                 "armor_dex",
                 "armor_str", "armor_stealth", "shield", "only_unarmored",
                 "worn",
-                "unarmored_base", "variable", "weapon", "sets_ability",
+                "unarmored_base", "variable", "weapon", "weapon_plus",
+                "sets_ability",
                 "sets_to",
                 "sets_speed", "fly_speed", "swim_speed", "climb_speed",
                 "vulnerable_others")
@@ -720,7 +721,7 @@ def build_equipment():
                     parts.append(".%s = %d" % (key, int(val)))
                 except ValueError:
                     r.die("%s wants a number, found %r" % (key, val))
-            elif key in ("resist", "immune"):
+            elif key in ("resist", "immune", "weapon_as"):
                 parts.append(".%s = %s" % (key, cstr(val)))
             else:
                 r.die("unknown setting %r" % key)

@@ -819,7 +819,7 @@ MAGICITEM|Sentinel Shield|DMG|Armor (shield)|uncommon||Emblazoned with the symbo
 # MAGICRULE | item | key=value ...
 MAGICRULE|Ring of Protection|ac_bonus=1|save_bonus=1
 MAGICRULE|Cloak of Protection|ac_bonus=1|save_bonus=1
-MAGICRULE|Staff of Power|ac_bonus=2|save_bonus=2
+MAGICRULE|Staff of Power|ac_bonus=2|save_bonus=2|weapon=1|weapon_plus=2|weapon_as=Quarterstaff
 MAGICRULE|Bracers of Defense|ac_bonus=2|only_unarmored=1
 MAGICRULE|Robe of the Archmagi|unarmored_base=15
 MAGICRULE|Demon Armor|armor_base=19|armor_str=15|armor_stealth=1
@@ -839,6 +839,34 @@ MAGICRULE|Shield of Missile Attraction|shield=2
 MAGICRULE|Spellguard Shield|shield=2
 MAGICRULE|Shield, +1, +2, or +3|shield=2|variable=1
 MAGICRULE|Weapon, +1, +2, or +3|variable=1|weapon=1
+MAGICRULE|Berserker Axe|weapon=1|weapon_plus=1
+MAGICRULE|Dagger of Venom|weapon=1|weapon_plus=1
+MAGICRULE|Defender|weapon=1|weapon_plus=3
+MAGICRULE|Dragon Slayer|weapon=1|weapon_plus=1
+MAGICRULE|Dwarven Thrower|weapon=1|weapon_plus=3
+MAGICRULE|Giant Slayer|weapon=1|weapon_plus=1
+MAGICRULE|Hammer of Thunderbolts|weapon=1|weapon_plus=1
+MAGICRULE|Holy Avenger|weapon=1|weapon_plus=3
+MAGICRULE|Luck Blade|weapon=1|weapon_plus=1
+MAGICRULE|Mace of Smiting|weapon=1|weapon_plus=1
+MAGICRULE|Nine Lives Stealer|weapon=1|weapon_plus=2
+MAGICRULE|Scimitar of Speed|weapon=1|weapon_plus=2
+MAGICRULE|Sun Blade|weapon=1|weapon_plus=2
+MAGICRULE|Vorpal Sword|weapon=1|weapon_plus=3
+MAGICRULE|Sword of Answering|weapon=1|weapon_plus=3
+MAGICRULE|Sword of Vengeance|weapon=1|weapon_plus=1
+MAGICRULE|Blackrazor|weapon=1|weapon_plus=3
+MAGICRULE|Wave|weapon=1|weapon_plus=3
+MAGICRULE|Whelm|weapon=1|weapon_plus=3
+MAGICRULE|Axe of the Dwarvish Lords|weapon=1|weapon_plus=3
+MAGICRULE|Moonblade|weapon=1|weapon_plus=1
+MAGICRULE|Staff of Striking|weapon=1|weapon_plus=3|weapon_as=Quarterstaff
+MAGICRULE|Staff of the Magi|weapon=1|weapon_plus=2|weapon_as=Quarterstaff
+MAGICRULE|Staff of the Woodlands|weapon=1|weapon_plus=2|weapon_as=Quarterstaff
+MAGICRULE|Staff of Thunder and Lightning|weapon=1|weapon_plus=2|weapon_as=Quarterstaff
+MAGICRULE|Rod of Lordly Might|weapon=1|weapon_plus=3|weapon_as=Mace
+MAGICRULE|Wand of Orcus|weapon=1|weapon_plus=3|weapon_as=Mace
+MAGICRULE|Sword of Kas|weapon=1|weapon_plus=3|weapon_as=Longsword
 MAGICRULE|Amulet of Health|sets_ability=3|sets_to=19
 MAGICRULE|Headband of Intellect|sets_ability=4|sets_to=19
 MAGICRULE|Gauntlets of Ogre Power|sets_ability=1|sets_to=19

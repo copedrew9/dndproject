@@ -579,6 +579,7 @@ static void dump_equipment(void)
             { "unarmored_base",  offsetof(MagicRule, unarmored_base) },
             { "variable",        offsetof(MagicRule, variable) },
             { "weapon",          offsetof(MagicRule, weapon) },
+            { "weapon_plus",     offsetof(MagicRule, weapon_plus) },
             { "sets_ability",    offsetof(MagicRule, sets_ability) },
             { "sets_to",         offsetof(MagicRule, sets_to) },
             { "sets_speed",      offsetof(MagicRule, sets_speed) },
@@ -604,6 +605,9 @@ static void dump_equipment(void)
             field(f, buf);
         }
         if (r->sets_ability && !r->sets_to) field(f, "sets_to=0");
+        if (r->weapon_as) { snprintf(buf, sizeof buf, "weapon_as=%s",
+                                     r->weapon_as);
+                            field(f, buf); }
         if (r->resist)  { snprintf(buf, sizeof buf, "resist=%s", r->resist);
                           field(f, buf); }
         if (r->immune)  { snprintf(buf, sizeof buf, "immune=%s", r->immune);

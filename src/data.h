@@ -578,6 +578,18 @@ typedef struct {
        The inventory entry's variant names the weapon it is, since the
        book's entry covers every weapon at once. */
     int weapon;
+    /* A bonus to attack and damage the entry states outright, where
+       variable means the copy's own rarity decides it. Most named magic
+       weapons have one: a holy avenger is always +3, where a "Weapon, +1,
+       +2, or +3" is whichever its copy is. */
+    int weapon_plus;
+    /* The mundane weapon the item is wielded as, for an item whose own
+       type does not say. Only the staff of power needs it: the DMG files
+       it under "Staff" and the entry says it can be wielded as a magic
+       quarterstaff. Everything else names its weapon in its type, either
+       outright ("Weapon (longsword)") or as a choice the copy makes
+       ("Weapon (any sword)"). */
+    const char *weapon_as;
 
     /* Scores an item sets outright, rather than adding to. sets_ability is
        the ability plus one, so zero means none; sets_to of 0 means the copy
@@ -622,6 +634,21 @@ int magic_variant_types(const MagicRule *r, const char **out, int max);
 
 /* Whether a rule's resist or immune field is one the copy fills in. */
 int magic_type_is_variant(const char *what);
+
+/* Which mundane weapon a magic item is, read off its type line.
+ *
+ * The DMG writes it three ways and this tells them apart, writing what it
+ * found into out[]:
+ *
+ *   MAGIC_WEAPON_NAMED   "Weapon (longsword)" -- out[] is the weapon.
+ *   MAGIC_WEAPON_CHOICE  "Weapon (any sword)", "Weapon (any axe or sword)",
+ *                        "Weapon (any sword that deals slashing damage)" --
+ *                        the copy says which, and out[] is the phrase that
+ *                        narrows it, for asking with.
+ *   MAGIC_WEAPON_NONE    not a weapon, or the type names no weapon at all.
+ */
+enum { MAGIC_WEAPON_NONE = 0, MAGIC_WEAPON_NAMED, MAGIC_WEAPON_CHOICE };
+int magic_weapon_kind(const char *type, char *out, size_t n);
 
 extern const ItemNote WEAPON_PROPERTIES[];
 extern const int WEAPON_PROPERTY_COUNT;

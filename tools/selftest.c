@@ -2127,6 +2127,107 @@ static void test_magic_checks_and_curses(void)
           "never to the one it turns aside", 1, 1);
 }
 
+/* A magic weapon is a weapon, and belongs in the attacks block with the
+   rest of them. */
+static void test_magic_weapon_attacks(void)
+{
+    Attack a[MAX_ATTACKS];
+    Character c;
+    int n, i, found;
+
+    printf("magic weapons among the attacks\n");
+
+    /* A holy avenger is a longsword: Strength 3 + proficiency 2 + its own
+       +3, and 1d8 + 3 + 3 slashing. The DMG leaves the sword to the copy,
+       so the copy has to say which. */
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 5, -1);
+    c.base_score[ABL_STR] = 16;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Holy Avenger", 1, 0, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "Longsword");
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Holy Avenger")) continue;
+        found = 1;
+        EQ(a[i].bonus, 9, "holy avenger to hit (Str 3 + prof 3 + weapon 3)");
+        check(strstr(a[i].damage, "1d8+6 slashing") != NULL,
+              "and 1d8 + Strength + 3 slashing", 1, 1);
+        check(strstr(a[i].note, "a longsword") != NULL,
+              "the line says which weapon it is", 1, 1);
+    }
+    EQ(found, 1, "the holy avenger has a line of its own");
+
+    /* Until the copy names a sword there is nothing to put on a line. */
+    reset(&c);
+    add_class(&c, CLS_PALADIN, 5, -1);
+    give_magic(&c, "Holy Avenger", 1, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (!strcmp(a[i].name, "Holy Avenger")) found = 1;
+    }
+    EQ(found, 0, "no line until the copy says which sword");
+
+    /* A staff of power is filed under Staff and wielded as a quarterstaff,
+       which only its rule knows. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Staff of Power", 1, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Staff of Power")) continue;
+        found = 1;
+        EQ(a[i].bonus, 5, "staff of power to hit (prof 3 + weapon 2)");
+        check(strstr(a[i].note, "a quarterstaff") != NULL,
+              "and it says it is a quarterstaff", 1, 1);
+    }
+    EQ(found, 1, "a staff that is a weapon gets a line");
+
+    /* Unattuned, it is still a quarterstaff and no longer a +2 one. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 5, -1);
+    c.base_score[ABL_STR] = 10;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Staff of Power", 0, 0, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Staff of Power")) continue;
+        found = 1;
+        EQ(a[i].bonus, 3, "unattuned, the bonus is gone");
+    }
+    EQ(found, 1, "but the staff is still a weapon");
+
+    /* The generic entry is named for the book, not for the thing: what the
+       character owns is a longsword. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    c.base_score[ABL_STR] = 14;
+    add_prof(&c, "All weapons");
+    give_magic(&c, "Weapon, +1, +2, or +3", 0, 2, 0);
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "Longsword");
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strcmp(a[i].name, "Longsword")) continue;
+        found = 1;
+        EQ(a[i].bonus, 6, "a +2 longsword (Str 2 + prof 2 + copy's 2)");
+    }
+    EQ(found, 1, "and it is filed under the weapon, not the entry");
+
+    /* Ammunition is not a weapon: you attack with the bow. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Ammunition, +1, +2, or +3", 0, 1, 0);
+    n = attacks_of(&c, a, MAX_ATTACKS);
+    for (i = 0, found = 0; i < n; i++) {
+        if (strstr(a[i].name, "Ammunition")) found = 1;
+    }
+    EQ(found, 0, "ammunition gets no line of its own");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2346,6 +2447,7 @@ int main(void)
     test_carrying_and_coins();
     test_magic_armour_claims();
     test_magic_checks_and_curses();
+    test_magic_weapon_attacks();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();
