@@ -169,7 +169,7 @@ void grant_level_hp(Character *c, int class_id, int is_first_level)
 
 /* ------------------------------------------------------------- ability score */
 
-static int feat_available(const Character *c, int f)
+int feat_offered(const Character *c, int f)
 {
     const FeatData *fd = &FEATS[f];
     int i;
@@ -197,7 +197,18 @@ static int feat_available(const Character *c, int f)
 
         n = split_pipe(fd->req_race, buf, sizeof buf, parts, 8);
         for (k = 0; k < n; k++) {
-            if (!strcmp(parts[k], race) || !strcmp(parts[k], sub)) ok = 1;
+            /* "Small" is a size, not a race, and it is how Xanathar's words
+               the one feat that asks for it: Squat Nimbleness is for "a
+               dwarf or a small race". Naming the small races one at a time
+               refuses the feat to every small race added after the list was
+               written, which by now is four of the six. */
+            if (!strcmp(parts[k], "Small")) {
+                if (c->race_id >= 0 && RACES[c->race_id].size == SZ_SMALL) {
+                    ok = 1;
+                }
+            } else if (!strcmp(parts[k], race) || !strcmp(parts[k], sub)) {
+                ok = 1;
+            }
         }
         if (!ok) return 0;
     }
@@ -296,7 +307,7 @@ void apply_asi_or_feat(Character *c, const char *reason)
 
         for (i = 0; i < FEAT_COUNT; i++) {
             if (!book_enabled(FEATS[i].book)) continue;
-            if (!feat_available(c, i)) continue;
+            if (!feat_offered(c, i)) continue;
             opts[n] = FEATS[i].name;
             det[n] = FEATS[i].summary;
             map[n] = i;

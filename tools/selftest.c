@@ -593,7 +593,10 @@ static void test_data_integrity(void)
            "every feat comes from a book");
 
         /* Every racial feat must name races that exist, or it could never
-           be offered to anyone. */
+           be offered to anyone. "Small" is the one entry that is a size
+           rather than a race -- Xanathar's asks Squat Nimbleness for "a
+           dwarf or a small race" -- and it has to name a size some race
+           actually is, for the same reason. */
         for (k = 0; k < FEAT_COUNT; k++) {
             char buf[128];
             const char *parts[8];
@@ -603,6 +606,12 @@ static void test_data_integrity(void)
             for (q = 0; q < np; q++) {
                 int found = find_race(parts[q]) >= 0
                          || find_subrace(parts[q]) >= 0;
+                if (!found && !strcmp(parts[q], "Small")) {
+                    int r2;
+                    for (r2 = 0; r2 < RACE_COUNT; r2++) {
+                        if (RACES[r2].size == SZ_SMALL) found = 1;
+                    }
+                }
                 if (!found) {
                     printf("  FAIL feat \"%s\" needs race \"%s\", which "
                            "does not exist\n", FEATS[k].name, parts[q]);
@@ -2009,6 +2018,46 @@ static void test_awkward_text(void)
  * The file is written by hand here rather than by save_character, because
  * the point is what the program does with a file it did not write.
  */
+/* Squat Nimbleness is offered to a dwarf and to anything small.
+ *
+ * Xanathar's asks it for "a dwarf or a small race", and the requirement is
+ * stored as a list of names that the level-up matches one at a time. Named
+ * one at a time, the list said Dwarf, Gnome and Halfling -- which was the
+ * whole of the small races on the day it was written, and is four short of
+ * them now. A deep gnome, a fairy, a goblin and a kobold were all refused a
+ * feat the book gives them.
+ */
+static void test_racial_feat_by_size(void)
+{
+    int f, r, small = 0;
+
+    printf("a feat asked for by size rather than by name\n");
+
+    for (f = 0; f < FEAT_COUNT; f++) {
+        if (!strcmp(FEATS[f].name, "Squat Nimbleness")) break;
+    }
+    if (f == FEAT_COUNT) {
+        printf("  FAIL %-52s is not in the feat table\n", "Squat Nimbleness");
+        failures++;
+        return;
+    }
+
+    for (r = 0; r < RACE_COUNT; r++) {
+        Character c;
+        int want, i;
+
+        reset(&c);
+        c.race_id = r;
+        add_class(&c, CLS_FIGHTER, 4, -1);
+        for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 15;
+
+        want = (RACES[r].size == SZ_SMALL) || !strcmp(RACES[r].name, "Dwarf");
+        if (RACES[r].size == SZ_SMALL) small++;
+        EQ(feat_offered(&c, f), want, RACES[r].name);
+    }
+    check(small >= 6, "small races the feat must reach", small, 6);
+}
+
 static void test_absurd_numbers(void)
 {
     static const char *const EXTREME[] = { "2147483647", "-2147483648" };
@@ -2195,6 +2244,7 @@ int main(void)
     test_attacks();
     test_choice_lists();
     test_carrying_and_coins();
+    test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();
     test_awkward_text();

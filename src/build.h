@@ -48,6 +48,11 @@ int  has_language(const Character *c, const char *lang);
 void choose_subclass_for(Character *c, int slot);
 void grant_level_hp(Character *c, int class_id, int is_first_level);
 void apply_asi_or_feat(Character *c, const char *reason);
+
+/* Whether a feat's prerequisites are met, which is what decides whether the
+   level-up offers it. Exported so that a test can ask the same question the
+   menu asks, rather than a copy of it. */
+int  feat_offered(const Character *c, int feat_id);
 void choose_fighting_style(Character *c, int class_id);
 void choose_expertise(Character *c, int count);
 void manage_spells(Character *c, int class_id);

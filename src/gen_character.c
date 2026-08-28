@@ -6346,7 +6346,7 @@ const FeatData FEATS[] = {
       "Your walking speed increases by 5 feet, you gain proficiency "
       "in Acrobatics or Athletics, and you have advantage on checks "
       "made to escape a grapple.",
-      "Dwarf|Gnome|Halfling" },
+      "Dwarf|Small" },
     { "Wood Elf Magic", BOOK_XGE,
       "Elf (wood)",
       ABL_COUNT, ABL_COUNT, 0, "", 0,
