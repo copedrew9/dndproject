@@ -59,6 +59,7 @@ verify:
 	python3 tools/verify_races.py
 	python3 tools/verify_spells.py
 	python3 tools/verify_magic_items.py
+	python3 tools/verify_magic_rules.py
 	python3 tools/verify_beasts.py
 	python3 tools/verify_classes.py
 	python3 tools/verify_backgrounds.py
@@ -66,6 +67,7 @@ verify:
 	python3 tools/verify_races_phb.py
 	python3 tools/verify_tables.py
 	python3 tools/verify_reference.py
+	python3 tools/verify_small_tables.py
 	python3 tools/verify_coverage.py
 
 # Every combination of race, class, subclass, level, background, feat, spell,
