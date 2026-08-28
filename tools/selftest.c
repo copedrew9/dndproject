@@ -2076,6 +2076,57 @@ static void test_magic_armour_claims(void)
                            types, 16), 0, "none where the type is fixed");
 }
 
+/* The two things a magic item may do that nothing used to record: raise
+   every ability check, and curse the wearer with a vulnerability. */
+static void test_magic_checks_and_curses(void)
+{
+    char buf[512];
+    Character c;
+    int before, after;
+
+    printf("an item that raises ability checks, and one that curses\n");
+
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.base_score[ABL_DEX] = 14;
+    c.skill_prof[SKL_STEALTH] = 1;
+    before = skill_bonus(&c, SKL_STEALTH);
+    give_magic(&c, "Stone of Good Luck (Luckstone)", 1, 0, 0);
+    after = skill_bonus(&c, SKL_STEALTH);
+    EQ(after - before, 1, "a luckstone raises a skill check by one");
+    EQ(save_bonus(&c, ABL_DEX) - ability_mod(&c, ABL_DEX), 1,
+       "and the saving throw it always raised");
+
+    /* An unattuned stone does nothing, the same as it does for saves. */
+    reset(&c);
+    add_class(&c, CLS_ROGUE, 1, -1);
+    c.skill_prof[SKL_STEALTH] = 1;
+    before = skill_bonus(&c, SKL_STEALTH);
+    give_magic(&c, "Stone of Good Luck (Luckstone)", 0, 0, 0);
+    EQ(skill_bonus(&c, SKL_STEALTH), before,
+       "an unattuned luckstone raises nothing");
+
+    /* The armour of vulnerability resists the type it was made against and
+       makes its wearer vulnerable to the other two, which are not known
+       until the copy names one. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    give_magic(&c, "Armor of Vulnerability", 1, 0, 1);
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "the two damage types it was not made against") != NULL,
+          "an armour with no type chosen names neither", 1, 1);
+
+    snprintf(c.inventory[c.item_count - 1].variant,
+             sizeof c.inventory[0].variant, "%s", "piercing");
+    magic_defences(&c, buf, sizeof buf);
+    check(strstr(buf, "resistant to piercing") != NULL,
+          "a piercing copy resists piercing", 1, 1);
+    check(strstr(buf, "vulnerable to bludgeoning and slashing") != NULL,
+          "and is vulnerable to the other two", 1, 1);
+    check(strstr(buf, "vulnerable to piercing") == NULL,
+          "never to the one it turns aside", 1, 1);
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2294,6 +2345,7 @@ int main(void)
     test_choice_lists();
     test_carrying_and_coins();
     test_magic_armour_claims();
+    test_magic_checks_and_curses();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

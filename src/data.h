@@ -555,6 +555,11 @@ typedef struct {
     const char *item;           /* names a MAGIC_ITEMS entry */
     int ac_bonus;               /* flat, added to Armor Class */
     int save_bonus;             /* flat, added to every saving throw */
+    /* Flat, added to every ability check. Only the stone of good luck has
+       it, and it is separate from save_bonus because the stone is the one
+       item that raises both and most items that raise saves raise no
+       checks. */
+    int check_bonus;
     int armor_base;             /* >0 when the item is itself armour */
     int armor_dex;              /* -1 full modifier, 0 none, N a cap */
     int armor_str;              /* Strength needed to avoid being slowed */
@@ -589,6 +594,13 @@ typedef struct {
        type, as armour and a ring of resistance do. */
     const char *resist;
     const char *immune;
+
+    /* The armour of vulnerability's curse: vulnerability to the types its
+       own list allows apart from the one the copy was made against. Those
+       types are the resist list, so this is a flag rather than a list of
+       its own -- a copy resistant to piercing is vulnerable to bludgeoning
+       and slashing, and which two that is falls out of the copy. */
+    int vulnerable_others;
 } MagicRule;
 
 extern const MagicRule MAGIC_RULES[];

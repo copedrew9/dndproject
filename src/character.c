@@ -181,10 +181,22 @@ int proficiency_bonus(const Character *c)
     return 2 + (lvl - 1) / 4;
 }
 
+/* What an item adds to every ability check. A stone of good luck raises
+   checks and saves alike, and a skill check is an ability check. */
+static int item_check_bonus(const Character *c)
+{
+    int i, bonus = 0;
+    for (i = 0; i < c->item_count; i++) {
+        const MagicRule *r = rule_in_effect(c, i);
+        if (r) bonus += r->check_bonus;
+    }
+    return bonus;
+}
+
 int skill_bonus(const Character *c, Skill s)
 {
     int pb = proficiency_bonus(c);
-    int bonus = ability_mod(c, SKILL_ABILITY[s]);
+    int bonus = ability_mod(c, SKILL_ABILITY[s]) + item_check_bonus(c);
 
     if (c->skill_prof[s]) {
         bonus += pb;
@@ -744,6 +756,38 @@ int magic_defences(const Character *c, char *out, size_t n)
                          how, what);
             if (w < 0 || (size_t)w >= n - used) return found;
             used += (size_t)w;
+            found++;
+        }
+        /* The armour of vulnerability's curse. Its resist list is the three
+           types the armour may be made against, and wearing it makes you
+           vulnerable to the two it was not. Naming them needs the copy: an
+           armour with no type chosen yet says so rather than listing all
+           three, which would be wrong whichever one is picked. */
+        if (r->vulnerable_others) {
+            const char *types[8];
+            int count = magic_variant_types(r, types, 8);
+            const char *chose = c->inventory[i].variant;
+            int t, w, first = 1;
+
+            w = snprintf(out + used, n - used, "%svulnerable to ",
+                         used ? "; " : "");
+            if (w < 0 || (size_t)w >= n - used) return found;
+            used += (size_t)w;
+            if (!chose[0]) {
+                w = snprintf(out + used, n - used,
+                             "the two damage types it was not made against");
+                if (w < 0 || (size_t)w >= n - used) return found;
+                used += (size_t)w;
+            } else {
+                for (t = 0; t < count; t++) {
+                    if (!strcmp(types[t], chose)) continue;
+                    w = snprintf(out + used, n - used, "%s%s",
+                                 first ? "" : " and ", types[t]);
+                    if (w < 0 || (size_t)w >= n - used) return found;
+                    used += (size_t)w;
+                    first = 0;
+                }
+            }
             found++;
         }
     }

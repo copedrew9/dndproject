@@ -568,6 +568,7 @@ static void dump_equipment(void)
         static const struct { const char *key; size_t off; } INTS[] = {
             { "ac_bonus",        offsetof(MagicRule, ac_bonus) },
             { "save_bonus",      offsetof(MagicRule, save_bonus) },
+            { "check_bonus",     offsetof(MagicRule, check_bonus) },
             { "armor_base",      offsetof(MagicRule, armor_base) },
             { "armor_dex",       offsetof(MagicRule, armor_dex) },
             { "armor_str",       offsetof(MagicRule, armor_str) },
@@ -584,6 +585,8 @@ static void dump_equipment(void)
             { "fly_speed",       offsetof(MagicRule, fly_speed) },
             { "swim_speed",      offsetof(MagicRule, swim_speed) },
             { "climb_speed",     offsetof(MagicRule, climb_speed) },
+            { "vulnerable_others",
+                                 offsetof(MagicRule, vulnerable_others) },
         };
         size_t k;
         char buf[64];

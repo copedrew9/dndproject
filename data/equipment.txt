@@ -830,7 +830,7 @@ MAGICRULE|Elven Chain|armor_base=14|armor_dex=2
 MAGICRULE|Glamoured Studded Leather|armor_base=13|armor_dex=-1
 MAGICRULE|Plate Armor of Etherealness|armor_base=18|armor_str=15|armor_stealth=1
 MAGICRULE|Armor of Invulnerability|armor_base=18|armor_str=15|armor_stealth=1|resist=nonmagical damage
-MAGICRULE|Armor of Vulnerability|armor_base=18|armor_str=15|armor_stealth=1|resist=bludgeoning,piercing,slashing
+MAGICRULE|Armor of Vulnerability|armor_base=18|armor_str=15|armor_stealth=1|vulnerable_others=1|resist=bludgeoning,piercing,slashing
 MAGICRULE|Armor of Resistance|worn=1|resist=*
 MAGICRULE|Armor, +1, +2, or +3|variable=1
 MAGICRULE|Animated Shield|shield=2
@@ -856,5 +856,5 @@ MAGICRULE|Ring of Warmth|resist=cold
 MAGICRULE|Frost Brand|resist=fire
 MAGICRULE|Periapt of Proof against Poison|immune=poison
 MAGICRULE|Sentinel Shield|shield=2
-MAGICRULE|Stone of Good Luck (Luckstone)|save_bonus=1
+MAGICRULE|Stone of Good Luck (Luckstone)|save_bonus=1|check_bonus=1
 MAGICRULE|Hand of Vecna|sets_ability=1|sets_to=20

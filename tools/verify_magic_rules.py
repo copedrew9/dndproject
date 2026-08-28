@@ -260,6 +260,38 @@ def check(kv, line, body):
         says(r"%s bonus to [^.]{0,70}saving throws" % plus(sv),
              "save_bonus=%d: the entry gives no +%d bonus to saving throws"
              % (sv, sv))
+    # Both of these are checked in both directions. A bonus a row claims and
+    # the entry does not give is the obvious fault; a bonus the entry gives
+    # and the row drops is the silent one, and it is the one that was there
+    # -- the stone of good luck raised saving throws and quietly did nothing
+    # for the ability checks the same sentence grants.
+    cb = number(kv, "check_bonus")
+    grants = re.search(r"\+\s*(\d) bonus to [^.]{0,40}ability checks",
+                       body, re.I)
+    if cb and not grants:
+        bad.append("check_bonus=%d: the entry gives no +%d bonus to ability "
+                   "checks" % (cb, cb))
+    elif cb and int(grants.group(1)) != cb:
+        bad.append("check_bonus=%d, and the entry gives +%s"
+                   % (cb, grants.group(1)))
+    elif grants and not cb:
+        bad.append("the entry gives a +%s bonus to ability checks and the "
+                   "row carries no check_bonus" % grants.group(1))
+
+    curses = re.search(r"vulnerability to two of the three damage type",
+                       body, re.I)
+    if number(kv, "vulnerable_others"):
+        if not curses:
+            bad.append("vulnerable_others=1: the entry does not curse the "
+                       "wearer with vulnerability to the two types it was "
+                       "not made against")
+        if not variant(kv.get("resist") or ""):
+            bad.append("vulnerable_others=1 needs a resist list to take the "
+                       "other types from, and the row has none")
+    elif curses:
+        bad.append("the entry curses the wearer with vulnerability to two "
+                   "of its three types, and the row does not say so")
+
     ub = number(kv, "unarmored_base")
     if ub:
         says(r"base Armor Class is %d" % ub,
@@ -333,7 +365,8 @@ def check(kv, line, body):
             says(r"%s [^.]{0,50}%s" % (verb, re.escape(t.split()[0])),
                  "%s lists %r, which the entry does not give" % (name, t))
 
-    for name in ("only_unarmored", "worn", "variable", "weapon"):
+    for name in ("only_unarmored", "worn", "variable", "weapon",
+                 "vulnerable_others"):
         if name in kv and kv[name] not in ("0", "1"):
             bad.append("%s=%s: the flag is a yes or a no, and nothing else "
                        "reads as either" % (name, kv[name]))

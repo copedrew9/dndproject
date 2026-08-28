@@ -3870,6 +3870,7 @@ const MagicRule MAGIC_RULES[] = {
       .armor_base = 18,
       .armor_str = 15,
       .armor_stealth = 1,
+      .vulnerable_others = 1,
       .resist = "bludgeoning,piercing,slashing" },
     { "Armor of Resistance", .worn = 1, .resist = "*" },
     { "Armor, +1, +2, or +3", .variable = 1 },
@@ -3896,7 +3897,7 @@ const MagicRule MAGIC_RULES[] = {
     { "Frost Brand", .resist = "fire" },
     { "Periapt of Proof against Poison", .immune = "poison" },
     { "Sentinel Shield", .shield = 2 },
-    { "Stone of Good Luck (Luckstone)", .save_bonus = 1 },
+    { "Stone of Good Luck (Luckstone)", .save_bonus = 1, .check_bonus = 1 },
     { "Hand of Vecna", .sets_ability = 1, .sets_to = 20 },
 };
 const int MAGIC_RULE_COUNT =
