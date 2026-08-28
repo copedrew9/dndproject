@@ -5,6 +5,7 @@ dndcreator
 __pycache__/
 selftest
 dumpdata
+combosweep
 # Saved character sheets land in the working directory; the data files and
 # the homebrew starter are part of the program.
 *.txt

@@ -508,6 +508,39 @@ identical. Text the format cannot take at face value goes through every field
 that holds it, a note of two thousand characters has to come back whole, and
 the two item tables have to stay apart.
 
+`tools/combos.c` (`make combos`) crosses those sweeps. A bug that needs a
+particular race in a particular class at a particular level lives in the
+space between them, and nothing was looking there. It builds characters in
+memory rather than through the wizard, which is what makes the numbers
+affordable -- one costs microseconds -- so it can walk the whole cross
+product:
+
+```
+every race and subrace x every class x every level     1-20
+every race and subrace x every subclass x every level  it can be held at
+every subclass x every option it offers                totem, land, rune...
+every pair of classes x four level splits, and every three classes together
+every background x every class; every feat x every class and every race
+every spell x every class; every magic item x every class; every item carried
+every beast x every kind of sidekick x every level
+a character sitting on every array limit at once
+all 8,192 combinations of the seven books and the six optional rules
+```
+
+That is 198,000 characters, measured in about a second, of which 2,278 go
+through the file and back. What it checks at each point is not that a number
+is a particular value -- the self-test does that against the book -- but that
+it is possible at all, and that the numbers the PHB states as formulas follow
+them: a carrying capacity of Strength x 15, a passive Perception of 10 plus
+the skill, an initiative of the Dexterity modifier, an unarmoured Armor Class
+at least what the class allows, and never more spell slots than the caster
+level permits. Breaking any of those in the engine on purpose -- Strength x
+14, say -- makes it fail within the first few hundred combinations.
+
+Run under `make asan` it is the same walk with the address and
+undefined-behaviour sanitizers watching every table index, which is what it
+is really for.
+
 `tools/roundtrip.py` saves characters and reads them back through the
 program's view mode, checking the reprinted sheet is identical to the stored
 one — which is what makes levelling up a saved character trustworthy.
@@ -544,6 +577,7 @@ tools/verify_reference.py  checks prices, conditions and the life tables
 tools/verify_coverage.py   looks for book content data/ is missing
 tools/extract_deities.py   writes the DEITY rows from appendix B
 tools/stress.py            walks every menu, not just the wizard
+tools/combos.c             every combination of race, class, subclass, level
 tools/fuzz_files.py        corrupts the files the program reads
 
 src/dnd.h              core types and the Character struct

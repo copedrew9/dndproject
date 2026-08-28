@@ -68,6 +68,18 @@ verify:
 	python3 tools/verify_reference.py
 	python3 tools/verify_coverage.py
 
+# Every combination of race, class, subclass, level, background, feat, spell,
+# item and setting the tables allow, measured for a number that cannot be
+# right. Worth the most under the sanitizers, which is what `make asan` does
+# with it.
+COMBOBIN = combosweep
+
+$(COMBOBIN): tools/combos.c $(TESTOBJS)
+	$(CC) $(CFLAGS) -I$(SRCDIR) -MMD -MP -o $@ tools/combos.c $(TESTOBJS)
+
+combos: $(COMBOBIN)
+	./$(COMBOBIN)
+
 # Assertions on the rules engine.
 TESTBIN  = selftest
 
@@ -84,7 +96,7 @@ test: $(TESTBIN)
 # main menu -- settings, reference, inventory, sidekicks, homebrew, notes --
 # in one session, and fuzz_files.py corrupts the files the program reads
 # rather than the answers it is given.
-check: test dataverify verify $(BIN)
+check: test combos dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/roundtrip.py
@@ -98,7 +110,8 @@ check: test dataverify verify $(BIN)
 asan:
 	$(MAKE) clean
 	$(MAKE) CFLAGS="-std=c99 -O1 -g -fsanitize=address,undefined \
-	  -fno-omit-frame-pointer"
+	  -fno-omit-frame-pointer" all $(COMBOBIN)
+	ASAN_OPTIONS=detect_leaks=0 ./$(COMBOBIN)
 	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 25 --seed 1
 	ASAN_OPTIONS=detect_leaks=0 python3 tools/drive.py --runs 10 --seed 500 \
 	  --levelup
@@ -108,6 +121,7 @@ asan:
 	$(MAKE) clean
 
 clean:
-	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) $(DUMPBIN).d
+	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) \
+	  $(DUMPBIN).d $(COMBOBIN) $(COMBOBIN).d
 
-.PHONY: all clean check test data dataverify audit verify asan
+.PHONY: all clean check test combos data dataverify audit verify asan
