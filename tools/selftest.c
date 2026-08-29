@@ -3341,6 +3341,74 @@ static void test_packs_unpack(void)
     EQ(add_pack(&c, -1, 1), -1, "and nor is nothing");
 }
 
+/* Three things a sheet printed wrongly, found by reading real sheets.
+ *
+ * The starting-gold average truncated before it multiplied, so 5d4 x 10
+ * came out at 120 gp where the Player's Handbook's own average column says
+ * 125. A monk of 14th level is proficient in every saving throw and
+ * save_bonus() adds the bonus, but the sheet's "(proficient)" note read
+ * only the class's own two, so four saves were annotated as unproficient
+ * beside a number that said otherwise. And the subrace trait list was
+ * printed before it was split, so the whole '|' separated string appeared
+ * as one trait and each piece again after it. */
+static void test_sheet_numbers_the_audit_found(void)
+{
+    Character c;
+    int i;
+
+    printf("three things a sheet printed wrongly\n");
+
+    /* The PHB's Starting Wealth by Class table, average column. */
+    {
+        static const struct { const char *name; int average; } GOLD[] = {
+            { "Barbarian", 50 }, { "Bard", 125 }, { "Cleric", 125 },
+            { "Druid", 50 },     { "Fighter", 125 }, { "Monk", 12 },
+            { "Paladin", 125 },  { "Ranger", 125 }, { "Rogue", 100 },
+            { "Sorcerer", 75 },  { "Warlock", 100 }, { "Wizard", 100 },
+        };
+        size_t g;
+        for (g = 0; g < sizeof GOLD / sizeof GOLD[0]; g++) {
+            int at = -1, got;
+            for (i = 0; i < CLASS_COUNT; i++) {
+                if (!strcmp(CLASSES[i].name, GOLD[g].name)) at = i;
+            }
+            if (at < 0) continue;
+            got = average_starting_gold(&CLASSES[at]);
+            check(got == GOLD[g].average, GOLD[g].name, got,
+                  GOLD[g].average);
+        }
+    }
+
+    /* Diamond Soul: every save proficient from 14th, and the number to
+       match. */
+    reset(&c);
+    c.race_id = 0;
+    add_class(&c, CLS_MONK, 14, -1);
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    for (i = 0; i < ABL_COUNT; i++) {
+        int want = proficiency_bonus(&c);
+        check(save_bonus(&c, (Ability)i) == want, "monk 14 save is proficient",
+              save_bonus(&c, (Ability)i), want);
+    }
+    reset(&c);
+    c.race_id = 0;
+    add_class(&c, CLS_MONK, 13, -1);
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    check(save_bonus(&c, ABL_CHA) == 0, "and not at 13th",
+          save_bonus(&c, ABL_CHA), 0);
+
+    /* No trait text may reach a sheet with a separator still in it. */
+    for (i = 0; i < SUBRACE_COUNT; i++) {
+        const char *t = SUBRACES[i].traits;
+        int pieces = 1;
+        const char *p;
+        if (!t || !t[0]) continue;
+        for (p = t; *p; p++) if (*p == '|') pieces++;
+        if (pieces > 1) break;
+    }
+    check(i < SUBRACE_COUNT, "a subrace with more than one trait", 1, 1);
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3571,6 +3639,7 @@ int main(void)
     test_damage_at_zero();
     test_patron_widens_rather_than_grants();
     test_packs_unpack();
+    test_sheet_numbers_the_audit_found();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

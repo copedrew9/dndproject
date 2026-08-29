@@ -424,6 +424,19 @@ static void take_starting_package(Character *c)
     }
 }
 
+/* The gold a class starts with when the average is taken rather than
+   rolled.
+ *
+ * The average of a d4 is 2.5, so the expected value is dice x 5 / 2 times
+ * the class's multiplier. The division used to come first and truncate:
+ * 5d4 x 10 came out at 120 gp where the Player's Handbook's own average
+ * column says 125. Multiplying first gives every class the book's number.
+ */
+int average_starting_gold(const ClassData *cd)
+{
+    return (cd->gold_dice * 5 * cd->gold_mult) / 2;
+}
+
 static void buy_with_gold(Character *c)
 {
     const ClassData *cd = &CLASSES[c->classes[0].class_id];
@@ -438,8 +451,7 @@ static void buy_with_gold(Character *c)
                * cd->gold_mult;
         printf("    Rolled %d gp.\n", rolled);
     } else {
-        /* The average of d4 is 2.5; use the rounded expected value. */
-        rolled = (cd->gold_dice * 5 / 2) * cd->gold_mult;
+        rolled = average_starting_gold(cd);
         printf("    Taking the average: %d gp.\n", rolled);
     }
     c->gold += rolled;

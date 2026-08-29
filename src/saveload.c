@@ -272,7 +272,13 @@ static void write_sheet(FILE *f, const Character *c)
         int mod = ability_mod(c, (Ability)i);
         fprintf(f, "  %-14s %2d  (%+d)     Saving throw %+d%s\n",
                 ABILITY_NAME[i], score, mod, save_bonus(c, (Ability)i),
-                c->save_prof[i] ? "  (proficient)" : "");
+                /* Diamond Soul makes a 14th-level monk proficient in every
+                   saving throw, and save_bonus() already adds the bonus.
+                   The annotation read the class's own two and so called
+                   the other four unproficient beside a number that said
+                   otherwise. */
+                (c->save_prof[i] || class_level_of(c, CLS_MONK) >= 14)
+                    ? "  (proficient)" : "");
     }
 
     section(f, "COMBAT");
@@ -390,15 +396,25 @@ static void write_sheet(FILE *f, const Character *c)
             for (k = 0; k < n; k++) fprintf(f, "  - %s\n", parts[k]);
         }
         if (c->subrace_id >= 0 && SUBRACES[c->subrace_id].traits[0]) {
+            /* Split before printing, as the race loop above does. Printing
+               first put the whole '|' separated string on the sheet as one
+               trait -- separators and all -- and then printed each piece
+               after it, so the first trait appeared twice and the line read
+               "Natural Illusionist: ...|Speak with Small Beasts: ...". */
             char tbuf[1024];
-            char *p;
+            char *p, *start;
             strncpy(tbuf, SUBRACES[c->subrace_id].traits, sizeof tbuf - 1);
             tbuf[sizeof tbuf - 1] = '\0';
-            p = tbuf;
-            fprintf(f, "  - %s\n", p);
-            while ((p = strchr(p, '|')) != NULL) {
-                *p++ = '\0';
-                fprintf(f, "  - %s\n", p);
+            start = tbuf;
+            for (p = tbuf;; p++) {
+                if (*p != '|' && *p != '\0') continue;
+                {
+                    int last = (*p == '\0');
+                    *p = '\0';
+                    if (*start) fprintf(f, "  - %s\n", start);
+                    if (last) break;
+                    start = p + 1;
+                }
             }
         }
     }

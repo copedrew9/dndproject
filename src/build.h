@@ -40,6 +40,10 @@ int  has_choice_starting(const Character *c, const char *label,
                          const char *value);
 int  has_choice_exactly(const Character *c, const char *label,
                         const char *value);
+/* The gold a class starts with when the average is taken rather than
+   rolled, which is the Player's Handbook's own average column. */
+int  average_starting_gold(const ClassData *cd);
+
 void add_item(Character *c, int item_id, int qty, int equipped);
 
 /* Taking a pack takes what is in it, and not the pack: a pack's weight is
