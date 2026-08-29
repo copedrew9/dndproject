@@ -509,9 +509,7 @@ static void hand_it_over(Character *c, const ShopLine *l, int qty)
     if (l->from_book && l->item_id >= 0) {
         /* A pack bought in a shop is unpacked like any other, so what the
            player carries is the gear and not the word. */
-        if (add_pack(c, l->item_id, qty) <= 0) {
-            add_item(c, l->item_id, qty, 0);
-        }
+        add_gear(c, l->item_id, qty, 0);
         return;
     }
     {

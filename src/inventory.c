@@ -129,11 +129,10 @@ static void add_from_catalogue(Character *c)
             show_item_detail(map[pick]);
             if (!ui_yesno("  Add it?", 1)) continue;
             qty = ui_int("  How many", 1, MAX_QUANTITY);
-            if (add_pack(c, map[pick], qty) > 0) {
+            if (add_gear(c, map[pick], qty, 0) > 1) {
                 printf("  Added %d x %s, unpacked into what is in it.\n",
                        qty, ITEMS[map[pick]].name);
             } else {
-                add_item(c, map[pick], qty, 0);
                 printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
             }
             /* Back to the categories rather than the same long list, so
@@ -544,7 +543,7 @@ static void sell_valuable(Character *c, int at)
 {
     Valuable *v = &c->valuables[at];
     int many = v->quantity;
-    long cp;
+    long cp, cp_total;
 
     if (v->value_cp == 0) {
         printf("  %s has no price on it; agree one with your DM and use "
@@ -553,6 +552,7 @@ static void sell_valuable(Character *c, int at)
     }
     if (many > 1) many = ui_int("  Sell how many", 1, v->quantity);
     cp = (long)v->value_cp * many;
+    cp_total = cp;              /* the message says what was paid in full */
 
     /* A sheet holds each coin count in its own field, so a sale that would
        not fit is refused rather than rounded down out of sight. */
@@ -567,8 +567,11 @@ static void sell_valuable(Character *c, int at)
     c->gold += (int)(cp / 100); cp %= 100;
     c->silver += (int)(cp / 10); cp %= 10;
     c->copper += (int)cp;
-    printf("  Sold %d x %s for %d gp.\n", many, v->name,
-           (v->value_cp * many) / 100);
+    {
+        char price[32];
+        format_price((int)cp_total, price, sizeof price);
+        printf("  Sold %d x %s for %s.\n", many, v->name, price);
+    }
 
     v->quantity -= many;
     if (v->quantity <= 0) {

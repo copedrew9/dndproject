@@ -72,11 +72,24 @@ def menu_number(tail, wanted):
     transcript for the same reason at_main_menu is: one read can split a
     menu from the prompt that follows it.
     """
+    exact = None
+    loose = None
     for line in tail.splitlines():
         m = MENU_LINE.match(line)
-        if m and wanted.lower() in m.group(2).lower():
-            return m.group(1)
-    return None
+        if not m:
+            continue
+        label = m.group(2).strip().lower()
+        want = wanted.strip().lower()
+        # An exact label wins over one that merely contains the word.
+        # "Orc" is inside "Half-Orc" and "Elf" inside "Half-Elf", "Sea Elf"
+        # and "High Elf", so a run aimed at an orc quietly built a half-orc
+        # and never said so.
+        if label == want:
+            exact = m.group(1)
+            break
+        if loose is None and want in label:
+            loose = m.group(1)
+    return exact or loose
 
 
 def answer(prompt, rng, free_text_name, want=None, tail=""):

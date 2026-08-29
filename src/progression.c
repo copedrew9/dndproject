@@ -1965,6 +1965,7 @@ void wizard_level_up(Character *c)
         c->classes[slot].subclass_id = -1;
         c->classes[slot].subclass_option = -1;
         add_prof_list(c, CLASSES[pick].mc_profs, CLASSES[pick].name);
+        grant_multiclass_extras(c, pick);
     }
 
     if (ui_yesno("\n  Roll the hit die for this level?", 0)) hp_use_average = 0;

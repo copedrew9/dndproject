@@ -12,6 +12,7 @@
 #include "saveload.h"
 #include "homebrew.h"
 #include "shop.h"
+#include "reference.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -3629,6 +3630,102 @@ static void test_traits_the_numbers_ignored(void)
     }
 }
 
+/* Four things the program printed or promised and did not do, found by
+   playing it rather than by reading it. */
+static void test_things_playing_it_found(void)
+{
+    printf("four things playing it turned up\n");
+
+    /* A price the books never print but a DM can type: gold, silver and
+       copper together. It used to collapse to one odd unit -- 25 gp 5 sp
+       3 cp came back as "2553 cp" -- and 2,550 copper, which is 25 gp
+       5 sp, came back as "255 sp". */
+    {
+        static const struct { int cp; const char *want; } PRICE[] = {
+            { 0,       "--" },
+            { 1,       "1 cp" },
+            { 5,       "5 cp" },
+            { 10,      "1 sp" },
+            { 50,      "5 sp" },
+            { 100,     "1 gp" },
+            { 7500,    "75 gp" },
+            { 2550,    "25 gp 5 sp" },
+            { 2553,    "25 gp 5 sp 3 cp" },
+            { 105,     "1 gp 5 cp" },
+            { 9999,    "99 gp 9 sp 9 cp" },
+        };
+        size_t k;
+        for (k = 0; k < sizeof PRICE / sizeof PRICE[0]; k++) {
+            char got[40];
+            format_price(PRICE[k].cp, got, sizeof got);
+            check(!strcmp(got, PRICE[k].want), PRICE[k].want, 1, 1);
+            if (strcmp(got, PRICE[k].want)) {
+                printf("      %d cp gave \"%s\"\n", PRICE[k].cp, got);
+            }
+        }
+    }
+
+    /* And every price the books DO print still reads as one unit, which is
+       what made the change safe. */
+    {
+        int i, mixed = 0;
+        for (i = 0; i < ITEM_COUNT; i++) {
+            char got[40];
+            if (ITEMS[i].book != BOOK_PHB) continue;
+            format_price(ITEMS[i].cost_cp, got, sizeof got);
+            if (strchr(got, ' ') && strstr(got, " gp") && strstr(got, " sp")) {
+                mixed++;
+            }
+        }
+        EQ(mixed, 0, "no book price needs more than one coin");
+    }
+
+    /* The cleric's two "(if proficient)" options name real items once the
+       qualifier is off. Nothing stripped it, so both fell through to being
+       noted as text and the cleric was handed nothing. */
+    check(find_item("Warhammer") >= 0, "a warhammer is a real item", 1, 1);
+    check(find_item("Chain mail") >= 0, "and chain mail is too", 1, 1);
+    {
+        int i, found = 0;
+        for (i = 0; i < CLASS_COUNT; i++) {
+            if (strcmp(CLASSES[i].name, "Cleric")) continue;
+            found = strstr(CLASSES[i].equipment, "(if proficient)") != NULL;
+        }
+        check(found, "the cleric's equipment still carries the qualifier "
+                     "the code has to strip", found, 1);
+    }
+
+    /* Multiclassing into a bard, ranger or rogue grants one skill; the
+       rogue also grants thieves' tools. The level-up path granted neither,
+       because the creation path is where the prompt lived. */
+    {
+        Character c;
+        int i, before, after;
+        static const int WHO[] = { CLS_BARD, CLS_RANGER, CLS_ROGUE };
+        size_t k;
+        for (k = 0; k < sizeof WHO / sizeof WHO[0]; k++) {
+            const ClassData *cd = &CLASSES[WHO[k]];
+            check(cd->skill_option_count > 0, cd->name,
+                  cd->skill_option_count, 1);
+            check(strstr(cd->mc_profs, "skill") != NULL,
+                  "  and says so in its multiclass line", 1, 1);
+        }
+        /* The rogue's tools are granted without a prompt, so this one can
+           be driven all the way. */
+        plain_fighter(&c, "SelftestMulti");
+        before = c.tool_prof_count;
+        grant_multiclass_extras(&c, CLS_FIGHTER);
+        after = c.tool_prof_count;
+        EQ(after, before, "a fighter grants no tools for multiclassing");
+        for (i = 0; i < c.tool_prof_count; i++) {
+            if (!strcmp(c.tool_profs[i], "Thieves' tools")) {
+                printf("  FAIL a fighter should not grant thieves' tools\n");
+                failures++;
+            }
+        }
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3861,6 +3958,7 @@ int main(void)
     test_packs_unpack();
     test_sheet_numbers_the_audit_found();
     test_traits_the_numbers_ignored();
+    test_things_playing_it_found();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

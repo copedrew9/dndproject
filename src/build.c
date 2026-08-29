@@ -339,6 +339,26 @@ int inventory_has_room(const Character *c)
     return c->item_count < MAX_ITEMS;
 }
 
+/* Add an item, or -- if it is a pack -- what is in it.
+ *
+ * Every place a character acquires gear goes through this, so that a pack
+ * cannot reach an inventory by a route somebody forgot. It could: the
+ * starting-equipment resolver has an alias table that calls add_item and
+ * returns before the unpacking below is reached, and the Priest's pack is
+ * the one pack with an entry in it -- so a cleric whose equipment line
+ * matched the alias carried "1 x Priest's pack" while all six of the
+ * others came apart. Returns how many kinds of thing went on. */
+int add_gear(Character *c, int item_id, int qty, int equipped)
+{
+    int parts;
+    if (!equipped) {
+        parts = add_pack(c, item_id, qty);
+        if (parts > 0) return parts;
+    }
+    add_item(c, item_id, qty, equipped);
+    return 1;
+}
+
 /* Taking a pack takes what is in it.
  *
  * A pack on the sheet is a word: "Explorer's pack" tells a player nothing
@@ -1482,6 +1502,42 @@ static void choose_background(Character *c)
         ui_multi("Language from your background:", opts, avail, n, 1, picks);
         if (picks[0] >= 0) add_language(c, opts[picks[0]]);
     }
+}
+
+/* The one skill a bard, ranger or rogue grants when you multiclass INTO
+ * it, and the rogue's thieves' tools.
+ *
+ * choose_class_skills() below does this at creation and is static and
+ * whole-character; a level-up that takes a new class reaches neither, so
+ * the free proficiency was granted to a character built as a multiclass
+ * and dropped from one that multiclassed later. add_prof_list cannot do it
+ * either: it drops any piece containing "skill" on purpose, because
+ * choosing one needs a prompt.
+ */
+void grant_multiclass_extras(Character *c, int class_id)
+{
+    const ClassData *cd = &CLASSES[class_id];
+    const char *opts[SKL_COUNT];
+    int avail[SKL_COUNT], picks[2];
+    int k, available = 0;
+    char prompt[128];
+
+    if (class_id == CLS_ROGUE) add_tool(c, "Thieves' tools");
+    if (class_id != CLS_BARD && class_id != CLS_RANGER
+        && class_id != CLS_ROGUE) {
+        return;
+    }
+    for (k = 0; k < cd->skill_option_count; k++) {
+        opts[k] = SKILL_NAME[cd->skill_options[k]];
+        avail[k] = !c->skill_prof[cd->skill_options[k]];
+        if (avail[k]) available++;
+    }
+    if (available < 1) return;
+
+    snprintf(prompt, sizeof prompt, "%s: one skill for multiclassing in:",
+             cd->name);
+    ui_multi(prompt, opts, avail, cd->skill_option_count, 1, picks);
+    if (picks[0] >= 0) c->skill_prof[cd->skill_options[picks[0]]] = 1;
 }
 
 /* Class skill proficiencies. Only the class you started in grants these

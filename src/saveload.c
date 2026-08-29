@@ -6,6 +6,7 @@
  * stored so the file stays valid if the game data is extended.
  */
 #include "saveload.h"
+#include "reference.h"
 #include "ui.h"
 #include "data.h"
 #include "sidekick.h"
@@ -507,8 +508,12 @@ static void write_sheet(FILE *f, const Character *c)
             const Valuable *v = &c->valuables[i];
             fprintf(f, "  %3d x %-30s", v->quantity, v->name);
             if (v->value_cp) {
-                fprintf(f, " %d gp", v->value_cp / 100);
-                if (v->value_cp % 100) fprintf(f, " %d cp", v->value_cp % 100);
+                /* format_price rather than gold-and-copper by hand: the
+                   silver went missing, so a 2 gp 5 sp gem read "2 gp 50
+                   cp" and a 5 sp one read nothing at all. */
+                char price[32];
+                format_price(v->value_cp, price, sizeof price);
+                fprintf(f, " %s", price);
             }
             fprintf(f, "\n");
             if (v->note[0]) fprintf(f, "        %s\n", v->note);

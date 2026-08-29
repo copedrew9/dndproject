@@ -26,12 +26,39 @@ const char *const CATEGORY_LABEL[] = {
 
 /* ------------------------------------------------------------ formatting */
 
+/* A price in the largest coins that divide it, and in all of them when
+ * none does.
+ *
+ * Every price the books print is a clean multiple -- there is no 25 gp
+ * 5 sp item -- so for the whole equipment table this is the single unit it
+ * always was. What is not clean is what a DM types: the shopbuilder asks
+ * for gold, silver and copper as three prompts and adds them up, and a
+ * sword priced at 25 gp 5 sp 3 cp came back out as "2553 cp".
+ */
 void format_price(int cp, char *out, size_t n)
 {
-    if (cp == 0)            snprintf(out, n, "--");
-    else if (cp % 100 == 0) snprintf(out, n, "%d gp", cp / 100);
-    else if (cp % 10 == 0)  snprintf(out, n, "%d sp", cp / 10);
-    else                    snprintf(out, n, "%d cp", cp);
+    int gp, sp, c;
+    size_t used = 0;
+
+    /* One unit only when the amount really is one unit: 2,550 copper is
+       25 gp 5 sp, not 255 silver. */
+    if (cp == 0) { snprintf(out, n, "--"); return; }
+    if (cp % 100 == 0) { snprintf(out, n, "%d gp", cp / 100); return; }
+    if (cp % 10 == 0 && cp < 100) { snprintf(out, n, "%d sp", cp / 10); return; }
+    if (cp < 10) { snprintf(out, n, "%d cp", cp); return; }
+
+    gp = cp / 100;
+    sp = (cp / 10) % 10;
+    c  = cp % 10;
+    out[0] = '\0';
+    if (gp) used += (size_t)snprintf(out + used, n - used, "%d gp", gp);
+    if (sp && used < n) {
+        used += (size_t)snprintf(out + used, n - used, "%s%d sp",
+                                 used ? " " : "", sp);
+    }
+    if (c && used < n) {
+        snprintf(out + used, n - used, "%s%d cp", used ? " " : "", c);
+    }
 }
 
 void format_weight(int tenths, char *out, size_t n)

@@ -44,6 +44,10 @@ int  has_choice_exactly(const Character *c, const char *label,
    rolled, which is the Player's Handbook's own average column. */
 int  average_starting_gold(const ClassData *cd);
 
+/* The extra proficiencies a class grants when you multiclass INTO it: one
+   skill for a bard, ranger or rogue, and the rogue's thieves' tools. */
+void grant_multiclass_extras(Character *c, int class_id);
+
 void add_item(Character *c, int item_id, int qty, int equipped);
 
 /* Taking a pack takes what is in it, and not the pack: a pack's weight is
@@ -52,6 +56,10 @@ void add_item(Character *c, int item_id, int qty, int equipped);
    (or the bank holds none of its contents), so the caller adds it plainly
    instead. */
 int  add_pack(Character *c, int pack_id, int qty);
+
+/* Add an item, or what is in it when it is a pack. Every acquisition path
+   goes through this so that no route can put a pack on a sheet. */
+int  add_gear(Character *c, int item_id, int qty, int equipped);
 int  inventory_has_room(const Character *c);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 
