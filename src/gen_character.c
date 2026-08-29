@@ -185,23 +185,31 @@ const RaceData RACES[] = {
       "Combat Training: battleaxe, handaxe, light hammer, "
       "warhammer|Tool Proficiency: smith's, brewer's or mason's "
       "tools|Stonecunning: double proficiency on History checks "
-      "about stonework|Speed is not reduced by wearing heavy armor", 0 },
+      "about stonework|Speed is not reduced by wearing heavy armor", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Elf", BOOK_PHB, {0,2,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common, Elvish", 0, 0, 0, 0, 0, 0, 3, 3,
       "Darkvision: 60 feet|Keen Senses: proficiency in "
       "Perception|Fey Ancestry: advantage on saves against being "
       "charmed, and magic cannot put you to sleep|Trance: 4 hours "
-      "of meditation counts as 8 hours of sleep", 0 },
+      "of meditation counts as 8 hours of sleep", 0,
+      0, 0, 0, "",
+      "Perception", 0, "" },
     { "Halfling", BOOK_PHB, {0,2,0,0,0,0}, 25, SZ_SMALL, 0,
       "Common, Halfling", 0, 0, 0, 0, 0, 0, 6, 3,
       "Lucky: reroll a 1 on an attack roll, ability check or saving "
       "throw|Brave: advantage on saves against being "
       "frightened|Halfling Nimbleness: move through the space of "
-      "any creature at least one size larger", 0 },
+      "any creature at least one size larger", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Human", BOOK_PHB, {1,1,1,1,1,1}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 9, 2,
       "Ability Score Increase: +1 to every ability score|Extra "
-      "Language: one language of your choice", 0 },
+      "Language: one language of your choice", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Dragonborn", BOOK_PHB, {2,0,0,0,0,1}, 30, SZ_MEDIUM, 0,
       "Common, Draconic", 0, 0, 0, 0, 0, 1, 0, 0,
       "Draconic Ancestry: choose a dragon type|Breath Weapon: "
@@ -209,38 +217,50 @@ const RaceData RACES[] = {
       "Constitution modifier + proficiency bonus; 2d6 damage, "
       "rising to 3d6 at 6th, 4d6 at 11th and 5d6 at 16th level; "
       "recharges on a short or long rest|Damage Resistance: to the "
-      "damage type of your ancestry", 0 },
+      "damage type of your ancestry", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Gnome", BOOK_PHB, {0,0,0,2,0,0}, 25, SZ_SMALL, 60,
       "Common, Gnomish", 0, 0, 0, 0, 0, 0, 11, 3,
       "Darkvision: 60 feet|Gnome Cunning: advantage on "
-      "Intelligence, Wisdom and Charisma saves against magic", 0 },
+      "Intelligence, Wisdom and Charisma saves against magic", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Half-Elf", BOOK_PHB, {0,0,0,0,0,2}, 30, SZ_MEDIUM, 60,
       "Common, Elvish", 1, 2, 2, 1, 0, 0, 14, 8,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves against "
       "being charmed, and magic cannot put you to sleep|Skill "
       "Versatility: proficiency in two skills of your "
       "choice|Ability Score Increase: +1 to two abilities of your "
-      "choice", 0 },
+      "choice", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Half-Orc", BOOK_PHB, {2,0,1,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common, Orc", 0, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Menacing: proficiency in "
       "Intimidation|Relentless Endurance: when dropped to 0 hit "
       "points, drop to 1 instead, once per long rest|Savage "
       "Attacks: roll one extra weapon damage die on a melee "
-      "critical hit", 0 },
+      "critical hit", 0,
+      0, 0, 0, "",
+      "Intimidation", 0, "" },
     { "Tiefling", BOOK_PHB, {0,0,0,1,0,2}, 30, SZ_MEDIUM, 60,
       "Common, Infernal", 0, 0, 0, 0, 0, 0, 22, 8,
       "Darkvision: 60 feet|Hellish Resistance: resistance to fire "
       "damage|Infernal Legacy: you know thaumaturgy; hellish rebuke "
       "at 3rd level and darkness at 5th level, each once per long "
-      "rest, using Charisma", 0 },
+      "rest, using Charisma", 0,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Aarakocra", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Flight: a flying speed of 30 feet, but not while wearing "
       "medium or heavy armor|Talons: unarmed strikes deal 1d6 "
       "slashing damage|Wind Caller: cast gust of wind once per long "
       "rest without a slot, from 3rd level, using a spellcasting "
-      "ability of your choice", 1 },
+      "ability of your choice", 1,
+      0, 0, 0, "1d6 slashing",
+      "", 0, "" },
     { "Aasimar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Celestial Resistance: resistance to necrotic and radiant "
@@ -250,7 +270,9 @@ const RaceData RACES[] = {
       "cantrip, cast with Charisma|Celestial Revelation: from 3rd "
       "level, transform as a bonus action for 1 minute -- Necrotic "
       "Shroud, Radiant Consumption or Radiant Soul -- once per long "
-      "rest", 1 },
+      "rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Bugbear", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
@@ -261,7 +283,9 @@ const RaceData RACES[] = {
       "squeezing you can move through and stop in a space large "
       "enough for a Small creature|Surprise Attack: deal an extra "
       "2d6 damage when you hit a creature that has not taken a turn "
-      "yet in combat", 1 },
+      "yet in combat", 1,
+      0, 0, 1, "",
+      "Stealth", 0, "" },
     { "Centaur", BOOK_MPMM, {0,0,0,0,0,0}, 40, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Charge: after moving 30 feet "
@@ -271,21 +295,27 @@ const RaceData RACES[] = {
       "carrying capacity, and climbing costs extra movement|Hooves: "
       "unarmed strikes deal 1d6 bludgeoning damage|Natural "
       "Affinity: proficiency in one of Animal Handling, Medicine, "
-      "Nature or Survival", 1 },
+      "Nature or Survival", 1,
+      0, 0, 1, "1d6 bludgeoning",
+      "", 1, "Animal Handling,Medicine,Nature,Survival" },
     { "Changeling", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Shapechanger: as an action, "
       "change your appearance and voice to any Medium or Small "
       "humanoid you have seen; your statistics do not "
       "change|Changeling Instincts: proficiency in two of "
-      "Deception, Insight, Intimidation, Performance or Persuasion", 1 },
+      "Deception, Insight, Intimidation, Performance or Persuasion", 1,
+      0, 0, 0, "",
+      "", 2, "Deception,Insight,Intimidation,Performance,Persuasion" },
     { "Deep Gnome", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 120,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Gnomish Magic Resistance: "
       "advantage on Intelligence, Wisdom and Charisma saves against "
       "spells|Gift of the Svirfneblin: cast disguise self once per "
       "long rest from 3rd level, and nondetection from 5th level, "
-      "without a slot", 1 },
+      "without a slot", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Duergar", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 120,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Superior Darkvision: 120 feet|Dwarven Resilience: advantage "
@@ -294,7 +324,9 @@ const RaceData RACES[] = {
       "enlarge/reduce on yourself from 3rd level and invisibility "
       "on yourself from 5th level, each once per long rest|Psionic "
       "Fortitude: advantage on saves to avoid or end the charmed or "
-      "stunned condition", 1 },
+      "stunned condition", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Eladrin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Darkvision: 60 feet|Fey "
@@ -304,13 +336,17 @@ const RaceData RACES[] = {
       "rest; from 3rd level the season you are in adds an "
       "effect|Keen Senses: proficiency in Perception|Trance: four "
       "hours of meditation counts as a long rest, and you may "
-      "change your season", 1 },
+      "change your season", 1,
+      0, 0, 0, "",
+      "Perception", 0, "" },
     { "Fairy", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Fairy Flight: a flying speed "
       "equal to your walking speed|Fairy Magic: you know "
       "druidcraft; cast faerie fire from 3rd level and "
-      "enlarge/reduce from 5th level, each once per long rest", 1 },
+      "enlarge/reduce from 5th level, each once per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Firbolg", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Firbolg Magic: cast detect magic and disguise self, each "
@@ -320,14 +356,18 @@ const RaceData RACES[] = {
       "proficiency bonus per long rest|Powerful Build: you count as "
       "one size larger for carrying capacity|Speech of Beast and "
       "Leaf: beasts and plants can understand you, and you have "
-      "advantage on Charisma checks made to influence them", 1 },
+      "advantage on Charisma checks made to influence them", 1,
+      0, 0, 1, "",
+      "", 0, "" },
     { "Genasi, Air", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Unending Breath: you can hold your "
       "breath indefinitely while not incapacitated|Lightning "
       "Resistance: resistance to lightning damage|Air Genasi Magic: "
       "you know shocking grasp; cast feather fall from 3rd level "
-      "and levitate from 5th level, each once per long rest", 1 },
+      "and levitate from 5th level, each once per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Genasi, Earth", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Earth Walk: difficult terrain costs no "
@@ -335,33 +375,43 @@ const RaceData RACES[] = {
       "ground or a floor|Merge with Stone: you know blade ward and "
       "can cast it as a bonus action a number of times equal to "
       "your proficiency bonus per long rest; cast pass without "
-      "trace from 5th level once per long rest", 1 },
+      "trace from 5th level once per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Genasi, Fire", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fire Resistance: resistance to fire "
       "damage|Reach to the Blaze: you know produce flame; cast "
-      "burning hands from 3rd level once per long rest", 1 },
+      "burning hands from 3rd level once per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Genasi, Water", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Acid Resistance: resistance to acid "
       "damage|Amphibious: you can breathe air and water|Swim: a "
       "swimming speed equal to your walking speed|Call to the Wave: "
       "you know acid splash; cast create or destroy water from 3rd "
-      "level once per long rest", 1 },
+      "level once per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Githyanki", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Astral Knowledge: after each long rest, gain proficiency in "
       "one skill of your choice until your next long rest|Githyanki "
       "Psionics: you know mage hand, cast without components; from "
       "3rd level jump and from 5th level misty step, each once per "
-      "long rest|Psychic Resilience: resistance to psychic damage", 1 },
+      "long rest|Psychic Resilience: resistance to psychic damage", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Githzerai", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Githzerai Psionics: you know mage hand, cast without "
       "components; from 3rd level shield and from 5th level detect "
       "thoughts, each once per long rest|Mental Discipline: "
       "advantage on saves to avoid or end the charmed or frightened "
-      "condition|Psychic Resilience: resistance to psychic damage", 1 },
+      "condition|Psychic Resilience: resistance to psychic damage", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Goblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fury of the Small: deal extra damage "
@@ -369,7 +419,9 @@ const RaceData RACES[] = {
       "you, once per turn, a number of times equal to your "
       "proficiency bonus per long rest|Fey Ancestry: advantage on "
       "saves to avoid or end the charmed condition|Nimble Escape: "
-      "Disengage or Hide as a bonus action", 1 },
+      "Disengage or Hide as a bonus action", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Goliath", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Little Giant: proficiency in Athletics, and you count as one "
@@ -377,7 +429,9 @@ const RaceData RACES[] = {
       "to cold damage, and you are acclimated to high "
       "altitude|Stone's Endurance: as a reaction, reduce damage by "
       "1d12 plus your Constitution modifier, a number of times "
-      "equal to your proficiency bonus per long rest", 1 },
+      "equal to your proficiency bonus per long rest", 1,
+      0, 0, 1, "",
+      "Athletics", 0, "" },
     { "Harengon", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Hare-Trigger: you can add "
@@ -386,7 +440,9 @@ const RaceData RACES[] = {
       "failed Dexterity save, add 1d4 to it, unless you are "
       "prone|Rabbit Hop: as a bonus action, jump a number of feet "
       "equal to five times your proficiency bonus, without "
-      "provoking", 1 },
+      "provoking", 1,
+      0, 0, 0, "",
+      "Perception", 0, "" },
     { "Hobgoblin", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
@@ -397,7 +453,9 @@ const RaceData RACES[] = {
       "the Many: when you miss an attack or fail an ability check "
       "or saving throw, add the number of allies you can see within "
       "30 feet, up to +3, a number of times equal to your "
-      "proficiency bonus per long rest", 1 },
+      "proficiency bonus per long rest", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Kenku", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Expert Duplication: advantage on checks made to produce an "
@@ -408,7 +466,9 @@ const RaceData RACES[] = {
       "bonus per long rest|Mimicry: you can mimic sounds you have "
       "heard, including voices; a listener can tell it is an "
       "imitation only with an Insight check against DC 8 + your "
-      "proficiency bonus + your Charisma modifier", 1 },
+      "proficiency bonus + your Charisma modifier", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Kobold", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_SMALL, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Draconic Cry: as a bonus action, enemies "
@@ -417,7 +477,9 @@ const RaceData RACES[] = {
       "proficiency bonus per long rest|Kobold Legacy: choose "
       "Craftiness (proficiency in one skill), Defiance (advantage "
       "on saves against being frightened) or Draconic Sorcery (one "
-      "sorcerer cantrip)", 1 },
+      "sorcerer cantrip)", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Lizardfolk", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Bite: unarmed strikes deal 1d6 slashing damage|Swim: a "
@@ -427,7 +489,9 @@ const RaceData RACES[] = {
       "number of times equal to your proficiency bonus per long "
       "rest|Natural Armor: AC 13 plus your Dexterity modifier when "
       "unarmored|Nature's Intuition: proficiency in two of Animal "
-      "Handling, Medicine, Nature, Perception, Stealth or Survival", 1 },
+      "Handling, Medicine, Nature, Perception, Stealth or Survival", 1,
+      13, 1, 0, "1d6 slashing",
+      "", 2, "Animal Handling,Medicine,Nature,Perception,Stealth,Survival" },
     { "Minotaur", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Horns: unarmed strikes deal 1d6 piercing damage|Goring Rush: "
@@ -437,7 +501,9 @@ const RaceData RACES[] = {
       "up to 10 feet as a bonus action, unless it succeeds on a "
       "Strength save|Labyrinthine Recall: you always know which way "
       "is north, and have advantage on Survival checks to navigate "
-      "or track", 1 },
+      "or track", 1,
+      0, 0, 0, "1d6 piercing",
+      "", 0, "" },
     { "Orc", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Adrenaline Rush: Dash as a bonus action "
@@ -445,14 +511,18 @@ const RaceData RACES[] = {
       "bonus, a number of times equal to your proficiency bonus per "
       "long rest|Powerful Build: you count as one size larger for "
       "carrying capacity|Relentless Endurance: drop to 1 hit point "
-      "instead of 0, once per long rest", 1 },
+      "instead of 0, once per long rest", 1,
+      0, 0, 1, "",
+      "", 0, "" },
     { "Satyr", BOOK_MPMM, {0,0,0,0,0,0}, 35, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Fey: your creature type is fey|Ram: unarmed strikes deal 1d6 "
       "bludgeoning damage|Magic Resistance: advantage on saves "
       "against spells|Mirthful Leaps: add a d8 to the distance of "
       "any jump|Reveler: proficiency in Performance and Persuasion, "
-      "and with one musical instrument", 1 },
+      "and with one musical instrument", 1,
+      0, 0, 0, "1d6 bludgeoning",
+      "Performance,Persuasion", 0, "" },
     { "Sea Elf", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
@@ -462,7 +532,9 @@ const RaceData RACES[] = {
       "speed|Friend of the Sea: you can communicate simple ideas to "
       "beasts with a swimming speed|Keen Senses: proficiency in "
       "Perception|Trance: four hours of meditation counts as a long "
-      "rest", 1 },
+      "rest", 1,
+      0, 0, 0, "",
+      "Perception", 0, "" },
     { "Shadar-kai", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Fey Ancestry: advantage on saves to "
@@ -472,7 +544,9 @@ const RaceData RACES[] = {
       "to your proficiency bonus per long rest; from 3rd level you "
       "also gain resistance to all damage until your next turn|Keen "
       "Senses: proficiency in Perception|Trance: four hours of "
-      "meditation counts as a long rest", 1 },
+      "meditation counts as a long rest", 1,
+      0, 0, 0, "",
+      "Perception", 0, "" },
     { "Shifter", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Shifting: as a bonus action, gain "
@@ -480,7 +554,9 @@ const RaceData RACES[] = {
       "for 1 minute, a number of times equal to your proficiency "
       "bonus per long rest|Shifting Feature: choose Beasthide, "
       "Longtooth, Swiftstride or Wildhunt; each adds an effect "
-      "while shifted", 1 },
+      "while shifted", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Tabaxi", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Cat's Claws: a climbing speed equal to "
@@ -488,7 +564,9 @@ const RaceData RACES[] = {
       "damage|Cat's Talent: proficiency in Perception and "
       "Stealth|Feline Agility: double your speed for a turn; you "
       "cannot do so again until you move 0 feet on one of your "
-      "turns", 1 },
+      "turns", 1,
+      0, 0, 0, "1d6 slashing",
+      "Perception,Stealth", 0, "" },
     { "Tortle", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 0,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Claws: unarmed strikes deal 1d6 slashing damage|Hold Breath: "
@@ -498,7 +576,9 @@ const RaceData RACES[] = {
       "action for +4 AC and advantage on Strength and Constitution "
       "saves, but prone and unable to move|Nature's Intuition: "
       "proficiency in one of Animal Handling, Medicine, Nature, "
-      "Perception, Stealth or Survival", 1 },
+      "Perception, Stealth or Survival", 1,
+      17, 0, 0, "1d6 slashing",
+      "", 1, "Animal Handling,Medicine,Nature,Perception,Stealth,Survival" },
     { "Triton", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Amphibious: you can breathe air and "
@@ -507,7 +587,9 @@ const RaceData RACES[] = {
       "5th level water walk, each once per long rest|Emissary of "
       "the Sea: you can communicate simple ideas to beasts, "
       "elementals and monstrosities with a swimming speed|Guardian "
-      "of the Depths: resistance to cold damage", 1 },
+      "of the Depths: resistance to cold damage", 1,
+      0, 0, 0, "",
+      "", 0, "" },
     { "Yuan-ti", BOOK_MPMM, {0,0,0,0,0,0}, 30, SZ_MEDIUM, 60,
       "Common", 1, 0, 0, 0, 0, 0, 0, 0,
       "Darkvision: 60 feet|Serpentine Spellcasting: you know poison "
@@ -515,7 +597,9 @@ const RaceData RACES[] = {
       "suggestion once per long rest from 3rd level|Magic "
       "Resistance: advantage on saves against spells|Poison "
       "Resilience: advantage on saves to avoid or end the poisoned "
-      "condition, and resistance to poison damage", 1 },
+      "condition, and resistance to poison damage", 1,
+      0, 0, 0, "",
+      "", 0, "" },
 };
 const int RACE_COUNT =
     (int)(sizeof(RACES) / sizeof(RACES[0]));
@@ -601,8 +685,12 @@ static const unsigned char PROG_10[MAX_LEVEL + 1] = {
 static const unsigned char PROG_11[MAX_LEVEL + 1] = {
     0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
 };
-/* third-caster spells known */
+/* arcane trickster cantrips */
 static const unsigned char PROG_12[MAX_LEVEL + 1] = {
+    0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
+};
+/* third-caster spells known */
+static const unsigned char PROG_13[MAX_LEVEL + 1] = {
     0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13
 };
 const unsigned char INFUSIONS_KNOWN[MAX_LEVEL + 1] = {
@@ -612,45 +700,47 @@ const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1] = {
     0, 0, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6
 };
 /* eldritch invocations */
-static const unsigned char PROG_15[MAX_LEVEL + 1] = {
+static const unsigned char PROG_16[MAX_LEVEL + 1] = {
     0, 0, 2, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8
 };
 /* pact boons */
-static const unsigned char PROG_16[MAX_LEVEL + 1] = {
+static const unsigned char PROG_17[MAX_LEVEL + 1] = {
     0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 /* metamagic options */
-static const unsigned char PROG_17[MAX_LEVEL + 1] = {
+static const unsigned char PROG_18[MAX_LEVEL + 1] = {
     0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4
 };
 /* maneuvers */
-static const unsigned char PROG_18[MAX_LEVEL + 1] = {
+static const unsigned char PROG_19[MAX_LEVEL + 1] = {
     0, 0, 0, 3, 3, 3, 3, 5, 5, 5, 7, 7, 7, 7, 7, 9, 9, 9, 9, 9, 9
 };
 /* Arcane Shot options */
-static const unsigned char PROG_19[MAX_LEVEL + 1] = {
+static const unsigned char PROG_20[MAX_LEVEL + 1] = {
     0, 0, 0, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6
 };
 /* runes */
-static const unsigned char PROG_20[MAX_LEVEL + 1] = {
+static const unsigned char PROG_21[MAX_LEVEL + 1] = {
     0, 0, 0, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5
 };
 /* elemental disciplines */
-static const unsigned char PROG_21[MAX_LEVEL + 1] = {
+static const unsigned char PROG_22[MAX_LEVEL + 1] = {
     0, 0, 0, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5
 };
 /* favored enemies */
-static const unsigned char PROG_22[MAX_LEVEL + 1] = {
+static const unsigned char PROG_23[MAX_LEVEL + 1] = {
     0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3
 };
 /* favored terrains */
-static const unsigned char PROG_23[MAX_LEVEL + 1] = {
+static const unsigned char PROG_24[MAX_LEVEL + 1] = {
     0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
 };
 
 const unsigned char *const THIRD_CANTRIPS = PROG_11;
 
-const unsigned char *const THIRD_SPELLS_KNOWN = PROG_12;
+const unsigned char *const TRICKSTER_CANTRIPS = PROG_12;
+
+const unsigned char *const THIRD_SPELLS_KNOWN = PROG_13;
 
 const unsigned char FULL_SLOTS[MAX_LEVEL + 1][10] = {
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -971,511 +1061,606 @@ const SubclassData SUBCLASSES[] = {
       "Fury in battle: frenzy grants a bonus attack at the cost of "
       "exhaustion.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 0, BOOK_PHB, "Path of the Totem Warrior",
       "A spirit animal guides you, granting resilience or ferocity.",
       "",
-      "Totem spirit", "Bear|Eagle|Wolf" },
+      "Totem spirit", "Bear|Eagle|Wolf",
+      "" },
     { 1, BOOK_PHB, "College of Lore",
       "Knowledge and cutting words; extra skills and additional "
       "magical secrets.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 1, BOOK_PHB, "College of Valor",
       "A battle skald: martial training and inspiration that aids "
       "attacks.",
       "",
-      "", "" },
+      "", "",
+      "Medium armor,Shields,Martial weapons" },
     { 2, BOOK_PHB, "Knowledge Domain",
       "The pursuit of learning; you read thoughts and borrow "
       "proficiencies.",
       "command, identify|augury, suggestion|nondetection, speak "
       "with dead|arcane eye, confusion|legend lore, scrying",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_PHB, "Life Domain",
       "Healing and vitality; your cures are more potent than "
       "others'.",
       "bless, cure wounds|lesser restoration, spiritual "
       "weapon|beacon of hope, revivify|death ward, guardian of "
       "faith|mass cure wounds, raise dead",
-      "", "" },
+      "", "",
+      "Heavy armor" },
     { 2, BOOK_PHB, "Light Domain",
       "Radiance and fire; you blind foes and shield allies with "
       "light.",
       "burning hands, faerie fire|flaming sphere, scorching "
       "ray|daylight, fireball|guardian of faith, wall of fire|flame "
       "strike, scrying",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_PHB, "Nature Domain",
       "The natural world; you command beasts and plants.",
       "animal friendship, speak with animals|barkskin, spike "
       "growth|plant growth, wind wall|dominate beast, grasping "
       "vine|insect plague, tree stride",
-      "", "" },
+      "", "",
+      "Heavy armor" },
     { 2, BOOK_PHB, "Tempest Domain",
       "Storm and thunder; you strike with maximised lightning and "
       "thunder.",
       "fog cloud, thunderwave|gust of wind, shatter|call lightning, "
       "sleet storm|control water, ice storm|destructive wave, "
       "insect plague",
-      "", "" },
+      "", "",
+      "Heavy armor,Martial weapons" },
     { 2, BOOK_PHB, "Trickery Domain",
       "Deception and stealth; you create illusory duplicates and "
       "bless allies with stealth.",
       "charm person, disguise self|mirror image, pass without "
       "trace|blink, dispel magic|dimension door, polymorph|dominate "
       "person, modify memory",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_PHB, "War Domain",
       "Battle prowess; bonus attacks and divine strikes.",
       "divine favor, shield of faith|magic weapon, spiritual "
       "weapon|crusader's mantle, spirit guardians|freedom of "
       "movement, stoneskin|flame strike, hold monster",
-      "", "" },
+      "", "",
+      "Heavy armor,Martial weapons" },
     { 3, BOOK_PHB, "Circle of the Land",
       "A druid of a particular terrain, with extra spells and "
       "recovery.",
       "",
-      "Land type", "Arctic|Coast|Desert|Forest|Grassland|Mountain|Swamp|Underdark" },
+      "Land type", "Arctic|Coast|Desert|Forest|Grassland|Mountain|Swamp|Underdark",
+      "" },
     { 3, BOOK_PHB, "Circle of the Moon",
       "A shapeshifter: wild shape as a bonus action into fiercer "
       "forms.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_PHB, "Champion",
       "Simple, relentless martial excellence; improved critical "
       "hits.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_PHB, "Battle Master",
       "Tactical manoeuvres fuelled by superiority dice.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_PHB, "Eldritch Knight",
       "A fighter who weaves wizard magic into swordplay "
       "(third-caster).",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_PHB, "Way of the Open Hand",
       "Mastery of unarmed combat; manipulate a foe's ki.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_PHB, "Way of Shadow",
       "A ninja of stealth and darkness, stepping between shadows.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_PHB, "Way of the Four Elements",
       "Bend the elements to your will through ki-fuelled "
       "disciplines.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_PHB, "Oath of Devotion",
       "The classic knight in shining armour: honesty, courage, "
       "duty.",
       "protection from evil and good, sanctuary|lesser restoration, "
       "zone of truth|beacon of hope, dispel magic|freedom of "
       "movement, guardian of faith|commune, flame strike",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_PHB, "Oath of the Ancients",
       "A green knight preserving light and life in the world.",
       "ensnaring strike, speak with animals|moonbeam, misty "
       "step|plant growth, protection from energy|ice storm, "
       "stoneskin|commune with nature, tree stride",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_PHB, "Oath of Vengeance",
       "A dark avenger who punishes wrongdoers at any cost.",
       "bane, hunter's mark|hold person, misty step|haste, "
       "protection from energy|banishment, dimension door|hold "
       "monster, scrying",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_PHB, "Hunter",
       "A monster slayer with tactics tuned to the prey you face.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_PHB, "Beast Master",
       "You bond with an animal companion that fights alongside you.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_PHB, "Thief",
       "Fast hands, climbing and the use of magic items others "
       "cannot.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_PHB, "Assassin",
       "Disguise, poison and devastating strikes against the "
       "unready.",
       "",
-      "", "" },
+      "", "",
+      "Disguise kit,Poisoner's kit" },
     { 8, BOOK_PHB, "Arcane Trickster",
       "A rogue who enhances stealth and mischief with wizard magic "
       "(third-caster).",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 9, BOOK_PHB, "Draconic Bloodline",
       "Dragon blood grants resilience, tougher skin and elemental "
       "affinity.",
       "",
       "Dragon ancestor", "Black (acid)|Blue (lightning)|Brass (fire)|Bronze "
       "(lightning)|Copper (acid)|Gold (fire)|Green (poison)|Red "
-      "(fire)|Silver (cold)|White (cold)" },
+      "(fire)|Silver (cold)|White (cold)",
+      "" },
     { 9, BOOK_PHB, "Wild Magic",
       "Raw chaos: your magic sometimes surges beyond your control.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_PHB, "The Archfey",
       "A patron of the Feywild; charm, escape and beguilement.",
       "faerie fire, sleep|calm emotions, phantasmal force|blink, "
       "plant growth|dominate beast, greater invisibility|dominate "
       "person, seeming",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_PHB, "The Fiend",
       "A patron from the lower planes; fire, temptation and dark "
       "luck.",
       "burning hands, command|blindness/deafness, scorching "
       "ray|fireball, stinking cloud|fire shield, wall of fire|flame "
       "strike, hallow",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_PHB, "The Great Old One",
       "An alien intelligence; telepathy and psychic domination.",
       "dissonant whispers, Tasha's hideous laughter|detect "
       "thoughts, phantasmal force|clairvoyance, sending|dominate "
       "beast, Evard's black tentacles|dominate person, telekinesis",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Abjuration",
       "Protective magic; an arcane ward absorbs damage for you.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Conjuration",
       "Summoning and teleportation; conjure objects and blink "
       "between spaces.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Divination",
       "Glimpse the future; portent replaces rolls with foreseen "
       "numbers.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Enchantment",
       "Charm and compulsion; bend minds to your will.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Evocation",
       "Elemental destruction, sculpted so allies are spared.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Illusion",
       "Deception made real; illusions you can reshape at will.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Necromancy",
       "Life and death; harvest life force and command the undead.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 11, BOOK_PHB, "School of Transmutation",
       "Change matter and form; a transmuter's stone grants shifting "
       "benefits.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 12, BOOK_TCE, "Alchemist",
       "Potions and elixirs: healing, restoration and experimental "
       "concoctions.",
       "healing word, ray of sickness|flaming sphere, melf's acid "
       "arrow|gaseous form, mass healing word|blight, death "
       "ward|cloudkill, raise dead",
-      "", "" },
+      "", "",
+      "" },
     { 12, BOOK_TCE, "Armorer",
       "You wear arcane armor you can reshape as a guardian or an "
       "infiltrator.",
       "magic missile, thunderwave|mirror image, shatter|hypnotic "
       "pattern, lightning bolt|fire shield, greater "
       "invisibility|passwall, wall of force",
-      "", "" },
+      "", "",
+      "Heavy armor,Smith's tools" },
     { 12, BOOK_TCE, "Artillerist",
       "You conjure an eldritch cannon that scorches, freezes or "
       "shields.",
       "shield, thunderwave|scorching ray, shatter|fireball, wind "
       "wall|ice storm, wall of fire|cone of cold, wall of force",
-      "", "" },
+      "", "",
+      "Woodcarver's tools" },
     { 12, BOOK_TCE, "Battle Smith",
       "A defender: you fight beside a steel defender you built "
       "yourself.",
       "heroism, shield|branding smite, warding bond|aura of "
       "vitality, conjure barrage|aura of purity, fire "
       "shield|banishing smite, mass cure wounds",
-      "", "" },
+      "", "",
+      "Martial weapons,Smith's tools" },
     { 0, BOOK_XGE, "Path of the Ancestral Guardian",
       "Ancestral spirits shield your allies and hinder those you "
       "strike.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 0, BOOK_XGE, "Path of the Storm Herald",
       "Your rage summons a storm aura shaped by the land that "
       "forged you.",
       "",
-      "Storm aura", "Desert|Sea|Tundra" },
+      "Storm aura", "Desert|Sea|Tundra",
+      "" },
     { 0, BOOK_XGE, "Path of the Zealot",
       "A god's fury burns in you; death itself struggles to hold "
       "you.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 1, BOOK_XGE, "College of Glamour",
       "Fey charm: you enthral audiences and command with a word.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 1, BOOK_XGE, "College of Swords",
       "A blade dancer whose flourishes are both performance and "
       "attack.",
       "",
-      "Fighting style", "Dueling|Two-Weapon Fighting" },
+      "Fighting style", "Dueling|Two-Weapon Fighting",
+      "Medium armor,Scimitar" },
     { 1, BOOK_XGE, "College of Whispers",
       "You trade in secrets and terror, poisoning minds with words.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_XGE, "Forge Domain",
       "The smith's fire: you bless armour and weapons, and shrug "
       "off blows.",
       "identify, searing smite|heat metal, magic weapon|elemental "
       "weapon, protection from energy|fabricate, wall of "
       "fire|animate objects, creation",
-      "", "" },
+      "", "",
+      "Heavy armor,Smith's tools" },
     { 2, BOOK_XGE, "Grave Domain",
       "The border between life and death; you deny it to others and "
       "cross it for your allies.",
       "bane, false life|gentle repose, ray of "
       "enfeeblement|revivify, vampiric touch|blight, death "
       "ward|antilife shell, raise dead",
-      "", "" },
+      "", "",
+      "" },
     { 3, BOOK_XGE, "Circle of Dreams",
       "The Summer Court's blessing: healing rest and moonlit "
       "escape.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 3, BOOK_XGE, "Circle of the Shepherd",
       "You call totem spirits and speak for the beasts of the "
       "world.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_XGE, "Arcane Archer",
       "Elven magic on the arrow: each shot can banish, char or "
       "ensnare.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_XGE, "Cavalier",
       "A guardian of the mounted charge who marks and punishes "
       "foes.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_XGE, "Samurai",
       "Unbending resolve: fighting spirit carries you past "
       "exhaustion.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_XGE, "Way of the Drunken Master",
       "You reel and stagger, turning apparent clumsiness into "
       "evasion.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_XGE, "Way of the Kensei",
       "A weapon is an extension of the body; your chosen arms "
       "become deadly.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_XGE, "Way of the Sun Soul",
       "You hurl your own life energy as searing light.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_XGE, "Oath of Conquest",
       "Rule through fear: you crush resistance and bind foes in "
       "dread.",
       "armor of agathys, command|hold person, spiritual "
       "weapon|bestow curse, fear|dominate beast, "
       "stoneskin|cloudkill, dominate person",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_XGE, "Oath of Redemption",
       "Violence is the last resort; you shield others and turn "
       "enemies aside.",
       "sanctuary, sleep|calm emotions, hold person|counterspell, "
       "hypnotic pattern|otiluke's resilient sphere, stoneskin|hold "
       "monster, wall of force",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_XGE, "Gloom Stalker",
       "A hunter of the lightless places, striking before foes can "
       "react.",
       "disguise self|rope trick|fear|greater invisibility|seeming",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_XGE, "Horizon Walker",
       "A watcher of planar portals who steps between worlds "
       "mid-fight.",
       "protection from evil and good|misty "
       "step|haste|banishment|teleportation circle",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_XGE, "Monster Slayer",
       "You study a quarry's weaknesses and turn its own magic "
       "against it.",
       "protection from evil and good|zone of truth|magic "
       "circle|banishment|hold monster",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_XGE, "Inquisitive",
       "A detective's eye for tells, traps and the lie behind the "
       "answer.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_XGE, "Mastermind",
       "You direct others, reading intentions and turning allies "
       "into weapons.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_XGE, "Scout",
       "A skirmisher at home in the wild who slips away when "
       "pressed.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_XGE, "Swashbuckler",
       "Duelling flair: you fight one on one and charm your way out "
       "of trouble.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 9, BOOK_XGE, "Divine Soul",
       "Celestial blood grants you the cleric's spell list alongside "
       "your own.",
       "",
-      "Divine affinity", "Good|Evil|Law|Chaos|Neutrality" },
+      "Divine affinity", "Good|Evil|Law|Chaos|Neutrality",
+      "" },
     { 9, BOOK_XGE, "Shadow Magic",
       "The Shadowfell answers you: hounds of ill omen and a body "
       "that endures.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 9, BOOK_XGE, "Storm Sorcery",
       "Wind and thunder attend your spells and carry you aloft.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_XGE, "The Celestial",
       "An upper-planar patron: you channel healing light and "
       "radiant fire.",
       "cure wounds, guiding bolt|flaming sphere, lesser "
       "restoration|daylight, revivify|guardian of faith, wall of "
       "fire|flame strike, greater restoration",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_XGE, "The Hexblade",
       "A sentient weapon from the Shadowfell; your curse marks a "
       "foe for ruin.",
       "shield, wrathful smite|blur, branding smite|blink, elemental "
       "weapon|phantasmal killer, staggering smite|banishing smite, "
       "cone of cold",
-      "", "" },
+      "", "",
+      "Medium armor,Shields,Martial weapons" },
     { 11, BOOK_XGE, "War Magic",
       "A battle mage balancing arcane deflection against offensive "
       "power.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 0, BOOK_TCE, "Path of the Beast",
       "A predator within: your rage grows claws, a bite or a "
       "lashing tail.",
       "",
-      "Form of the Beast", "Bite|Claws|Tail" },
+      "Form of the Beast", "Bite|Claws|Tail",
+      "" },
     { 0, BOOK_TCE, "Path of Wild Magic",
       "Raw magic leaks through your fury in unpredictable bursts.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 1, BOOK_TCE, "College of Creation",
       "The Song of Creation: you sing objects and dancing items "
       "into being.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 1, BOOK_TCE, "College of Eloquence",
       "Flawless persuasion: your words never quite fail to land.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_TCE, "Order Domain",
       "Law and obedience; you compel and command, and allies strike "
       "for you.",
       "command, heroism|hold person, zone of truth|mass healing "
       "word, slow|compulsion, locate creature|commune, dominate "
       "person",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_TCE, "Peace Domain",
       "Bonds of friendship that share harm and knit a party "
       "together.",
       "heroism, sanctuary|aid, warding bond|beacon of hope, "
       "sending|aura of purity, otiluke's resilient sphere|greater "
       "restoration, rary's telepathic bond",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_TCE, "Twilight Domain",
       "The comfort of night: darkvision, sanctuary from fear, and a "
       "twilight aura.",
       "faerie fire, sleep|moonbeam, see invisibility|aura of "
       "vitality, leomund's tiny hut|aura of life, greater "
       "invisibility|circle of power, mislead",
-      "", "" },
+      "", "",
+      "" },
     { 3, BOOK_TCE, "Circle of Spores",
       "Decay as part of the cycle; necrotic spores and animated "
       "dead.",
       "chill touch|blindness/deafness, gentle repose|animate dead, "
       "gaseous form|blight, confusion|cloudkill, contagion",
-      "", "" },
+      "", "",
+      "" },
     { 3, BOOK_TCE, "Circle of Stars",
       "Starlight given form: you take a constellation's shape.",
       "",
-      "Starry form", "Archer|Chalice|Dragon" },
+      "Starry form", "Archer|Chalice|Dragon",
+      "" },
     { 3, BOOK_TCE, "Circle of Wildfire",
       "Fire that clears the way for new growth, with a wildfire "
       "spirit bound to you.",
       "burning hands, cure wounds|flaming sphere, scorching "
       "ray|plant growth, revivify|aura of life, fire shield|flame "
       "strike, mass cure wounds",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_TCE, "Psi Warrior",
       "Psionic energy shields allies, shoves foes and sharpens your "
       "strikes.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_TCE, "Rune Knight",
       "Giant runes carved into your gear, and the size to match.",
       "",
-      "First rune", "Cloud|Fire|Frost|Stone" },
+      "First rune", "Cloud|Fire|Frost|Stone",
+      "" },
     { 5, BOOK_TCE, "Way of Mercy",
       "A masked healer who can mend with one hand and harm with the "
       "other.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_TCE, "Way of the Astral Self",
       "Spectral arms, a visage and a body of ki that fight "
       "alongside you.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_TCE, "Oath of Glory",
       "The heroic ideal: you inspire feats of athletics and press "
       "the attack.",
       "guiding bolt, heroism|enhance ability, magic weapon|haste, "
       "protection from energy|compulsion, freedom of "
       "movement|commune, flame strike",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_TCE, "Oath of the Watchers",
       "A sentinel against extraplanar threats, alert and hard to "
       "surprise.",
       "alarm, detect magic|moonbeam, see invisibility|counterspell, "
       "nondetection|aura of purity, banishment|hold monster, "
       "scrying",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_TCE, "Fey Wanderer",
       "Fey mirth clings to you: your strikes carry dread and your "
       "words charm.",
       "charm person|misty step|dispel magic|dimension door|mislead",
-      "", "" },
+      "", "",
+      "" },
     { 7, BOOK_TCE, "Swarmkeeper",
       "A swarm of spirits accompanies you, biting, shifting and "
       "shielding.",
       "faerie fire, mage hand|web|gaseous form|arcane eye|insect "
       "plague",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_TCE, "Phantom",
       "Death clings to you; you harvest whispers from the slain.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 8, BOOK_TCE, "Soulknife",
       "Psionic blades and a mind that can speak across distance.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 9, BOOK_TCE, "Aberrant Mind",
       "An alien influence rewrote you; psionic spells come without "
       "components.",
@@ -1483,7 +1668,8 @@ const SubclassData SUBCLASSES[] = {
       "emotions, detect thoughts|hunger of hadar, sending|evard's "
       "black tentacles, summon aberration|rary's telepathic bond, "
       "telekinesis",
-      "", "" },
+      "", "",
+      "" },
     { 9, BOOK_TCE, "Clockwork Soul",
       "Order from Mechanus: you smooth out chance and restore "
       "balance.",
@@ -1491,65 +1677,76 @@ const SubclassData SUBCLASSES[] = {
       "restoration|dispel magic, protection from energy|freedom of "
       "movement, summon construct|greater restoration, wall of "
       "force",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_TCE, "The Fathomless",
       "Something vast in the deep: a tentacle answers you and the "
       "water heals.",
       "create or destroy water, thunderwave|gust of wind, "
       "silence|lightning bolt, sleet storm|control water, summon "
       "elemental|bigby's hand, cone of cold",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_TCE, "The Genie",
       "A noble genie's pact, with a vessel to shelter in and "
       "elemental wrath.",
       "detect evil and good|phantasmal force|create food and "
       "water|phantasmal killer|creation",
-      "Genie kind", "Dao (earth)|Djinni (air)|Efreeti (fire)|Marid (water)" },
+      "Genie kind", "Dao (earth)|Djinni (air)|Efreeti (fire)|Marid (water)",
+      "" },
     { 11, BOOK_TCE, "Bladesinging",
       "An elven tradition of sword and spell woven into one dance.",
       "",
-      "", "" },
+      "", "",
+      "Light armor,Performance" },
     { 11, BOOK_TCE, "Order of Scribes",
       "Your spellbook awakens; you rewrite spells and let the book "
       "take a hit.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 0, BOOK_SCAG, "Path of the Battlerager",
       "Dwarves who fight in spiked armour, using it as a weapon and "
       "giving themselves to the fury of battle.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 2, BOOK_SCAG, "Arcana Domain",
       "A cleric of the gods of magic, drawing on the wizard's art "
       "alongside your own.",
       "detect magic, magic missile|magic weapon, Nystul's magic "
       "aura|dispel magic, magic circle|arcane eye, Leomund's secret "
       "chest|planar binding, teleportation circle",
-      "", "" },
+      "", "",
+      "" },
     { 4, BOOK_SCAG, "Purple Dragon Knight",
       "A knight of Cormyr, called a banneret elsewhere, who turns a "
       "band of allies into a war band.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 5, BOOK_SCAG, "Way of the Long Death",
       "Monks obsessed with the mechanics of dying, who draw "
       "vitality from the deaths of others.",
       "",
-      "", "" },
+      "", "",
+      "" },
     { 6, BOOK_SCAG, "Oath of the Crown",
       "An oath sworn to the ideals of civilisation and the "
       "sovereign who embodies them.",
       "command, compelled duel|warding bond, zone of truth|aura of "
       "vitality, spirit guardians|banishment, guardian of "
       "faith|circle of power, geas",
-      "", "" },
+      "", "",
+      "" },
     { 10, BOOK_SCAG, "The Undying",
       "A patron who has cheated death itself, and grants a measure "
       "of that endurance.",
       "false life, ray of sickness|blindness/deafness, "
       "silence|feign death, speak with dead|aura of life, death "
       "ward|contagion, legend lore",
-      "", "" },
+      "", "",
+      "" },
 };
 const int SUBCLASS_COUNT =
     (int)(sizeof(SUBCLASSES) / sizeof(SUBCLASSES[0]));
@@ -4533,39 +4730,39 @@ const OptionList OPTION_LISTS[] = {
     { "Warlock", "",
       "Eldritch Invocation", "eldritch invocations",
       OPTS_0, (int)(sizeof(OPTS_0) / sizeof(OPTS_0[0])),
-      PROG_15, 0 },
+      PROG_16, 0 },
     { "Warlock", "",
       "Pact Boon", "pact boons",
       OPTS_1, (int)(sizeof(OPTS_1) / sizeof(OPTS_1[0])),
-      PROG_16, 0 },
+      PROG_17, 0 },
     { "Sorcerer", "",
       "Metamagic option", "metamagic options",
       OPTS_2, (int)(sizeof(OPTS_2) / sizeof(OPTS_2[0])),
-      PROG_17, 0 },
+      PROG_18, 0 },
     { "Fighter", "Battle Master",
       "Maneuver", "maneuvers",
       OPTS_3, (int)(sizeof(OPTS_3) / sizeof(OPTS_3[0])),
-      PROG_18, 0 },
+      PROG_19, 0 },
     { "Fighter", "Arcane Archer",
       "Arcane Shot option", "Arcane Shot options",
       OPTS_4, (int)(sizeof(OPTS_4) / sizeof(OPTS_4[0])),
-      PROG_19, 0 },
+      PROG_20, 0 },
     { "Fighter", "Rune Knight",
       "Rune", "runes",
       OPTS_5, (int)(sizeof(OPTS_5) / sizeof(OPTS_5[0])),
-      PROG_20, 0 },
+      PROG_21, 0 },
     { "Monk", "Way of the Four Elements",
       "Elemental Discipline", "elemental disciplines",
       OPTS_6, (int)(sizeof(OPTS_6) / sizeof(OPTS_6[0])),
-      PROG_21, 0 },
+      PROG_22, 0 },
     { "Ranger", "",
       "Favored Enemy", "favored enemies",
       OPTS_7, (int)(sizeof(OPTS_7) / sizeof(OPTS_7[0])),
-      PROG_22, 1 },
+      PROG_23, 1 },
     { "Ranger", "",
       "Favored Terrain", "favored terrains",
       OPTS_8, (int)(sizeof(OPTS_8) / sizeof(OPTS_8[0])),
-      PROG_23, 0 },
+      PROG_24, 0 },
 };
 const int OPTION_LIST_COUNT =
     (int)(sizeof(OPTION_LISTS) / sizeof(OPTION_LISTS[0]));

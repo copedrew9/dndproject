@@ -97,6 +97,15 @@ def answer(prompt, rng, free_text_name, want=None, tail=""):
             # is only "Choose, N info [1-13]: ". So the aim is taken from
             # the accumulated tail.
             low_tail = tail.lower()
+            # Leave the books alone when aiming. They are all on by
+            # default, and toggling them at random switches off the very
+            # book the wanted race or subclass comes from -- a run aimed at
+            # a tortle was offered the nine races of the Player's Handbook
+            # and quietly built a dwarf.
+            if "source books" in low_tail and "toggle" in prompt.lower():
+                done = menu_number(tail, "Done")
+                if done:
+                    return done
             if want.get("class") and ("classes:" in low_tail
                                       or "which class" in low_tail):
                 pick = menu_number(tail, want["class"])
@@ -108,6 +117,11 @@ def answer(prompt, rng, free_text_name, want=None, tail=""):
             # which is why nothing ever exercised their spell steps.
             if want.get("subclass"):
                 pick = menu_number(tail, want["subclass"])
+                if pick and lo <= int(pick) <= hi:
+                    return pick
+            if want.get("race") and ("races:" in low_tail
+                                     or "which race" in low_tail):
+                pick = menu_number(tail, want["race"])
                 if pick and lo <= int(pick) <= hi:
                     return pick
             if want.get("level"):
@@ -308,6 +322,8 @@ def main():
                     help="build at this level every run")
     ap.add_argument("--subclass", metavar="NAME",
                     help="take this subclass wherever it is offered")
+    ap.add_argument("--race", metavar="NAME",
+                    help="build this race every run")
     args = ap.parse_args()
 
     global RECORD_TO
@@ -323,9 +339,9 @@ def main():
         with tempfile.TemporaryDirectory() as workdir:
             try:
                 want = None
-                if args.klass or args.level or args.subclass:
+                if args.klass or args.level or args.subclass or args.race:
                     want = {"class": args.klass, "level": args.level,
-                            "subclass": args.subclass}
+                            "subclass": args.subclass, "race": args.race}
                 rc, transcript, err, name = run_once(
                     binary, seed, rng, args.valgrind, workdir, args.verbose,
                     args.levelup or bool(args.magic), args.magic,

@@ -143,12 +143,29 @@ static void measure(const Character *c, const char *what)
 
     if (speed_of(c) < 0 || speed_of(c) > 200) fail(what, "an odd speed");
 
+    /* A race's natural armour is a floor, not a replacement: whatever else
+       is worn, the Armor Class cannot come out below the shell. */
+    if (c->race_id >= 0 && RACES[c->race_id].natural_ac) {
+        int floor_ac = RACES[c->race_id].natural_ac;
+        if (RACES[c->race_id].natural_ac_dex) {
+            floor_ac += ability_mod(c, ABL_DEX);
+        }
+        if (ac < floor_ac) fail(what, "an armour class below the race's own hide");
+    }
+
     /* Three of the derived numbers are a formula the PHB states outright,
        so they are checked against the formula rather than against a range.
        Whatever a race, a class, a feat or a magic item does to the score
        underneath, the number on the sheet has to follow it. */
-    if (carrying_capacity(c) != ability_score(c, ABL_STR) * 15) {
-        fail(what, "a carrying capacity that is not Strength x 15");
+    {
+        /* Strength x 15, doubled for a race that counts as one size larger
+           -- Powerful Build, Little Giant, Equine Build. */
+        int want = ability_score(c, ABL_STR) * 15;
+        if (c->race_id >= 0 && RACES[c->race_id].powerful_build) want *= 2;
+        if (carrying_capacity(c) != want) {
+            fail(what, "a carrying capacity that is not Strength x 15, "
+                       "doubled for Powerful Build");
+        }
     }
     {
         int want = 10 + skill_bonus(c, SKL_PERCEPTION)
@@ -1100,6 +1117,114 @@ static int line_covers(const char *line, const ItemData *it)
     return contains_ci(line, it->name);
 }
 
+/* Every race against every suit of armour and every Dexterity.
+ *
+ * Four of the things a race's traits promise are numbers somebody has to
+ * work out, and until recently nobody did: a tortle's shell, a goliath's
+ * carrying capacity, a lizardfolk's bite, an elf's Perception. Each is
+ * checked on its own in the selftest against the book. What is checked
+ * here is that they survive being crossed with everything else -- that the
+ * shell still wins over leather armour and still loses to plate, that the
+ * bite is still the bite when a weapon is also carried, and that no
+ * combination produces a number outside what the rules can make.
+ */
+static void sweep_race_traits(void)
+{
+    static const int DEXES[] = { 1, 8, 10, 14, 18, 20, 30 };
+    int r, a, d;
+
+    for (r = 0; r < RACE_COUNT; r++) {
+        for (d = 0; d < (int)(sizeof DEXES / sizeof DEXES[0]); d++) {
+            for (a = -1; a < ITEM_COUNT; a++) {
+                Character c;
+                char what[160];
+                int worn = 0, want, got;
+
+                if (a >= 0) {
+                    ItemCategory cat = ITEMS[a].category;
+                    if (cat != ITEM_LIGHT_ARMOR && cat != ITEM_MEDIUM_ARMOR
+                        && cat != ITEM_HEAVY_ARMOR) {
+                        continue;
+                    }
+                    worn = 1;
+                }
+
+                base(&c, "Traits");
+                c.race_id = r;
+                add_class_at(&c, CLS_FIGHTER, 1, -1);
+                c.base_score[ABL_DEX] = DEXES[d];
+                c.base_score[ABL_STR] = 15;
+                c.item_count = 0;
+                if (worn) add_item(&c, a, 1, 1);
+
+                snprintf(what, sizeof what, "%s in %s at Dex %d",
+                         RACES[r].name, worn ? ITEMS[a].name : "nothing",
+                         DEXES[d]);
+
+                /* The Armor Class, worked out a second way. */
+                if (worn) {
+                    want = ITEMS[a].base_ac
+                         + dex_through(ITEMS[a].dex_cap,
+                                       ability_mod(&c, ABL_DEX));
+                } else {
+                    want = 10 + ability_mod(&c, ABL_DEX);
+                }
+                if (RACES[r].natural_ac) {
+                    int nat = RACES[r].natural_ac;
+                    if (RACES[r].natural_ac_dex) {
+                        nat += ability_mod(&c, ABL_DEX);
+                    }
+                    if (nat > want) want = nat;
+                }
+                got = armour_class(&c);
+                if (got != want) {
+                    char why[128];
+                    snprintf(why, sizeof why,
+                             "armour class %d where the tables give %d",
+                             got, want);
+                    fail(what, why);
+                }
+
+                /* The carrying capacity, likewise. */
+                want = ability_score(&c, ABL_STR) * 15;
+                if (RACES[r].powerful_build) want *= 2;
+                if (carrying_capacity(&c) != want) {
+                    fail(what, "the wrong carrying capacity");
+                }
+
+                /* And the unarmed strike says what the race's own weapon
+                   says, whatever else is being carried. */
+                {
+                    Attack at[24];
+                    int n = attacks_of(&c, at, 24), k, seen = 0;
+                    for (k = 0; k < n; k++) {
+                        if (strcmp(at[k].name, "Unarmed strike")) continue;
+                        seen = 1;
+                        if (RACES[r].natural_weapon[0]) {
+                            char die[16];
+                            const char *sp =
+                                strchr(RACES[r].natural_weapon, ' ');
+                            size_t dn = sp ? (size_t)(sp
+                                       - RACES[r].natural_weapon) : 0;
+                            if (dn && dn < sizeof die) {
+                                memcpy(die, RACES[r].natural_weapon, dn);
+                                die[dn] = '\0';
+                                if (strncmp(at[k].damage, die, dn) != 0) {
+                                    fail(what, "an unarmed strike that is "
+                                               "not the race's own weapon");
+                                }
+                            }
+                        }
+                    }
+                    if (!seen) fail(what, "no unarmed strike at all");
+                }
+
+                measure(&c, what);
+            }
+        }
+    }
+}
+
 static void sweep_weapon_proficiency(void)
 {
     static const int LEVELS[] = { 1, 5, 20 };
@@ -1255,6 +1380,7 @@ int main(int argc, char **argv)
     sweep_carried_but_unused();
     sweep_sidekicks();
     sweep_armour_and_dex();
+    sweep_race_traits();
     sweep_weapon_proficiency();
     sweep_at_the_limits();
     sweep_settings();

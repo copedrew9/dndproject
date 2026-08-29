@@ -119,7 +119,10 @@ static void dump_character(void)
     head(f, "RACE", "name | book | STR | DEX | CON | INT | WIS | CHA | "
                     "speed | size | darkvision | languages | extra_languages "
                     "| extra_skills | choice_asi_count | choice_asi_amount | "
-                    "bonus_feats | has_ancestry | origin_choice | traits");
+                    "bonus_feats | has_ancestry | origin_choice | traits | "
+                    "natural_ac | natural_ac_dex | powerful_build | "
+                    "natural_weapon | fixed_skills | choice_skill_count | "
+                    "choice_skills");
     for (i = 0; i < RACE_COUNT; i++) {
         const RaceData *r = &RACES[i];
         rec(f, "RACE");
@@ -138,6 +141,13 @@ static void dump_character(void)
         num(f, r->has_ancestry);
         num(f, r->origin_choice);
         field(f, r->traits);
+        num(f, r->natural_ac);
+        num(f, r->natural_ac_dex);
+        num(f, r->powerful_build);
+        field(f, r->natural_weapon);
+        field(f, r->fixed_skills);
+        num(f, r->choice_skill_count);
+        field(f, r->choice_skills);
         end(f);
     }
 
@@ -261,6 +271,7 @@ static void dump_character(void)
         }
     }
     progression(f, "third-caster cantrips", THIRD_CANTRIPS);
+    progression(f, "arcane trickster cantrips", TRICKSTER_CANTRIPS);
     progression(f, "third-caster spells known", THIRD_SPELLS_KNOWN);
     progression(f, "infusions known", INFUSIONS_KNOWN);
     progression(f, "infused items", INFUSED_ITEMS);
@@ -291,7 +302,7 @@ static void dump_character(void)
     }
 
     head(f, "SUBCLASS", "class | name | book | summary | bonus_spells | "
-                        "option_label | options");
+                        "option_label | options | grants");
     for (i = 0; i < SUBCLASS_COUNT; i++) {
         const SubclassData *s = &SUBCLASSES[i];
         rec(f, "SUBCLASS");
@@ -302,6 +313,7 @@ static void dump_character(void)
         field(f, s->bonus_spells);
         field(f, s->option_label);
         field(f, s->options);
+        field(f, s->grants);
         end(f);
     }
 

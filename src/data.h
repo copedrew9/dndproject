@@ -69,6 +69,17 @@ typedef struct {
        origins setting says. Appended last so the older rows, which leave it
        out, are zero-filled. */
     int origin_choice;
+    /* What a race's traits promise that a number has to honour. All of
+       these were prose on the sheet and nothing else: the trait was
+       printed, and the Armor Class, the skill list, the carrying capacity
+       and the unarmed strike went on as though it were not there. */
+    int natural_ac;             /* unarmoured base AC; 0 = none */
+    int natural_ac_dex;         /* whether Dexterity is added to it */
+    int powerful_build;         /* counts as one size larger to carry */
+    const char *natural_weapon; /* "1d6 slashing"; "" = ordinary fists */
+    const char *fixed_skills;   /* comma separated, always proficient */
+    int choice_skill_count;     /* how many to choose from the next */
+    const char *choice_skills;  /* comma separated, "" = none */
 } RaceData;
 
 typedef struct {
@@ -183,6 +194,12 @@ typedef struct {
     /* Some subclasses carry a further choice (totem animal, land terrain). */
     const char *option_label;
     const char *options;        /* '|' separated, "" when none */
+    /* Armour, weapons and tools the subclass makes you proficient with,
+       comma separated, "" when none. These were a hard-coded list of six
+       in progression.c while thirteen subclasses printed the promise on
+       the sheet, so seven of them left the proficiency ungranted -- and an
+       attack with a martial weapon short its proficiency bonus. */
+    const char *grants;
 } SubclassData;
 
 typedef struct {
@@ -255,6 +272,11 @@ extern const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1];
 
 /* Eldritch Knight / Arcane Trickster progressions. */
 extern const unsigned char *const THIRD_CANTRIPS;
+/* The Eldritch Knight learns two cantrips and a third at 10th; the Arcane
+   Trickster learns three -- mage hand and two more -- and a fourth at
+   10th. They shared one row, so every Arcane Trickster was a cantrip
+   short at every level. */
+extern const unsigned char *const TRICKSTER_CANTRIPS;
 extern const unsigned char *const THIRD_SPELLS_KNOWN;
 
 /* The experience needed for each character level (PHB p.15). Indexed by

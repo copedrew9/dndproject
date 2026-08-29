@@ -699,10 +699,56 @@ static void choose_race(Character *c)
         while ((piece = next_csv(&cursor)) != NULL) add_language(c, piece);
     }
 
-    /* Fixed racial proficiencies that the traits text describes. */
-    if (strcmp(RACES[pick].name, "Elf") == 0) c->skill_prof[SKL_PERCEPTION] = 1;
-    if (strcmp(RACES[pick].name, "Half-Orc") == 0) {
-        c->skill_prof[SKL_INTIMIDATION] = 1;
+    /* The skills a race's traits promise.
+     *
+     * These were prose and nothing else for every race but the elf and the
+     * half-orc, which were the two written out by hand here. Fourteen more
+     * printed "proficiency in Perception" on the sheet and left Perception
+     * unproficient, so the modifier and the passive Perception were both
+     * short. They come off the row now, so a race added to data/ brings its
+     * skills with it. */
+    {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", RACES[pick].fixed_skills);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            int sk;
+            if (!*piece) continue;
+            sk = skill_by_name(piece);
+            if (sk >= 0) c->skill_prof[sk] = 1;
+        }
+    }
+    /* And the ones it offers a choice of: "proficiency in two of Animal
+       Handling, Medicine, Nature, Perception, Stealth or Survival". */
+    if (RACES[pick].choice_skill_count > 0
+        && RACES[pick].choice_skills[0]) {
+        const char *opts[SKL_COUNT];
+        static char names[SKL_COUNT][MAX_NAME];
+        int map[SKL_COUNT], n = 0, picks[SKL_COUNT], got, k;
+        char buf[256], *cursor = buf, *piece;
+
+        snprintf(buf, sizeof buf, "%s", RACES[pick].choice_skills);
+        while ((piece = next_csv(&cursor)) != NULL && n < SKL_COUNT) {
+            int sk;
+            if (!*piece) continue;
+            sk = skill_by_name(piece);
+            if (sk < 0 || c->skill_prof[sk]) continue;
+            snprintf(names[n], sizeof names[n], "%s", SKILL_NAME[sk]);
+            opts[n] = names[n];
+            map[n] = sk;
+            n++;
+        }
+        if (n > 0) {
+            char prompt[96];
+            int want = RACES[pick].choice_skill_count;
+            if (want > n) want = n;
+            snprintf(prompt, sizeof prompt,
+                     "%s: choose %d skill%s:", RACES[pick].name, want,
+                     want == 1 ? "" : "s");
+            got = ui_multi(prompt, opts, NULL, n, want, picks);
+            for (k = 0; k < got; k++) {
+                if (picks[k] >= 0) c->skill_prof[map[picks[k]]] = 1;
+            }
+        }
     }
     if (c->subrace_id >= 0) {
         const char *sn = SUBRACES[c->subrace_id].name;

@@ -3457,6 +3457,178 @@ static void test_sheet_numbers_the_audit_found(void)
     check(i < SUBRACE_COUNT, "a subrace with more than one trait", 1, 1);
 }
 
+/* Eight things a race's or a subclass's own text promised and no number
+   honoured. Each was printed on the sheet as a trait or a feature and then
+   ignored by the thing it was about. */
+static void test_traits_the_numbers_ignored(void)
+{
+    Character c;
+    int i;
+
+    printf("traits the numbers used to ignore\n");
+
+    /* Natural armour. A tortle's shell is AC 17 whatever its Dexterity and
+       whatever it wears; a lizardfolk's is 13 + Dexterity. */
+    {
+        static const struct { const char *race; int dex; int want; } AC[] = {
+            { "Tortle", 8, 17 }, { "Tortle", 18, 17 },
+            { "Lizardfolk", 16, 16 }, { "Lizardfolk", 8, 12 },
+            { "Human", 16, 13 },
+        };
+        size_t k;
+        for (k = 0; k < sizeof AC / sizeof AC[0]; k++) {
+            int at = find_race(AC[k].race);
+            if (at < 0) continue;
+            plain_fighter(&c, "SelftestHide");
+            c.race_id = at;
+            c.item_count = 0;
+            c.base_score[ABL_DEX] = AC[k].dex;
+            check(armour_class(&c) == AC[k].want, AC[k].race,
+                  armour_class(&c), AC[k].want);
+        }
+    }
+
+    /* Powerful Build doubles what you can carry. */
+    {
+        int at = find_race("Goliath");
+        if (at >= 0) {
+            plain_fighter(&c, "SelftestCarry");
+            c.race_id = at;
+            c.base_score[ABL_STR] = 15;
+            EQ(carrying_capacity(&c), 450, "a goliath carries double");
+        }
+        plain_fighter(&c, "SelftestCarry");
+        c.race_id = find_race("Human");
+        c.base_score[ABL_STR] = 15;
+        EQ(carrying_capacity(&c), 225, "and a human does not");
+    }
+
+    /* Claws, horns and hooves replace the fist. */
+    {
+        static const struct { const char *race; const char *want; } NW[] = {
+            { "Tortle", "1d6+3 slashing" },
+            { "Minotaur", "1d6+3 piercing" },
+            { "Centaur", "1d6+3 bludgeoning" },
+            { "Human", "4 bludgeoning" },
+        };
+        size_t k;
+        for (k = 0; k < sizeof NW / sizeof NW[0]; k++) {
+            Attack a[16];
+            int n, at = find_race(NW[k].race), found = 0;
+            if (at < 0) continue;
+            plain_fighter(&c, "SelftestFist");
+            c.race_id = at;
+            c.item_count = 0;
+            c.base_score[ABL_STR] = 16;
+            n = attacks_of(&c, a, 16);
+            for (i = 0; i < n; i++) {
+                if (strcmp(a[i].name, "Unarmed strike")) continue;
+                found = 1;
+                check(!strcmp(a[i].damage, NW[k].want), NW[k].race, 1, 1);
+                if (strcmp(a[i].damage, NW[k].want)) {
+                    printf("      got %s, want %s\n", a[i].damage,
+                           NW[k].want);
+                }
+            }
+            check(found, "an unarmed strike is listed", found, 1);
+        }
+    }
+
+    /* Every race whose traits promise a skill has it, and the skills it
+       promises are real ones. */
+    for (i = 0; i < RACE_COUNT; i++) {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", RACES[i].fixed_skills);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (skill_by_name(piece) < 0) {
+                printf("  FAIL %s is proficient in \"%s\", which is no "
+                       "skill\n", RACES[i].name, piece);
+                failures++;
+            }
+        }
+        snprintf(buf, sizeof buf, "%s", RACES[i].choice_skills);
+        cursor = buf;
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (skill_by_name(piece) < 0) {
+                printf("  FAIL %s offers \"%s\", which is no skill\n",
+                       RACES[i].name, piece);
+                failures++;
+            }
+        }
+        if (RACES[i].choice_skill_count && !RACES[i].choice_skills[0]) {
+            printf("  FAIL %s chooses %d skills from nothing\n",
+                   RACES[i].name, RACES[i].choice_skill_count);
+            failures++;
+        }
+    }
+    check(find_race("Elf") >= 0
+          && strstr(RACES[find_race("Elf")].fixed_skills, "Perception")
+              != NULL, "an elf is proficient in Perception", 1, 1);
+    check(find_race("Tabaxi") < 0
+          || strstr(RACES[find_race("Tabaxi")].fixed_skills, "Stealth")
+              != NULL, "a tabaxi in Stealth", 1, 1);
+
+    /* Every proficiency a subclass grants is a real one. */
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", SUBCLASSES[i].grants);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (strstr(piece, "tools") || strstr(piece, "kit")) {
+                if (find_item(piece) < 0) {
+                    printf("  FAIL %s grants \"%s\", which is no tool\n",
+                           SUBCLASSES[i].name, piece);
+                    failures++;
+                }
+            }
+        }
+    }
+    {
+        int at = -1;
+        for (i = 0; i < SUBCLASS_COUNT; i++) {
+            if (!strcmp(SUBCLASSES[i].name, "Battle Smith")) at = i;
+        }
+        check(at >= 0 && strstr(SUBCLASSES[at].grants, "Martial weapons")
+                  != NULL,
+              "a battle smith is proficient with martial weapons", 1, 1);
+    }
+
+    /* The two third casters do not learn the same number of cantrips: the
+       Arcane Trickster's three include mage hand. Asked of a character, so
+       that the table AND the code that chooses between the two tables are
+       both covered -- checking the rows alone passes even when the code
+       reads the wrong one. */
+    {
+        static const struct { const char *sub; int cls; int lvl; int want; }
+        CANTRIPS[] = {
+            { "Eldritch Knight",  CLS_FIGHTER, 3,  2 },
+            { "Eldritch Knight",  CLS_FIGHTER, 9,  2 },
+            { "Eldritch Knight",  CLS_FIGHTER, 10, 3 },
+            { "Eldritch Knight",  CLS_FIGHTER, 20, 3 },
+            { "Arcane Trickster", CLS_ROGUE,   3,  3 },
+            { "Arcane Trickster", CLS_ROGUE,   9,  3 },
+            { "Arcane Trickster", CLS_ROGUE,   10, 4 },
+            { "Arcane Trickster", CLS_ROGUE,   20, 4 },
+        };
+        size_t k;
+        for (k = 0; k < sizeof CANTRIPS / sizeof CANTRIPS[0]; k++) {
+            int at = -1, got;
+            for (i = 0; i < SUBCLASS_COUNT; i++) {
+                if (!strcmp(SUBCLASSES[i].name, CANTRIPS[k].sub)) at = i;
+            }
+            if (at < 0) continue;
+            reset(&c);
+            c.race_id = 0;
+            add_class(&c, CANTRIPS[k].cls, CANTRIPS[k].lvl, at);
+            got = known_spell_count(&c, CANTRIPS[k].cls, 1);
+            check(got == CANTRIPS[k].want, CANTRIPS[k].sub, got,
+                  CANTRIPS[k].want);
+        }
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3688,6 +3860,7 @@ int main(void)
     test_patron_widens_rather_than_grants();
     test_packs_unpack();
     test_sheet_numbers_the_audit_found();
+    test_traits_the_numbers_ignored();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

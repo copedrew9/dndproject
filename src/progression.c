@@ -132,7 +132,11 @@ int known_spell_count(const Character *c, int class_id, int cantrips)
     sub = c->classes[slot].subclass_id;
 
     if (is_third_caster(sub)) {
-        return cantrips ? THIRD_CANTRIPS[lvl] : THIRD_SPELLS_KNOWN[lvl];
+        if (!cantrips) return THIRD_SPELLS_KNOWN[lvl];
+        /* The two third casters do not learn the same number of cantrips:
+           the Arcane Trickster's three include mage hand. */
+        return subclass_is(sub, "Arcane Trickster")
+             ? TRICKSTER_CANTRIPS[lvl] : THIRD_CANTRIPS[lvl];
     }
     if (cantrips) {
         return CLASSES[class_id].cantrips_known
@@ -451,28 +455,31 @@ void choose_subclass_for(Character *c, int slot)
         }
     }
 
-    /* Subclass proficiency grants. */
+    /* What the subclass makes you proficient with.
+     *
+     * This was six subclasses written out by hand while thirteen print the
+     * promise in their feature text, so seven of them -- the Hexblade, the
+     * Armorer, the Battle Smith, the Artillerist, the Forge Domain, the
+     * College of Swords and the Bladesinger -- said "gain proficiency with
+     * martial weapons" on the sheet and left the attack bonus short. It
+     * comes off the row now, so a subclass added to data/ brings its
+     * proficiencies with it. */
     {
         int sub = c->classes[slot].subclass_id;
-        if (subclass_is(sub, "College of Valor")) {
-            add_prof(c, "Medium armor");
-            add_prof(c, "Shields");
-            add_prof(c, "Martial weapons");
-        }
-        /* Life, Nature, Tempest and War domains grant heavy armour; the
-           latter two also grant martial weapons. */
-        if (strcmp(SUBCLASSES[sub].name, "Life Domain") == 0
-            || strcmp(SUBCLASSES[sub].name, "Nature Domain") == 0) {
-            add_prof(c, "Heavy armor");
-        }
-        if (strcmp(SUBCLASSES[sub].name, "Tempest Domain") == 0
-            || strcmp(SUBCLASSES[sub].name, "War Domain") == 0) {
-            add_prof(c, "Heavy armor");
-            add_prof(c, "Martial weapons");
-        }
-        if (strcmp(SUBCLASSES[sub].name, "Assassin") == 0) {
-            add_tool(c, "Disguise kit");
-            add_tool(c, "Poisoner's kit");
+        char buf[256], *cursor = buf, *piece;
+
+        snprintf(buf, sizeof buf, "%s", SUBCLASSES[sub].grants);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            /* A kit or a set of tools is a tool; everything else -- armour,
+               a shield, a weapon, a skill -- is a proficiency. */
+            if (strstr(piece, "tools") || strstr(piece, "kit")) {
+                add_tool(c, piece);
+            } else {
+                int sk = skill_by_name(piece);
+                if (sk >= 0) c->skill_prof[sk] = 1;
+                else add_prof(c, piece);
+            }
         }
     }
 
