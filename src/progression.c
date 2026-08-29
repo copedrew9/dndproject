@@ -2,6 +2,7 @@
 #include "build.h"
 #include "ui.h"
 #include "data_spells.h"
+#include "reference.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -880,8 +881,12 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 {
     const char *extra = choosable_extras(c, class_id);
     const char *opts[400];
-    const char *det[400];
+    const char *info[400];
     static char lines[400][160];
+    /* The whole of each spell, for "N info". Static because it is far too
+       much to put on the stack, and because the menu holds pointers into
+       it for as long as the prompt is on screen. */
+    static char detail[400][SPELL_INFO_LEN];
     int map[400], n = 0, i, taken = 0;
 
     for (i = 0; i < SPELL_COUNT && n < 400; i++) {
@@ -894,7 +899,8 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
                  SPELLS[i].name, SCHOOL_NAMES[SPELLS[i].school],
                  SPELLS[i].ritual ? ", ritual" : "");
         opts[n] = lines[n];
-        det[n] = NULL;
+        spell_summary(i, detail[n], sizeof detail[n]);
+        info[n] = detail[n];
         map[n] = i;
         n++;
     }
@@ -911,7 +917,10 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
         if (n == 0) break;              /* cannot happen; cheap to be sure */
         snprintf(prompt, sizeof prompt, "  Choose %s %d of %d (level %d):",
                  what, taken + 1, want, level);
-        pick = ui_menu(prompt, opts, det, n);
+        /* The details array stays empty and the summaries go in as the
+           info list: a paragraph under all three hundred lines would bury
+           the menu, but "N info" prints the one that was asked about. */
+        pick = ui_menu_info(prompt, opts, NULL, n, info);
 
         add_spell(c, map[pick], class_id, 1, 0);
         printf("    Added %s -- %s, %s, %s, %s\n",
@@ -929,7 +938,7 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
            guessing game about which numbers had moved. */
         for (k = pick; k + 1 < n; k++) {
             opts[k] = opts[k + 1];
-            det[k]  = det[k + 1];
+            info[k] = info[k + 1];
             map[k]  = map[k + 1];
         }
         n--;
@@ -1079,8 +1088,10 @@ static void forget_spell(Character *c, int at)
 static void offer_spell_swap(Character *c, int class_id)
 {
     const ClassData *cd = &CLASSES[class_id];
-    const char *opts[MAX_SPELLS];
+    const char *opts[MAX_SPELLS + 1];
+    const char *info[MAX_SPELLS + 1];
     static char lines[MAX_SPELLS][120];
+    static char detail[MAX_SPELLS][SPELL_INFO_LEN];
     int map[MAX_SPELLS], n = 0, i, slot, bit, maxlvl, pick;
 
     slot = find_class_slot(c, class_id);
@@ -1110,6 +1121,8 @@ static void offer_spell_swap(Character *c, int class_id)
                  SPELLS[c->spells[i].spell_id].name,
                  SPELLS[c->spells[i].spell_id].level);
         opts[n] = lines[n];
+        spell_summary(c->spells[i].spell_id, detail[n], sizeof detail[n]);
+        info[n] = detail[n];
         map[n] = i;
         n++;
     }
@@ -1122,7 +1135,8 @@ static void offer_spell_swap(Character *c, int class_id)
     if (!ui_yesno("  Swap one out?", 0)) return;
 
     opts[n] = "Change my mind";
-    pick = ui_menu("  Replace which spell?", opts, NULL, n + 1);
+    info[n] = NULL;
+    pick = ui_menu_info("  Replace which spell?", opts, NULL, n + 1, info);
     if (pick == n) return;
 
     {
@@ -1186,7 +1200,9 @@ static void mark_prepared(Character *c, int class_id)
 
     for (lvl = 1; lvl <= maxlvl; lvl++) {
         const char *opts[64];
+        const char *info[64];
         static char lines[64][120];
+        static char detail[64][SPELL_INFO_LEN];
         int flags[64], map[64], n = 0, i;
         char prompt[96];
 
@@ -1197,6 +1213,9 @@ static void mark_prepared(Character *c, int class_id)
             snprintf(lines[n], sizeof lines[n], "%s",
                      SPELLS[c->spells[i].spell_id].name);
             opts[n] = lines[n];
+            spell_summary(c->spells[i].spell_id, detail[n],
+                          sizeof detail[n]);
+            info[n] = detail[n];
             flags[n] = c->spells[i].prepared;
             map[n] = i;
             n++;
@@ -1206,7 +1225,7 @@ static void mark_prepared(Character *c, int class_id)
         snprintf(prompt, sizeof prompt,
                  "  Level %d -- prepared today (%d of %d used):",
                  lvl, spells_marked_prepared(c, class_id), allowed);
-        ui_toggle_list(prompt, opts, n, flags);
+        ui_toggle_list_info(prompt, opts, n, flags, info);
         for (i = 0; i < n; i++) c->spells[map[i]].prepared = flags[i];
     }
 
@@ -1481,7 +1500,9 @@ static void pick_feat_spell(Character *c, const char *prompt, int level,
                             unsigned class_mask, unsigned school_mask)
 {
     const char *opts[256];
+    const char *info[256];
     static char labels[256][96];
+    static char detail[256][SPELL_INFO_LEN];
     int map[256], n = 0, i;
     char answer[MAX_TEXT];
 
@@ -1494,6 +1515,8 @@ static void pick_feat_spell(Character *c, const char *prompt, int level,
         snprintf(labels[n], sizeof labels[n], "%s (%s)", SPELLS[i].name,
                  SCHOOL_NAMES[SPELLS[i].school]);
         opts[n] = labels[n];
+        spell_summary(i, detail[n], sizeof detail[n]);
+        info[n] = detail[n];
         map[n] = i;
         n++;
     }
@@ -1501,8 +1524,9 @@ static void pick_feat_spell(Character *c, const char *prompt, int level,
         printf("    Nothing is left for you to learn there.\n");
         return;
     }
-    i = ui_menu_custom(prompt, opts, NULL, n, "Another spell (type it in)",
-                       answer, sizeof answer);
+    i = ui_menu_custom_info(prompt, opts, NULL, n,
+                            "Another spell (type it in)",
+                            answer, sizeof answer, info);
     if (i >= 0) {
         add_spell(c, map[i], -1, 1, 1);
         printf("    You learn %s.\n", SPELLS[map[i]].name);

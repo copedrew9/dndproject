@@ -105,6 +105,15 @@ const char *item_notes(const char *name)
     return NULL;
 }
 
+const char *spell_notes(const char *name)
+{
+    int i;
+    for (i = 0; i < SPELL_NOTE_COUNT; i++) {
+        if (same_fold(SPELL_NOTES[i].spell, name)) return SPELL_NOTES[i].text;
+    }
+    return NULL;
+}
+
 int find_magic_item(const char *name)
 {
     int i;

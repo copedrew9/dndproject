@@ -694,6 +694,14 @@ static void dump_spells(void)
         end(f);
     }
 
+    head(f, "SPELLTEXT", "spell | what casting it does");
+    for (i = 0; i < SPELL_NOTE_COUNT; i++) {
+        rec(f, "SPELLTEXT");
+        field(f, SPELL_NOTES[i].spell);
+        field(f, SPELL_NOTES[i].text);
+        end(f);
+    }
+
     fclose(f);
 }
 

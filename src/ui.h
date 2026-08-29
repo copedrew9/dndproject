@@ -114,10 +114,24 @@ int  ui_menu_custom(const char *prompt, const char *const *options,
                     const char *const *details, int count,
                     const char *custom_label, char *out, size_t n);
 
+/* The same again with a separate array of longer answers to "N info", for a
+   menu whose entries have more to say than fits on their line. A spell is
+   the case that wanted it: the line is a name and a school, and the answer
+   to "N info" is the whole spell. */
+int  ui_menu_custom_info(const char *prompt, const char *const *options,
+                         const char *const *details, int count,
+                         const char *custom_label, char *out, size_t n,
+                         const char *const *info);
+
 /* Checkboxes: toggle entries on and off until done. flags[] is both the
    starting state and the answer; returns how many ended up set. */
 int  ui_toggle_list(const char *prompt, const char *const *options,
                     int count, int *flags);
+
+/* Checkboxes that answer "N info" as well, info[i] going with options[i].
+   The Done entry has nothing to say about itself. */
+int  ui_toggle_list_info(const char *prompt, const char *const *options,
+                         int count, int *flags, const char *const *info);
 
 /* Case-insensitive substring test; returns 1 when needle is empty. */
 int  contains_ci(const char *haystack, const char *needle);

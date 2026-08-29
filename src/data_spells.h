@@ -55,4 +55,25 @@ extern const SpellData BOOK_SPELLS[];
 extern const int BOOK_SPELL_COUNT;
 extern const char *const SCHOOL_NAMES[SCHOOL_COUNT];
 
+/* What a spell actually does, in a sentence or two.
+ *
+ * The spell row carries the numbers a sheet needs -- level, school, range,
+ * duration -- and none of what a player choosing between two of them wants
+ * to know, which is what happens when it is cast. So the prose is held
+ * beside the row rather than in it, the way an item's note is: the row
+ * stays a fixed set of fields, and the description is looked up by name so
+ * that a spell the DM adds simply has none.
+ *
+ * The words are the project's own, written from the rules, not the book's. */
+typedef struct {
+    const char *spell;
+    const char *text;
+} SpellNote;
+
+extern const SpellNote SPELL_NOTES[];
+extern const int SPELL_NOTE_COUNT;
+
+/* The description for a spell, or NULL when there is none. */
+const char *spell_notes(const char *name);
+
 #endif

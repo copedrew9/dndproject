@@ -13,6 +13,7 @@
 #include "dnd.h"
 #include "data.h"
 #include "data_spells.h"
+#include "reference.h"
 #include "sidekick.h"
 #include "saveload.h"
 #include "ui.h"
@@ -216,7 +217,9 @@ static void pick_sidekick_spells(Sidekick *sk)
     while (have_cantrips < want_cantrips || have_spells < want_spells) {
         int cantrip = have_cantrips < want_cantrips;
         const char *opts[256];
+        const char *info[256];
         static char labels[256][96];
+        static char detail[256][SPELL_INFO_LEN];
         int map[256], n = 0, pick, k;
 
         for (i = 0; i < SPELL_COUNT && n < 256; i++) {
@@ -234,13 +237,16 @@ static void pick_sidekick_spells(Sidekick *sk)
             snprintf(labels[n], sizeof labels[n], "%-30s %s", SPELLS[i].name,
                      SCHOOL_NAMES[SPELLS[i].school]);
             opts[n] = labels[n];
+            spell_summary(i, detail[n], sizeof detail[n]);
+            info[n] = detail[n];
             map[n] = i;
             n++;
         }
         if (n == 0) break;
 
-        pick = ui_menu(cantrip ? "  Choose a cantrip:" : "  Choose a spell:",
-                       opts, NULL, n);
+        pick = ui_menu_info(cantrip ? "  Choose a cantrip:"
+                                    : "  Choose a spell:",
+                            opts, NULL, n, info);
         if (sk->spell_count >= (int)(sizeof sk->spells / sizeof sk->spells[0]))
             break;
         sk->spells[sk->spell_count++] = map[pick];

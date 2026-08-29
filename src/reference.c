@@ -10,6 +10,7 @@
  */
 #include "dnd.h"
 #include "data.h"
+#include "data_spells.h"
 #include "reference.h"
 #include "ui.h"
 
@@ -25,6 +26,88 @@ const char *const CATEGORY_LABEL[] = {
 };
 
 /* ------------------------------------------------------------ formatting */
+
+/* Everything about a spell, for the player deciding whether to take it.
+ *
+ * A spell menu could only ever show a name and a school on its line, which
+ * is not enough to choose between two of them: what a spell does, how long
+ * it takes to cast, what it costs in components and concentration, and
+ * whether it can be cast as a ritual all decide the choice, and none of it
+ * was anywhere on the screen. This assembles the lot into the paragraph
+ * that "N info" prints, and every menu that offers a spell passes it.
+ *
+ * Newlines are kept: ui_wrap honours them, so the fields stay on their own
+ * lines however narrow the terminal is.
+ */
+void spell_summary(int spell_id, char *out, size_t n)
+{
+    static const char *const ORDINAL[] = {
+        "", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"
+    };
+    const SpellData *s;
+    const char *text;
+    char school[32], level[48], classes[192];
+    size_t i, used = 0;
+    int k;
+
+    if (!n) return;
+    out[0] = '\0';
+    if (spell_id < 0 || spell_id >= SPELL_COUNT) return;
+    s = &SPELLS[spell_id];
+
+    /* "Evocation" reads as a heading; "3rd-level evocation" reads as a
+       description of the spell, which is what this is. */
+    for (i = 0; s->school < SCHOOL_COUNT && SCHOOL_NAMES[s->school][i]
+                && i + 1 < sizeof school; i++) {
+        int ch = (unsigned char)SCHOOL_NAMES[s->school][i];
+        school[i] = (char)(ch >= 'A' && ch <= 'Z' ? ch + 32 : ch);
+    }
+    school[i] = '\0';
+    if (s->level == 0) {
+        snprintf(level, sizeof level, "%s cantrip", school);
+    } else {
+        snprintf(level, sizeof level, "%s-level %s",
+                 ORDINAL[s->level <= 9 ? s->level : 9], school);
+    }
+
+    /* The class list with spaces after the commas: the data file writes
+       "bard,cleric" because it is a field, and this is a sentence. */
+    classes[0] = '\0';
+    for (k = 0; k < SPELL_CLASS_NAME_COUNT; k++) {
+        size_t len;
+        if (!(s->classes & (1u << k))) continue;
+        len = strlen(SPELL_CLASS_NAME[k]);
+        if (used + len + (used ? 2 : 0) + 1 > sizeof classes) break;
+        if (used) { classes[used++] = ','; classes[used++] = ' '; }
+        memcpy(classes + used, SPELL_CLASS_NAME[k], len);
+        used += len;
+        classes[used] = '\0';
+    }
+    if (!used) snprintf(classes, sizeof classes, "none by list");
+
+    text = spell_notes(s->name);
+    snprintf(out, n,
+             "%s -- %s (%s).\n"
+             "Casting time: %s. Range: %s. Duration: %s.\n"
+             "Components: %s.\n"
+             "%s %s\n"
+             "On the spell list of: %s.%s%s",
+             s->name, level,
+             /* The homebrew row's name explains what homebrew is, which is
+                right on the books menu and wrong in a spell's first line. */
+             s->book == BOOK_HOMEBREW ? "Homebrew"
+                 : s->book < BOOK_COUNT ? BOOK_NAME[s->book]
+                                        : "an unknown book",
+             s->casting_time, s->range, s->duration, s->components,
+             s->ritual ? "Can be cast as a ritual."
+                       : "Cannot be cast as a ritual.",
+             s->concentration ? "Requires concentration."
+                              : "Needs no concentration.",
+             classes,
+             text && text[0] ? "\n" : "",
+             text && text[0] ? text : "");
+}
+
 
 /* A price in the largest coins that divide it, and in all of them when
  * none does.
