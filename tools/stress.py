@@ -201,8 +201,8 @@ class Session:
         # past what this knows about are covered by --tour, which walks
         # every screen in turn.
         pick = self.rng.choices(
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-            weights=[2, 4, 4, 2, 3, 2, 4, 3, 4, 3])[0]
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+            weights=[2, 4, 4, 2, 3, 2, 4, 3, 4, 3, 3])[0]
         return pick if int(pick) < size else "1"
 
     def text(self, prompt):

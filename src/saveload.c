@@ -89,7 +89,7 @@ static void warn_unknown(const char *kind, const char *name)
                     "current data; it was left out.\n", kind, name);
 }
 
-static void wrap_to(FILE *f, const char *text, int indent)
+void record_wrap(FILE *f, const char *text, int indent)
 {
     const int width = 76;
     int col = 0;
@@ -576,8 +576,8 @@ static void write_sheet(FILE *f, const Character *c)
                 fprintf(f, "    %s, %s%s%s\n", m->type, m->rarity,
                         m->attunement ? " -- " : "",
                         m->attunement ? m->attunement : "");
-                wrap_to(f, m->text, 4);
-                if (m->curse && !e->curse_hidden) wrap_to(f, m->curse, 4);
+                record_wrap(f, m->text, 4);
+                if (m->curse && !e->curse_hidden) record_wrap(f, m->curse, 4);
             }
         }
     }
@@ -600,11 +600,11 @@ static void write_sheet(FILE *f, const Character *c)
     if (c->flaw[0])       fprintf(f, "  Flaw:   %s\n", c->flaw);
     if (c->appearance[0]) {
         fprintf(f, "\n  Appearance:\n");
-        wrap_to(f, c->appearance, 4);
+        record_wrap(f, c->appearance, 4);
     }
     if (c->backstory[0]) {
         fprintf(f, "\n  Backstory:\n");
-        wrap_to(f, c->backstory, 4);
+        record_wrap(f, c->backstory, 4);
     }
 
     if (c->note_count) {
@@ -624,7 +624,7 @@ static void write_sheet(FILE *f, const Character *c)
                 if (*p == '\n' || *p == '\0') {
                     int end = (*p == '\0');
                     *p = '\0';
-                    if (*start) wrap_to(f, start, 6);
+                    if (*start) record_wrap(f, start, 6);
                     else fprintf(f, "\n");
                     if (end) break;
                     start = p + 1;

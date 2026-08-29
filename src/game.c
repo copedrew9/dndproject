@@ -22,6 +22,7 @@
 #include "inventory.h"
 #include "reference.h"
 #include "saveload.h"
+#include "shop.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -429,15 +430,19 @@ static void track_resources(Character *c)
 
 /* Everything is counted in copper so that mixed change works out, and
    turned back into coins at the end. */
-static long purse_in_copper(const Character *c)
+long purse_in_copper(const Character *c)
 {
     return (long)c->copper + (long)c->silver * 10 + (long)c->electrum * 50
          + (long)c->gold * 100 + (long)c->platinum * 1000;
 }
 
-static void purse_from_copper(Character *c, long cp)
+void purse_from_copper(Character *c, long cp)
 {
     if (cp < 0) cp = 0;
+    /* Held to what the five fields of a saved sheet can hold. Every screen
+       that pays a character checks first and says so, so nothing reaches
+       here that would lose money quietly; this is the backstop. */
+    if (cp > MAX_PURSE_CP) cp = MAX_PURSE_CP;
     c->platinum = (int)(cp / 1000); cp %= 1000;
     c->gold     = (int)(cp / 100);  cp %= 100;
     c->electrum = (int)(cp / 50);   cp %= 50;
@@ -445,7 +450,7 @@ static void purse_from_copper(Character *c, long cp)
     c->copper   = (int)cp;
 }
 
-static void remember(Character *c, int copper, const char *what)
+void remember(Character *c, int copper, const char *what)
 {
     LedgerEntry *e;
     int i;
@@ -501,6 +506,11 @@ static void money(Character *c)
             char note[MAX_NAME];
 
             if (got == 0) break;
+            if (have + got > MAX_PURSE_CP) {
+                printf("  That is more coin than one character can carry "
+                       "about; put the rest somewhere safe.\n");
+                break;
+            }
             ui_line("  Where from (blank to leave it unsaid)", note,
                     sizeof note);
             purse_from_copper(c, have + got);
@@ -759,6 +769,7 @@ void game_mode(Character *c)
             "Uses of things",
             "Conditions",
             "Money",
+            "Visit a shop",
             "Food, drink and lodging",
             "Equipment",
             "Wear and repair",
@@ -767,7 +778,7 @@ void game_mode(Character *c)
         };
 
         vitals(c);
-        switch (ui_menu("  At the table:", what, NULL, 12)) {
+        switch (ui_menu("  At the table:", what, NULL, 13)) {
         case 0:  ui_header("Character Sheet"); print_sheet(c); break;
         case 1:  hurt_and_heal(c);      break;
         case 2:  take_a_rest(c);        break;
@@ -775,10 +786,11 @@ void game_mode(Character *c)
         case 4:  track_resources(c);    break;
         case 5:  set_conditions(c);     break;
         case 6:  money(c);              break;
-        case 7:  spend_at_the_inn(c);   break;
-        case 8:  manage_inventory(c);   break;
-        case 9:  wear_and_repair(c);    break;
-        case 10: edit_details(c);       break;
+        case 7:  shop_visit(c);         break;
+        case 8:  spend_at_the_inn(c);   break;
+        case 9:  manage_inventory(c);   break;
+        case 10: wear_and_repair(c);    break;
+        case 11: edit_details(c);       break;
         default: return;
         }
     }

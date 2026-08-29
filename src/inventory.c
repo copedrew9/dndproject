@@ -10,6 +10,7 @@
 #include "dnd.h"
 #include "data.h"
 #include "build.h"
+#include "game.h"
 #include "inventory.h"
 #include "reference.h"
 #include "ui.h"
@@ -489,6 +490,14 @@ static void sell_valuable(Character *c, int at)
     }
     if (many > 1) many = ui_int("  Sell how many", 1, v->quantity);
     cp = (long)v->value_cp * many;
+
+    /* A sheet holds each coin count in its own field, so a sale that would
+       not fit is refused rather than rounded down out of sight. */
+    if (purse_in_copper(c) + cp > MAX_PURSE_CP) {
+        printf("  You are already carrying all the coin you can; nobody "
+               "here can pay you for that.\n");
+        return;
+    }
 
     /* Paid in whatever coin divides it, biggest first, which is how a
        merchant would count it out. */

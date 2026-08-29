@@ -45,4 +45,10 @@ int  record_split(char *line, char **out, int max);
    atoi, which is itself undefined on a number too large to hold. */
 int  record_int(const char *field, int lo, int hi);
 
+/* The prose wrapper the readable half of these files is written with. It
+   breaks only at spaces and never rewrites the text, which is what lets
+   tools/roundtrip.py compare a sheet against itself. Shared with shop.c,
+   whose files are written the same way. */
+void record_wrap(FILE *f, const char *text, int indent);
+
 #endif /* SAVELOAD_H */

@@ -11,6 +11,7 @@
 #include "data_spells.h"
 #include "saveload.h"
 #include "homebrew.h"
+#include "shop.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -2792,6 +2793,172 @@ static void test_valuables(void)
     }
 }
 
+/* A shop is written and read like a character sheet, which means the same
+   two things have to hold: a name carrying the separator survives, and a
+   line naming something in the books is joined back up to the book when it
+   is read, so that buying one puts a real item in the inventory. */
+static void test_shop_file(void)
+{
+    static Shop s, back;
+    char path[MAX_SHOP_NAME + 8];
+    int mail = find_item("Chain mail");
+
+    printf("shops\n");
+
+    memset(&s, 0, sizeof s);
+    snprintf(s.name, sizeof s.name, "%s", "SelftestBell|Book\\Candle");
+    snprintf(s.keeper, sizeof s.keeper, "%s", "Ivrit the Younger");
+    snprintf(s.about, sizeof s.about, "%s",
+             "Smells of pitch. The owl is not for sale.");
+
+    s.line_count = 2;
+    snprintf(s.lines[0].name, sizeof s.lines[0].name, "%s", "Chain mail");
+    s.lines[0].from_book = 1;
+    s.lines[0].item_id = mail;
+    s.lines[0].category = ITEM_HEAVY_ARMOR;
+    s.lines[0].price_cp = 6000;         /* under the book's 75 gp */
+    s.lines[0].stock = 1;
+    snprintf(s.lines[0].note, sizeof s.lines[0].note, "%s",
+             "Off a dead man; ask no questions.");
+
+    snprintf(s.lines[1].name, sizeof s.lines[1].name, "%s",
+             "A map to the old mine");
+    s.lines[1].from_book = 0;
+    s.lines[1].item_id = -1;
+    s.lines[1].category = ITEM_GEAR;
+    s.lines[1].price_cp = 2500;
+    s.lines[1].stock = -1;
+
+    check(shop_save(&s, path, sizeof path) == 0, "shop written", 1, 1);
+    check(shop_load(path, &back) == 0, "and read back", 1, 1);
+
+    check(!strcmp(back.name, s.name), "the awkward name survives", 1, 1);
+    check(!strcmp(back.keeper, "Ivrit the Younger"), "the keeper", 1, 1);
+    check(!strcmp(back.about, s.about), "the line about the place", 1, 1);
+    EQ(back.line_count, 2, "both lines");
+
+    /* The price the DM set, not the book's. A shop that quietly restored
+       the book's price would undo the only reason to set one. */
+    EQ(back.lines[0].price_cp, 6000, "the DM's price, not the book's");
+    check(ITEMS[mail].cost_cp != 6000, "which is not what the book says",
+          1, 1);
+    EQ(back.lines[0].stock, 1, "one on the wall");
+    EQ(back.lines[0].item_id, mail, "joined back up to the book");
+    EQ(back.lines[0].from_book, 1, "and known to be from it");
+    check(!strcmp(back.lines[0].note, s.lines[0].note), "the note", 1, 1);
+
+    EQ(back.lines[1].stock, -1, "and as many maps as you like");
+    EQ(back.lines[1].from_book, 0, "the DM's own line is not in the book");
+    EQ(back.lines[1].item_id, -1, "and points at nothing");
+
+    /* A line of the DM's own named after something the books sell stays
+       the DM's, at the DM's price -- it is not quietly turned into the
+       book's item with the book's weight and entry. */
+    memset(&s.lines[1], 0, sizeof s.lines[1]);
+    snprintf(s.lines[1].name, sizeof s.lines[1].name, "%s", "Chain mail");
+    s.lines[1].from_book = 0;
+    s.lines[1].item_id = -1;
+    s.lines[1].price_cp = 300;
+    s.lines[1].stock = -1;
+    check(shop_save(&s, path, sizeof path) == 0, "shop written again", 1, 1);
+    check(shop_load(path, &back) == 0, "and read back again", 1, 1);
+    EQ(back.lines[1].from_book, 0, "a namesake line stays the DM's own");
+    EQ(back.lines[1].item_id, -1, "and still points at nothing");
+    EQ(back.lines[1].price_cp, 300, "at the price the DM set");
+
+    /* The longest record the writer can produce, every field full and every
+       character one the escaping doubles. A read buffer too small for it
+       used to cut the line in half and read the rest as a record of its
+       own. */
+    {
+        static Shop big, bigback;
+        char bigpath[MAX_SHOP_NAME + 8];
+        size_t k;
+
+        memset(&big, 0, sizeof big);
+        /* The name is escaped too, and it is the field that pushes the
+           SHOP record past a buffer sized for the others alone. */
+        for (k = 0; k + 1 < sizeof big.name; k++) big.name[k] = '|';
+        big.name[0] = 'S';  /* so the file has a name to start with */
+        for (k = 0; k + 1 < sizeof big.keeper; k++) big.keeper[k] = '|';
+        for (k = 0; k + 1 < sizeof big.about; k++) big.about[k] = '\\';
+        big.line_count = 1;
+        for (k = 0; k + 1 < sizeof big.lines[0].name; k++)
+            big.lines[0].name[k] = '|';
+        for (k = 0; k + 1 < sizeof big.lines[0].note; k++)
+            big.lines[0].note[k] = '\\';
+        big.lines[0].item_id = -1;
+        big.lines[0].price_cp = MAX_COINS;
+        big.lines[0].stock = -1;
+
+        check(shop_save(&big, bigpath, sizeof bigpath) == 0,
+              "a shop with every field full", 1, 1);
+        check(shop_load(bigpath, &bigback) == 0, "reads back", 1, 1);
+        check(!strcmp(bigback.keeper, big.keeper),
+              "a keeper of nothing but separators", 1, 1);
+        check(!strcmp(bigback.about, big.about),
+              "a description of nothing but escapes", 1, 1);
+        EQ(bigback.line_count, 1, "one line, not two");
+        check(!strcmp(bigback.lines[0].name, big.lines[0].name),
+              "the line's name entire", 1, 1);
+        check(!strcmp(bigback.lines[0].note, big.lines[0].note),
+              "and its note entire", 1, 1);
+    }
+
+    /* Not a shop file, and not a crash either. */
+    {
+        static Shop nope;
+        char sheet[MAX_NAME + 8];
+        Character c;
+        plain_fighter(&c, "SelftestNotAShop");
+        check(save_character(&c, sheet, sizeof sheet) == 0,
+              "a character sheet written", 1, 1);
+        EQ(shop_load(sheet, &nope), -2, "a sheet is not a shop");
+        EQ(shop_load("SelftestNoSuchShopAtAll.txt", &nope), -1,
+           "and a missing file says so");
+
+        /* Shops and sheets share a directory and a naming rule, so a shop
+           named after a character wants that character's file. It does not
+           get it. */
+        memset(&nope, 0, sizeof nope);
+        snprintf(nope.name, sizeof nope.name, "%s", "SelftestNotAShop");
+        EQ(shop_save(&nope, path, sizeof path), -2,
+           "a shop will not write over a character");
+        EQ(file_is_character(sheet), 1, "and the character is still there");
+    }
+}
+
+/* A purse that will not fit the five coin fields of a saved sheet used to
+   be written out anyway and read back clamped, so the sheet changed on
+   reload: tools/stress.py found a character paid eleven times over holding
+   1,097,040 platinum and getting 999,999 back. */
+static void test_purse_has_a_ceiling(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+
+    printf("a purse a sheet can hold\n");
+
+    plain_fighter(&c, "SelftestPurse");
+    purse_from_copper(&c, MAX_PURSE_CP * 4);
+    check(c.platinum <= MAX_COINS, "platinum within the field", c.platinum,
+          MAX_COINS);
+    check(c.gold <= MAX_COINS, "gold within the field", c.gold, MAX_COINS);
+    EQ(purse_in_copper(&c), MAX_PURSE_CP, "and holds all it can");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(purse_in_copper(&back), MAX_PURSE_CP, "with the same purse");
+
+    /* And the ordinary case still counts out change the way it always did. */
+    purse_from_copper(&c, 1234);
+    EQ(c.platinum, 1, "1234 copper is a platinum,");
+    EQ(c.gold, 2, "two gold,");
+    EQ(c.electrum, 0, "no electrum,");
+    EQ(c.silver, 3, "three silver");
+    EQ(c.copper, 4, "and four copper");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3020,6 +3187,8 @@ int main(void)
     test_two_copies_stay_two();
     test_play_state_survives();
     test_valuables();
+    test_shop_file();
+    test_purse_has_a_ceiling();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

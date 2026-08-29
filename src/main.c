@@ -14,6 +14,7 @@
 #include "sidekick.h"
 #include "reference.h"
 #include "saveload.h"
+#include "shop.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -168,6 +169,7 @@ int main(int argc, char **argv)
         "Manage a character's inventory",
         "Manage a character's sidekicks",
         "Homebrew (your own items and spells)",
+        "Shopbuilder (a shop for your table, saved to its own file)",
         "Notes and character details",
         "Quit"
     };
@@ -207,7 +209,7 @@ int main(int argc, char **argv)
         printf("  D&D 5th Edition Character Creator\n");
         ui_rule();
 
-        pick = ui_menu("  What would you like to do?", menu, NULL, 11);
+        pick = ui_menu("  What would you like to do?", menu, NULL, 12);
         switch (pick) {
         case 0: do_create(); break;
         case 1: do_level_up(); break;
@@ -220,7 +222,8 @@ int main(int argc, char **argv)
         case 7: edit_saved("Manage a Character's Sidekicks", manage_sidekicks);
                 break;
         case 8: homebrew_menu(); break;
-        case 9: edit_saved("Notes and Character Details", edit_details);
+        case 9: shopbuilder_menu(); break;
+        case 10: edit_saved("Notes and Character Details", edit_details);
                 break;
         default: return 0;
         }
