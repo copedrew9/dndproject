@@ -484,6 +484,25 @@ static void write_sheet(FILE *f, const Character *c)
         fprintf(f, "\n");
         if (it->contents[0]) fprintf(f, "        contains: %s\n", it->contents);
     }
+    if (c->valuable_count) {
+        long worth = 0;
+        fprintf(f, "\n  Also carried:\n");
+        for (i = 0; i < c->valuable_count; i++) {
+            const Valuable *v = &c->valuables[i];
+            fprintf(f, "  %3d x %-30s", v->quantity, v->name);
+            if (v->value_cp) {
+                fprintf(f, " %d gp", v->value_cp / 100);
+                if (v->value_cp % 100) fprintf(f, " %d cp", v->value_cp % 100);
+            }
+            fprintf(f, "\n");
+            if (v->note[0]) fprintf(f, "        %s\n", v->note);
+            worth += (long)v->value_cp * v->quantity;
+        }
+        if (worth) {
+            fprintf(f, "  Worth %ld gp in all, if anyone will pay it.\n",
+                    worth / 100);
+        }
+    }
     fprintf(f, "\n  Coins: %d pp, %d gp, %d ep, %d sp, %d cp\n",
             c->platinum, c->gold, c->electrum, c->silver, c->copper);
     fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
@@ -814,6 +833,14 @@ static void write_data(FILE *f, const Character *c)
         fprintf(f, "RESOURCE|%d|%d|%d|", c->resources[i].used,
                 c->resources[i].max, c->resources[i].per_long_rest);
         record_put(f, c->resources[i].name);
+        fputc('\n', f);
+    }
+    for (i = 0; i < c->valuable_count; i++) {
+        fprintf(f, "VALUABLE|%d|%d|", c->valuables[i].value_cp,
+                c->valuables[i].quantity);
+        record_put(f, c->valuables[i].name);
+        fputc('|', f);
+        record_put(f, c->valuables[i].note);
         fputc('\n', f);
     }
     for (i = 0; i < c->ledger_count; i++) {
@@ -1346,6 +1373,13 @@ int load_character(const char *path, Character *c)
             r->max = record_int(fields[2], 0, 999);
             r->per_long_rest = record_int(fields[3], 0, 1);
             copy_field(r->name, sizeof r->name, fields[4]);
+        } else if (!strcmp(fields[0], "VALUABLE") && n >= 5
+                   && c->valuable_count < MAX_VALUABLES) {
+            Valuable *v = &c->valuables[c->valuable_count++];
+            v->value_cp = record_int(fields[1], 0, MAX_COINS);
+            v->quantity = record_int(fields[2], 1, MAX_STACK);
+            copy_field(v->name, sizeof v->name, fields[3]);
+            copy_field(v->note, sizeof v->note, fields[4]);
         } else if (!strcmp(fields[0], "LEDGER") && n >= 3
                    && c->ledger_count < MAX_LEDGER) {
             LedgerEntry *e = &c->ledger[c->ledger_count++];

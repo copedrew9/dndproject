@@ -490,6 +490,60 @@ TRINKET|A glass jar containing lard with a label that reads, "Griffon Grease"
 TRINKET|A wooden box with a ceramic bottom that holds a living worm with a head on each end of its body
 TRINKET|A metal urn containing the ashes of a hero
 
+# GEM | name | value_gp | description
+GEM|Azurite|10|opaque mottled deep blue
+GEM|Banded agate|10|translucent striped brown, blue, white, or red
+GEM|Blue quartz|10|transparent pale blue
+GEM|Eye agate|10|translucent circles of gray, white, brown, blue, or green
+GEM|Hematite|10|opaque gray-black
+GEM|Lapis lazuli|10|opaque light and dark blue with yellow flecks
+GEM|Malachite|10|opaque striated light and dark green
+GEM|Moss agate|10|translucent pink or yellow-white with mossy gray or green markings
+GEM|Obsidian|10|opaque black
+GEM|Rhodochrosite|10|opaque light pink
+GEM|Tiger eye|10|translucent brown with golden center
+GEM|Turquoise|10|opaque light blue-green
+GEM|Bloodstone|50|opaque dark gray with red flecks
+GEM|Carnelian|50|opaque orange to red-brown
+GEM|Chalcedony|50|opaque white
+GEM|Chrysoprase|50|translucent green
+GEM|Citrine|50|transparent pale yellow-brown
+GEM|Jasper|50|opaque blue, black, or brown
+GEM|Moonstone|50|translucent white with pale blue glow
+GEM|Onyx|50|opaque bands of black and white, or pure black or white
+GEM|Quartz|50|transparent white, smoky gray, or yellow
+GEM|Sardonyx|50|opaque bands of red and white
+GEM|Star rose quartz|50|translucent rosy stone with white star-shaped center
+GEM|Zircon|50|transparent pale blue-green
+GEM|Amber|100|transparent watery gold to rich gold
+GEM|Amethyst|100|transparent deep purple
+GEM|Chrysoberyl|100|transparent yellow-green to pale green
+GEM|Coral|100|opaque crimson
+GEM|Garnet|100|transparent red, brown-green, or violet
+GEM|Jade|100|translucent light green, deep green, or white
+GEM|Jet|100|opaque deep black
+GEM|Pearl|100|opaque lustrous white, yellow, or pink
+GEM|Spinel|100|transparent red, red-brown, or deep green
+GEM|Tourmaline|100|transparent pale green, blue, brown, or red
+GEM|Alexandrite|500|transparent dark green
+GEM|Aquamarine|500|transparent pale blue-green
+GEM|Black pearl|500|opaque pure black
+GEM|Blue spinel|500|transparent deep blue
+GEM|Peridot|500|transparent rich olive green
+GEM|Topaz|500|transparent golden yellow
+GEM|Black opal|1000|translucent dark green with black mottling and golden flecks
+GEM|Blue sapphire|1000|transparent blue-white to medium blue
+GEM|Emerald|1000|transparent deep bright green
+GEM|Fire opal|1000|translucent fiery red
+GEM|Opal|1000|translucent pale blue with green and golden mottling
+GEM|Star ruby|1000|translucent ruby with white star-shaped center
+GEM|Star sapphire|1000|translucent blue sapphire with white star-shaped center
+GEM|Yellow sapphire|1000|transparent fiery yellow or yellow green
+GEM|Black sapphire|5000|translucent lustrous black with glowing highlights
+GEM|Diamond|5000|transparent blue-white, canary, pink, brown, or blue
+GEM|Jacinth|5000|transparent fiery orange
+GEM|Ruby|5000|transparent clear red to deep crimson
+
 # LIFESTYLE | name | cost_cp_per_day | text
 LIFESTYLE|Wretched|0|No home at all. You shelter in barns and crates and rely on the good graces of others. Violence, disease and hunger follow you, and you are beneath the notice of most people.
 LIFESTYLE|Squalid|10|A leaky stable, a mud-floored hut or a vermin-ridden boarding house. You have shelter from the elements but live in a desperate and often violent place.

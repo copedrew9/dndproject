@@ -37,6 +37,7 @@
    and small enough to sit in the file. */
 #define MAX_RESOURCES 16
 #define MAX_LEDGER 32
+#define MAX_VALUABLES 32
 #define MAX_EXHAUSTION 6
 
 #define MAX_QUANTITY 99
@@ -145,6 +146,19 @@ typedef struct {
     int copper;             /* negative when spent, positive when earned */
     char what[MAX_NAME];
 } LedgerEntry;
+
+/* Something carried that is not equipment: a gemstone off the Dungeon
+   Master's Guide's treasure tables, or a thing with no entry anywhere --
+   a letter of marque, a signet ring, the innkeeper's daughter's locket.
+   Both are the same shape, because what a player wants from either is the
+   same: a name, what it is worth if anything, and a line saying what it
+   is or where it came from. */
+typedef struct {
+    char name[MAX_NAME];
+    int value_cp;           /* 0 when it is worth nothing in particular */
+    int quantity;
+    char note[MAX_TEXT];
+} Valuable;
 
 /* Free-form in-class choices: fighting styles, pact boons, metamagic,
    eldritch invocations, battle master maneuvers, expertise notes. */
@@ -308,6 +322,13 @@ typedef struct {
 
     LedgerEntry ledger[MAX_LEDGER];
     int ledger_count;
+
+    /* Gems and anything else carried that the equipment tables do not
+       have. Kept apart from the inventory because they are not equipment:
+       nothing is worn, wielded or weighed, and the only number that
+       matters is what they would fetch. */
+    Valuable valuables[MAX_VALUABLES];
+    int valuable_count;
 } Character;
 
 /* ---------------------------------------------------------- derived numbers */

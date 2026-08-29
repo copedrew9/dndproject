@@ -521,6 +521,21 @@ static void dump_equipment(void)
         rec(f, "TRINKET"); field(f, TRINKETS[i]); end(f);
     }
 
+    /* Gemstones from the Dungeon Master's Guide's treasure tables. A gem
+       is worth what its table says and nothing else -- the books give no
+       haggling rule for one -- so the value is the whole of its mechanics,
+       and the description is what it looks like on the table. */
+    head(f, "GEM", "name | value_gp | description");
+    for (i = 0; i < GEM_COUNT; i++) {
+        char buf[32];
+        rec(f, "GEM");
+        field(f, GEMS[i].name);
+        snprintf(buf, sizeof buf, "%d", GEMS[i].value_gp);
+        field(f, buf);
+        field(f, GEMS[i].description);
+        end(f);
+    }
+
     head(f, "LIFESTYLE", "name | cost_cp_per_day | text");
     for (i = 0; i < LIFESTYLE_COUNT; i++) {
         rec(f, "LIFESTYLE");

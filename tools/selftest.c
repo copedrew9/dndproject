@@ -2717,6 +2717,81 @@ static void test_play_state_survives(void)
     }
 }
 
+/* Gems and oddments: treasure rather than equipment. */
+static void test_valuables(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i, tens = 0, five_k = 0;
+
+    printf("gems and things with no table\n");
+
+    /* The book prints six tables and nothing between them, so every gem
+       has to be worth one of six amounts. */
+    for (i = 0; i < GEM_COUNT; i++) {
+        int v = GEMS[i].value_gp;
+        int ok = (v == 10 || v == 50 || v == 100 || v == 500
+                  || v == 1000 || v == 5000);
+        if (!ok) {
+            printf("  FAIL %s is worth %d gp, which is no table\n",
+                   GEMS[i].name, v);
+            failures++;
+        }
+        if (v == 10) tens++;
+        if (v == 5000) five_k++;
+        check(GEMS[i].description != NULL && GEMS[i].description[0],
+              "every gem says what it looks like", 1, 1);
+    }
+    EQ(GEM_COUNT, 52, "all six tables of gems");
+    EQ(tens, 12, "twelve stones at 10 gp");
+    EQ(five_k, 4, "four at 5,000");
+
+    /* One of each kind carried: a gem off the table and a thing with no
+       table at all. */
+    plain_fighter(&c, "SelftestValuables");
+    c.valuable_count = 2;
+    snprintf(c.valuables[0].name, sizeof c.valuables[0].name, "%s", "Ruby");
+    c.valuables[0].value_cp = 5000 * 100;
+    c.valuables[0].quantity = 2;
+    snprintf(c.valuables[0].note, sizeof c.valuables[0].note, "%s",
+             "transparent clear red");
+    snprintf(c.valuables[1].name, sizeof c.valuables[1].name, "%s",
+             "A letter of marque");
+    c.valuables[1].value_cp = 0;
+    c.valuables[1].quantity = 1;
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.valuable_count, 2, "both come back");
+    check(!strcmp(back.valuables[0].name, "Ruby"), "the gem by name", 1, 1);
+    EQ(back.valuables[0].value_cp, 500000, "and by value");
+    EQ(back.valuables[0].quantity, 2, "and how many");
+    check(!strcmp(back.valuables[1].name, "A letter of marque"),
+          "the thing with no table", 1, 1);
+    EQ(back.valuables[1].value_cp, 0, "which is worth nothing in particular");
+
+    /* It reaches the sheet a reader sees, not only the data block. */
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, "Also carried") != NULL,
+          "the sheet has a place for them", 1, 1);
+    check(strstr(sheet_a, "A letter of marque") != NULL,
+          "and prints one with no price", 1, 1);
+    remove(path);
+
+    /* A character carrying none writes no record, so an old sheet is
+       unchanged. */
+    {
+        Character none;
+        char p2[MAX_NAME + 8];
+        plain_fighter(&none, "SelftestNoValuables");
+        check(save_character(&none, p2, sizeof p2) == 0, "written", 1, 1);
+        slurp(p2, sheet_a, sizeof sheet_a);
+        check(strstr(sheet_a, "\nVALUABLE|") == NULL,
+              "carrying none writes nothing", 1, 1);
+        remove(p2);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2944,6 +3019,7 @@ int main(void)
     test_prepared_survives();
     test_two_copies_stay_two();
     test_play_state_survives();
+    test_valuables();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

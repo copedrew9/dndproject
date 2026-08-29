@@ -525,6 +525,18 @@ typedef struct {
     int cost_cp;
 } PriceEntry;
 
+/* A gemstone from the Dungeon Master's Guide's treasure tables. Its value
+   is fixed by the table it is printed in, which is the whole of what a gem
+   does: it is treasure to be carried and sold, not equipment to be used. */
+typedef struct {
+    const char *name;
+    int value_gp;
+    const char *description;
+} GemData;
+
+extern const GemData GEMS[];
+extern const int GEM_COUNT;
+
 extern const PriceEntry SERVICES[];
 extern const int SERVICE_COUNT;
 extern const PriceEntry SPELLCASTING_SERVICES[];

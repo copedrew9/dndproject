@@ -55,6 +55,7 @@ audit:
 # not a name that fails to resolve.
 verify:
 	python3 tools/verify_equipment.py
+	python3 tools/verify_gems.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py
 	python3 tools/verify_spells.py

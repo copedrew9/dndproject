@@ -676,6 +676,12 @@ def build_equipment():
                for r in tags.get("SPELLSERVICE", [])],
               "SPELLCASTING_SERVICE_COUNT")
 
+    out.table("const GemData GEMS[]",
+              ["    { %s, %d, %s }" % (cstr(r.str(0)), r.int(1),
+                                       cstr(r.str(2)))
+               for r in tags.get("GEM", [])],
+              "GEM_COUNT")
+
     rows, magic_names = [], set()
     for r in tags.get("MAGICITEM", []):
         magic_names.add(r.str(0))
