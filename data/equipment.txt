@@ -86,9 +86,12 @@ ITEM|Bell|PHB|gear|100|0|0|0|0|0||||
 ITEM|Blanket|PHB|gear|50|30|0|0|0|0||||
 ITEM|Block and tackle|PHB|gear|100|50|0|0|0|0||||
 ITEM|Book|PHB|gear|2500|50|0|0|0|0||||
+ITEM|Bottle, glass|PHB|gear|200|20|0|0|0|0||||
 ITEM|Bucket|PHB|gear|5|20|0|0|0|0||||
 ITEM|Caltrops (bag of 20)|PHB|gear|100|20|0|0|0|0||||
 ITEM|Candle|PHB|gear|1|0|0|0|0|0||||
+ITEM|Case, crossbow bolt|PHB|gear|100|10|0|0|0|0||||
+ITEM|Case, map or scroll|PHB|gear|100|10|0|0|0|0||||
 ITEM|Chain (10 feet)|PHB|gear|500|100|0|0|0|0||||
 ITEM|Chalk (1 piece)|PHB|gear|1|0|0|0|0|0||||
 ITEM|Chest|PHB|gear|500|250|0|0|0|0||||
@@ -188,7 +191,9 @@ ITEM|Navigator's tools|PHB|tool|2500|20|0|0|0|0||||
 ITEM|Poisoner's kit|PHB|tool|5000|20|0|0|0|0||||
 ITEM|Thieves' tools|PHB|tool|2500|10|0|0|0|0||||
 ITEM|Dice set|PHB|tool|10|0|0|0|0|0||||
+ITEM|Dragonchess set|PHB|tool|100|5|0|0|0|0||||
 ITEM|Playing card set|PHB|tool|50|0|0|0|0|0||||
+ITEM|Three-Dragon Ante set|PHB|tool|100|0|0|0|0|0||||
 ITEM|Bagpipes|PHB|tool|3000|60|0|0|0|0||||
 ITEM|Drum|PHB|tool|600|30|0|0|0|0||||
 ITEM|Dulcimer|PHB|tool|2500|100|0|0|0|0||||
@@ -315,7 +320,9 @@ ITEMNOTE|Navigator's tools|A sextant, compass, calipers, ruler, parchment, ink a
 ITEMNOTE|Poisoner's kit|Glass vials, a mortar and pestle, chemicals and a glass stirring rod. Helps with Investigation and Perception to spot poison, Medicine to treat it, Nature to identify a poisonous creature, and Survival to forage.
 ITEMNOTE|Thieves' tools|A file, lock picks, a small mirror on a handle, narrow-bladed scissors and pliers. Needed to pick locks and disarm traps, and helps with History checks on notorious heists and Investigation and Perception on traps and security.
 ITEMNOTE|Dice set|A gaming set. Proficiency covers one type of game; it helps with History checks about the game's history, Insight to read an opponent, and Sleight of Hand to cheat.
+ITEMNOTE|Dragonchess set|A gaming set; see Dice set.
 ITEMNOTE|Playing card set|A gaming set. Proficiency covers one type of game; it helps with History, Insight to read an opponent, and Sleight of Hand to cheat.
+ITEMNOTE|Three-Dragon Ante set|A gaming set; see Dice set.
 ITEMNOTE|Bagpipes|A musical instrument. Proficiency lets you add your proficiency bonus to Performance checks with it, and helps with History checks on songs and Perception to pick out a tune.
 ITEMNOTE|Drum|A musical instrument; see Bagpipes.
 ITEMNOTE|Dulcimer|A musical instrument; see Bagpipes.
@@ -370,7 +377,9 @@ TOOLGROUP|Artisan's tools|Tinker's tools
 TOOLGROUP|Artisan's tools|Weaver's tools
 TOOLGROUP|Artisan's tools|Woodcarver's tools
 TOOLGROUP|Gaming set|Dice set
+TOOLGROUP|Gaming set|Dragonchess set
 TOOLGROUP|Gaming set|Playing card set
+TOOLGROUP|Gaming set|Three-Dragon Ante set
 TOOLGROUP|Musical instrument|Bagpipes
 TOOLGROUP|Musical instrument|Drum
 TOOLGROUP|Musical instrument|Dulcimer

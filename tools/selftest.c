@@ -1645,8 +1645,12 @@ static void test_choice_lists(void)
     check(n == 17, "artisan's tools", n, 17);
     n = tools_in_group("Musical instrument", tools, 64);
     check(n == 10, "musical instruments", n, 10);
+    /* Four, not two. The PHB's Gaming set entry lists dice, dragonchess,
+       playing cards and Three-Dragon Ante; two of them were never entered,
+       and this assertion agreed with the gap instead of catching it.
+       tools/verify_equipment_coverage.py is what found them. */
     n = tools_in_group("Gaming set", tools, 64);
-    check(n == 2, "gaming sets", n, 2);
+    check(n == 4, "gaming sets", n, 4);
 
     /* A group nobody has heard of yields every tool, so a proficiency the
        books word some other way still gets a list rather than a blank. */
@@ -2866,6 +2870,32 @@ static void test_shop_file(void)
     EQ(back.lines[1].item_id, -1, "and still points at nothing");
     EQ(back.lines[1].price_cp, 300, "at the price the DM set");
 
+    /* Written, read and written again has to give the same bytes. Checking
+       the fields one by one only proves the fields somebody thought to
+       check; this proves the file. */
+    {
+        static char first[8192], second[8192];
+        FILE *fh;
+        size_t got;
+
+        check(shop_save(&s, path, sizeof path) == 0, "shop written", 1, 1);
+        fh = fopen(path, "r");
+        check(fh != NULL, "and opened again", 1, 1);
+        got = fh ? fread(first, 1, sizeof first - 1, fh) : 0;
+        if (fh) fclose(fh);
+        first[got] = '\0';
+
+        check(shop_load(path, &back) == 0, "read back", 1, 1);
+        check(shop_save(&back, path, sizeof path) == 0, "and written again",
+              1, 1);
+        fh = fopen(path, "r");
+        got = fh ? fread(second, 1, sizeof second - 1, fh) : 0;
+        if (fh) fclose(fh);
+        second[got] = '\0';
+
+        check(!strcmp(first, second), "the same file both times", 1, 1);
+    }
+
     /* The longest record the writer can produce, every field full and every
        character one the escaping doubles. A read buffer too small for it
        used to cut the line in half and read the rest as a record of its
@@ -2957,6 +2987,61 @@ static void test_purse_has_a_ceiling(void)
     EQ(c.electrum, 0, "no electrum,");
     EQ(c.silver, 3, "three silver");
     EQ(c.copper, 4, "and four copper");
+}
+
+/* The three entries the coverage checks added, held by the program rather
+   than by the data file: five PHB items nobody had entered, and the warlock
+   invocation Tasha's prints between two that were entered.
+
+   Each is here because the check that would have caught it did not exist.
+   tools/verify_equipment_coverage.py and tools/verify_prereq_coverage.py do
+   now, and this is the assertion that the entries reached the compiled
+   tables with the book's own numbers rather than merely reaching data/. */
+static void test_entries_the_books_have(void)
+{
+    static const struct { const char *name; int cp; int tenths; int cat; }
+    WANT[] = {
+        { "Bottle, glass",         200, 20, ITEM_GEAR },
+        { "Case, crossbow bolt",   100, 10, ITEM_GEAR },
+        { "Case, map or scroll",   100, 10, ITEM_GEAR },
+        { "Dragonchess set",       100,  5, ITEM_TOOL },
+        { "Three-Dragon Ante set", 100,  0, ITEM_TOOL },
+    };
+    int i, j, found = 0;
+
+    printf("the entries the coverage checks found missing\n");
+
+    for (i = 0; i < (int)(sizeof WANT / sizeof WANT[0]); i++) {
+        int at = find_item(WANT[i].name);
+        if (at < 0) {
+            printf("  FAIL the books sell \"%s\" and we do not\n",
+                   WANT[i].name);
+            failures++;
+            continue;
+        }
+        check(ITEMS[at].cost_cp == WANT[i].cp, WANT[i].name,
+              ITEMS[at].cost_cp, WANT[i].cp);
+        check(ITEMS[at].weight_tenths == WANT[i].tenths, "  its weight",
+              ITEMS[at].weight_tenths, WANT[i].tenths);
+        check((int)ITEMS[at].category == WANT[i].cat, "  its shelf",
+              (int)ITEMS[at].category, WANT[i].cat);
+    }
+
+    /* Tasha's gates it at 12th level and on the Pact of the Talisman, which
+       is what separates it from Protection (7th) and Rebuke (no level). */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        for (j = 0; j < ol->count; j++) {
+            if (strcmp(ol->options[j].name, "Bond of the Talisman")) continue;
+            found = 1;
+            check(!strcmp(ol->class_name, "Warlock"), "a warlock invocation",
+                  1, 1);
+            EQ(ol->options[j].min_level, 12, "gated at 12th level");
+            check(!strcmp(ol->options[j].prereq, "Pact of the Talisman"),
+                  "and on the Pact of the Talisman", 1, 1);
+        }
+    }
+    EQ(found, 1, "Bond of the Talisman is in the invocations");
 }
 
 static void test_racial_feat_by_size(void)
@@ -3189,6 +3274,7 @@ int main(void)
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();
+    test_entries_the_books_have();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

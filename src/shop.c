@@ -604,7 +604,11 @@ static void buy_from(Character *c, Shop *s)
             }
             hand_it_over(c, l, qty);
             if (l->stock > 0) l->stock -= qty;
-            {
+            /* format_price writes "--" for nothing, which is the right
+               thing in a price column and the wrong thing in a sentence. */
+            if (cost == 0) {
+                printf("  Took %d x %s, for nothing.\n", qty, l->name);
+            } else {
                 char price[32];
                 format_price((int)cost, price, sizeof price);
                 printf("  Bought %d x %s for %s.\n", qty, l->name, price);

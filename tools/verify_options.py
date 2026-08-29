@@ -197,6 +197,15 @@ def main():
         if says_prereq is not None:
             rest = IN_PREREQ.sub("", says_prereq)
             missing = words(prereq) - words(rest)
+            # The extraction sets spaces inside words at a line break --
+            # "Pact of the Talis man feature" for the talisman invocations,
+            # "Lightn ing" elsewhere -- so a word of ours that the book has
+            # only across such a break is present, not missing. Held to six
+            # letters, long enough that two of the book's own words running
+            # together cannot spell one of ours by accident.
+            glued = re.sub(r"[^a-z]", "", rest.lower())
+            missing = {w for w in missing
+                       if len(w) < 6 or w not in glued}
             if missing:
                 problems.append("our prerequisite %r says %s, and the book's "
                                 "%r does not"

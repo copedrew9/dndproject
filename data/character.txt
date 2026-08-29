@@ -1157,7 +1157,7 @@ OPTFEATURE|Sorcerer|TCE|3|Metamagic Options||Seeking Spell and Transmuted Spell 
 OPTFEATURE|Sorcerer|TCE|4|Sorcerous Versatility||Whenever you gain an Ability Score Improvement, you may swap a Metamagic option or a cantrip.
 OPTFEATURE|Sorcerer|TCE|5|Magical Guidance||Spend 1 sorcery point to reroll a failed ability check.
 OPTFEATURE|Warlock|TCE|1|Additional Warlock Spells||Twenty more spells are added to the warlock spell list.
-OPTFEATURE|Warlock|TCE|2|Eldritch Invocation Options||Further invocations become available, including Eldritch Mind, Far Scribe, Investment of the Chain Master, Rebuke of the Talisman and Undying Servitude.
+OPTFEATURE|Warlock|TCE|2|Eldritch Invocation Options||Further invocations become available, including Bond of the Talisman, Eldritch Mind, Far Scribe, Investment of the Chain Master, Rebuke of the Talisman and Undying Servitude.
 OPTFEATURE|Warlock|TCE|3|Pact Boon Option||The Pact of the Talisman: an amulet that lets its wearer add a d4 to a failed ability check.
 OPTFEATURE|Warlock|TCE|4|Eldritch Versatility||Whenever you gain an Ability Score Improvement, you may swap a cantrip, your Pact Boon, or, from 12th level, a Mystic Arcanum spell.
 OPTFEATURE|Wizard|TCE|1|Additional Wizard Spells||Twenty-three more spells are added to the wizard spell list.
@@ -1221,6 +1221,7 @@ OPTION|eldritch invocations|Ascendant Step|PHB|9||Cast levitate on yourself at w
 OPTION|eldritch invocations|Beast Speech|PHB|0||Cast speak with animals at will, without expending a spell slot.
 OPTION|eldritch invocations|Beguiling Influence|PHB|0||You gain proficiency in the Deception and Persuasion skills.
 OPTION|eldritch invocations|Bewitching Whispers|PHB|7||Cast compulsion once using a warlock spell slot, then take a long rest.
+OPTION|eldritch invocations|Bond of the Talisman|TCE|12|Pact of the Talisman|As an action, teleport to the unoccupied space nearest whoever wears your talisman, on the same plane; they can do the same to reach you. Usable a number of times per long rest equal to your proficiency bonus.
 OPTION|eldritch invocations|Book of Ancient Secrets|PHB|0|Pact of the Tome|Inscribe two 1st-level ritual spells from any class list in your Book of Shadows and cast them as rituals; you can add more as you find them.
 OPTION|eldritch invocations|Chains of Carceri|PHB|15|Pact of the Chain|Cast hold monster at will on a celestial, fiend or elemental, without a slot or components; once per long rest per creature.
 OPTION|eldritch invocations|Devil's Sight|PHB|0||You see normally in darkness, magical and nonmagical, out to 120 feet.
