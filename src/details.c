@@ -206,7 +206,7 @@ static void notes_menu(Character *c)
  * allows something else -- including for a character with no background at
  * all, which the creation wizard used to skip over entirely. */
 static void edit_line(const char *label,
-                      const char *const *suggestions, char *out)
+                      const char *const *suggestions, char *out, size_t n)
 {
     char prompt[96];
 
@@ -218,11 +218,11 @@ static void edit_line(const char *label,
 
     snprintf(prompt, sizeof prompt, "  %s:", label);
     if (suggestions && suggestions[0]) {
-        int n = 0;
-        while (n < 9 && suggestions[n]) n++;
-        ui_pick_or_type(prompt, suggestions, n, out, MAX_TEXT);
+        int count = 0;
+        while (count < 9 && suggestions[count]) count++;
+        ui_pick_or_type(prompt, suggestions, count, out, n);
     } else {
-        ui_line(prompt, out, MAX_TEXT);
+        ui_line(prompt, out, n);
     }
 }
 
@@ -239,12 +239,12 @@ static void personality_menu(Character *c)
                "suggest -- write what fits.\n", c->background_name);
     }
 
-    edit_line("Personality trait", bg ? bg->traits : NULL, c->trait);
-    edit_line("Ideal",             bg ? bg->ideals : NULL, c->ideal);
-    edit_line("Bond",              bg ? bg->bonds  : NULL, c->bond);
-    edit_line("Flaw",              bg ? bg->flaws  : NULL, c->flaw);
-    edit_line("Appearance",        NULL, c->appearance);
-    edit_line("Backstory",         NULL, c->backstory);
+    edit_line("Personality trait", bg ? bg->traits : NULL, c->trait, sizeof c->trait);
+    edit_line("Ideal",             bg ? bg->ideals : NULL, c->ideal, sizeof c->ideal);
+    edit_line("Bond",              bg ? bg->bonds  : NULL, c->bond, sizeof c->bond);
+    edit_line("Flaw",              bg ? bg->flaws  : NULL, c->flaw, sizeof c->flaw);
+    edit_line("Appearance",        NULL, c->appearance, sizeof c->appearance);
+    edit_line("Backstory",         NULL, c->backstory, sizeof c->backstory);
 }
 
 /* ---------------------------------------------------------------- the screen */

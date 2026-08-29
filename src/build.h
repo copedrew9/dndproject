@@ -6,7 +6,15 @@
 #include "data.h"
 
 /* Top level flows. */
-void wizard_create(Character *c);
+/* Builds a character. Returns 1 when the player confirmed it at the end
+   and 0 when they left without saving; the caller writes the file. */
+int wizard_create(Character *c);
+
+/* Whether a class draws its power from someone it has to name: a cleric's
+   god, a paladin's oath, a warlock's patron. Those three are asked for one
+   and not offered a way past; everyone else is asked whether they keep a
+   faith at all. */
+int class_must_name_a_patron(int class_id);
 void wizard_level_up(Character *c);
 
 /* Walks every class level, granting hit points, subclasses and choices. */
@@ -38,6 +46,13 @@ void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 /* Magic items live in the same list, flagged so they index MAGIC_ITEMS. */
 void add_magic_item(Character *c, int magic_id, int qty, int attuned,
                     int plus);
+
+/* One copy of a magic item, appended rather than stacked. Returns the new
+   entry so the caller can set what only it knows -- the damage type the
+   copy carries, whether the table is hiding what it is -- or NULL when
+   there is no room. */
+InventoryEntry *add_magic_item_copy(Character *c, int magic_id, int qty,
+                                    int attuned, int plus);
 void remove_inventory_entry(Character *c, int index, int qty);
 int  attuned_count(const Character *c);
 int  has_prof(const Character *c, const char *prof);

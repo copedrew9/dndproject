@@ -89,7 +89,7 @@ static void warn_unknown(const char *kind, const char *name)
                     "current data; it was left out.\n", kind, name);
 }
 
-static void wrap_to(FILE *f, const char *text, int indent)
+void record_wrap(FILE *f, const char *text, int indent)
 {
     const int width = 76;
     int col = 0;
@@ -303,15 +303,19 @@ static void write_sheet(FILE *f, const Character *c)
     fprintf(f, "\n");
     fprintf(f, "  Passive Perception %d\n", passive_perception(c));
     {
-        /* Experience is not tracked, but knowing where the level sits on
-           the advancement table is what tells a player how far off the
-           next one is. */
+        /* What has been earned, and what the next level costs. The two are
+           printed together because the useful number is the difference. */
         int lv = total_level(c);
         if (SETTINGS.experience && lv >= 0 && lv <= MAX_LEVEL) {
-            fprintf(f, "  Experience       %d needed for level %d",
-                    XP_FOR_LEVEL[lv], lv);
+            fprintf(f, "  Experience       %d", c->xp);
             if (lv < MAX_LEVEL) {
-                fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+                int need = XP_FOR_LEVEL[lv + 1] - c->xp;
+                fprintf(f, " -- %d for level %d", XP_FOR_LEVEL[lv + 1],
+                        lv + 1);
+                if (need > 0) fprintf(f, ", %d to go", need);
+                else fprintf(f, ", enough to level up");
+            } else {
+                fprintf(f, " -- 20th level is the maximum");
             }
             fprintf(f, "\n");
         }
@@ -480,6 +484,25 @@ static void write_sheet(FILE *f, const Character *c)
         fprintf(f, "\n");
         if (it->contents[0]) fprintf(f, "        contains: %s\n", it->contents);
     }
+    if (c->valuable_count) {
+        long worth = 0;
+        fprintf(f, "\n  Also carried:\n");
+        for (i = 0; i < c->valuable_count; i++) {
+            const Valuable *v = &c->valuables[i];
+            fprintf(f, "  %3d x %-30s", v->quantity, v->name);
+            if (v->value_cp) {
+                fprintf(f, " %d gp", v->value_cp / 100);
+                if (v->value_cp % 100) fprintf(f, " %d cp", v->value_cp % 100);
+            }
+            fprintf(f, "\n");
+            if (v->note[0]) fprintf(f, "        %s\n", v->note);
+            worth += (long)v->value_cp * v->quantity;
+        }
+        if (worth) {
+            fprintf(f, "  Worth %ld gp in all, if anyone will pay it.\n",
+                    worth / 100);
+        }
+    }
     fprintf(f, "\n  Coins: %d pp, %d gp, %d ep, %d sp, %d cp\n",
             c->platinum, c->gold, c->electrum, c->silver, c->copper);
     fprintf(f, "  Carried weight: %d.%d lb of a %d lb capacity\n",
@@ -536,14 +559,25 @@ static void write_sheet(FILE *f, const Character *c)
                        "the right situation.\n");
             for (i = 0; i < c->item_count; i++) {
                 const MagicItem *m;
-                if (!c->inventory[i].is_magic) continue;
-                m = &MAGIC_ITEMS[c->inventory[i].item_id];
-                fprintf(f, "\n  %d x %s%s\n", c->inventory[i].quantity,
-                        m->name, c->inventory[i].attuned ? " (attuned)" : "");
+                const InventoryEntry *e = &c->inventory[i];
+                if (!e->is_magic) continue;
+                m = &MAGIC_ITEMS[e->item_id];
+                fprintf(f, "\n  %d x %s%s\n", e->quantity,
+                        m->name, e->attuned ? " (attuned)" : "");
+                /* An item the table has not identified for this character
+                   prints as a name and nothing else. What it does is still
+                   done -- the numbers reached Armor Class and the attacks
+                   block above -- but the sheet does not say why, which is
+                   the point of handing one over unidentified. */
+                if (e->concealed) {
+                    fprintf(f, "    (not yet identified)\n");
+                    continue;
+                }
                 fprintf(f, "    %s, %s%s%s\n", m->type, m->rarity,
                         m->attunement ? " -- " : "",
                         m->attunement ? m->attunement : "");
-                wrap_to(f, m->text, 4);
+                record_wrap(f, m->text, 4);
+                if (m->curse && !e->curse_hidden) record_wrap(f, m->curse, 4);
             }
         }
     }
@@ -566,11 +600,11 @@ static void write_sheet(FILE *f, const Character *c)
     if (c->flaw[0])       fprintf(f, "  Flaw:   %s\n", c->flaw);
     if (c->appearance[0]) {
         fprintf(f, "\n  Appearance:\n");
-        wrap_to(f, c->appearance, 4);
+        record_wrap(f, c->appearance, 4);
     }
     if (c->backstory[0]) {
         fprintf(f, "\n  Backstory:\n");
-        wrap_to(f, c->backstory, 4);
+        record_wrap(f, c->backstory, 4);
     }
 
     if (c->note_count) {
@@ -590,7 +624,7 @@ static void write_sheet(FILE *f, const Character *c)
                 if (*p == '\n' || *p == '\0') {
                     int end = (*p == '\0');
                     *p = '\0';
-                    if (*start) wrap_to(f, start, 6);
+                    if (*start) record_wrap(f, start, 6);
                     else fprintf(f, "\n");
                     if (end) break;
                     start = p + 1;
@@ -750,13 +784,69 @@ static void write_data(FILE *f, const Character *c)
             fprintf(f, "|%d|%d|", c->inventory[i].plus,
                     c->inventory[i].equipped);
             record_put(f, c->inventory[i].variant);
+            fprintf(f, "|%d|%d", c->inventory[i].concealed,
+                    c->inventory[i].curse_hidden);
             fputc('\n', f);
         } else {
             fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
                     c->inventory[i].equipped);
             record_put(f, ITEMS[c->inventory[i].item_id].name);
+            if (c->inventory[i].wear) {
+                fprintf(f, "|%d", c->inventory[i].wear);
+            }
             fputc('\n', f);
         }
+    }
+    if (c->xp) fprintf(f, "XP|%d\n", c->xp);
+    /* What has happened at the table. Written only when something has, so
+       a character nobody has played reads exactly as it did before game
+       mode existed. */
+    if (c->damage || c->temp_hp || c->death_success || c->death_fail
+        || c->exhaustion || c->conditions) {
+        fprintf(f, "PLAY|%d|%d|%d|%d|%d|%u\n", c->damage, c->temp_hp,
+                c->death_success, c->death_fail, c->exhaustion,
+                c->conditions);
+    }
+    {
+        int any = c->pact_used, k;
+        for (k = 1; k <= 9; k++) if (c->slots_used[k]) any = 1;
+        if (any) {
+            fprintf(f, "SLOTS|%d", c->pact_used);
+            for (k = 1; k <= 9; k++) fprintf(f, "|%d", c->slots_used[k]);
+            fputc('\n', f);
+        }
+    }
+    {
+        int any = 0;
+        for (i = 0; i < c->class_count; i++) {
+            if (c->hit_dice_used[i]) any = 1;
+        }
+        if (any) {
+            fprintf(f, "HITDICE");
+            for (i = 0; i < c->class_count; i++) {
+                fprintf(f, "|%d", c->hit_dice_used[i]);
+            }
+            fputc('\n', f);
+        }
+    }
+    for (i = 0; i < c->resource_count; i++) {
+        fprintf(f, "RESOURCE|%d|%d|%d|", c->resources[i].used,
+                c->resources[i].max, c->resources[i].per_long_rest);
+        record_put(f, c->resources[i].name);
+        fputc('\n', f);
+    }
+    for (i = 0; i < c->valuable_count; i++) {
+        fprintf(f, "VALUABLE|%d|%d|", c->valuables[i].value_cp,
+                c->valuables[i].quantity);
+        record_put(f, c->valuables[i].name);
+        fputc('|', f);
+        record_put(f, c->valuables[i].note);
+        fputc('\n', f);
+    }
+    for (i = 0; i < c->ledger_count; i++) {
+        fprintf(f, "LEDGER|%d|", c->ledger[i].copper);
+        record_put(f, c->ledger[i].what);
+        fputc('\n', f);
     }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
             c->gold, c->platinum);
@@ -1079,8 +1169,16 @@ int load_character(const char *path, Character *c)
                 snprintf(nt->body, sizeof nt->body, "%s",
                          (n >= 3) ? fields[2] : "");
                 /* Notes written before they had a title and a body of
-                   their own are a single line; keep it as both. */
-                if (!nt->body[0]) {
+                   their own are a single line; keep it as both.
+
+                   The test is the missing field, not the empty body. A
+                   note whose body is deliberately empty writes all three
+                   fields with nothing in the third, and reading that as
+                   the old shape put the title in the body -- where the
+                   sheet then declined to print it, because a note whose
+                   body is its title prints once. So the sheet lost a line
+                   on reload, which is what tools/stress.py caught. */
+                if (n < 3) {
                     size_t tn = strlen(nt->title);
                     if (tn >= sizeof nt->body) tn = sizeof nt->body - 1;
                     memcpy(nt->body, nt->title, tn);
@@ -1152,8 +1250,15 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
             if (id >= 0) {
+                int before = c->item_count;
                 add_item(c, id, record_int(fields[1], 1, MAX_STACK),
                          record_int(fields[2], 0, 1));
+                /* How worn it is, written only when it is. A file from
+                   before game mode has no such column and reads as sound. */
+                if (n >= 5 && c->item_count > before) {
+                    c->inventory[c->item_count - 1].wear =
+                        record_int(fields[4], 0, 2);
+                }
             }
             else warn_unknown("item", fields[3]);
         } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
@@ -1217,14 +1322,19 @@ int load_character(const char *path, Character *c)
                    clause -- the gem of brightness had one it should never
                    have had -- would otherwise keep spending one of the
                    three slots on it. */
-                add_magic_item(c, id,
-                               record_int(fields[1], 1, MAX_STACK),
-                               MAGIC_ITEMS[id].attunement
-                                   ? record_int(fields[2], 0, 1) : 0,
-                               /* The copy's plus -- except for a belt of
-                                  giant strength, whose column carries the
-                                  Strength it sets instead. */
-                               n >= 5 ? record_int(fields[4], 0, 30) : 0);
+                /* Each record is one entry, not one more of an entry
+                   already read: two rings of resistance made against
+                   different damage, or two copies of one item the table is
+                   telling the player different things about, are distinct
+                   and merging them would drop the second's attunement. */
+                add_magic_item_copy(c, id,
+                                    record_int(fields[1], 1, MAX_STACK),
+                                    MAGIC_ITEMS[id].attunement
+                                        ? record_int(fields[2], 0, 1) : 0,
+                                    /* The copy's plus -- except for a belt
+                                       of giant strength, whose column
+                                       carries the Strength it sets. */
+                                    n >= 5 ? record_int(fields[4], 0, 30) : 0);
                 /* A row the bank declines -- a quantity of zero or less, or
                    an inventory already full -- adds nothing, and the columns
                    after the name then have no entry of their own to land on.
@@ -1236,10 +1346,57 @@ int load_character(const char *path, Character *c)
                         snprintf(e->variant, sizeof e->variant, "%s",
                                  fields[6]);
                     }
+                    /* What the table has chosen not to tell the player.
+                       Older files carry neither column, and an item nobody
+                       hid anything about reads the same either way. */
+                    if (n >= 8) e->concealed = record_int(fields[7], 0, 1);
+                    if (n >= 9) e->curse_hidden = record_int(fields[8], 0, 1);
                 }
             } else {
                 warn_unknown("magic item", fields[3]);
             }
+        } else if (!strcmp(fields[0], "PLAY") && n >= 7) {
+            c->damage        = record_int(fields[1], 0, 9999);
+            c->temp_hp       = record_int(fields[2], 0, 9999);
+            c->death_success = record_int(fields[3], 0, 3);
+            c->death_fail    = record_int(fields[4], 0, 3);
+            c->exhaustion    = record_int(fields[5], 0, MAX_EXHAUSTION);
+            c->conditions    = (unsigned int)record_int(fields[6], 0,
+                                                        (1 << 20) - 1);
+        } else if (!strcmp(fields[0], "SLOTS") && n >= 2) {
+            int k;
+            c->pact_used = record_int(fields[1], 0, 99);
+            for (k = 2; k < n && k - 1 <= 9; k++) {
+                c->slots_used[k - 1] = record_int(fields[k], 0, 99);
+            }
+        } else if (!strcmp(fields[0], "HITDICE") && n >= 2) {
+            int k;
+            for (k = 1; k < n && k - 1 < MAX_CLASSES; k++) {
+                c->hit_dice_used[k - 1] = record_int(fields[k], 0, MAX_LEVEL);
+            }
+        } else if (!strcmp(fields[0], "RESOURCE") && n >= 5
+                   && c->resource_count < MAX_RESOURCES) {
+            Resource *r = &c->resources[c->resource_count++];
+            r->used = record_int(fields[1], 0, 999);
+            r->max = record_int(fields[2], 0, 999);
+            r->per_long_rest = record_int(fields[3], 0, 1);
+            copy_field(r->name, sizeof r->name, fields[4]);
+        } else if (!strcmp(fields[0], "VALUABLE") && n >= 5
+                   && c->valuable_count < MAX_VALUABLES) {
+            Valuable *v = &c->valuables[c->valuable_count++];
+            v->value_cp = record_int(fields[1], 0, MAX_COINS);
+            v->quantity = record_int(fields[2], 1, MAX_STACK);
+            copy_field(v->name, sizeof v->name, fields[3]);
+            copy_field(v->note, sizeof v->note, fields[4]);
+        } else if (!strcmp(fields[0], "LEDGER") && n >= 3
+                   && c->ledger_count < MAX_LEDGER) {
+            LedgerEntry *e = &c->ledger[c->ledger_count++];
+            e->copper = record_int(fields[1], -MAX_COINS, MAX_COINS);
+            copy_field(e->what, sizeof e->what, fields[2]);
+        } else if (!strcmp(fields[0], "XP") && n >= 2) {
+            /* Written only when non-zero, so a file without the record is a
+               character who has earned none. */
+            c->xp = record_int(fields[1], 0, 9999999);
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
             c->copper   = record_int(fields[1], 0, MAX_COINS);
             c->silver   = record_int(fields[2], 0, MAX_COINS);

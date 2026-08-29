@@ -82,19 +82,109 @@ void ui_para(const char *text)
     ui_wrap(text, 2);
 }
 
+/* Going back, giving up, and asking what a choice means -------------------- */
+
+static void (*escape_fn)(UiEscape);
+static const char *const *info_list;
+static int info_count;
+
+void ui_set_escape(void (*fn)(UiEscape))
+{
+    escape_fn = fn;
+}
+
+void ui_set_info(const char *const *info, int count)
+{
+    info_list = info;
+    info_count = info ? count : 0;
+}
+
+/* Whether the whole answer, trimmed, is this word. Case is ignored; a
+   longer answer that merely starts with it is not a match. */
+static int word_is(const char *s, const char *word)
+{
+    size_t n;
+
+    while (*s == ' ' || *s == '\t') s++;
+    n = strlen(s);
+    while (n && (s[n - 1] == ' ' || s[n - 1] == '\t')) n--;
+    if (n != strlen(word)) return 0;
+    while (n--) {
+        int a = *s++, b = *word++;
+        if (a >= 'A' && a <= 'Z') a += 32;
+        if (b >= 'A' && b <= 'Z') b += 32;
+        if (a != b) return 0;
+    }
+    return 1;
+}
+
+/* Which escape an answer asks for, if any.
+ *
+ * The whole answer has to be the word. tools/stress.py types "back\\slash"
+ * at prompts on purpose, and a test that accepted any answer beginning
+ * with "back" would read that as "go back" and start throwing the rest of
+ * the session's input away.
+ */
+static UiEscape escape_word(const char *s)
+{
+    if (word_is(s, "b") || word_is(s, "back")) return UI_ESC_BACK;
+    if (word_is(s, "q") || word_is(s, "quit")) return UI_ESC_QUIT;
+    return (UiEscape)0;
+}
+
+/* "3 info" -- the number of a menu entry followed by the word. Returns the
+   1-based entry, or 0 when the line is not asking for information. */
+static int info_request(const char *s)
+{
+    char *end;
+    long v;
+
+    v = strtol(s, &end, 10);
+    if (end == s || v < 1) return 0;
+    return word_is(end, "info") ? (int)v : 0;
+}
+
 /* Prompts ------------------------------------------------------------------ */
 
 int ui_int(const char *prompt, int lo, int hi)
 {
     char buf[128];
+    /* The words are offered only where something can act on them, and the
+       hint goes before the range rather than after it because the range is
+       the last thing on the line and two harnesses find it by anchoring to
+       the end. */
+    const char *hint = escape_fn ? " (b back, q quit)" : "";
+    const char *asks = info_list ? ", N info" : "";
 
     for (;;) {
         char *end;
         long v;
 
-        printf("%s [%d-%d]: ", prompt, lo, hi);
+        printf("%s%s%s [%d-%d]: ", prompt, hint, asks, lo, hi);
         fflush(stdout);
         if (!read_line(buf, sizeof buf)) input_closed();
+
+        if (escape_fn) {
+            UiEscape e = escape_word(buf);
+            if (e) {
+                escape_fn(e);       /* does not return */
+                continue;           /* unreachable; keeps the compiler calm */
+            }
+        }
+        if (info_list) {
+            int which = info_request(buf);
+            if (which) {
+                if (which > info_count || !info_list[which - 1]
+                    || !info_list[which - 1][0]) {
+                    printf("  There is nothing more to say about %d.\n",
+                           which);
+                } else {
+                    printf("\n");
+                    ui_wrap(info_list[which - 1], 4);
+                }
+                continue;
+            }
+        }
 
         v = strtol(buf, &end, 10);
         while (*end && isspace((unsigned char)*end)) end++;
@@ -148,14 +238,28 @@ int ui_yesno(const char *prompt, int def_yes)
 int ui_menu(const char *prompt, const char *const *options,
             const char *const *details, int count)
 {
-    int i;
+    return ui_menu_info(prompt, options, details, count, NULL);
+}
+
+int ui_menu_info(const char *prompt, const char *const *options,
+                 const char *const *details, int count,
+                 const char *const *info)
+{
+    int i, pick;
 
     printf("\n%s\n", prompt);
     for (i = 0; i < count; i++) {
         printf("  %2d) %s\n", i + 1, options[i]);
         if (details && details[i] && details[i][0]) ui_wrap(details[i], 6);
     }
-    return ui_int("  Choose", 1, count) - 1;
+    /* Every menu can be asked about itself, answering with the same detail
+       line it already prints under the option. A menu with no details says
+       so rather than pretending; a caller that wants better passes a
+       richer array through ui_menu_info. */
+    ui_set_info(info ? info : details, count);
+    pick = ui_int("  Choose", 1, count) - 1;
+    ui_set_info(NULL, 0);
+    return pick;
 }
 
 int ui_multi(const char *prompt, const char *const *options,
@@ -219,6 +323,16 @@ int ui_multi(const char *prompt, const char *const *options,
 /* Dice --------------------------------------------------------------------- */
 
 static unsigned long rng_state = 1;
+
+unsigned long ui_rng_state(void)
+{
+    return rng_state;
+}
+
+void ui_rng_restore(unsigned long state)
+{
+    rng_state = state ? state : 1;
+}
 
 void rng_seed(unsigned int seed)
 {

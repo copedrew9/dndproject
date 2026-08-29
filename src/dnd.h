@@ -11,6 +11,13 @@
 
 #define MAX_NAME 64
 #define MAX_TEXT 256
+/* The backstory is the one line of prose on a character that is not typed
+   by hand. Xanathar's "This Is Your Life" walks thirteen tables and joins
+   the answers, and the table names and separators alone cost 241
+   characters before a single answer -- so the shortest complete life path
+   is over 400 and MAX_TEXT could never hold one. It used to break out of
+   the loop mid-word around the seventh table and store the fragment. */
+#define MAX_BACKSTORY 1024
 #define MAX_CLASSES 12      /* a character may not exceed 20 total levels */
 #define MAX_SPELLS 128
 #define MAX_ITEMS 96
@@ -25,6 +32,14 @@
    so a stack may stand higher than a single purchase -- but not without a
    ceiling: ninety-six lines of an unbounded quantity of the heaviest thing
    in the book is not a heavy pack, it is an overflowed weight. */
+/* Game mode: how many resources a character may track by hand, and how
+   many purchases the ledger remembers. Both are generous for one session
+   and small enough to sit in the file. */
+#define MAX_RESOURCES 16
+#define MAX_LEDGER 32
+#define MAX_VALUABLES 32
+#define MAX_EXHAUSTION 6
+
 #define MAX_QUANTITY 99
 #define MAX_STACK 999
 #define MAX_COINS 999999
@@ -88,6 +103,21 @@ typedef struct {
        resistance resists, the giant a belt draws its Strength from, the
        weapon a +1 weapon is. */
     char variant[MAX_NAME];
+    /* What the sheet is allowed to say about a magic item. A DM handing
+       one over often wants the player to have the thing without the
+       entry: an unidentified rod is a rod. Both are set by the table and
+       cleared again when the item is identified or the curse bites.
+       Neither changes what the item does -- the numbers it brings still
+       reach Armor Class and the attacks block, because the character is
+       carrying it either way. */
+    int concealed;      /* print the name and nothing else */
+    int curse_hidden;   /* print the entry, but not what it costs you */
+    /* How worn the thing is. The Player's Handbook has no general rule for
+       equipment wearing out -- it is a house rule at most tables that use
+       one at all -- so this records what the table decided rather than
+       computing anything: 0 sound, 1 damaged, 2 broken. Nothing here
+       changes a number on the sheet. */
+    int wear;
 } InventoryEntry;
 
 #define MAX_ATTUNED 3
@@ -96,6 +126,39 @@ typedef struct {
 #define MAX_LORE 2048
 #define MAX_SK_CHOICES 12
 
+
+/* Something with a limited number of uses between rests: Bardic
+   Inspiration, Ki, sorcery points, Channel Divinity, Rage, a wand's
+   charges. The books spell out how many of each a character has, but the
+   count depends on level, subclass and sometimes on a feat, so the table
+   sets the maximum once and the program only counts down from it. */
+typedef struct {
+    char name[MAX_NAME];
+    int used;
+    int max;
+    int per_long_rest;      /* 0 when a short rest brings it back */
+} Resource;
+
+/* Where the money went. Coins tell a player how much they have and never
+   how they came to have that much, which is the question that starts an
+   argument three sessions later. */
+typedef struct {
+    int copper;             /* negative when spent, positive when earned */
+    char what[MAX_NAME];
+} LedgerEntry;
+
+/* Something carried that is not equipment: a gemstone off the Dungeon
+   Master's Guide's treasure tables, or a thing with no entry anywhere --
+   a letter of marque, a signet ring, the innkeeper's daughter's locket.
+   Both are the same shape, because what a player wants from either is the
+   same: a name, what it is worth if anything, and a line saying what it
+   is or where it came from. */
+typedef struct {
+    char name[MAX_NAME];
+    int value_cp;           /* 0 when it is worth nothing in particular */
+    int quantity;
+    char note[MAX_TEXT];
+} Valuable;
 
 /* Free-form in-class choices: fighting styles, pact boons, metamagic,
    eldritch invocations, battle master maneuvers, expertise notes. */
@@ -179,6 +242,13 @@ typedef struct {
     int item_count;
     int copper, silver, electrum, gold, platinum;
 
+    /* Experience earned, when the table is using it. Kept as a total rather
+       than derived from the level, because the two disagree on purpose: a
+       character sits on their level until the DM says otherwise, and the
+       gap between the total and the next threshold is the thing a player
+       wants to see. */
+    int xp;
+
     SpellEntry spells[MAX_SPELLS];
     int spell_count;
 
@@ -216,9 +286,49 @@ typedef struct {
     char bond[MAX_TEXT];
     char flaw[MAX_TEXT];
     char appearance[MAX_TEXT];
-    char backstory[MAX_TEXT];
+    char backstory[MAX_BACKSTORY];
     int age, height_in, weight_lb;
     char eyes[MAX_NAME], skin[MAX_NAME], hair[MAX_NAME];
+
+    /* ------------------------------------------------------- at the table
+     *
+     * Everything above is what the character IS, and is settled when they
+     * are made or when they gain a level. Everything here is what has
+     * happened to them since, and changes between one roll and the next:
+     * how hurt they are, what they have spent, what is wrong with them.
+     *
+     * It is kept on the character rather than in a separate file because
+     * it is the same character -- a sheet that says 42 hit points and a
+     * note elsewhere saying 11 of them are gone is two sources for one
+     * number, and they drift.
+     */
+    /* Spell slots spent, by level, and the pact slots a warlock has used.
+       The maximum is worked out from the class table every time it is
+       needed; what has to be remembered is only how many are gone. */
+    int slots_used[10];
+    int pact_used;
+
+    int damage;                 /* hit points lost; current = max - damage */
+    int temp_hp;                /* a separate pool, lost first, never healed */
+    int hit_dice_used[MAX_CLASSES];   /* spent on a short rest, by class */
+    int death_success, death_fail;    /* death saving throws, 0-3 each */
+    int exhaustion;             /* 0 to MAX_EXHAUSTION */
+    /* One bit per entry of CONDITIONS[], except exhaustion, which has
+       levels rather than a yes or no and is counted above. */
+    unsigned int conditions;
+
+    Resource resources[MAX_RESOURCES];
+    int resource_count;
+
+    LedgerEntry ledger[MAX_LEDGER];
+    int ledger_count;
+
+    /* Gems and anything else carried that the equipment tables do not
+       have. Kept apart from the inventory because they are not equipment:
+       nothing is worn, wielded or weighed, and the only number that
+       matters is what they would fetch. */
+    Valuable valuables[MAX_VALUABLES];
+    int valuable_count;
 } Character;
 
 /* ---------------------------------------------------------- derived numbers */

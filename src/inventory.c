@@ -10,6 +10,7 @@
 #include "dnd.h"
 #include "data.h"
 #include "build.h"
+#include "game.h"
 #include "inventory.h"
 #include "reference.h"
 #include "ui.h"
@@ -137,11 +138,20 @@ static void add_from_catalogue(Character *c)
     }
 }
 
-static void add_magic(Character *c)
+/* The magic item list, optionally narrowed before it is shown. `preset`
+   is NULL when the player is searching for themselves, and a word when the
+   caller already knows what they are after -- the potion screen passes
+   "potion" so that nobody has to walk past a deck of many things to reach
+   a potion of healing. */
+static void add_magic_filtered(Character *c, const char *preset)
 {
     char term[64];
 
-    ui_line("  Search magic items for (blank for all)", term, sizeof term);
+    if (preset) {
+        snprintf(term, sizeof term, "%s", preset);
+    } else {
+        ui_line("  Search magic items for (blank for all)", term, sizeof term);
+    }
 
     for (;;) {
         const char *opts[REF_MAX + 1];
@@ -151,7 +161,12 @@ static void add_magic(Character *c)
         for (i = 0; i < MAGIC_ITEM_COUNT && n < REF_MAX; i++) {
             const MagicItem *m = &MAGIC_ITEMS[i];
             if (!book_enabled(m->book)) continue;
-            if (term[0] && !contains_ci(m->name, term)) continue;
+            /* A potion of healing says so in its name; an oil of
+               slipperiness and a philter of love do not, and all three are
+               filed under Potion in the type. Matching either is what
+               makes one search find the lot. */
+            if (term[0] && !contains_ci(m->name, term)
+                && !contains_ci(m->type, term)) continue;
             snprintf(lines[n], REF_LINE, "%-34s %-22s %s", m->name, m->rarity,
                      m->attunement ? "attunement" : "");
             opts[n] = lines[n];
@@ -159,7 +174,22 @@ static void add_magic(Character *c)
             n++;
         }
         if (n == 0) {
-            printf("  Nothing matches.\n");
+            /* Two different dead ends read alike otherwise: a search that
+               matched nothing, and a bank with nothing in it because the
+               book the magic items come from is switched off. The second
+               is not the player's typing, and saying so saves them
+               retyping it. */
+            int any = 0;
+            for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+                if (book_enabled(MAGIC_ITEMS[i].book)) { any = 1; break; }
+            }
+            if (!any) {
+                printf("  There are no magic items to choose from: the "
+                       "books they come from are switched off in Content "
+                       "Settings.\n");
+            } else {
+                printf("  Nothing matches.\n");
+            }
             return;
         }
         opts[n] = "Back";
@@ -425,6 +455,254 @@ static void attune_items(Character *c)
     }
 }
 
+static void add_magic(Character *c)
+{
+    add_magic_filtered(c, NULL);
+}
+
+/* ------------------------------------------------- gems and oddments */
+
+/* Potions are magic items, and there are 277 of those. Somebody who wants
+   a potion of healing should not have to walk past a deck of many things
+   to reach it, so the search that add_magic() already takes is simply
+   pre-filled -- everything the DMG files under Potion or Oil. */
+static void add_potion(Character *c)
+{
+    printf("\n  Potions and oils, from the Dungeon Master's Guide. They "
+           "are magic items like any other; this is the same list with "
+           "everything else left out.\n");
+    add_magic_filtered(c, "potion");
+}
+
+/* Selling is worth its own step because the value is already known: a gem
+   is worth what its table says, and the books give no haggling rule for
+   one. What the table does with that is the table's business. */
+static void sell_valuable(Character *c, int at)
+{
+    Valuable *v = &c->valuables[at];
+    int many = v->quantity;
+    long cp;
+
+    if (v->value_cp == 0) {
+        printf("  %s has no price on it; agree one with your DM and use "
+               "the money screen.\n", v->name);
+        return;
+    }
+    if (many > 1) many = ui_int("  Sell how many", 1, v->quantity);
+    cp = (long)v->value_cp * many;
+
+    /* A sheet holds each coin count in its own field, so a sale that would
+       not fit is refused rather than rounded down out of sight. */
+    if (purse_in_copper(c) + cp > MAX_PURSE_CP) {
+        printf("  You are already carrying all the coin you can; nobody "
+               "here can pay you for that.\n");
+        return;
+    }
+
+    /* Paid in whatever coin divides it, biggest first, which is how a
+       merchant would count it out. */
+    c->gold += (int)(cp / 100); cp %= 100;
+    c->silver += (int)(cp / 10); cp %= 10;
+    c->copper += (int)cp;
+    printf("  Sold %d x %s for %d gp.\n", many, v->name,
+           (v->value_cp * many) / 100);
+
+    v->quantity -= many;
+    if (v->quantity <= 0) {
+        int i;
+        for (i = at; i + 1 < c->valuable_count; i++) {
+            c->valuables[i] = c->valuables[i + 1];
+        }
+        c->valuable_count--;
+    }
+}
+
+static void add_gem(Character *c)
+{
+    const char *opts[80];
+    static char lines[80][110];
+    int map[80], n = 0, i, pick;
+    int last = -1;
+
+    for (i = 0; i < GEM_COUNT && n < 78; i++) {
+        /* The book prints six tables and the value is the only thing
+           separating them, so the value leads the line. */
+        if (GEMS[i].value_gp != last) {
+            last = GEMS[i].value_gp;
+        }
+        snprintf(lines[n], sizeof lines[n], "%5d gp  %-18s %s",
+                 GEMS[i].value_gp, GEMS[i].name, GEMS[i].description);
+        opts[n] = lines[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) return;
+    opts[n] = "Back";
+
+    pick = ui_menu("  Which stone?", opts, NULL, n + 1);
+    if (pick == n) return;
+
+    if (c->valuable_count >= MAX_VALUABLES) {
+        printf("  That is as many odd things as this program carries.\n");
+        return;
+    }
+    {
+        const GemData *g = &GEMS[map[pick]];
+        Valuable *v = &c->valuables[c->valuable_count++];
+        memset(v, 0, sizeof *v);
+        snprintf(v->name, sizeof v->name, "%s", g->name);
+        v->value_cp = g->value_gp * 100;
+        v->quantity = ui_int("  How many", 1, MAX_QUANTITY);
+        snprintf(v->note, sizeof v->note, "%s", g->description);
+        printf("  Added %d x %s.\n", v->quantity, g->name);
+    }
+}
+
+static void add_oddment(Character *c)
+{
+    Valuable *v;
+    char name[MAX_NAME];
+
+    if (c->valuable_count >= MAX_VALUABLES) {
+        printf("  That is as many odd things as this program carries.\n");
+        return;
+    }
+    printf("\n  For the things no table has: a letter of marque, a signet "
+           "ring, somebody's locket.\n");
+    ui_line("  What is it", name, sizeof name);
+    if (!name[0]) return;
+
+    v = &c->valuables[c->valuable_count++];
+    memset(v, 0, sizeof *v);
+    snprintf(v->name, sizeof v->name, "%s", name);
+    v->quantity = ui_int("  How many", 1, MAX_QUANTITY);
+    if (ui_yesno("  Is it worth anything in particular?", 0)) {
+        int gp = ui_int("  How many gold pieces each", 0, MAX_COINS / 100);
+        int cp = ui_int("  And how many copper", 0, 99);
+        v->value_cp = gp * 100 + cp;
+    }
+    ui_line("  A line about it (blank for none)", v->note, sizeof v->note);
+    printf("  Added %d x %s.\n", v->quantity, v->name);
+}
+
+static void valuables_menu(Character *c)
+{
+    for (;;) {
+        const char *opts[MAX_VALUABLES + 4];
+        static char lines[MAX_VALUABLES][110];
+        int i, n = 0, pick;
+
+        for (i = 0; i < c->valuable_count; i++) {
+            const Valuable *v = &c->valuables[i];
+            if (v->value_cp) {
+                snprintf(lines[n], sizeof lines[n], "%3d x %-24s %d gp each",
+                         v->quantity, v->name, v->value_cp / 100);
+            } else {
+                snprintf(lines[n], sizeof lines[n], "%3d x %-24s no price",
+                         v->quantity, v->name);
+            }
+            opts[n] = lines[n];
+            n++;
+        }
+        opts[n] = "Add a gemstone";
+        opts[n + 1] = "Add something of your own";
+        opts[n + 2] = "Back";
+
+        printf("\n  Gems and oddments -- treasure rather than equipment: "
+               "nothing here is worn, wielded or weighed.\n");
+        pick = ui_menu("  Carried:", opts, NULL, n + 3);
+        if (pick == n + 2) return;
+        if (pick == n) { add_gem(c); continue; }
+        if (pick == n + 1) { add_oddment(c); continue; }
+
+        {
+            static const char *const act[] = { "Sell it", "Drop it", "Back" };
+            int i2;
+            switch (ui_menu("  Do what with it?", act, NULL, 3)) {
+            case 0: sell_valuable(c, pick); break;
+            case 1:
+                for (i2 = pick; i2 + 1 < c->valuable_count; i2++) {
+                    c->valuables[i2] = c->valuables[i2 + 1];
+                }
+                c->valuable_count--;
+                break;
+            default: break;
+            }
+        }
+    }
+}
+
+/* --------------------------------------------------- what the player is told */
+
+static int is_magic_item(const Character *c, int i)
+{
+    return c->inventory[i].is_magic;
+}
+
+/* Hiding and revealing what a magic item is.
+ *
+ * A DM hands over a rod without saying it is a rod of lordly might, and
+ * says so later. Two things can be withheld separately, because they are
+ * withheld for different reasons and revealed at different moments: the
+ * whole entry, until somebody identifies the thing, and the curse alone,
+ * until it bites. Neither changes what the item does. The bonus still
+ * reaches Armor Class and the attack line, because the character really is
+ * carrying it -- what changes is only what the sheet is willing to say.
+ */
+static void conceal_items(Character *c)
+{
+    for (;;) {
+        const char *opts[MAX_ITEMS + 1];
+        static char lines[MAX_ITEMS][128];
+        int map[MAX_ITEMS], n, pick;
+
+        n = carried_menu(c, is_magic_item, opts, lines, map, MAX_ITEMS);
+        if (n == 0) {
+            printf("  You carry no magic items.\n");
+            return;
+        }
+        opts[n] = "Done";
+
+        printf("\n  A hidden item still does what it does; the sheet just "
+               "does not say what.\n");
+        pick = ui_menu("  Hide or reveal which?", opts, NULL, n + 1);
+        if (pick == n) return;
+
+        {
+            InventoryEntry *e = &c->inventory[map[pick]];
+            const MagicItem *m = &MAGIC_ITEMS[e->item_id];
+            const char *what[4];
+            int k = 0, act;
+            int can_curse = (m->curse != NULL);
+
+            what[k++] = e->concealed ? "Reveal what it is"
+                                     : "Hide everything but the name";
+            if (can_curse) {
+                what[k++] = e->curse_hidden ? "Reveal the curse"
+                                            : "Hide the curse";
+            }
+            what[k++] = "Back";
+
+            printf("\n  %s: %s%s\n", m->name,
+                   e->concealed ? "not yet identified" : "fully written out",
+                   can_curse ? (e->curse_hidden ? ", curse hidden"
+                                                : ", curse shown")
+                             : ", no curse");
+            act = ui_menu("  Do what?", what, NULL, k);
+            if (act == 0) {
+                e->concealed = !e->concealed;
+                printf("  %s %s.\n", m->name,
+                       e->concealed ? "now prints as a name and nothing else"
+                                    : "is written out in full again");
+            } else if (can_curse && act == 1) {
+                e->curse_hidden = !e->curse_hidden;
+                printf("  The curse on %s is now %s.\n", m->name,
+                       e->curse_hidden ? "withheld" : "shown");
+            }
+        }
+    }
+}
+
 /* ------------------------------------------------------------------- coins */
 
 static void adjust_coins(Character *c)
@@ -452,22 +730,28 @@ void manage_inventory(Character *c)
             "Look at what you are carrying",
             "Pick up equipment",
             "Pick up a magic item",
+            "Pick up a potion",
+            "Gems and oddments",
             "Put something down",
             "Wear or take off armor and shields",
             "Attune to magic items",
+            "Hide or reveal what a magic item is",
             "Set your coins",
             "Done"
         };
 
         show_carried(c);
-        switch (ui_menu("  Inventory:", modes, NULL, 8)) {
+        switch (ui_menu("  Inventory:", modes, NULL, 11)) {
         case 0: inventory_reference(c);  break;
         case 1: add_from_catalogue(c);   break;
         case 2: add_magic(c);            break;
-        case 3: remove_gear(c);          break;
-        case 4: equip_gear(c);           break;
-        case 5: attune_items(c);         break;
-        case 6: adjust_coins(c);         break;
+        case 3: add_potion(c);           break;
+        case 4: valuables_menu(c);       break;
+        case 5: remove_gear(c);          break;
+        case 6: equip_gear(c);           break;
+        case 7: attune_items(c);         break;
+        case 8: conceal_items(c);        break;
+        case 9: adjust_coins(c);         break;
         default: return;
         }
     }

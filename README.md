@@ -25,23 +25,34 @@ The main menu offers:
 
 1. **Create a new character** — the full wizard.
 2. **Load a character and level up** — reads a saved `.txt` and advances it.
-3. **View a saved character** — prints the sheet.
-4. **Content settings** — which books are in play, and whether custom
+3. **Game mode** — a character in play rather than in the making: hit
+   points and death saves, rests and hit dice, spell slots and components,
+   uses of things (bardic inspiration, ki, rage), conditions, money and a
+   ledger of where it went, a visit to a shop, food and lodging off the
+   book's own table, gear, and how worn that gear is.
+4. **View a saved character** — prints the sheet.
+5. **Content settings** — which books are in play, and whether custom
    origins, TCE's optional class features, multiclassing and feats are
    allowed, whether the sheet prints where the level sits on the experience
    table, and whether you roll your own dice. The settings are written into
    the character file, so a character loaded to level up offers the content
    it was built with -- and keeps its own answer on the experience line.
-5. **Reference** — look up any item, magic item, weapon property, trinket,
+6. **Reference** — look up any item, magic item, weapon property, trinket,
    lifestyle, service or condition.
-6. **Manage a character's inventory** — pick things up, put them down,
-   change what is worn, attune to magic items.
-7. **Manage a character's sidekicks** — add one, level it up, or write it
+7. **Manage a character's inventory** — pick things up, put them down,
+   change what is worn, attune to magic items, carry gems and the things no
+   table has.
+8. **Manage a character's sidekicks** — add one, level it up, or write it
    out as a sheet of its own.
-8. **Homebrew** — add your own items, magic items and spells to the banks,
+9. **Homebrew** — add your own items, magic items and spells to the banks,
    or take them out again.
-9. **Notes and character details** — notes, personality, appearance and
-   backstory, on a saved character.
+10. **Shopbuilder** — a shop for your table, saved to `<shop name>.txt`. A
+    shop is what the DM puts in it and nothing else: each line carries its
+    own price, so the town with a war on can charge what it likes for
+    arrows, and a line can be something no book sells. Game mode loads one
+    by name and buys from it.
+11. **Notes and character details** — notes, personality, appearance and
+    backstory, on a saved character.
 
 ## What it covers
 

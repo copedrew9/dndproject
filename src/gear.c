@@ -299,6 +299,39 @@ static void add_all_phrases(Character *c, const char *text)
     if (*start) add_phrase(c, start);
 }
 
+/* Where the next lettered alternative starts, or NULL.
+ *
+ * A marker is "(a)" -- one bracket, one lowercase letter, one bracket --
+ * standing at the start of the line or after a space. The letter has to be
+ * a single character because the alternatives are not the only brackets on
+ * these lines: the paladin's armour reads "(c) chain mail (if proficient)",
+ * and splitting on that one would cut an option in half.
+ */
+static const char *next_alternative(const char *s, const char *start)
+{
+    for (; *s; s++) {
+        if (s[0] != '(' || s[1] < 'a' || s[1] > 'z' || s[2] != ')') continue;
+        if (s != start && s[-1] != ' ') continue;
+        return s;
+    }
+    return NULL;
+}
+
+/* How much of an alternative is the alternative, with the punctuation that
+ * joins it to the next one taken off: "(a) a rapier, " and "(b) a longsword
+ * or " are a rapier and a longsword. */
+static size_t alternative_len(const char *p, size_t len)
+{
+    while (len && p[len - 1] == ' ') len--;
+    if (len >= 2 && p[len - 2] == 'o' && p[len - 1] == 'r'
+        && (len == 2 || p[len - 3] == ' ')) {
+        len -= 2;
+        while (len && p[len - 1] == ' ') len--;
+    }
+    if (len && p[len - 1] == ',') len--;
+    return len;
+}
+
 /* Reads a starting-equipment line, offering the lettered alternatives when
  * the PHB gives a choice, then resolving whatever was chosen into items. */
 static void resolve_equipment_line(Character *c, const char *line)
@@ -319,16 +352,22 @@ static void resolve_equipment_line(Character *c, const char *line)
     strncpy(buf, line, sizeof buf - 1);
     buf[sizeof buf - 1] = '\0';
 
-    p = buf;
-    while (p && *p && n < 8) {
-        const char *next = strstr(p, " or (");
-        size_t len = next ? (size_t)(next - p) : strlen(p);
+    /* Split on the markers themselves rather than on " or (". Three of the
+       PHB's lines offer three things and separate the first two with a
+       comma -- "(a) a burglar's pack, (b) a dungeoneer's pack or (c) an
+       explorer's pack" -- and splitting on the "or" alone put the burglar's
+       and the dungeoneer's pack on one line as a single option, so a rogue
+       could not choose between them. */
+    p = next_alternative(buf, buf);
+    while (p && n < 8) {
+        const char *next = next_alternative(p + 3, buf);
+        size_t len = alternative_len(p, next ? (size_t)(next - p) : strlen(p));
         if (len >= sizeof parts[0]) len = sizeof parts[0] - 1;
         memcpy(parts[n], p, len);
         parts[n][len] = '\0';
         opts[n] = parts[n];
         n++;
-        p = next ? next + 4 : NULL;
+        p = next;
     }
 
     if (n <= 1) {
@@ -637,7 +676,25 @@ static const char *chosen_domain(const Character *c)
     return NULL;
 }
 
-static void choose_deity(Character *c)
+/* Classes whose power is somebody else's.
+ *
+ * A cleric serves a god, a paladin swears an oath, and a warlock strikes a
+ * bargain with an extraplanar patron: for all three the source is part of
+ * the character rather than a decoration on it, so naming it is not
+ * optional. Everyone else may keep a faith and is asked instead. */
+int class_must_name_a_patron(int class_id)
+{
+    return class_id == CLS_CLERIC || class_id == CLS_PALADIN
+        || class_id == CLS_WARLOCK;
+}
+
+/* Offers the deity tables, and says whether one was actually named.
+ *
+ * When it is required the way out is not offered at all, rather than
+ * offered and refused: a menu that cannot be declined always ends in a
+ * deity, where a loop around a decline would spin forever against a
+ * closed input. */
+static int choose_deity(Character *c, int required)
 {
     const char *pantheons[16];
     int pn = 0, i, pick;
@@ -651,13 +708,16 @@ static void choose_deity(Character *c)
         }
         if (!seen) pantheons[pn++] = DEITIES[i].pantheon;
     }
-    pantheons[pn] = "No deity in particular";
+    /* A deity table with nothing in it -- a homebrew file that replaced it,
+       say -- leaves nothing to require. */
+    if (pn == 0) return 0;
+    if (!required) pantheons[pn] = "No deity in particular";
 
     if (domain) {
         printf("\n  Deities marked with a star suggest the %s.\n", domain);
     }
-    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + 1);
-    if (pick == pn) return;
+    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + !required);
+    if (!required && pick == pn) return 0;
 
     {
         const char *opts[128];
@@ -680,7 +740,7 @@ static void choose_deity(Character *c)
             map[n] = i;
             n++;
         }
-        if (n == 0) return;
+        if (n == 0) return 0;
 
         choice = ui_menu("  Your deity:", opts, det, n);
         add_choice(c, "Deity", DEITIES[map[choice]].name);
@@ -689,6 +749,7 @@ static void choose_deity(Character *c)
             printf("  %s does not suggest the %s, which is worth agreeing "
                    "with your DM.\n", DEITIES[map[choice]].name, domain);
         }
+        return 1;
     }
 }
 
@@ -726,16 +787,23 @@ void choose_personality(Character *c)
     pick_or_type("Bond", bg ? bg->bonds : NULL, c->bond, sizeof c->bond);
     pick_or_type("Flaw", bg ? bg->flaws : NULL, c->flaw, sizeof c->flaw);
 
-    /* A cleric or paladin serves someone in particular; everyone else may
-       still keep a faith. */
+    /* A cleric, paladin or warlock has to name what they serve; everyone
+       else may still keep a faith, and is asked. */
     {
         int devout = 0;
+        const char *why = NULL;
         for (i = 0; i < c->class_count; i++) {
             int id = c->classes[i].class_id;
-            if (id == CLS_CLERIC || id == CLS_PALADIN) devout = 1;
+            if (!class_must_name_a_patron(id)) continue;
+            devout = 1;
+            why = CLASSES[id].name;
         }
-        if (ui_yesno("\n  Choose a deity for your character?", devout)) {
-            choose_deity(c);
+        if (devout) {
+            printf("\n  A %s draws their power from someone in particular, "
+                   "so this one is not a choice.\n", why);
+            choose_deity(c, 1);
+        } else if (ui_yesno("\n  Choose a deity for your character?", 0)) {
+            choose_deity(c, 0);
         }
     }
 

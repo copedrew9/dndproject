@@ -521,6 +521,21 @@ static void dump_equipment(void)
         rec(f, "TRINKET"); field(f, TRINKETS[i]); end(f);
     }
 
+    /* Gemstones from the Dungeon Master's Guide's treasure tables. A gem
+       is worth what its table says and nothing else -- the books give no
+       haggling rule for one -- so the value is the whole of its mechanics,
+       and the description is what it looks like on the table. */
+    head(f, "GEM", "name | value_gp | description");
+    for (i = 0; i < GEM_COUNT; i++) {
+        char buf[32];
+        rec(f, "GEM");
+        field(f, GEMS[i].name);
+        snprintf(buf, sizeof buf, "%d", GEMS[i].value_gp);
+        field(f, buf);
+        field(f, GEMS[i].description);
+        end(f);
+    }
+
     head(f, "LIFESTYLE", "name | cost_cp_per_day | text");
     for (i = 0; i < LIFESTYLE_COUNT; i++) {
         rec(f, "LIFESTYLE");
@@ -547,7 +562,7 @@ static void dump_equipment(void)
     }
 
     head(f, "MAGICITEM", "name | book | type | rarity | attunement (blank "
-                         "when none) | text");
+                         "when none) | text | curse (blank when none)");
     for (i = 0; i < BOOK_MAGIC_ITEM_COUNT; i++) {
         const MagicItem *m = &BOOK_MAGIC_ITEMS[i];
         rec(f, "MAGICITEM");
@@ -557,6 +572,7 @@ static void dump_equipment(void)
         field(f, m->rarity);
         field(f, m->attunement ? m->attunement : "");
         field(f, m->text);
+        field(f, m->curse ? m->curse : "");
         end(f);
     }
 

@@ -9,6 +9,46 @@ void ui_header(const char *title);
 void ui_para(const char *text);
 void ui_wrap(const char *text, int indent);
 
+/* ------------------------------------------------- going back, and giving up
+ *
+ * A player part-way through building a character wants two things a plain
+ * menu cannot give them: to undo the last choice, and to abandon the whole
+ * thing and start again. Both are answered by typing a word rather than a
+ * number -- "b" or "back", "q" or "quit" -- because every menu's numbers
+ * are already spoken for by its options, and a number that means something
+ * different on every screen is worse than a word that means the same on
+ * all of them.
+ *
+ * No prompt function returns an escape. A prompt that is escaped never
+ * returns at all: the registered handler is called and does not come back,
+ * which is what keeps this out of the other hundred and fifty call sites
+ * in the program. They cannot mishandle a sentinel they can never see.
+ *
+ * Escapes are off until a handler is registered, so a prompt outside
+ * character creation -- setting coins, entering a dice roll -- neither
+ * offers the words nor accepts them.
+ */
+typedef enum { UI_ESC_BACK = 1, UI_ESC_QUIT } UiEscape;
+
+/* Registered by the flow that can honour an escape. THE HANDLER MUST NOT
+   RETURN: it longjmps past the prompt that raised it. Pass NULL to turn
+   escapes off again. */
+void ui_set_escape(void (*fn)(UiEscape));
+
+/* The dice, so that going back can put them back too. Undoing a choice has
+   to undo the rolls it consumed, or backing up and coming forward again
+   would be a way to reroll hit points until they suited. Starting a new
+   character is the opposite case and does not restore them: that is a new
+   character, not a replay of the old one. */
+unsigned long ui_rng_state(void);
+void ui_rng_restore(unsigned long state);
+
+/* The text "3 info" shows for entry 3 of the menu now on screen, set for
+   the duration of one prompt. ui_menu does this for its callers, passing
+   the details it was already given, so every existing menu answers "info"
+   with the line it already shows. */
+void ui_set_info(const char *const *info, int count);
+
 /* Prompt for an integer in [lo, hi]. Re-asks until the input is valid. */
 int  ui_int(const char *prompt, int lo, int hi);
 
@@ -28,6 +68,14 @@ int  ui_yesno(const char *prompt, int def_yes);
    Returns the selected index. */
 int  ui_menu(const char *prompt, const char *const *options,
              const char *const *details, int count);
+
+/* The same menu, with a separate array of longer answers to "N info".
+   Pass NULL for info and the details array is used, which is what ui_menu
+   does -- so a menu that already prints a detail line needs no change to
+   answer a question about it. */
+int  ui_menu_info(const char *prompt, const char *const *options,
+                  const char *const *details, int count,
+                  const char *const *info);
 
 /* Choose n distinct entries from options; fills picks[] with indices.
    Entries where available[i] is 0 are shown as unavailable and cannot be

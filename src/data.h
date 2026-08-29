@@ -525,6 +525,18 @@ typedef struct {
     int cost_cp;
 } PriceEntry;
 
+/* A gemstone from the Dungeon Master's Guide's treasure tables. Its value
+   is fixed by the table it is printed in, which is the whole of what a gem
+   does: it is treasure to be carried and sold, not equipment to be used. */
+typedef struct {
+    const char *name;
+    int value_gp;
+    const char *description;
+} GemData;
+
+extern const GemData GEMS[];
+extern const int GEM_COUNT;
+
 extern const PriceEntry SERVICES[];
 extern const int SERVICE_COUNT;
 extern const PriceEntry SPELLCASTING_SERVICES[];
@@ -539,6 +551,13 @@ typedef struct {
     const char *rarity;
     const char *attunement;     /* NULL when no attunement is required */
     const char *text;
+    /* What the item does to whoever carries it that the entry does not
+       advertise, kept apart from the text so a DM can withhold it. NULL
+       when the item is not cursed. Splitting the sentence out of the text
+       by looking for the word would be a guess: the axe of the dwarvish
+       lords says "It is cursed:" in the middle of its entry and the armour
+       of vulnerability puts a sentence after its curse. */
+    const char *curse;
 } MagicItem;
 
 extern const MagicItem *MAGIC_ITEMS;

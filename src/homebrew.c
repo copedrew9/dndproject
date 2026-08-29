@@ -234,6 +234,9 @@ int homebrew_load(void)
             m->rarity = keep(fields[3]);
             m->attunement = fields[4][0] ? keep(fields[4]) : NULL;
             m->text = keep(fields[5]);
+            /* Older homebrew files stop at the text, so a missing curse
+               field is a file without one rather than a broken record. */
+            m->curse = (n >= 7 && fields[6][0]) ? keep(fields[6]) : NULL;
         } else if (!strcmp(fields[0], "SPELL") && n >= 11
                    && n_spells < MAX_CUSTOM) {
             SpellData *sp = &custom_spells[n_spells++];
@@ -306,6 +309,8 @@ int homebrew_save(void)
         record_put(f, m->attunement ? m->attunement : "");
         fputc('|', f);
         record_put(f, m->text);
+        fputc('|', f);
+        record_put(f, m->curse ? m->curse : "");
         fputc('\n', f);
     }
     for (i = 0; i < n_spells; i++) {
@@ -654,6 +659,11 @@ static void add_custom_magic_item(void)
 
     ui_line("  What does it do", buf, sizeof buf);
     m->text = keep(buf[0] ? buf : "No description was given.");
+
+    /* Kept apart from the description so a DM can hand the item over with
+       the curse withheld, and reveal it when it takes effect. */
+    ui_line("  Any curse on it (blank for none)", buf, sizeof buf);
+    m->curse = buf[0] ? keep(buf) : NULL;
 
     n_magic++;
     rebuild_banks();

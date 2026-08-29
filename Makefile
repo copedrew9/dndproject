@@ -50,11 +50,15 @@ audit:
 
 # Checks the numbers, not just the names: every PHB equipment row against
 # the book's own tables, and every deity against appendix B. verify_coverage
-# runs the other way, looking for spells and magic items the books have and
-# data/ does not -- the direction a gap hides in, since a missing entry is
-# not a name that fails to resolve.
+# and verify_equipment_coverage run the other way, looking for spells, magic
+# items and priced equipment rows the books have and data/ does not -- the
+# direction a gap hides in, since a missing entry is not a name that fails to
+# resolve. That direction found five PHB items nobody had entered: the glass
+# bottle, two cases, and two of the four gaming sets.
 verify:
 	python3 tools/verify_equipment.py
+	python3 tools/verify_equipment_coverage.py
+	python3 tools/verify_gems.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py
 	python3 tools/verify_spells.py
@@ -67,6 +71,7 @@ verify:
 	python3 tools/verify_races_phb.py
 	python3 tools/verify_tables.py
 	python3 tools/verify_options.py
+	python3 tools/verify_prereq_coverage.py
 	python3 tools/verify_spell_lists.py
 	python3 tools/verify_reference.py
 	python3 tools/verify_sidekicks.py
@@ -99,15 +104,20 @@ test: $(TESTBIN)
 #
 # drive.py answers the creation wizard; stress.py wanders the rest of the
 # main menu -- settings, reference, inventory, sidekicks, homebrew, notes --
-# in one session, and fuzz_files.py corrupts the files the program reads
-# rather than the answers it is given.
+# in one session, and fuzz_files.py and fuzz_shop.py corrupt the files the
+# program reads rather than the answers it is given: a character sheet and
+# homebrew.txt for the first, a shop for the second.
 check: test combos dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
+	python3 tools/drive.py --runs 10 --seed 700 --magic 3
+	python3 tools/drive.py --runs 8 --seed 810 --back-at 2
+	python3 tools/drive.py --runs 8 --seed 820 --quit-at 3
 	python3 tools/roundtrip.py
 	python3 tools/stress.py --runs 1 --seed 11 --tour --ops 9 --grace 0.02
 	python3 tools/stress.py --runs 4 --seed 20 --ops 4 --grace 0.02
 	python3 tools/fuzz_files.py --runs 150 --seed 1
+	python3 tools/fuzz_shop.py --runs 120 --seed 1
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race
@@ -136,6 +146,7 @@ asan:
 	$(SANENV) python3 tools/stress.py --runs 3 --seed 20 \
 	  --ops 5 --nasty 0.3 --grace 0.02 --seconds 1800
 	$(SANENV) python3 tools/fuzz_files.py --runs 200 --seed 1
+	$(SANENV) python3 tools/fuzz_shop.py --runs 200 --seed 1
 	$(MAKE) clean
 
 clean:

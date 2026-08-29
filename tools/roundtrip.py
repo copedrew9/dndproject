@@ -8,6 +8,7 @@ level-up path would then get wrong.
 """
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,34 @@ import drive                                        # noqa: E402
 
 DIVIDER = "MACHINE-READABLE DATA"
 MENU = "D&D 5th Edition Character Creator"
+
+
+MENU_LINE = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
+
+
+def menu_entry(text, wanted):
+    """The number of the main-menu entry whose label contains `wanted`.
+
+    Three harnesses drive the view screen by sending its menu number, and
+    all three had that number written into them as "3". Adding game mode
+    above it moved it to 4, and a hardcoded number does not fail loudly
+    when a menu grows -- it silently drives a different screen and reports
+    the empty result as a fault in the character being viewed.
+    """
+    for line in text.splitlines():
+        m = MENU_LINE.match(line)
+        if m and wanted.lower() in m.group(2).lower():
+            return m.group(1)
+    return None
+
+
+def view_entry(binary, workdir=None):
+    """Ask the program itself which entry views a saved character."""
+    probe = subprocess.run([binary, "--seed", "1"], input=b"\n",
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           cwd=workdir, timeout=300)
+    return menu_entry(probe.stdout.decode("utf-8", "replace"),
+                      "View a saved character") or "3"
 
 
 def sheet_of(text):
@@ -52,6 +81,7 @@ def main():
                 failures += 1
                 continue
 
+            view = view_entry(binary, wd)
             for fn in sorted(os.listdir(wd)):
                 if not fn.endswith(".txt"):
                     continue
@@ -59,9 +89,10 @@ def main():
                 saved = sheet_of(open(path, encoding="utf-8",
                                       errors="replace").read())
 
-                # Menu option 3 views a saved character, then 4 quits.
+                # The view entry is asked for rather than assumed; the
+                # trailing 5 falls off the end of the menu and quits.
                 proc = subprocess.run(
-                    [binary], input="3\n%s\n5\n" % fn,
+                    [binary], input="%s\n%s\n5\n" % (view, fn),
                     capture_output=True, text=True, cwd=wd, errors="replace")
                 start = proc.stdout.find("=" * 20)
                 reloaded = sheet_of(proc.stdout[start:] if start >= 0 else "")

@@ -3830,9 +3830,9 @@ const OptionalFeature OPTIONAL_FEATURES[] = {
       "Twenty more spells are added to the warlock spell list." },
     { 10, BOOK_TCE, 2, "Eldritch Invocation Options",
       "",
-      "Further invocations become available, including Eldritch "
-      "Mind, Far Scribe, Investment of the Chain Master, Rebuke of "
-      "the Talisman and Undying Servitude." },
+      "Further invocations become available, including Bond of the "
+      "Talisman, Eldritch Mind, Far Scribe, Investment of the Chain "
+      "Master, Rebuke of the Talisman and Undying Servitude." },
     { 10, BOOK_TCE, 3, "Pact Boon Option",
       "",
       "The Pact of the Talisman: an amulet that lets its wearer add "
@@ -4085,6 +4085,11 @@ static const ClassOption OPTS_0[] = {
     { "Bewitching Whispers", BOOK_PHB, 7, "",
       "Cast compulsion once using a warlock spell slot, then take a "
       "long rest." },
+    { "Bond of the Talisman", BOOK_TCE, 12, "Pact of the Talisman",
+      "As an action, teleport to the unoccupied space nearest "
+      "whoever wears your talisman, on the same plane; they can do "
+      "the same to reach you. Usable a number of times per long "
+      "rest equal to your proficiency bonus." },
     { "Book of Ancient Secrets", BOOK_PHB, 0, "Pact of the Tome",
       "Inscribe two 1st-level ritual spells from any class list in "
       "your Book of Shadows and cast them as rituals; you can add "

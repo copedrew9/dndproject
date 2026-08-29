@@ -7,9 +7,11 @@
 #include "data.h"
 #include "sidekick.h"
 #include "build.h"
+#include "game.h"
 #include "data_spells.h"
 #include "saveload.h"
 #include "homebrew.h"
+#include "shop.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1643,8 +1645,12 @@ static void test_choice_lists(void)
     check(n == 17, "artisan's tools", n, 17);
     n = tools_in_group("Musical instrument", tools, 64);
     check(n == 10, "musical instruments", n, 10);
+    /* Four, not two. The PHB's Gaming set entry lists dice, dragonchess,
+       playing cards and Three-Dragon Ante; two of them were never entered,
+       and this assertion agreed with the gap instead of catching it.
+       tools/verify_equipment_coverage.py is what found them. */
     n = tools_in_group("Gaming set", tools, 64);
-    check(n == 2, "gaming sets", n, 2);
+    check(n == 4, "gaming sets", n, 4);
 
     /* A group nobody has heard of yields every tool, so a proficiency the
        books word some other way still gets a list rather than a blank. */
@@ -1897,6 +1903,34 @@ static void test_sweep_content(void)
     for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
         plain_fighter(&c, "SelftestMagic");
         add_magic_item(&c, i, 1, MAGIC_ITEMS[i].attunement ? 1 : 0, 0);
+        if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
+    }
+
+    /* And again with everything a copy can carry filled in. The pass above
+       writes every item in its blank state -- no bonus, no damage type, no
+       weapon -- which is the one state in which the variant field is empty
+       and cannot be lost. An item whose copy says it is a +3 longsword made
+       against fire has three more things to survive the round trip, and
+       until now nothing wrote one down. */
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        const MagicRule *r = magic_rule_for(MAGIC_ITEMS[i].name);
+        const char *types[16];
+        char inner[MAX_NAME];
+        int nt;
+
+        plain_fighter(&c, "SelftestVariant");
+        add_magic_item(&c, i, 2, MAGIC_ITEMS[i].attunement ? 1 : 0, 3);
+        c.inventory[c.item_count - 1].equipped = 1;
+
+        nt = r ? magic_variant_types(r, types, 16) : 0;
+        if (nt > 0) {
+            snprintf(c.inventory[c.item_count - 1].variant,
+                     sizeof c.inventory[0].variant, "%s", types[nt - 1]);
+        } else if (magic_weapon_kind(MAGIC_ITEMS[i].type, inner, sizeof inner)
+                   == MAGIC_WEAPON_CHOICE) {
+            snprintf(c.inventory[c.item_count - 1].variant,
+                     sizeof c.inventory[0].variant, "%s", "Longsword");
+        }
         if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
     }
 
@@ -2228,6 +2262,857 @@ static void test_magic_weapon_attacks(void)
     EQ(found, 0, "ammunition gets no line of its own");
 }
 
+/* Every magic rule has to do something.
+ *
+ * The rules are checked against the books by tools/verify_magic_rules.py,
+ * and each of them names a real item, which test_magic_armour_class
+ * confirms. Neither says the rule ever reaches the sheet. A field the
+ * generator writes and the engine never reads is dead data that looks
+ * alive: it round-trips, it verifies against the DMG, and a player picking
+ * that item sees nothing at all.
+ *
+ * So this takes a character's whole observable state -- Armor Class,
+ * speeds, every ability score, every saving throw, every skill, the
+ * resistances line, and every attack -- adds one item, and requires the
+ * state to move. What moved is not asserted here; the rule's own test
+ * does that. What is asserted is that something did.
+ */
+typedef struct {
+    int ac, speed, fly, swim, climb, attacks;
+    int score[ABL_COUNT], save[ABL_COUNT], skill[SKL_COUNT];
+    int bonus[MAX_ATTACKS];
+    char defences[512];
+} Observed;
+
+static void observe(const Character *c, Observed *o)
+{
+    Attack atk[MAX_ATTACKS];
+    int i;
+
+    memset(o, 0, sizeof *o);
+    o->ac = armour_class(c);
+    o->speed = speed_of(c);
+    o->fly = magic_fly_speed(c);
+    o->swim = magic_swim_speed(c);
+    o->climb = magic_climb_speed(c);
+    for (i = 0; i < ABL_COUNT; i++) {
+        o->score[i] = ability_score(c, (Ability)i);
+        o->save[i] = save_bonus(c, (Ability)i);
+    }
+    for (i = 0; i < SKL_COUNT; i++) o->skill[i] = skill_bonus(c, (Skill)i);
+    magic_defences(c, o->defences, sizeof o->defences);
+    o->attacks = attacks_of(c, atk, MAX_ATTACKS);
+    for (i = 0; i < o->attacks && i < MAX_ATTACKS; i++) {
+        o->bonus[i] = atk[i].bonus;
+    }
+}
+
+static void test_every_magic_rule_does_something(void)
+{
+    /* One baseline cannot show every rule working, and the four that a
+       single one hides are exactly the interesting ones: bracers of
+       defense and a robe of the archmagi do nothing to somebody already
+       wearing armour, boots of striding and springing set a speed of 30 on
+       a character who already walks 30, and a belt of giant strength only
+       ever raises a score. So each rule is tried against both a small
+       unarmoured character with poor scores and an armoured one with good
+       ones, and has to move at least one of them. */
+    static const struct { int small, armed; } BASE[] = { { 1, 0 }, { 0, 1 } };
+    Character c;
+    Observed before, after;
+    int i, k, dead = 0;
+
+    printf("every magic rule reaches the sheet\n");
+
+    for (i = 0; i < MAGIC_RULE_COUNT; i++) {
+        const MagicRule *r = &MAGIC_RULES[i];
+        const char *types[16];
+        int id = find_magic_item(r->item);
+        int moved = 0, plus, nt;
+
+        if (id < 0) continue;              /* already reported elsewhere */
+
+        /* A belt of giant strength carries its score in the copy rather
+           than in the rule, so the copy has to carry a big one: three
+           would lower a Strength of 14 and read as no effect at all. */
+        plus = (r->sets_ability && !r->sets_to) ? 29 : 3;
+
+        for (k = 0; k < 2 && !moved; k++) {
+            reset(&c);
+            add_class(&c, CLS_FIGHTER, 5, -1);
+            {
+                int a, score = BASE[k].armed ? 14 : 8;
+                for (a = 0; a < ABL_COUNT; a++) c.base_score[a] = score;
+            }
+            if (BASE[k].small) {
+                /* A gnome walks 25 feet, so boots that set a speed of 30
+                   have something to set. */
+                c.race_id = find_race("Gnome");
+            }
+            add_prof(&c, "All weapons");
+            if (BASE[k].armed) {
+                add_item(&c, find_item("Longsword"), 1, 1);
+                add_item(&c, find_item("Leather armor"), 1, 1);
+            }
+            observe(&c, &before);
+
+            /* Attuned, worn and held: what is tested here is what the rule
+               does when it is doing anything at all. The gating is tested
+               by the rules that gate. */
+            add_magic_item(&c, id, 1, 1, plus);
+            c.inventory[c.item_count - 1].equipped = 1;
+
+            /* A copy that carries its own damage type or its own weapon
+               has to say which before the rule has anything to apply. */
+            nt = magic_variant_types(r, types, 16);
+            if (nt > 0) {
+                snprintf(c.inventory[c.item_count - 1].variant,
+                         sizeof c.inventory[0].variant, "%s", types[0]);
+            } else {
+                char inner[MAX_NAME];
+                if (magic_weapon_kind(MAGIC_ITEMS[id].type, inner,
+                                      sizeof inner) == MAGIC_WEAPON_CHOICE) {
+                    snprintf(c.inventory[c.item_count - 1].variant,
+                             sizeof c.inventory[0].variant, "%s", "Longsword");
+                }
+            }
+
+            observe(&c, &after);
+            if (memcmp(&before, &after, sizeof before)) moved = 1;
+        }
+        if (!moved) {
+            printf("  FAIL %s changes nothing on the sheet\n", r->item);
+            failures++;
+            dead++;
+        }
+    }
+    EQ(dead, 0, "no rule is dead data");
+}
+
+/* What the sheet is allowed to say about a magic item, and what it is not. */
+static void test_hidden_magic_items(void)
+{
+    Character c;
+    char path[MAX_NAME + 8];
+    int cursed = -1, i;
+
+    printf("hiding and revealing a magic item\n");
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (MAGIC_ITEMS[i].curse) { cursed = i; break; }
+    }
+    EQ(cursed >= 0, 1, "some item carries a curse of its own");
+    if (cursed < 0) return;
+
+    /* Written out in full: the entry and the curse both reach the sheet. */
+    plain_fighter(&c, "SelftestHidden");
+    add_magic_item(&c, cursed, 1, MAGIC_ITEMS[cursed].attunement ? 1 : 0, 0);
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "the name is on the sheet", 1, 1);
+    check(strstr(sheet_a, "Cursed") != NULL || strstr(sheet_a, "cursed") != NULL,
+          "and so is the curse", 1, 1);
+    remove(path);
+
+    /* Curse withheld: the entry stays, the curse goes. */
+    c.inventory[0].curse_hidden = 1;
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "the name survives hiding the curse", 1, 1);
+    check(strstr(sheet_a, "Cursed:") == NULL,
+          "but the curse does not", 1, 1);
+    remove(path);
+
+    /* Concealed: the name and nothing else. */
+    c.inventory[0].curse_hidden = 0;
+    c.inventory[0].concealed = 1;
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "a concealed item still shows its name", 1, 1);
+    check(strstr(sheet_a, "not yet identified") != NULL,
+          "and says it is unidentified", 1, 1);
+    check(strstr(sheet_a, "Cursed:") == NULL,
+          "and gives away nothing else", 1, 1);
+    remove(path);
+
+    /* Both flags survive the file, and hiding changes no number. */
+    {
+        Character back;
+        int ac_before = armour_class(&c);
+        c.inventory[0].curse_hidden = 1;
+        check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+        check(load_character(path, &back) == 0, "and read back", 1, 1);
+        EQ(back.inventory[0].concealed, 1, "concealed survives the file");
+        EQ(back.inventory[0].curse_hidden, 1, "so does the hidden curse");
+        EQ(armour_class(&back), ac_before,
+           "hiding an item changes nothing it does");
+        remove(path);
+    }
+}
+
+/* A complete life path has to fit.
+ *
+ * Xanathar's walks thirteen tables and joins the answers into one line.
+ * The table names and their separators cost 241 characters before a single
+ * answer is added, so the shortest complete life path runs past 400 -- and
+ * the field used to be 256, which meant the join broke out mid-word around
+ * the seventh table and stored the fragment. Nothing noticed, because a
+ * truncated string is still a string.
+ */
+static void test_life_path_fits(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    size_t need = 0;
+    int i;
+
+    printf("a whole life path fits on the sheet\n");
+
+    /* The scaffolding alone, with the longest row each table can produce. */
+    for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+        const LifeTable *t = &LIFE_TABLES[i];
+        size_t longest = 0;
+        int k;
+        for (k = 0; k < t->count; k++) {
+            size_t len = strlen(t->rows[k].text);
+            if (len > longest) longest = len;
+        }
+        need += strlen(t->name) + 2 + longest + 2;   /* "Name: text" + ". " */
+    }
+    check(need < MAX_BACKSTORY, "the longest life path fits the field",
+          (long)need, (long)MAX_BACKSTORY);
+
+    /* And one really does survive being written and read back. */
+    plain_fighter(&c, "SelftestLife");
+    {
+        size_t used = 0;
+        for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+            const LifeTable *t = &LIFE_TABLES[i];
+            int w = snprintf(c.backstory + used, sizeof c.backstory - used,
+                             "%s%s: %s", i ? ". " : "", t->name,
+                             t->rows[t->count - 1].text);
+            if (w < 0 || (size_t)w >= sizeof c.backstory - used) break;
+            used += (size_t)w;
+        }
+        EQ(i, LIFE_TABLE_COUNT, "every table is written, none dropped");
+    }
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    check(!strcmp(back.backstory, c.backstory),
+          "the life path comes back whole", 1, 1);
+    remove(path);
+}
+
+/* A cleric, paladin or warlock has to name what they serve. The rule is
+   about which classes, not about the menu, so that is what is checked --
+   the wizard's prompts are exercised by tools/drive.py. */
+static void test_patron_is_required(void)
+{
+    static const struct { int cls; int required; } WANT[] = {
+        { CLS_CLERIC,  1 }, { CLS_PALADIN, 1 }, { CLS_WARLOCK, 1 },
+        { CLS_FIGHTER, 0 }, { CLS_WIZARD,  0 }, { CLS_DRUID,   0 },
+        { CLS_ROGUE,   0 }, { CLS_BARD,    0 },
+    };
+    int i;
+
+    printf("who has to name a patron\n");
+
+    for (i = 0; i < (int)(sizeof WANT / sizeof WANT[0]); i++) {
+        char what[96];
+        snprintf(what, sizeof what, "%s %s name one",
+                 CLASSES[WANT[i].cls].name,
+                 WANT[i].required ? "must" : "need not");
+        EQ(class_must_name_a_patron(WANT[i].cls), WANT[i].required, what);
+    }
+}
+
+/* Preparation is a per-spell decision that has to reach the file. Nothing
+   used to set it to anything but 1, so nothing ever proved it could be 0
+   and come back 0. */
+static void test_prepared_survives(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i, cleric = -1, marked = 0;
+
+    printf("which spells are prepared\n");
+
+    base_character(&c, "SelftestPrep");
+    c.race_id = 0;
+    add_class(&c, CLS_CLERIC, 5, -1);
+    c.hp_rolls[0] = 8;
+    c.hp_roll_count = 1;
+
+    /* Three cleric spells, the middle one left unprepared. */
+    for (i = 0; i < SPELL_COUNT && c.spell_count < 3; i++) {
+        if (SPELLS[i].level != 1) continue;
+        if (!(SPELLS[i].classes & SPL_CLERIC)) continue;
+        c.spells[c.spell_count].spell_id = i;
+        c.spells[c.spell_count].class_id = CLS_CLERIC;
+        c.spells[c.spell_count].prepared = (c.spell_count != 1);
+        c.spells[c.spell_count].always_prepared = 0;
+        c.spell_count++;
+        cleric = i;
+    }
+    EQ(c.spell_count, 3, "three cleric spells to prepare from");
+    if (cleric < 0) return;
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.spell_count, 3, "all three come back");
+    for (i = 0; i < back.spell_count; i++) {
+        if (back.spells[i].prepared) marked++;
+    }
+    EQ(marked, 2, "and the one left unprepared is still unprepared");
+    remove(path);
+}
+
+/* Two copies of one magic item, presented differently, are two entries.
+ *
+ * The stack test in add_magic_item looks at the item, the attunement and
+ * the bonus, and not at the damage type a copy carries or at what the
+ * table is hiding about it. Loading a file through that test folded two
+ * attuned copies into one and quietly dropped an attunement -- the sheet
+ * said "Attuned to 2 of 3" before saving and "1 of 3" after. */
+static void test_two_copies_stay_two(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int id = -1, i;
+
+    printf("two copies of one magic item, told apart\n");
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (MAGIC_ITEMS[i].attunement && MAGIC_ITEMS[i].curse) { id = i; break; }
+    }
+    if (id < 0) {
+        for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+            if (MAGIC_ITEMS[i].attunement) { id = i; break; }
+        }
+    }
+    EQ(id >= 0, 1, "some item needs attunement");
+    if (id < 0) return;
+
+    plain_fighter(&c, "SelftestTwoCopies");
+    {
+        InventoryEntry *a = add_magic_item_copy(&c, id, 1, 1, 0);
+        InventoryEntry *b = add_magic_item_copy(&c, id, 1, 1, 0);
+        check(a != NULL && b != NULL, "both copies added", 1, 1);
+        if (!a || !b) return;
+        b->curse_hidden = 1;        /* the same item, told differently */
+    }
+    EQ(c.item_count, 2, "two entries, not one stack");
+    EQ(attuned_count(&c), 2, "attuned to both");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.item_count, 2, "still two entries after the file");
+    EQ(attuned_count(&back), 2, "and still attuned to both");
+    remove(path);
+
+    /* And a reused slot brings nothing of its last occupant with it. */
+    {
+        Character d;
+        InventoryEntry *e;
+        plain_fighter(&d, "SelftestReuse");
+        e = add_magic_item_copy(&d, id, 1, 1, 0);
+        if (!e) return;
+        snprintf(e->variant, sizeof e->variant, "%s", "fire");
+        e->concealed = 1;
+        d.item_count = 0;                   /* as putting it down does */
+        e = add_magic_item_copy(&d, id, 1, 0, 0);
+        check(e != NULL && e->variant[0] == '\0',
+              "a reused slot carries no old variant", 1, 1);
+        check(e != NULL && e->concealed == 0,
+              "and no old hidden flag", 1, 1);
+    }
+}
+
+/* What happens at the table has to survive the table breaking up.
+ *
+ * Everything game mode changes is on the character rather than in a file
+ * beside it, which is only worth anything if it is written and read back.
+ * A sheet that says 42 hit points and a scrap of paper saying 11 are gone
+ * is two sources for one number.
+ */
+static void test_play_state_survives(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int max, i;
+
+    printf("what happens at the table\n");
+
+    base_character(&c, "SelftestPlay");
+    c.race_id = 0;
+    add_class(&c, CLS_WIZARD, 6, -1);
+    for (i = 0; i < 6; i++) c.hp_rolls[i] = 4;
+    c.hp_roll_count = 6;
+    max = hit_points_max(&c);
+    check(max > 0, "the character has hit points", 1, 1);
+
+    /* Hurt, exhausted, poisoned, out of slots, out of hit dice, in debt to
+       a ledger and using something with charges. */
+    c.damage = 7;
+    c.temp_hp = 3;
+    c.death_success = 1;
+    c.death_fail = 2;
+    c.exhaustion = 2;
+    c.conditions = (1u << 9);              /* one condition, whichever */
+    c.slots_used[1] = 2;
+    c.slots_used[3] = 1;
+    c.pact_used = 0;
+    c.hit_dice_used[0] = 3;
+    c.resource_count = 1;
+    snprintf(c.resources[0].name, sizeof c.resources[0].name, "%s",
+             "Arcane Recovery");
+    c.resources[0].max = 1;
+    c.resources[0].used = 1;
+    c.resources[0].per_long_rest = 1;
+    c.ledger_count = 1;
+    c.ledger[0].copper = -250;
+    snprintf(c.ledger[0].what, sizeof c.ledger[0].what, "%s", "a night's inn");
+    if (c.item_count) c.inventory[0].wear = 2;
+
+    EQ(hit_points_now(&c), max - 7, "current hit points are max less damage");
+    EQ(hit_dice_left(&c, 0), 3, "three of six hit dice left");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.damage, 7, "damage survives");
+    EQ(back.temp_hp, 3, "temporary hit points survive");
+    EQ(back.death_success, 1, "death saves made survive");
+    EQ(back.death_fail, 2, "death saves failed survive");
+    EQ(back.exhaustion, 2, "exhaustion survives");
+    EQ((long)back.conditions, (long)c.conditions, "conditions survive");
+    EQ(back.slots_used[1], 2, "spent 1st-level slots survive");
+    EQ(back.slots_used[3], 1, "spent 3rd-level slots survive");
+    EQ(back.hit_dice_used[0], 3, "spent hit dice survive");
+    EQ(back.resource_count, 1, "the tracked resource survives");
+    check(!strcmp(back.resources[0].name, "Arcane Recovery"),
+          "with its name", 1, 1);
+    EQ(back.resources[0].used, 1, "and how much of it is gone");
+    EQ(back.ledger_count, 1, "the ledger survives");
+    EQ(back.ledger[0].copper, -250, "with what was spent");
+    if (c.item_count) {
+        EQ(back.inventory[0].wear, 2, "and how worn the gear is");
+    }
+    remove(path);
+
+    /* A character nobody has played writes no play records at all, so an
+       untouched sheet reads exactly as it did before game mode existed. */
+    {
+        Character fresh;
+        char p2[MAX_NAME + 8];
+        base_character(&fresh, "SelftestUnplayed");
+        fresh.race_id = 0;
+        add_class(&fresh, CLS_FIGHTER, 1, -1);
+        fresh.hp_rolls[0] = 10;
+        fresh.hp_roll_count = 1;
+        check(save_character(&fresh, p2, sizeof p2) == 0, "written", 1, 1);
+        slurp(p2, sheet_a, sizeof sheet_a);
+        check(strstr(sheet_a, "\nPLAY|") == NULL,
+              "an unplayed character writes no play record", 1, 1);
+        check(strstr(sheet_a, "\nSLOTS|") == NULL,
+              "nor a slot record", 1, 1);
+        remove(p2);
+    }
+}
+
+/* Gems and oddments: treasure rather than equipment. */
+static void test_valuables(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i, tens = 0, five_k = 0;
+
+    printf("gems and things with no table\n");
+
+    /* The book prints six tables and nothing between them, so every gem
+       has to be worth one of six amounts. */
+    for (i = 0; i < GEM_COUNT; i++) {
+        int v = GEMS[i].value_gp;
+        int ok = (v == 10 || v == 50 || v == 100 || v == 500
+                  || v == 1000 || v == 5000);
+        if (!ok) {
+            printf("  FAIL %s is worth %d gp, which is no table\n",
+                   GEMS[i].name, v);
+            failures++;
+        }
+        if (v == 10) tens++;
+        if (v == 5000) five_k++;
+        check(GEMS[i].description != NULL && GEMS[i].description[0],
+              "every gem says what it looks like", 1, 1);
+    }
+    EQ(GEM_COUNT, 52, "all six tables of gems");
+    EQ(tens, 12, "twelve stones at 10 gp");
+    EQ(five_k, 4, "four at 5,000");
+
+    /* One of each kind carried: a gem off the table and a thing with no
+       table at all. */
+    plain_fighter(&c, "SelftestValuables");
+    c.valuable_count = 2;
+    snprintf(c.valuables[0].name, sizeof c.valuables[0].name, "%s", "Ruby");
+    c.valuables[0].value_cp = 5000 * 100;
+    c.valuables[0].quantity = 2;
+    snprintf(c.valuables[0].note, sizeof c.valuables[0].note, "%s",
+             "transparent clear red");
+    snprintf(c.valuables[1].name, sizeof c.valuables[1].name, "%s",
+             "A letter of marque");
+    c.valuables[1].value_cp = 0;
+    c.valuables[1].quantity = 1;
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.valuable_count, 2, "both come back");
+    check(!strcmp(back.valuables[0].name, "Ruby"), "the gem by name", 1, 1);
+    EQ(back.valuables[0].value_cp, 500000, "and by value");
+    EQ(back.valuables[0].quantity, 2, "and how many");
+    check(!strcmp(back.valuables[1].name, "A letter of marque"),
+          "the thing with no table", 1, 1);
+    EQ(back.valuables[1].value_cp, 0, "which is worth nothing in particular");
+
+    /* It reaches the sheet a reader sees, not only the data block. */
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, "Also carried") != NULL,
+          "the sheet has a place for them", 1, 1);
+    check(strstr(sheet_a, "A letter of marque") != NULL,
+          "and prints one with no price", 1, 1);
+    remove(path);
+
+    /* A character carrying none writes no record, so an old sheet is
+       unchanged. */
+    {
+        Character none;
+        char p2[MAX_NAME + 8];
+        plain_fighter(&none, "SelftestNoValuables");
+        check(save_character(&none, p2, sizeof p2) == 0, "written", 1, 1);
+        slurp(p2, sheet_a, sizeof sheet_a);
+        check(strstr(sheet_a, "\nVALUABLE|") == NULL,
+              "carrying none writes nothing", 1, 1);
+        remove(p2);
+    }
+}
+
+/* A shop is written and read like a character sheet, which means the same
+   two things have to hold: a name carrying the separator survives, and a
+   line naming something in the books is joined back up to the book when it
+   is read, so that buying one puts a real item in the inventory. */
+static void test_shop_file(void)
+{
+    static Shop s, back;
+    char path[MAX_SHOP_NAME + 8];
+    int mail = find_item("Chain mail");
+
+    printf("shops\n");
+
+    memset(&s, 0, sizeof s);
+    snprintf(s.name, sizeof s.name, "%s", "SelftestBell|Book\\Candle");
+    snprintf(s.keeper, sizeof s.keeper, "%s", "Ivrit the Younger");
+    snprintf(s.about, sizeof s.about, "%s",
+             "Smells of pitch. The owl is not for sale.");
+
+    s.line_count = 2;
+    snprintf(s.lines[0].name, sizeof s.lines[0].name, "%s", "Chain mail");
+    s.lines[0].from_book = 1;
+    s.lines[0].item_id = mail;
+    s.lines[0].category = ITEM_HEAVY_ARMOR;
+    s.lines[0].price_cp = 6000;         /* under the book's 75 gp */
+    s.lines[0].stock = 1;
+    snprintf(s.lines[0].note, sizeof s.lines[0].note, "%s",
+             "Off a dead man; ask no questions.");
+
+    snprintf(s.lines[1].name, sizeof s.lines[1].name, "%s",
+             "A map to the old mine");
+    s.lines[1].from_book = 0;
+    s.lines[1].item_id = -1;
+    s.lines[1].category = ITEM_GEAR;
+    s.lines[1].price_cp = 2500;
+    s.lines[1].stock = -1;
+
+    check(shop_save(&s, path, sizeof path) == 0, "shop written", 1, 1);
+    check(shop_load(path, &back) == 0, "and read back", 1, 1);
+
+    check(!strcmp(back.name, s.name), "the awkward name survives", 1, 1);
+    check(!strcmp(back.keeper, "Ivrit the Younger"), "the keeper", 1, 1);
+    check(!strcmp(back.about, s.about), "the line about the place", 1, 1);
+    EQ(back.line_count, 2, "both lines");
+
+    /* The price the DM set, not the book's. A shop that quietly restored
+       the book's price would undo the only reason to set one. */
+    EQ(back.lines[0].price_cp, 6000, "the DM's price, not the book's");
+    check(ITEMS[mail].cost_cp != 6000, "which is not what the book says",
+          1, 1);
+    EQ(back.lines[0].stock, 1, "one on the wall");
+    EQ(back.lines[0].item_id, mail, "joined back up to the book");
+    EQ(back.lines[0].from_book, 1, "and known to be from it");
+    check(!strcmp(back.lines[0].note, s.lines[0].note), "the note", 1, 1);
+
+    EQ(back.lines[1].stock, -1, "and as many maps as you like");
+    EQ(back.lines[1].from_book, 0, "the DM's own line is not in the book");
+    EQ(back.lines[1].item_id, -1, "and points at nothing");
+
+    /* A line of the DM's own named after something the books sell stays
+       the DM's, at the DM's price -- it is not quietly turned into the
+       book's item with the book's weight and entry. */
+    memset(&s.lines[1], 0, sizeof s.lines[1]);
+    snprintf(s.lines[1].name, sizeof s.lines[1].name, "%s", "Chain mail");
+    s.lines[1].from_book = 0;
+    s.lines[1].item_id = -1;
+    s.lines[1].price_cp = 300;
+    s.lines[1].stock = -1;
+    check(shop_save(&s, path, sizeof path) == 0, "shop written again", 1, 1);
+    check(shop_load(path, &back) == 0, "and read back again", 1, 1);
+    EQ(back.lines[1].from_book, 0, "a namesake line stays the DM's own");
+    EQ(back.lines[1].item_id, -1, "and still points at nothing");
+    EQ(back.lines[1].price_cp, 300, "at the price the DM set");
+
+    /* Written, read and written again has to give the same bytes. Checking
+       the fields one by one only proves the fields somebody thought to
+       check; this proves the file. */
+    {
+        static char first[8192], second[8192];
+        FILE *fh;
+        size_t got;
+
+        check(shop_save(&s, path, sizeof path) == 0, "shop written", 1, 1);
+        fh = fopen(path, "r");
+        check(fh != NULL, "and opened again", 1, 1);
+        got = fh ? fread(first, 1, sizeof first - 1, fh) : 0;
+        if (fh) fclose(fh);
+        first[got] = '\0';
+
+        check(shop_load(path, &back) == 0, "read back", 1, 1);
+        check(shop_save(&back, path, sizeof path) == 0, "and written again",
+              1, 1);
+        fh = fopen(path, "r");
+        got = fh ? fread(second, 1, sizeof second - 1, fh) : 0;
+        if (fh) fclose(fh);
+        second[got] = '\0';
+
+        check(!strcmp(first, second), "the same file both times", 1, 1);
+    }
+
+    /* The longest record the writer can produce, every field full and every
+       character one the escaping doubles. A read buffer too small for it
+       used to cut the line in half and read the rest as a record of its
+       own. */
+    {
+        static Shop big, bigback;
+        char bigpath[MAX_SHOP_NAME + 8];
+        size_t k;
+
+        memset(&big, 0, sizeof big);
+        /* The name is escaped too, and it is the field that pushes the
+           SHOP record past a buffer sized for the others alone. */
+        for (k = 0; k + 1 < sizeof big.name; k++) big.name[k] = '|';
+        big.name[0] = 'S';  /* so the file has a name to start with */
+        for (k = 0; k + 1 < sizeof big.keeper; k++) big.keeper[k] = '|';
+        for (k = 0; k + 1 < sizeof big.about; k++) big.about[k] = '\\';
+        big.line_count = 1;
+        for (k = 0; k + 1 < sizeof big.lines[0].name; k++)
+            big.lines[0].name[k] = '|';
+        for (k = 0; k + 1 < sizeof big.lines[0].note; k++)
+            big.lines[0].note[k] = '\\';
+        big.lines[0].item_id = -1;
+        big.lines[0].price_cp = MAX_COINS;
+        big.lines[0].stock = -1;
+
+        check(shop_save(&big, bigpath, sizeof bigpath) == 0,
+              "a shop with every field full", 1, 1);
+        check(shop_load(bigpath, &bigback) == 0, "reads back", 1, 1);
+        check(!strcmp(bigback.keeper, big.keeper),
+              "a keeper of nothing but separators", 1, 1);
+        check(!strcmp(bigback.about, big.about),
+              "a description of nothing but escapes", 1, 1);
+        EQ(bigback.line_count, 1, "one line, not two");
+        check(!strcmp(bigback.lines[0].name, big.lines[0].name),
+              "the line's name entire", 1, 1);
+        check(!strcmp(bigback.lines[0].note, big.lines[0].note),
+              "and its note entire", 1, 1);
+    }
+
+    /* Not a shop file, and not a crash either. */
+    {
+        static Shop nope;
+        char sheet[MAX_NAME + 8];
+        Character c;
+        plain_fighter(&c, "SelftestNotAShop");
+        check(save_character(&c, sheet, sizeof sheet) == 0,
+              "a character sheet written", 1, 1);
+        EQ(shop_load(sheet, &nope), -2, "a sheet is not a shop");
+        EQ(shop_load("SelftestNoSuchShopAtAll.txt", &nope), -1,
+           "and a missing file says so");
+
+        /* Shops and sheets share a directory and a naming rule, so a shop
+           named after a character wants that character's file. It does not
+           get it. */
+        memset(&nope, 0, sizeof nope);
+        snprintf(nope.name, sizeof nope.name, "%s", "SelftestNotAShop");
+        EQ(shop_save(&nope, path, sizeof path), -2,
+           "a shop will not write over a character");
+        EQ(file_is_character(sheet), 1, "and the character is still there");
+    }
+}
+
+/* A purse that will not fit the five coin fields of a saved sheet used to
+   be written out anyway and read back clamped, so the sheet changed on
+   reload: tools/stress.py found a character paid eleven times over holding
+   1,097,040 platinum and getting 999,999 back. */
+static void test_purse_has_a_ceiling(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+
+    printf("a purse a sheet can hold\n");
+
+    plain_fighter(&c, "SelftestPurse");
+    purse_from_copper(&c, MAX_PURSE_CP * 4);
+    check(c.platinum <= MAX_COINS, "platinum within the field", c.platinum,
+          MAX_COINS);
+    check(c.gold <= MAX_COINS, "gold within the field", c.gold, MAX_COINS);
+    EQ(purse_in_copper(&c), MAX_PURSE_CP, "and holds all it can");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(purse_in_copper(&back), MAX_PURSE_CP, "with the same purse");
+
+    /* And the ordinary case still counts out change the way it always did. */
+    purse_from_copper(&c, 1234);
+    EQ(c.platinum, 1, "1234 copper is a platinum,");
+    EQ(c.gold, 2, "two gold,");
+    EQ(c.electrum, 0, "no electrum,");
+    EQ(c.silver, 3, "three silver");
+    EQ(c.copper, 4, "and four copper");
+}
+
+/* The three entries the coverage checks added, held by the program rather
+   than by the data file: five PHB items nobody had entered, and the warlock
+   invocation Tasha's prints between two that were entered.
+
+   Each is here because the check that would have caught it did not exist.
+   tools/verify_equipment_coverage.py and tools/verify_prereq_coverage.py do
+   now, and this is the assertion that the entries reached the compiled
+   tables with the book's own numbers rather than merely reaching data/. */
+static void test_entries_the_books_have(void)
+{
+    static const struct { const char *name; int cp; int tenths; int cat; }
+    WANT[] = {
+        { "Bottle, glass",         200, 20, ITEM_GEAR },
+        { "Case, crossbow bolt",   100, 10, ITEM_GEAR },
+        { "Case, map or scroll",   100, 10, ITEM_GEAR },
+        { "Dragonchess set",       100,  5, ITEM_TOOL },
+        { "Three-Dragon Ante set", 100,  0, ITEM_TOOL },
+    };
+    int i, j, found = 0;
+
+    printf("the entries the coverage checks found missing\n");
+
+    for (i = 0; i < (int)(sizeof WANT / sizeof WANT[0]); i++) {
+        int at = find_item(WANT[i].name);
+        if (at < 0) {
+            printf("  FAIL the books sell \"%s\" and we do not\n",
+                   WANT[i].name);
+            failures++;
+            continue;
+        }
+        check(ITEMS[at].cost_cp == WANT[i].cp, WANT[i].name,
+              ITEMS[at].cost_cp, WANT[i].cp);
+        check(ITEMS[at].weight_tenths == WANT[i].tenths, "  its weight",
+              ITEMS[at].weight_tenths, WANT[i].tenths);
+        check((int)ITEMS[at].category == WANT[i].cat, "  its shelf",
+              (int)ITEMS[at].category, WANT[i].cat);
+    }
+
+    /* Tasha's gates it at 12th level and on the Pact of the Talisman, which
+       is what separates it from Protection (7th) and Rebuke (no level). */
+    for (i = 0; i < OPTION_LIST_COUNT; i++) {
+        const OptionList *ol = &OPTION_LISTS[i];
+        for (j = 0; j < ol->count; j++) {
+            if (strcmp(ol->options[j].name, "Bond of the Talisman")) continue;
+            found = 1;
+            check(!strcmp(ol->class_name, "Warlock"), "a warlock invocation",
+                  1, 1);
+            EQ(ol->options[j].min_level, 12, "gated at 12th level");
+            check(!strcmp(ol->options[j].prereq, "Pact of the Talisman"),
+                  "and on the Pact of the Talisman", 1, 1);
+        }
+    }
+    EQ(found, 1, "Bond of the Talisman is in the invocations");
+}
+
+/* A note with a title and nothing under it. The loader used to read an
+   empty body as the old one-line shape and put the title in the body, and
+   the sheet then declined to print a body that is its own title -- so the
+   sheet lost a line on reload, which is what tools/stress.py caught. The
+   old shape still has to work: a note record with only two fields is a
+   single line that serves as both. */
+static void test_note_with_no_body(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    FILE *f;
+
+    printf("a note with nothing under its title\n");
+
+    plain_fighter(&c, "SelftestEmptyNote");
+    c.note_count = 2;
+    snprintf(c.notes[0].title, sizeof c.notes[0].title, "%s", "A debt");
+    c.notes[0].body[0] = '\0';
+    snprintf(c.notes[1].title, sizeof c.notes[1].title, "%s", "A patron");
+    snprintf(c.notes[1].body, sizeof c.notes[1].body, "%s",
+             "She wants the ring back.");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.note_count, 2, "both notes");
+    check(!strcmp(back.notes[0].title, "A debt"), "the title", 1, 1);
+    EQ((int)strlen(back.notes[0].body), 0, "and an empty body, still empty");
+    check(!strcmp(back.notes[1].body, "She wants the ring back."),
+          "the other note's body", 1, 1);
+
+    /* The old shape: a NOTE of one field, which is both title and body.
+       Made by rewriting the record in the sheet just written, so the rest
+       of the file is a real one rather than a guess at the minimum. */
+    {
+        static char text[200000];
+        size_t got;
+        char *at;
+
+        f = fopen(path, "r");
+        check(f != NULL, "the sheet opened", 1, 1);
+        got = f ? fread(text, 1, sizeof text - 1, f) : 0;
+        if (f) fclose(f);
+        text[got] = '\0';
+
+        at = strstr(text, "NOTE|A patron|She wants the ring back.");
+        check(at != NULL, "the two-field note is in the file", 1, 1);
+
+        f = fopen(path, "w");
+        check(f != NULL, "an older file written", 1, 1);
+        if (f && at) {
+            /* Everything before that record, the record cut back to its
+               one field, then everything after the line it was on. */
+            const char *eol = strchr(at, '\n');
+            fwrite(text, 1, (size_t)(at - text), f);
+            fputs("NOTE|A patron", f);
+            if (eol) fputs(eol, f);
+            fclose(f);
+        } else if (f) {
+            fclose(f);
+        }
+        check(load_character(path, &back) == 0, "and read", 1, 1);
+        EQ(back.note_count, 2, "both notes still");
+        check(!strcmp(back.notes[1].title, "A patron"),
+              "its line is the title", 1, 1);
+        check(!strcmp(back.notes[1].body, "A patron"),
+              "and the body too", 1, 1);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2448,6 +3333,18 @@ int main(void)
     test_magic_armour_claims();
     test_magic_checks_and_curses();
     test_magic_weapon_attacks();
+    test_every_magic_rule_does_something();
+    test_hidden_magic_items();
+    test_life_path_fits();
+    test_patron_is_required();
+    test_prepared_survives();
+    test_two_copies_stay_two();
+    test_play_state_survives();
+    test_valuables();
+    test_shop_file();
+    test_purse_has_a_ceiling();
+    test_entries_the_books_have();
+    test_note_with_no_body();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

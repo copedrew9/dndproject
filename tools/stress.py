@@ -60,9 +60,31 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import roundtrip                                     # noqa: E402
 
+MENU_LINE = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
+
+
+def menu_number(tail, wanted):
+    """The number of the menu entry whose text contains `wanted`, or None.
+
+    By what it says rather than where it sits, so adding an option above it
+    does not silently change which one this picks.
+    """
+    for line in tail.splitlines():
+        m = MENU_LINE.match(line)
+        if m and wanted.lower() in m.group(2).lower():
+            return m.group(1)
+    return None
+
+
 RANGE_RE = re.compile(r"\[(-?\d+)-(-?\d+)\]:\s*$")
 YESNO_RE = re.compile(r"\[(?:Y/n|y/N)\]:\s*$")
+# A character sheet the program says it has written. The homebrew screen
+# prints the same sentence about homebrew.txt, which is not a character:
+# counting it made main_menu believe a character existed, so the session
+# stopped creating one, and the run then failed with "no character file
+# written" -- a harness bug reported as the program's.
 SAVED_RE = re.compile(r"Saved to (.+\.txt)")
+NOT_A_SHEET = ("homebrew.txt",)
 
 # Printed immediately above the main menu and nowhere else, which is what
 # makes it a safe way to recognise the main menu.
@@ -179,11 +201,14 @@ class Session:
             pick = self.next_screen
             self.next_screen += 1
             return str(pick)
-        # Weighted so the screens that carry state -- level up, inventory,
-        # homebrew -- come up more often than the read-only ones.
+        # Weighted so the screens that carry state -- level up, game mode,
+        # inventory, homebrew -- come up more often than the read-only
+        # ones. The list runs to one short of the menu's size, and entries
+        # past what this knows about are covered by --tour, which walks
+        # every screen in turn.
         pick = self.rng.choices(
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            weights=[2, 4, 2, 3, 2, 4, 3, 4, 3])[0]
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+            weights=[2, 4, 4, 2, 3, 2, 4, 3, 4, 3, 3])[0]
         return pick if int(pick) < size else "1"
 
     def text(self, prompt):
@@ -231,7 +256,15 @@ class Session:
         m = RANGE_RE.search(prompt)
         if m:
             lo, hi = int(m.group(1)), int(m.group(2))
-            tail = "".join(transcript[-4:])[-600:]
+            # Wide enough to hold the whole main menu, banner included.
+            # It was 600, which fitted an eleven-entry menu and not a
+            # twelve-entry one: the banner fell off the front, every main
+            # menu was answered as though it were some other screen, and
+            # sessions ended having never created a character -- reported
+            # as "no character file written", which reads like the
+            # program's fault and is not. Sized from the menu itself, with
+            # room for the menu to grow again.
+            tail = "".join(transcript[-6:])[-2000:]
             # The main menu is the one under the program's own banner, not
             # merely the one that asks "What would you like to do?". Two
             # screens ask that -- the other is the note editor -- and taking
@@ -245,6 +278,16 @@ class Session:
             if BANNER in tail and lo == 1:
                 self.depth = 0          # a fresh screen, a fresh budget
                 return self.main_menu(hi, transcript)
+            # The wizard ends by asking whether to keep the character, and
+            # only one of the five answers saves. main_menu above creates
+            # until something has been saved, so answering this at random
+            # would build characters until the session's prompt budget ran
+            # out -- the same shape of livelock the note editor caused, and
+            # just as unreadable in the failure report.
+            if "Is that right?" in tail:
+                pick = menu_number(tail, "Save this character")
+                if pick:
+                    return pick
             if lo == 1 and hi == 20 and "level" in prompt.lower():
                 return str(self.rng.choice([1, 1, 2, 3, 5, 8, 11, 14, 17, 20]))
             # An answer outside the stated bounds must be refused and the
@@ -304,7 +347,7 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
                                    % max_prompts)
             for m in SAVED_RE.finditer("".join(transcript[-3:])):
                 f = os.path.basename(m.group(1))
-                if f not in session.saved:
+                if f not in session.saved and f not in NOT_A_SHEET:
                     session.saved.append(f)
             reply = session.answer(prompt, transcript)
             replies.append(reply)
@@ -338,8 +381,14 @@ def view_sheet(binary, workdir, filename):
 
     Returns what it printed and whether it ended cleanly.
     """
+    # The main menu's entry for viewing is found by what it says rather
+    # than by a fixed number. It was "3" until game mode was added above
+    # it, and a hardcoded number does not fail loudly when a menu grows --
+    # it quietly drives a different screen and reports the empty result as
+    # a round-trip failure in the character.
+    entry = roundtrip.view_entry(binary, workdir)
     proc = subprocess.run([binary, "--seed", "1"],
-                          input=("3\n%s\n" % filename).encode(),
+                          input=("%s\n%s\n" % (entry, filename)).encode(),
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           cwd=workdir, timeout=300)
     err = proc.stderr.decode("utf-8", "replace")
@@ -350,9 +399,16 @@ def view_sheet(binary, workdir, filename):
 def is_character_file(path):
     """A character file carries the machine-readable block. A sidekick's
     sheet, written out from the sidekick screen, is a printout with no block
-    and is not meant to be loaded."""
+    and is not meant to be loaded.
+
+    The whole line has to be the marker, which is the test the program
+    itself makes (strcmp against DATA_BEGIN in src/saveload.c). Matching a
+    prefix instead read a sidekick NAMED "#BEGIN-DNDDATA v1" as a character
+    file, because its printout opens with its own name, and then reported
+    the printout's missing data block as a round-trip failure.
+    """
     with open(path, encoding="utf-8", errors="replace") as fh:
-        return any(line.startswith("#BEGIN-DNDDATA") for line in fh)
+        return any(line.rstrip("\r\n") == "#BEGIN-DNDDATA v1" for line in fh)
 
 
 def check_roundtrip(binary, workdir, produced):
