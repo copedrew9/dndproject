@@ -83,9 +83,12 @@ ITEM|Barrel|PHB|gear|200|700|0|0|0|0||||
 ITEM|Basket|PHB|gear|40|20|0|0|0|0||||
 ITEM|Bedroll|PHB|gear|100|70|0|0|0|0||||
 ITEM|Bell|PHB|gear|100|0|0|0|0|0||||
+ITEM|Alms box|PHB|gear|0|10|0|0|0|0||||
 ITEM|Blanket|PHB|gear|50|30|0|0|0|0||||
+ITEM|Block of incense|PHB|gear|0|0|0|0|0|0||||
 ITEM|Block and tackle|PHB|gear|100|50|0|0|0|0||||
 ITEM|Book|PHB|gear|2500|50|0|0|0|0||||
+ITEM|Book of lore|PHB|gear|0|50|0|0|0|0||||
 ITEM|Bottle, glass|PHB|gear|200|20|0|0|0|0||||
 ITEM|Bucket|PHB|gear|5|20|0|0|0|0||||
 ITEM|Caltrops (bag of 20)|PHB|gear|100|20|0|0|0|0||||
@@ -93,6 +96,7 @@ ITEM|Candle|PHB|gear|1|0|0|0|0|0||||
 ITEM|Case, crossbow bolt|PHB|gear|100|10|0|0|0|0||||
 ITEM|Case, map or scroll|PHB|gear|100|10|0|0|0|0||||
 ITEM|Chain (10 feet)|PHB|gear|500|100|0|0|0|0||||
+ITEM|Censer|PHB|gear|0|10|0|0|0|0||||
 ITEM|Chalk (1 piece)|PHB|gear|1|0|0|0|0|0||||
 ITEM|Chest|PHB|gear|500|250|0|0|0|0||||
 ITEM|Climber's kit|PHB|gear|2500|120|0|0|0|0||||
@@ -129,6 +133,7 @@ ITEM|Ladder (10-foot)|PHB|gear|10|250|0|0|0|0||||
 ITEM|Lamp|PHB|gear|50|10|0|0|0|0||||
 ITEM|Lantern, bullseye|PHB|gear|1000|20|0|0|0|0||||
 ITEM|Lantern, hooded|PHB|gear|500|20|0|0|0|0||||
+ITEM|Little bag of sand|PHB|gear|0|0|0|0|0|0||||
 ITEM|Lock|PHB|gear|1000|10|0|0|0|0||||
 ITEM|Magnifying glass|PHB|gear|10000|0|0|0|0|0||||
 ITEM|Manacles|PHB|gear|200|60|0|0|0|0||||
@@ -157,7 +162,9 @@ ITEM|Sealing wax|PHB|gear|50|0|0|0|0|0||||
 ITEM|Shovel|PHB|gear|200|50|0|0|0|0||||
 ITEM|Signal whistle|PHB|gear|5|0|0|0|0|0||||
 ITEM|Signet ring|PHB|gear|500|0|0|0|0|0||||
+ITEM|Small knife|PHB|gear|0|0|0|0|0|0||||
 ITEM|Soap|PHB|gear|2|0|0|0|0|0||||
+ITEM|String (10 feet)|PHB|gear|0|0|0|0|0|0||||
 ITEM|Spellbook|PHB|gear|5000|30|0|0|0|0||||
 ITEM|Spikes, iron (10)|PHB|gear|100|50|0|0|0|0||||
 ITEM|Spyglass|PHB|gear|100000|10|0|0|0|0||||
@@ -165,6 +172,7 @@ ITEM|Tent, two-person|PHB|gear|200|200|0|0|0|0||||
 ITEM|Tinderbox|PHB|gear|50|10|0|0|0|0||||
 ITEM|Torch|PHB|gear|1|10|0|0|0|0||||
 ITEM|Vial|PHB|gear|100|0|0|0|0|0||||
+ITEM|Vestments|PHB|gear|0|40|0|0|0|0||||
 ITEM|Waterskin|PHB|gear|20|50|0|0|0|0||||
 ITEM|Whetstone|PHB|gear|1|10|0|0|0|0||||
 ITEM|Alchemist's supplies|PHB|tool|5000|80|0|0|0|0||||
@@ -357,6 +365,74 @@ WEAPONPROP|Special|The weapon has a rule of its own. A lance has disadvantage wi
 WEAPONPROP|Thrown|You can throw it to make a ranged attack, using the same ability modifier you would use in melee.
 WEAPONPROP|Two-Handed|The weapon requires two hands when you attack with it.
 WEAPONPROP|Versatile|Can be used with one or two hands; the larger damage die in brackets applies when wielded in two hands.
+
+# PACKITEM | pack | item | how many
+PACKITEM|Burglar's pack|Backpack|1
+PACKITEM|Burglar's pack|Ball bearings (bag of 1,000)|1
+PACKITEM|Burglar's pack|String (10 feet)|1
+PACKITEM|Burglar's pack|Bell|1
+PACKITEM|Burglar's pack|Candle|5
+PACKITEM|Burglar's pack|Crowbar|1
+PACKITEM|Burglar's pack|Hammer|1
+PACKITEM|Burglar's pack|Piton|10
+PACKITEM|Burglar's pack|Lantern, hooded|1
+PACKITEM|Burglar's pack|Oil (flask)|2
+PACKITEM|Burglar's pack|Rations (1 day)|5
+PACKITEM|Burglar's pack|Tinderbox|1
+PACKITEM|Burglar's pack|Waterskin|1
+PACKITEM|Burglar's pack|Rope, hempen (50 feet)|1
+PACKITEM|Diplomat's pack|Chest|1
+PACKITEM|Diplomat's pack|Case, map or scroll|2
+PACKITEM|Diplomat's pack|Clothes, fine|1
+PACKITEM|Diplomat's pack|Ink (1 ounce bottle)|1
+PACKITEM|Diplomat's pack|Ink pen|1
+PACKITEM|Diplomat's pack|Lamp|1
+PACKITEM|Diplomat's pack|Oil (flask)|2
+PACKITEM|Diplomat's pack|Paper (one sheet)|5
+PACKITEM|Diplomat's pack|Perfume (vial)|1
+PACKITEM|Diplomat's pack|Sealing wax|1
+PACKITEM|Diplomat's pack|Soap|1
+PACKITEM|Dungeoneer's pack|Backpack|1
+PACKITEM|Dungeoneer's pack|Crowbar|1
+PACKITEM|Dungeoneer's pack|Hammer|1
+PACKITEM|Dungeoneer's pack|Piton|10
+PACKITEM|Dungeoneer's pack|Torch|10
+PACKITEM|Dungeoneer's pack|Tinderbox|1
+PACKITEM|Dungeoneer's pack|Rations (1 day)|10
+PACKITEM|Dungeoneer's pack|Waterskin|1
+PACKITEM|Dungeoneer's pack|Rope, hempen (50 feet)|1
+PACKITEM|Entertainer's pack|Backpack|1
+PACKITEM|Entertainer's pack|Bedroll|1
+PACKITEM|Entertainer's pack|Clothes, costume|2
+PACKITEM|Entertainer's pack|Candle|5
+PACKITEM|Entertainer's pack|Rations (1 day)|5
+PACKITEM|Entertainer's pack|Waterskin|1
+PACKITEM|Entertainer's pack|Disguise kit|1
+PACKITEM|Explorer's pack|Backpack|1
+PACKITEM|Explorer's pack|Bedroll|1
+PACKITEM|Explorer's pack|Mess kit|1
+PACKITEM|Explorer's pack|Tinderbox|1
+PACKITEM|Explorer's pack|Torch|10
+PACKITEM|Explorer's pack|Rations (1 day)|10
+PACKITEM|Explorer's pack|Waterskin|1
+PACKITEM|Explorer's pack|Rope, hempen (50 feet)|1
+PACKITEM|Priest's pack|Backpack|1
+PACKITEM|Priest's pack|Blanket|1
+PACKITEM|Priest's pack|Candle|10
+PACKITEM|Priest's pack|Tinderbox|1
+PACKITEM|Priest's pack|Alms box|1
+PACKITEM|Priest's pack|Block of incense|2
+PACKITEM|Priest's pack|Censer|1
+PACKITEM|Priest's pack|Vestments|1
+PACKITEM|Priest's pack|Rations (1 day)|2
+PACKITEM|Priest's pack|Waterskin|1
+PACKITEM|Scholar's pack|Backpack|1
+PACKITEM|Scholar's pack|Book of lore|1
+PACKITEM|Scholar's pack|Ink (1 ounce bottle)|1
+PACKITEM|Scholar's pack|Ink pen|1
+PACKITEM|Scholar's pack|Parchment (one sheet)|10
+PACKITEM|Scholar's pack|Little bag of sand|1
+PACKITEM|Scholar's pack|Small knife|1
 
 # TOOLGROUP | group | item
 TOOLGROUP|Artisan's tools|Alchemist's supplies

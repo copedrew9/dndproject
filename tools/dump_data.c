@@ -508,6 +508,18 @@ static void dump_equipment(void)
         end(f);
     }
 
+    /* Emitted where the data file has it -- between the weapon properties
+       and the tool groups -- because the round trip compares the two files
+       line for line. */
+    head(f, "PACKITEM", "pack | item | how many");
+    for (i = 0; i < PACK_ITEM_COUNT; i++) {
+        rec(f, "PACKITEM");
+        field(f, PACK_ITEMS[i].pack);
+        field(f, PACK_ITEMS[i].item);
+        num(f, PACK_ITEMS[i].quantity);
+        end(f);
+    }
+
     head(f, "TOOLGROUP", "group | item");
     for (i = 0; i < TOOL_GROUP_COUNT; i++) {
         rec(f, "TOOLGROUP");

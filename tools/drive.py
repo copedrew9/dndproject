@@ -79,7 +79,12 @@ def menu_number(tail, wanted):
     return None
 
 
-def answer(prompt, rng, free_text_name):
+def answer(prompt, rng, free_text_name, want=None, tail=""):
+    """One reply. `want` is an optional {"class": name, "level": n} that
+    aims the run rather than leaving it to the dice, so a caster can be
+    built on purpose. Answering at random reaches a wizard about one run in
+    thirteen and a wizard of a chosen level far less often, which is why
+    nothing here ever exercised the spell steps twice in a row."""
     # A line of a text block. A blank line ends it, which is what this
     # harness wants: the notes screen is not what it is here to exercise.
     if prompt.endswith("> "):
@@ -87,6 +92,31 @@ def answer(prompt, rng, free_text_name):
     m = RANGE_RE.search(prompt)
     if m:
         lo, hi = int(m.group(1)), int(m.group(2))
+        if want:
+            # The screen names the step, not the prompt line -- the prompt
+            # is only "Choose, N info [1-13]: ". So the aim is taken from
+            # the accumulated tail.
+            low_tail = tail.lower()
+            if want.get("class") and ("classes:" in low_tail
+                                      or "which class" in low_tail):
+                pick = menu_number(tail, want["class"])
+                if pick and lo <= int(pick) <= hi:
+                    return pick
+            # A subclass is chosen from a menu the step names rather than
+            # the prompt. Without this the third casters -- the Eldritch
+            # Knight and the Arcane Trickster -- are reachable only by luck,
+            # which is why nothing ever exercised their spell steps.
+            if want.get("subclass"):
+                pick = menu_number(tail, want["subclass"])
+                if pick and lo <= int(pick) <= hi:
+                    return pick
+            if want.get("level"):
+                if lo == 1 and hi == 20 and "level" in prompt.lower():
+                    return str(want["level"])
+                # "How many levels in it?" -- put them all in the one class,
+                # so aiming at a class does not produce a multiclass.
+                if "how many levels" in low_tail:
+                    return str(hi)
         # Favour level 1-8 characters so runs stay quick, but reach high
         # levels sometimes.
         if lo == 1 and hi == 20 and "level" in prompt.lower():
@@ -108,7 +138,7 @@ def answer(prompt, rng, free_text_name):
 
 
 def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
-             magic=0, quit_at=0, back_at=0):
+             magic=0, quit_at=0, back_at=0, want=None):
     cmd = [binary, "--seed", str(seed)]
     if use_valgrind:
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
@@ -144,7 +174,12 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
             menu_size = re.search(r"Choose \[1-(\d+)\]", prompt)
             # A single read can split the menu from its prompt, so look at
             # the accumulated tail rather than only the last chunk.
-            tail = "".join(transcript[-4:])[-600:]
+            # Wide enough for the whole main menu with room to grow. It
+            # was 600, which the menu came within a hundred characters of:
+            # tools/stress.py had the same window and a twelfth entry
+            # pushed its own marker off the front, so every main menu was
+            # answered as though it were another screen.
+            tail = "".join(transcript[-6:])[-2000:]
             at_main_menu = (menu_size is not None
                             and "What would you like to do" in tail)
             # The wizard now ends by asking whether to keep the character,
@@ -207,10 +242,11 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
                     # produces one. Give up after a few tries rather than
                     # asking until the prompt cap and reporting a timeout.
                     if got < magic and tries < magic * 4:
-                        want, tries = "Pick up a magic item", tries + 1
+                        entry = "Pick up a magic item"
+                        tries += 1
                     else:
-                        want = "Done"
-                    pick = menu_number(tail, want)
+                        entry = "Done"
+                    pick = menu_number(tail, entry)
                     if pick:
                         replies.append(pick)
                         proc.stdin.write((pick + "\n").encode())
@@ -227,7 +263,7 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
                 else:
                     reply = menu_size.group(1)  # quit is always last
             else:
-                reply = answer(prompt, rng, name)
+                reply = answer(prompt, rng, name, want, tail)
 
             replies.append(reply)
             proc.stdin.write((reply + "\n").encode())
@@ -265,6 +301,13 @@ def main():
                     help="pick up N magic items on the way through; implies "
                          "--levelup, since the inventory is only offered "
                          "after a level-up")
+    ap.add_argument("--class", dest="klass", metavar="NAME",
+                    help="build this class every run rather than one the "
+                         "dice chose, so a caster can be reached on purpose")
+    ap.add_argument("--level", type=int, default=0, metavar="N",
+                    help="build at this level every run")
+    ap.add_argument("--subclass", metavar="NAME",
+                    help="take this subclass wherever it is offered")
     args = ap.parse_args()
 
     global RECORD_TO
@@ -279,10 +322,14 @@ def main():
         rng = random.Random(seed)
         with tempfile.TemporaryDirectory() as workdir:
             try:
+                want = None
+                if args.klass or args.level or args.subclass:
+                    want = {"class": args.klass, "level": args.level,
+                            "subclass": args.subclass}
                 rc, transcript, err, name = run_once(
                     binary, seed, rng, args.valgrind, workdir, args.verbose,
                     args.levelup or bool(args.magic), args.magic,
-                    args.quit_at, args.back_at)
+                    args.quit_at, args.back_at, want)
             except Exception as exc:            # noqa: BLE001
                 print("run %d (seed %d): harness error: %s" % (i, seed, exc))
                 failures += 1

@@ -57,9 +57,16 @@ static void vitals(const Character *c)
     printf(", AC %d, speed %d\n", armour_class(c), speed_of(c));
 
     if (now == 0) {
-        printf("  Down: %d success%s and %d failure%s on death saves.\n",
-               c->death_success, c->death_success == 1 ? "" : "es",
-               c->death_fail, c->death_fail == 1 ? "" : "s");
+        if (c->death_fail >= 3) {
+            printf("  Dead: three failed death saves.\n");
+        } else if (c->death_success >= 3) {
+            printf("  Stable at 0 hit points, %d failure%s on the way.\n",
+                   c->death_fail, c->death_fail == 1 ? "" : "s");
+        } else {
+            printf("  Down: %d success%s and %d failure%s on death saves.\n",
+                   c->death_success, c->death_success == 1 ? "" : "es",
+                   c->death_fail, c->death_fail == 1 ? "" : "s");
+        }
     }
     if (c->exhaustion) {
         printf("  Exhaustion level %d.\n", c->exhaustion);
@@ -88,6 +95,68 @@ static void vitals(const Character *c)
            c->platinum, c->gold, c->electrum, c->silver, c->copper);
 }
 
+/* One blow, and what the rules make of it.
+ *
+ * Kept apart from the screen because it is the only part with a right
+ * answer: everything else here records what the table decided, and this
+ * works something out. The Player's Handbook (p.197, "Damage at 0 Hit
+ * Points") says three things, and the program used to do none of them --
+ * it printed that enough damage in one blow kills outright and then never
+ * worked out whether this blow was enough.
+ *
+ *   Damage taken at 0 hit points is a failed death save, and two of them
+ *   if the blow was a critical.
+ *
+ *   Damage left over once the hit points are gone kills outright when it
+ *   reaches the hit point maximum. That remainder has to be measured
+ *   before the damage is clamped to the maximum, because the clamp is
+ *   exactly what throws it away.
+ *
+ * `absorbed` and `spare` are filled in for the caller's message; either
+ * may be NULL.
+ */
+HurtResult take_damage(Character *c, int hurt, int critical,
+                       int *absorbed, int *spare)
+{
+    int max = hit_points_max(c);
+    int was_down = (hit_points_now(c) == 0);
+    int soak = 0, left;
+
+    if (absorbed) *absorbed = 0;
+    if (spare) *spare = 0;
+    if (hurt <= 0) return HURT_NOTHING;
+
+    /* Temporary hit points are lost first and are not healed back, which
+       is the whole of the rule. */
+    if (c->temp_hp) {
+        soak = hurt < c->temp_hp ? hurt : c->temp_hp;
+        c->temp_hp -= soak;
+        hurt -= soak;
+        if (absorbed) *absorbed = soak;
+    }
+    if (hurt == 0) return HURT_SOAKED;
+
+    left = hurt - hit_points_now(c);
+    if (left < 0) left = 0;
+    if (spare) *spare = left;
+
+    c->damage += hurt;
+    if (c->damage > max) c->damage = max;
+
+    if (hit_points_now(c) > 0) return HURT_STANDING;
+
+    if (left >= max) {
+        c->death_success = 0;
+        c->death_fail = 3;
+        return HURT_DEAD;
+    }
+    if (!was_down) return HURT_DOWNED;
+
+    c->death_fail += critical ? 2 : 1;
+    if (c->death_fail > 3) c->death_fail = 3;
+    return HURT_SAVE_FAILED;
+}
+
 static void hurt_and_heal(Character *c)
 {
     for (;;) {
@@ -101,19 +170,41 @@ static void hurt_and_heal(Character *c)
         switch (ui_menu("  Hit points:", what, NULL, 5)) {
         case 0: {
             int hurt = ui_int("  How much damage", 0, 9999);
-            /* Temporary hit points are lost first and are not healed
-               back, which is the whole of the rule. */
-            if (c->temp_hp) {
-                int soak = hurt < c->temp_hp ? hurt : c->temp_hp;
-                c->temp_hp -= soak;
-                hurt -= soak;
-                printf("  %d absorbed by temporary hit points.\n", soak);
+            int crit = 0, absorbed = 0, spare = 0;
+
+            /* Whether the blow was a critical only changes anything for a
+               character already at 0, so it is only asked there. */
+            if (hurt > 0 && hurt > c->temp_hp && hit_points_now(c) == 0) {
+                crit = ui_yesno("  Was that a critical hit?", 0);
             }
-            c->damage += hurt;
-            if (c->damage > max) c->damage = max;
-            if (hit_points_now(c) == 0) {
+            switch (take_damage(c, hurt, crit, &absorbed, &spare)) {
+            case HURT_NOTHING:
+                break;
+            case HURT_SOAKED:
+                printf("  %d absorbed by temporary hit points.\n", absorbed);
+                break;
+            case HURT_STANDING:
+                if (absorbed) {
+                    printf("  %d absorbed by temporary hit points.\n",
+                           absorbed);
+                }
+                break;
+            case HURT_DOWNED:
                 printf("  %s is down. Death saves start now, and enough "
                        "damage in one blow kills outright.\n", c->name);
+                break;
+            case HURT_SAVE_FAILED:
+                printf("  Hit while down: %s.\n",
+                       crit ? "two death save failures"
+                            : "a death save failure");
+                if (c->death_fail >= 3) {
+                    printf("  Three failures: %s dies.\n", c->name);
+                }
+                break;
+            case HURT_DEAD:
+                printf("  %d past nothing, against a maximum of %d: %s dies "
+                       "outright.\n", spare, max, c->name);
+                break;
             }
             break;
         }

@@ -124,6 +124,15 @@ The main menu offers:
   gear, tools, packs, tack and vehicles, with weight tracked against carrying
   capacity. The shop shows an item's full detail before asking you to buy it,
   and can look items up without buying.
+- **Packs come apart.** Taking an explorer's pack puts the bedroll, the
+  rations, the waterskin and the rest on the sheet as things you can drop,
+  sell, eat and count -- not one line reading "Explorer's pack". The
+  contents replace the pack rather than joining it, which is only safe
+  because a pack's weight is exactly the sum of its parts: all seven are,
+  to the tenth of a pound, and `tools/verify_packs.py` checks both that
+  and the contents themselves against the book. Seven things a pack names
+  and the book prices nowhere -- an alms box, a censer, vestments, a book
+  of lore -- have rows of their own so they can be carried.
 - **Item information** — every item says what it does, not just what it costs
   and weighs. Armour carries its AC formula, Strength requirement, Stealth
   penalty and don/doff times; weapons explain each property they list;

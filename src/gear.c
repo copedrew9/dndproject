@@ -261,8 +261,16 @@ static void add_phrase(Character *c, const char *phrase)
         }
     }
     if (id >= 0) {
-        add_item(c, id, qty, 0);
-        printf("      Added %d x %s.\n", qty, ITEMS[id].name);
+        /* A pack goes on as what is in it, which is what the player
+           actually carries. */
+        int parts = add_pack(c, id, qty);
+        if (parts > 0) {
+            printf("      Added %d x %s, unpacked into %d things.\n",
+                   qty, ITEMS[id].name, parts);
+        } else {
+            add_item(c, id, qty, 0);
+            printf("      Added %d x %s.\n", qty, ITEMS[id].name);
+        }
     } else {
         add_choice(c, "Equipment", phrase);
         printf("      Noted: %s\n", phrase);
@@ -544,8 +552,14 @@ static void shop(Character *c)
                     c->silver = left / 10;
                     c->copper = left % 10;
                 }
-                add_item(c, map[pick], qty, 0);
-                printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
+                if (add_pack(c, map[pick], qty) > 0) {
+                    printf("  Added %d x %s, unpacked.\n", qty,
+                           ITEMS[map[pick]].name);
+                } else {
+                    add_item(c, map[pick], qty, 0);
+                    printf("  Added %d x %s.\n", qty,
+                           ITEMS[map[pick]].name);
+                }
             }
         }
     }

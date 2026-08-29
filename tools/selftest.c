@@ -12,8 +12,10 @@
 #include "saveload.h"
 #include "homebrew.h"
 #include "shop.h"
+#include "ui.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -3113,6 +3115,232 @@ static void test_note_with_no_body(void)
     }
 }
 
+/* Damage at 0 hit points, PHB p.197. The program printed that enough damage
+   in one blow kills outright and then never worked out whether this blow
+   was enough; nor did being hit while down cost a death save. Found by
+   playing: a 7 hit point character at 0 took 100 damage and the screen said
+   "0 successes and 0 failures". */
+static void test_damage_at_zero(void)
+{
+    Character c;
+    int max, absorbed, spare;
+
+    printf("damage at 0 hit points\n");
+
+    plain_fighter(&c, "SelftestDown");
+    c.base_score[ABL_CON] = 10;
+    max = hit_points_max(&c);
+    check(max > 2, "a hit point maximum to work with", max, 3);
+
+    /* Hurt but standing. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, 1, 0, &absorbed, &spare), HURT_STANDING, "a scratch");
+    EQ(hit_points_now(&c), max - 1, "costs one hit point");
+    EQ(c.death_fail, 0, "and no death save");
+
+    /* Temporary hit points go first and are not a death save. */
+    c.damage = 0; c.temp_hp = 5; c.death_fail = 0;
+    EQ(take_damage(&c, 3, 0, &absorbed, &spare), HURT_SOAKED,
+       "temporary hit points take it");
+    EQ(absorbed, 3, "all three of them");
+    EQ(c.temp_hp, 2, "two temporary left");
+    EQ(hit_points_now(&c), max, "and no real damage");
+
+    /* Brought to 0 with little to spare: down, not dead, no failure yet. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max + 1, 0, &absorbed, &spare), HURT_DOWNED,
+       "brought to nothing");
+    EQ(hit_points_now(&c), 0, "at 0 hit points");
+    EQ(c.death_fail, 0, "and being knocked down is not itself a failure");
+
+    /* Hit while down: one failure. */
+    EQ(take_damage(&c, 1, 0, &absorbed, &spare), HURT_SAVE_FAILED,
+       "hit while down");
+    EQ(c.death_fail, 1, "one failed death save");
+
+    /* A critical while down: two. */
+    EQ(take_damage(&c, 1, 1, &absorbed, &spare), HURT_SAVE_FAILED,
+       "a critical while down");
+    EQ(c.death_fail, 3, "two more, and the count stops at three");
+
+    /* The remainder reaching the maximum kills outright, from full health. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max * 2, 0, &absorbed, &spare), HURT_DEAD,
+       "twice the maximum in one blow");
+    EQ(spare, max, "leaves exactly the maximum over");
+    EQ(c.death_fail, 3, "which is death");
+
+    /* And one point short of it does not. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max * 2 - 1, 0, &absorbed, &spare), HURT_DOWNED,
+       "one point short of outright death");
+    EQ(c.death_fail, 0, "is only down");
+
+    /* At 0 already, a blow of the whole maximum kills outright rather than
+       counting as a failure. */
+    c.damage = max; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max, 0, &absorbed, &spare), HURT_DEAD,
+       "the maximum in one blow while down");
+    EQ(c.death_fail, 3, "is death, not a failed save");
+}
+
+/* SPELLS by whole name, case-insensitively; the lookup inside
+   progression.c is static and this is the only caller out here. The
+   spell_named() above takes a length and answers a different question. */
+static int spell_by_whole_name(const char *name)
+{
+    int i;
+    for (i = 0; i < SPELL_COUNT; i++) {
+        if (same_fold(SPELLS[i].name, name)) return i;
+    }
+    return -1;
+}
+
+/* A warlock's patron widens the list; it does not hand the spells over.
+ *
+ * The Player's Handbook says the Expanded Spell List is "added to the
+ * warlock spell list for you". The program granted those spells to the
+ * character instead, and because they were not flagged always-prepared they
+ * counted against the spells the warlock may know -- so the allowance ran
+ * out and a 5th-level warlock was asked to choose nothing at all. Found by
+ * building one and watching it go straight from "You know 6 spells." to the
+ * equipment step. */
+static void test_patron_widens_rather_than_grants(void)
+{
+    Character c;
+    int i, patron = -1, checked = 0;
+
+    printf("a warlock patron's expanded list\n");
+
+    /* Any patron with an expanded list will do. */
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        if (SUBCLASSES[i].class_id != CLS_WARLOCK) continue;
+        if (!SUBCLASSES[i].bonus_spells || !SUBCLASSES[i].bonus_spells[0]) {
+            continue;
+        }
+        patron = i;
+        break;
+    }
+    check(patron >= 0, "a patron with an expanded list", patron >= 0, 1);
+    if (patron < 0) return;
+
+    reset(&c);
+    add_class(&c, CLS_WARLOCK, 5, patron);
+
+    {
+        const char *list = warlock_expanded_list(&c, CLS_WARLOCK);
+        check(list != NULL && list[0], "the patron offers a list", 1, 1);
+
+        /* Every name in it has to be a real spell, and none of them may
+           already be on the warlock's own list -- otherwise it is not
+           widening anything. */
+        if (list) {
+            char buf[2048], *cursor = buf, *piece;
+            snprintf(buf, sizeof buf, "%s", list);
+            while ((piece = next_csv(&cursor)) != NULL) {
+                int sid;
+                if (!*piece) continue;
+                sid = spell_by_whole_name(piece);
+                if (sid < 0) {
+                    printf("  FAIL the patron offers \"%s\", which is no "
+                           "spell\n", piece);
+                    failures++;
+                    continue;
+                }
+                if (SPELLS[sid].classes & SPL_WARLOCK) {
+                    printf("  FAIL the patron \"adds\" %s, which warlocks "
+                           "already have\n", SPELLS[sid].name);
+                    failures++;
+                }
+                checked++;
+            }
+        }
+        check(checked > 0, "and it names some spells", checked, 1);
+    }
+
+    /* Nobody else has one. */
+    reset(&c);
+    add_class(&c, CLS_CLERIC, 5, -1);
+    check(warlock_expanded_list(&c, CLS_CLERIC) == NULL,
+          "a cleric has no expanded list", 1, 1);
+
+    /* A warlock with no patron chosen yet has nothing to add. */
+    reset(&c);
+    add_class(&c, CLS_WARLOCK, 1, -1);
+    check(warlock_expanded_list(&c, CLS_WARLOCK) == NULL,
+          "nor a warlock without a patron", 1, 1);
+}
+
+/* Taking a pack takes what is in it.
+ *
+ * The sheet used to say "1 x Explorer's pack" and nothing else, so a player
+ * could not drop, sell, eat or count any of it. The contents go on instead
+ * of the pack, which is only safe because a pack's weight is exactly the
+ * sum of its parts -- carrying both would count everything twice. That sum
+ * is the invariant here; tools/verify_packs.py checks the contents
+ * themselves against the Player's Handbook. */
+static void test_packs_unpack(void)
+{
+    Character c;
+    int i, packs = 0;
+
+    printf("what is inside a pack\n");
+
+    for (i = 0; i < ITEM_COUNT; i++) {
+        int j, parts = 0, weight = 0, before, after;
+        if (ITEMS[i].category != ITEM_PACK) continue;
+        packs++;
+
+        for (j = 0; j < PACK_ITEM_COUNT; j++) {
+            int id;
+            if (!same_fold(PACK_ITEMS[j].pack, ITEMS[i].name)) continue;
+            id = find_item(PACK_ITEMS[j].item);
+            if (id < 0) {
+                printf("  FAIL %s holds \"%s\", which is no item\n",
+                       ITEMS[i].name, PACK_ITEMS[j].item);
+                failures++;
+                continue;
+            }
+            weight += ITEMS[id].weight_tenths * PACK_ITEMS[j].quantity;
+            parts++;
+        }
+        if (parts == 0) {
+            printf("  FAIL %s has no contents\n", ITEMS[i].name);
+            failures++;
+            continue;
+        }
+        if (weight != ITEMS[i].weight_tenths) {
+            printf("  FAIL %s weighs %d tenths and its parts weigh %d\n",
+                   ITEMS[i].name, ITEMS[i].weight_tenths, weight);
+            failures++;
+        }
+
+        /* And the program agrees: unpacking one onto a character adds the
+           same weight the pack itself would have. */
+        plain_fighter(&c, "SelftestPack");
+        c.item_count = 0;
+        before = current_weight_tenths(&c);
+        {
+            int went_on = add_pack(&c, i, 1);
+            check(went_on == parts, ITEMS[i].name, went_on, parts);
+        }
+        after = current_weight_tenths(&c);
+        if (after - before != ITEMS[i].weight_tenths) {
+            printf("  FAIL unpacking %s added %d tenths, the pack weighs "
+                   "%d\n", ITEMS[i].name, after - before,
+                   ITEMS[i].weight_tenths);
+            failures++;
+        }
+    }
+    EQ(packs, 7, "the seven packs of the Player's Handbook");
+
+    /* Anything that is not a pack is refused, so the caller adds it
+       plainly. */
+    plain_fighter(&c, "SelftestPack");
+    EQ(add_pack(&c, find_item("Dagger"), 1), -1, "a dagger is not a pack");
+    EQ(add_pack(&c, -1, 1), -1, "and nor is nothing");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3340,6 +3568,9 @@ int main(void)
     test_prepared_survives();
     test_two_copies_stay_two();
     test_play_state_survives();
+    test_damage_at_zero();
+    test_patron_widens_rather_than_grants();
+    test_packs_unpack();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

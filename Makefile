@@ -1,5 +1,10 @@
 CC      ?= gcc
-CFLAGS  ?= -std=c99 -Wall -Wextra -O2
+# An implicit declaration is a build error rather than a warning. It is the
+# one warning here that is silently fatal at runtime: a function declared by
+# accident returns int, so a pointer coming back from it is truncated to 32
+# bits. tools/selftest.c had been compiling that way for want of ui.h, and
+# the first use of a pointer-returning helper from it segfaulted.
+CFLAGS  ?= -std=c99 -Wall -Wextra -Werror=implicit-function-declaration -O2
 SRCDIR   = src
 OBJDIR   = build
 BIN      = dndcreator
@@ -58,6 +63,7 @@ audit:
 verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_equipment_coverage.py
+	python3 tools/verify_packs.py
 	python3 tools/verify_gems.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py

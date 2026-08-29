@@ -67,6 +67,11 @@ CHECKS = [
 # reported apart from the real misses so that a genuine one stands out
 # instead of arriving in a crowd of expected ones.
 OURS = {
+    # The Priest's Pack names "2 blocks of incense"; the singular a row has
+    # to be named by is ours. The other six of these pack-only items appear
+    # in the book's prose in the singular and resolve on their own.
+    "Block of incense":
+        "our singular for the Priest's Pack's \"2 blocks of incense\"",
     "Standard Human":
         "the PHB prints the plain human with no heading of its own",
     "Extra Elemental Discipline":

@@ -647,6 +647,19 @@ def build_equipment():
         "WEAPON_PROPERTY_COUNT")
 
     out.table(
+        "const PackItem PACK_ITEMS[]",
+        ["    { %s, %s, %d }" % (cstr(r.str(0)), cstr(r.str(1)), r.int(2))
+         for r in tags.get("PACKITEM", [])],
+        "PACK_ITEM_COUNT")
+    for r in tags.get("PACKITEM", []):
+        if r.str(0) not in item_names:
+            r.die("no ITEM named %r" % r.str(0))
+        if r.str(1) not in item_names:
+            r.die("no ITEM named %r" % r.str(1))
+        if r.int(2) < 1:
+            r.die("a pack cannot hold %d of something" % r.int(2))
+
+    out.table(
         "const ToolGroup TOOL_GROUPS[]",
         ["    { %s, %s }" % (cstr(r.str(0)), cstr(r.str(1)))
          for r in tags.get("TOOLGROUP", [])],

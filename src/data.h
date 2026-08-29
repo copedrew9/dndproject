@@ -351,6 +351,28 @@ extern const int BOOK_ITEM_COUNT;
 
 int find_item(const char *name);
 
+/* What is inside an equipment pack.
+ *
+ * The pack's own row carries its contents as prose, which reads well and
+ * is no use to anything: a player who takes an explorer's pack wants the
+ * bedroll and the rations on the sheet, to drop, sell and count. So the
+ * same contents are held again as rows, each naming a real ITEM and how
+ * many of it, and taking a pack puts those on the character instead of the
+ * pack.
+ *
+ * Instead of, not as well as: a pack's weight_tenths IS the sum of its
+ * parts, exactly, for all seven, so carrying both would count everything
+ * twice. tools/verify_packs.py checks the contents against the book and
+ * the sum against the row. */
+typedef struct {
+    const char *pack;           /* an ITEM of category ITEM_PACK */
+    const char *item;           /* an ITEM the pack contains */
+    int quantity;
+} PackItem;
+
+extern const PackItem PACK_ITEMS[];
+extern const int PACK_ITEM_COUNT;
+
 /* Item detail: descriptions, and what an item does when it has no stat line.
  * data_itemtext.c carries the prose; data_equipment.c carries the numbers. */
 typedef struct {

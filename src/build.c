@@ -317,6 +317,68 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     c->item_count++;
 }
 
+/* Whether this exact item is already carried unequipped, so adding more of
+   it stacks rather than needing a new slot. */
+static int carrying_already(const Character *c, int item_id)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        if (!c->inventory[i].is_magic && c->inventory[i].item_id == item_id
+            && !c->inventory[i].equipped) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Whether a character has room for another kind of thing. add_item drops
+   what will not fit and says nothing, which was harmless while a pack was
+   one entry and is not now that it is a dozen. */
+int inventory_has_room(const Character *c)
+{
+    return c->item_count < MAX_ITEMS;
+}
+
+/* Taking a pack takes what is in it.
+ *
+ * A pack on the sheet is a word: "Explorer's pack" tells a player nothing
+ * they can drop, sell, eat or count, and the rations and the bedroll are
+ * the whole reason to have one. So the contents go on instead -- instead
+ * of, not as well as, because a pack's weight IS the sum of its parts and
+ * carrying both would count everything twice.
+ *
+ * Returns how many kinds of thing were added, or -1 when this is not a
+ * pack, so the caller can fall back to adding it plainly. */
+int add_pack(Character *c, int pack_id, int qty)
+{
+    int i, added = 0, dropped = 0;
+
+    if (pack_id < 0 || pack_id >= ITEM_COUNT) return -1;
+    if (ITEMS[pack_id].category != ITEM_PACK) return -1;
+    if (qty <= 0) return -1;
+
+    for (i = 0; i < PACK_ITEM_COUNT; i++) {
+        int id;
+        if (!same_fold(PACK_ITEMS[i].pack, ITEMS[pack_id].name)) continue;
+        id = find_item(PACK_ITEMS[i].item);
+        if (id < 0) continue;           /* a bank the DM has narrowed */
+        if (!inventory_has_room(c)
+            && !carrying_already(c, id)) {
+            dropped++;
+            continue;
+        }
+        add_item(c, id, PACK_ITEMS[i].quantity * qty, 0);
+        added++;
+    }
+    if (dropped) {
+        printf("      %d thing%s from the pack would not fit and was left "
+               "behind.\n", dropped, dropped == 1 ? "" : "s");
+    }
+    /* A pack the data has no contents for stays a pack rather than
+       vanishing. */
+    return added ? added : -1;
+}
+
 void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
 {
     int i;

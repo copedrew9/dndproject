@@ -129,8 +129,13 @@ static void add_from_catalogue(Character *c)
             show_item_detail(map[pick]);
             if (!ui_yesno("  Add it?", 1)) continue;
             qty = ui_int("  How many", 1, MAX_QUANTITY);
-            add_item(c, map[pick], qty, 0);
-            printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
+            if (add_pack(c, map[pick], qty) > 0) {
+                printf("  Added %d x %s, unpacked into what is in it.\n",
+                       qty, ITEMS[map[pick]].name);
+            } else {
+                add_item(c, map[pick], qty, 0);
+                printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
+            }
             /* Back to the categories rather than the same long list, so
                there is always a short way out. */
             if (!ui_yesno("  Pick up something else?", 0)) return;
