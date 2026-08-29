@@ -108,7 +108,7 @@ def answer(prompt, rng, free_text_name):
 
 
 def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
-             magic=0):
+             magic=0, quit_at=0, back_at=0):
     cmd = [binary, "--seed", str(seed)]
     if use_valgrind:
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
@@ -126,6 +126,7 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
     name = rng.choice(NAMES) + str(seed)
     steps = 0
     got = 0
+    escapes = 0
 
     try:
         # Main menu: create a character.
@@ -145,6 +146,25 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
             tail = "".join(transcript[-4:])[-600:]
             at_main_menu = (menu_size is not None
                             and "What would you like to do" in tail)
+            # b and q are only offered where the wizard can honour them,
+            # and the prompt says so. Typing one at the Nth such prompt
+            # exercises the jump out of a half-built character: back has to
+            # put the previous step's answers back, and quit has to leave
+            # nothing of the old character behind. Neither is reachable by
+            # answering menus at random, so neither was ever covered.
+            if (quit_at or back_at) and "(b back, q quit)" in prompt:
+                escapes += 1
+                word = None
+                if quit_at and escapes == quit_at:
+                    word = "q"
+                elif back_at and escapes == back_at:
+                    word = "b"
+                if word:
+                    replies.append(word)
+                    proc.stdin.write((word + "\n").encode())
+                    proc.stdin.flush()
+                    continue
+
             # Magic items are only reachable through the inventory, and
             # the inventory is only offered after a level-up -- creation
             # hands out a class's starting equipment and nothing else. So a
@@ -212,6 +232,11 @@ def main():
                     help="copy each produced character sheet into DIR")
     ap.add_argument("--levelup", action="store_true",
                     help="after creating, reload the character and level it up")
+    ap.add_argument("--quit-at", type=int, default=0, metavar="N",
+                    help="type q at the Nth prompt that offers it, then "
+                         "build the restarted character to the end")
+    ap.add_argument("--back-at", type=int, default=0, metavar="N",
+                    help="type b at the Nth prompt that offers it")
     ap.add_argument("--magic", type=int, default=0, metavar="N",
                     help="pick up N magic items on the way through; implies "
                          "--levelup, since the inventory is only offered "
@@ -232,7 +257,8 @@ def main():
             try:
                 rc, transcript, err, name = run_once(
                     binary, seed, rng, args.valgrind, workdir, args.verbose,
-                    args.levelup or bool(args.magic), args.magic)
+                    args.levelup or bool(args.magic), args.magic,
+                    args.quit_at, args.back_at)
             except Exception as exc:            # noqa: BLE001
                 print("run %d (seed %d): harness error: %s" % (i, seed, exc))
                 failures += 1

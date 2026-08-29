@@ -3,6 +3,8 @@
 #include "ui.h"
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <setjmp.h>
 #include <string.h>
 
 
@@ -366,6 +368,163 @@ void add_item_by_name(Character *c, const char *name, int qty, int equipped)
     add_item(c, find_item(name), qty, equipped);
 }
 
+/* ------------------------------------------------------- what a choice means
+ *
+ * Typing "3 info" at a menu asks what entry 3 would give you. What a
+ * player needs at that moment is the part they cannot see from the name:
+ * the numbers it moves and the proficiencies it grants. So each panel
+ * leads with those and leaves the prose to the sheet, which prints it all
+ * once the choice is made.
+ */
+static void add_bit(char *out, size_t n, const char *fmt, ...)
+{
+    va_list ap;
+    size_t used = strlen(out);
+
+    if (used + 2 >= n) return;
+    if (used) {
+        out[used++] = ' ';
+        out[used] = '\0';
+    }
+    va_start(ap, fmt);
+    vsnprintf(out + used, n - used, fmt, ap);
+    va_end(ap);
+}
+
+/* "+2 Strength, +1 Constitution", or nothing when the race grants none. */
+static void ability_line(const int *ability, char *out, size_t n)
+{
+    int a, wrote = 0;
+
+    out[0] = '\0';
+    for (a = 0; a < ABL_COUNT; a++) {
+        char bit[48];
+        if (!ability[a]) continue;
+        snprintf(bit, sizeof bit, "%s%+d %s", wrote ? ", " : "",
+                 ability[a], ABILITY_NAME[a]);
+        strncat(out, bit, n - strlen(out) - 1);
+        wrote = 1;
+    }
+}
+
+static void race_info(const RaceData *r, char *out, size_t n)
+{
+    char line[160];
+
+    out[0] = '\0';
+    /* Two settings and one race flag all discard the printed increases, so
+       the panel has to say which rule is actually in force rather than
+       quoting a spread that will never be applied. */
+    if (r->origin_choice) {
+        add_bit(out, n, "Ability scores: no fixed increases -- you choose "
+                        "where they go.");
+    } else if (SETTINGS.custom_origins) {
+        add_bit(out, n, "Ability scores: custom origins is on, so you place "
+                        "this race's increases yourself.");
+    } else {
+        ability_line(r->ability, line, sizeof line);
+        if (line[0]) add_bit(out, n, "Ability scores: %s.", line);
+    }
+    add_bit(out, n, "Speed %d feet, %s.", r->speed, SIZE_NAME[r->size]);
+    if (r->darkvision) add_bit(out, n, "Darkvision %d feet.", r->darkvision);
+    add_bit(out, n, "Languages: %s%s.", r->languages,
+            r->extra_languages ? ", and one of your choice" : "");
+    if (r->extra_skills) {
+        add_bit(out, n, "Skills: %d of your choice.", r->extra_skills);
+    }
+    if (r->bonus_feats) add_bit(out, n, "A feat at 1st level.");
+    if (r->subrace_count) {
+        add_bit(out, n, "Has %d subraces, chosen next.", r->subrace_count);
+    }
+}
+
+static void class_info(const ClassData *cl, char *out, size_t n)
+{
+    out[0] = '\0';
+    add_bit(out, n, "Hit die d%d.", cl->hit_die);
+    add_bit(out, n, "Saving throws: %s and %s.",
+            ABILITY_NAME[cl->save_prof[0]], ABILITY_NAME[cl->save_prof[1]]);
+    /* The books write "None" in these columns rather than leaving them
+       blank, so printing them unconditionally would say "Armour: None." */
+    if (strcmp(cl->armour_profs, "None")) {
+        add_bit(out, n, "Armour: %s.", cl->armour_profs);
+    }
+    add_bit(out, n, "Weapons: %s.", cl->weapon_profs);
+    if (cl->tool_profs[0] && strcmp(cl->tool_profs, "None")) {
+        add_bit(out, n, "Tools: %s.", cl->tool_profs);
+    }
+    {
+        char skills[240];
+        int i, wrote = 0;
+        skills[0] = '\0';
+        for (i = 0; i < cl->skill_option_count; i++) {
+            strncat(skills, wrote ? ", " : "",
+                    sizeof skills - strlen(skills) - 1);
+            strncat(skills, SKILL_NAME[cl->skill_options[i]],
+                    sizeof skills - strlen(skills) - 1);
+            wrote = 1;
+        }
+        /* The bard and the rogue may choose from every skill there is, and
+           listing all eighteen crowds out what the class actually does. */
+        if (cl->skill_option_count >= SKL_COUNT) {
+            add_bit(out, n, "Skills: any %d.", cl->skill_picks);
+        } else if (wrote) {
+            add_bit(out, n, "Skills: %d from %s.", cl->skill_picks, skills);
+        }
+    }
+    if (cl->caster != CAST_NONE) {
+        add_bit(out, n, "Casts with %s, from level %d.",
+                ABILITY_NAME[cl->spell_ability], cl->caster_start_level);
+    }
+    add_bit(out, n, "%s is chosen at level %d.",
+            cl->subclass_label, cl->subclass_level);
+    /* What the class actually does on the day you take it. */
+    {
+        int i, wrote = 0;
+        char feats[320];
+        feats[0] = '\0';
+        for (i = 0; i < FEATURE_COUNT; i++) {
+            const FeatureData *f = &FEATURES[i];
+            if (f->class_id != (int)(cl - CLASSES)) continue;
+            if (f->subclass_id >= 0 || f->level != 1) continue;
+            strncat(feats, wrote ? ", " : "",
+                    sizeof feats - strlen(feats) - 1);
+            strncat(feats, f->name, sizeof feats - strlen(feats) - 1);
+            wrote = 1;
+        }
+        if (wrote) add_bit(out, n, "At 1st level: %s.", feats);
+    }
+}
+
+static void background_info(const BackgroundData *b, char *out, size_t n)
+{
+    int i, wrote = 0;
+    char skills[200];
+
+    out[0] = '\0';
+    skills[0] = '\0';
+    for (i = 0; i < 2; i++) {
+        /* SKL_COUNT marks a skill the book leaves to you; naming it would
+           index one past the end of SKILL_NAME. */
+        if (b->skills[i] == SKL_COUNT) continue;
+        strncat(skills, wrote ? ", " : "", sizeof skills - strlen(skills) - 1);
+        strncat(skills, SKILL_NAME[b->skills[i]],
+                sizeof skills - strlen(skills) - 1);
+        wrote = 1;
+    }
+    if (wrote) add_bit(out, n, "Skills: %s.", skills);
+    if (b->skill_choice_count) {
+        add_bit(out, n, "And %d more from: %s.", b->skill_choice_count,
+                b->skill_choices);
+    }
+    if (b->tool_profs[0]) add_bit(out, n, "Tools: %s.", b->tool_profs);
+    if (b->extra_languages) {
+        add_bit(out, n, "Languages: %d of your choice.", b->extra_languages);
+    }
+    add_bit(out, n, "Feature -- %s: %s", b->feature_name, b->feature_summary);
+    if (b->gold) add_bit(out, n, "Starting gold %d gp.", b->gold);
+}
+
 /* ------------------------------------------------------------------- step 1 */
 
 static void choose_race(Character *c)
@@ -381,14 +540,18 @@ static void choose_race(Character *c)
 
     {
         int map[MENU_MAX], n = 0;
+        static char panels[MENU_MAX][1024];
+        const char *info[MENU_MAX];
         for (i = 0; i < RACE_COUNT && n < MENU_MAX; i++) {
             if (!book_enabled(RACES[i].book)) continue;
             names[n] = RACES[i].name;
             details[n] = NULL;
+            race_info(&RACES[i], panels[n], sizeof panels[n]);
+            info[n] = panels[n];
             map[n] = i;
             n++;
         }
-        pick = map[ui_menu("Races:", names, details, n)];
+        pick = map[ui_menu_info("Races:", names, details, n, info)];
     }
     c->race_id = pick;
 
@@ -520,6 +683,8 @@ static void choose_classes(Character *c, int *target_level)
 {
     const char *names[MENU_MAX];
     const char *details[MENU_MAX];
+    static char class_panels[MENU_MAX][1024];
+    const char *class_info_list[MENU_MAX];
     int class_map[MENU_MAX], class_n;
     int i, remaining;
 
@@ -540,6 +705,11 @@ static void choose_classes(Character *c, int *target_level)
             n++;
         }
         class_n = n;
+        for (i = 0; i < class_n; i++) {
+            class_info(&CLASSES[class_map[i]], class_panels[i],
+                       sizeof class_panels[i]);
+            class_info_list[i] = class_panels[i];
+        }
     }
 
     c->class_count = 0;
@@ -556,10 +726,11 @@ static void choose_classes(Character *c, int *target_level)
             break;
         }
 
-        pick = class_map[ui_menu(c->class_count == 0
-                                     ? "Classes:"
-                                     : "Add levels in which class?",
-                                 names, details, class_n)];
+        pick = class_map[ui_menu_info(c->class_count == 0
+                                          ? "Classes:"
+                                          : "Add levels in which class?",
+                                      names, details, class_n,
+                                      class_info_list)];
         slot = find_class_slot(c, pick);
         int levels, maxlev;
 
@@ -1084,6 +1255,8 @@ static void choose_background(Character *c)
 {
     const char *names[MENU_MAX];
     const char *details[MENU_MAX];
+    static char panels[MENU_MAX][1024];
+    const char *info[MENU_MAX];
     int i, pick;
 
     ui_header("Step 4: Describe Your Character -- Background");
@@ -1108,7 +1281,16 @@ static void choose_background(Character *c)
         map[n] = -1;
         n++;
 
-        pick = map[ui_menu("Backgrounds:", names, details, n)];
+        for (i = 0; i < n; i++) {
+            if (map[i] < 0) {
+                info[i] = details[i];
+            } else {
+                background_info(&BACKGROUNDS[map[i]], panels[i],
+                                sizeof panels[i]);
+                info[i] = panels[i];
+            }
+        }
+        pick = map[ui_menu_info("Backgrounds:", names, details, n, info)];
     }
     if (pick < 0) {
         custom_background(c);
@@ -1217,35 +1399,149 @@ static void grant_class_tools(Character *c)
 
 /* --------------------------------------------------------------- the wizard */
 
-void wizard_create(Character *c)
+/* --------------------------------------------------- going back and starting
+ *
+ * Creation is a fixed sequence of steps, and the two things a player wants
+ * part-way through are to undo the last one and to abandon the lot. Both
+ * are done by keeping a copy of the character as it stood before each step
+ * and jumping out of whatever prompt raised the escape.
+ *
+ * Undo is a whole-struct copy because a Character is plain data -- no
+ * pointers, nothing owned -- so `*c = snapshot` puts back everything a
+ * step touched without any step having to know what that was. The
+ * alternative, an undo written per step, is a second copy of every step's
+ * effects that would rot the first time one of them changed.
+ *
+ * Nothing on this path allocates or opens a file, so jumping out of the
+ * middle of a step leaks nothing. Everything the driver reads after a jump
+ * lives in this one static struct rather than in locals, which is what
+ * makes the jump safe: a local written between setjmp and longjmp is
+ * indeterminate afterwards, and a static is not.
+ */
+static void step_name(Character *c)
 {
-    int target_level;
-
-    memset(c, 0, sizeof *c);
-    c->race_id = c->subrace_id = c->background_id = -1;
-    c->ancestry_id = -1;
-
-    ui_header("Create a D&D 5th Edition Character");
-    ui_para("This wizard follows the six steps in chapter 1 of the Player's "
-            "Handbook. Everything you choose is saved to a text file at the "
-            "end.");
-
     ui_line("\nCharacter name", c->name, sizeof c->name);
     if (!c->name[0]) strcpy(c->name, "Unnamed");
     ui_line("Player name", c->player, sizeof c->player);
+}
 
-    choose_race(c);
-    choose_classes(c, &target_level);
+/* choose_classes is the one step that reports something back to the
+   driver, and the level it settles is wanted by build_levels. */
+static void step_classes(Character *c);
+static void step_abilities(Character *c);
+
+static struct {
+    jmp_buf step;               /* where a prompt jumps back to */
+    Character snap[16];         /* the character before each step */
+    unsigned long rng[16];      /* and the dice before it, so back can undo */
+    UiEscape raised;
+    int at;                     /* the step being run */
+    int target_level;
+    int restarts;
+} WIZ;
+
+static void step_classes(Character *c)
+{
+    choose_classes(c, &WIZ.target_level);
+}
+
+/* The abilities, the racial bonuses they are added to, and the multiclass
+   requirements they have to meet are one step and not three. Racial
+   bonuses are applied to scores that must already be chosen, and the
+   requirements are checked against the total; entering any of the three
+   without the ones before it would check numbers that were not there
+   yet. */
+static void step_abilities(Character *c)
+{
     choose_abilities(c);
     apply_racial_bonuses(c);
     check_multiclass_requirements(c);
+}
 
+static void step_profs(Character *c)
+{
     grant_class_proficiencies(c);
-    choose_background(c);
+}
+
+static void step_skills(Character *c)
+{
     choose_class_skills(c);
     grant_class_tools(c);
+}
 
+static void step_levels(Character *c)
+{
     build_levels(c);
-    choose_equipment(c);
-    choose_personality(c);
+}
+
+static const struct { const char *name; void (*fn)(Character *); } STEPS[] = {
+    { "your name",          step_name },
+    { "race",               choose_race },
+    { "class",              step_classes },
+    { "ability scores",     step_abilities },
+    { "proficiencies",      step_profs },
+    { "background",         choose_background },
+    { "skills",             step_skills },
+    { "levels",             step_levels },
+    { "equipment",          choose_equipment },
+    { "personality",        choose_personality },
+};
+#define STEP_COUNT ((int)(sizeof STEPS / sizeof STEPS[0]))
+
+static void wizard_escape(UiEscape e)
+{
+    WIZ.raised = e;
+    longjmp(WIZ.step, 1);
+}
+
+void wizard_create(Character *c)
+{
+    WIZ.restarts = 0;
+
+    for (;;) {
+        int done = 0;
+
+        memset(c, 0, sizeof *c);
+        c->race_id = c->subrace_id = c->background_id = -1;
+        c->ancestry_id = -1;
+        WIZ.at = 0;
+        WIZ.target_level = 1;
+
+        ui_header("Create a D&D 5th Edition Character");
+        ui_para("This wizard follows the six steps in chapter 1 of the "
+                "Player's Handbook. Everything you choose is saved to a "
+                "text file at the end.");
+        ui_para("At any menu you can type b to go back one step, q to throw "
+                "this character away and start again, or a number followed "
+                "by the word info -- \"3 info\" -- to be told what that "
+                "choice means.");
+
+        ui_set_escape(wizard_escape);
+        while (WIZ.at < STEP_COUNT) {
+            WIZ.snap[WIZ.at] = *c;
+            WIZ.rng[WIZ.at] = ui_rng_state();
+            if (setjmp(WIZ.step) == 0) {
+                STEPS[WIZ.at].fn(c);
+                WIZ.at++;
+            } else if (WIZ.raised == UI_ESC_BACK) {
+                if (WIZ.at == 0) {
+                    printf("\n  This is the first step; there is nothing "
+                           "behind it.\n");
+                } else {
+                    WIZ.at--;
+                    *c = WIZ.snap[WIZ.at];
+                    ui_rng_restore(WIZ.rng[WIZ.at]);
+                    printf("\n  Back to %s.\n", STEPS[WIZ.at].name);
+                }
+            } else {
+                break;              /* quit: out to the restart below */
+            }
+        }
+        ui_set_escape(NULL);
+        done = (WIZ.at >= STEP_COUNT);
+        if (done) return;
+
+        WIZ.restarts++;
+        printf("\n  Throwing that character away and starting again.\n");
+    }
 }

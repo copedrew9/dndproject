@@ -105,6 +105,8 @@ check: test combos dataverify verify $(BIN)
 	python3 tools/drive.py --runs 30 --seed 1
 	python3 tools/drive.py --runs 10 --seed 500 --levelup
 	python3 tools/drive.py --runs 10 --seed 700 --magic 3
+	python3 tools/drive.py --runs 8 --seed 810 --back-at 2
+	python3 tools/drive.py --runs 8 --seed 820 --quit-at 3
 	python3 tools/roundtrip.py
 	python3 tools/stress.py --runs 1 --seed 11 --tour --ops 9 --grace 0.02
 	python3 tools/stress.py --runs 4 --seed 20 --ops 4 --grace 0.02
