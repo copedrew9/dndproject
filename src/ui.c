@@ -549,20 +549,33 @@ int ui_menu_custom(const char *prompt, const char *const *options,
                    const char *const *details, int count,
                    const char *custom_label, char *out, size_t n)
 {
+    return ui_menu_custom_info(prompt, options, details, count, custom_label,
+                               out, n, NULL);
+}
+
+int ui_menu_custom_info(const char *prompt, const char *const *options,
+                        const char *const *details, int count,
+                        const char *custom_label, char *out, size_t n,
+                        const char *const *info)
+{
     const char *opts[257];
     const char *det[257];
+    const char *inf[257];
     int i;
 
     if (count > 256) count = 256;
     for (i = 0; i < count; i++) {
         opts[i] = options[i];
         det[i] = details ? details[i] : NULL;
+        inf[i] = info ? info[i] : NULL;
     }
     opts[count] = custom_label;
     det[count] = "Something your table uses that is not printed above";
+    inf[count] = det[count];
 
     for (;;) {
-        int pick = ui_menu(prompt, opts, det, count + 1);
+        int pick = ui_menu_info(prompt, opts, det, count + 1,
+                                info ? inf : NULL);
         if (pick < count) {
             snprintf(out, n, "%s", options[pick]);
             return pick;
@@ -579,10 +592,17 @@ int ui_menu_custom(const char *prompt, const char *const *options,
 int ui_toggle_list(const char *prompt, const char *const *options,
                    int count, int *flags)
 {
+    return ui_toggle_list_info(prompt, options, count, flags, NULL);
+}
+
+int ui_toggle_list_info(const char *prompt, const char *const *options,
+                        int count, int *flags, const char *const *info)
+{
     if (count > 63) count = 63;
 
     for (;;) {
         const char *opts[65];
+        const char *inf[65];
         static char labels[65][96];
         int i, pick, set = 0;
 
@@ -590,13 +610,16 @@ int ui_toggle_list(const char *prompt, const char *const *options,
             snprintf(labels[i], sizeof labels[i], "[%c] %s",
                      flags[i] ? 'x' : ' ', options[i]);
             opts[i] = labels[i];
+            inf[i] = info ? info[i] : NULL;
             if (flags[i]) set++;
         }
         snprintf(labels[count], sizeof labels[count],
                  "Done (%d chosen)", set);
         opts[count] = labels[count];
+        inf[count] = NULL;
 
-        pick = ui_menu(prompt, opts, NULL, count + 1);
+        pick = ui_menu_info(prompt, opts, NULL, count + 1,
+                            info ? inf : NULL);
         if (pick == count) return set;
         flags[pick] = !flags[pick];
     }

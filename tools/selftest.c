@@ -3781,6 +3781,141 @@ static void feed(const char *text, char *out, size_t n)
     out[got > 0 ? got : 0] = '\0';
 }
 
+/* ------------------------------------------------- what a spell says it does
+ *
+ * A spell menu shows a name and a school, and a player choosing between two
+ * of them wants what neither says: what the spell does when it is cast. That
+ * is what data/spells.txt's SPELLTEXT rows carry and what spell_summary()
+ * assembles, so both the rows and the paragraph are checked here.
+ */
+static void test_every_spell_says_what_it_does(void)
+{
+    int i, j, shortest = 10000, longest = 0;
+
+    printf("every spell has a description\n");
+
+    for (i = 0; i < BOOK_SPELL_COUNT; i++) {
+        const char *text = spell_notes(BOOK_SPELLS[i].name);
+        int len;
+
+        if (!text || !text[0]) {
+            printf("  FAIL %-52s has no description\n",
+                   BOOK_SPELLS[i].name);
+            failures++;
+            continue;
+        }
+        len = (int)strlen(text);
+        if (len < shortest) shortest = len;
+        if (len > longest) longest = len;
+        /* A description that is the name again, or a stub, is worse than
+           none: it reads as an answer and says nothing. */
+        if (len < 40) {
+            printf("  FAIL %-52s says too little (%d characters)\n",
+                   BOOK_SPELLS[i].name, len);
+            failures++;
+        }
+        if (!strcmp(text, BOOK_SPELLS[i].name)) {
+            printf("  FAIL %-52s repeats its own name\n",
+                   BOOK_SPELLS[i].name);
+            failures++;
+        }
+    }
+    check(shortest >= 40, "the shortest description", shortest, 40);
+    check(longest < 400, "the longest description", longest, 400);
+
+    /* Two spells sharing a description means one was pasted over the other,
+       which is the way a table this size goes wrong. */
+    for (i = 0; i < SPELL_NOTE_COUNT; i++) {
+        for (j = i + 1; j < SPELL_NOTE_COUNT; j++) {
+            if (strcmp(SPELL_NOTES[i].text, SPELL_NOTES[j].text) != 0)
+                continue;
+            printf("  FAIL %-52s reads the same as %s\n",
+                   SPELL_NOTES[i].spell, SPELL_NOTES[j].spell);
+            failures++;
+        }
+    }
+    EQ(SPELL_NOTE_COUNT, BOOK_SPELL_COUNT, "a description for each spell");
+}
+
+static void test_the_spell_panel(void)
+{
+    char out[SPELL_INFO_LEN];
+    int fireball = -1, detect = -1, blast = -1, i;
+
+    printf("the paragraph a spell menu answers with\n");
+
+    for (i = 0; i < SPELL_COUNT; i++) {
+        if (!strcmp(SPELLS[i].name, "Fireball")) fireball = i;
+        if (!strcmp(SPELLS[i].name, "Detect Magic")) detect = i;
+        if (!strcmp(SPELLS[i].name, "Eldritch Blast")) blast = i;
+    }
+    if (fireball < 0 || detect < 0 || blast < 0) {
+        printf("  FAIL %-52s missing from the table\n", "a named spell");
+        failures++;
+        return;
+    }
+
+    spell_summary(fireball, out, sizeof out);
+    check(strstr(out, "3rd-level evocation") != NULL,
+          "a levelled spell names its level and school", 1, 1);
+    check(strstr(out, "Casting time: 1 action") != NULL,
+          "and its casting time", 1, 1);
+    check(strstr(out, "Range: 150 feet") != NULL, "and its range", 1, 1);
+    check(strstr(out, "Duration: Instantaneous") != NULL,
+          "and its duration", 1, 1);
+    check(strstr(out, "Components: V, S, M") != NULL,
+          "and its components", 1, 1);
+    check(strstr(out, "Cannot be cast as a ritual.") != NULL,
+          "and says it is no ritual", 1, 1);
+    check(strstr(out, "Needs no concentration.") != NULL,
+          "and that it needs no concentration", 1, 1);
+    check(strstr(out, "sorcerer, wizard") != NULL,
+          "and whose list it is on", 1, 1);
+    check(strstr(out, "Player's Handbook") != NULL,
+          "and which book it came from", 1, 1);
+    check(strstr(out, spell_notes("Fireball")) != NULL,
+          "and what it actually does", 1, 1);
+
+    /* A ritual that also takes concentration says both, and says them the
+       other way round. Detect magic is both. */
+    spell_summary(detect, out, sizeof out);
+    check(strstr(out, "Can be cast as a ritual.") != NULL,
+          "a ritual says so", 1, 1);
+    check(strstr(out, "Requires concentration.") != NULL,
+          "and a concentration spell says so", 1, 1);
+
+    /* A cantrip has no level to name. */
+    spell_summary(blast, out, sizeof out);
+    check(strstr(out, "evocation cantrip") != NULL,
+          "a cantrip is described as one", 1, 1);
+    check(strstr(out, "-level") == NULL,
+          "and is not given a spell level", 1, 1);
+
+    /* An index off the end is answered with nothing rather than a read
+       past the table: the menus that call this pass an index they took
+       from their own list, and a list that ran short would do exactly
+       this. */
+    spell_summary(-1, out, sizeof out);
+    EQ((long)strlen(out), 0, "no spell, nothing said");
+    spell_summary(SPELL_COUNT, out, sizeof out);
+    EQ((long)strlen(out), 0, "nor for an index off the end");
+
+    /* The buffer is never overrun, and the paragraph always fits: every
+       spell in the table is written into a buffer the size the callers
+       use, and the longest must not be truncated mid-word. */
+    for (i = 0; i < SPELL_COUNT; i++) {
+        spell_summary(i, out, sizeof out);
+        if (strlen(out) >= sizeof out - 1) {
+            printf("  FAIL %-52s fills the whole buffer\n", SPELLS[i].name);
+            failures++;
+        }
+        if (!strstr(out, "On the spell list of:")) {
+            printf("  FAIL %-52s was cut short\n", SPELLS[i].name);
+            failures++;
+        }
+    }
+}
+
 static void test_the_prompt_layer(void)
 {
     static char said[8192];
@@ -4053,6 +4188,8 @@ int main(void)
     test_sheet_numbers_the_audit_found();
     test_traits_the_numbers_ignored();
     test_things_playing_it_found();
+    test_every_spell_says_what_it_does();
+    test_the_spell_panel();
     test_the_prompt_layer();
     test_valuables();
     test_shop_file();

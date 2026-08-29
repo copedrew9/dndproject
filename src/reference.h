@@ -12,6 +12,13 @@
 
 extern const char *const CATEGORY_LABEL[];
 
+/* The longest a spell summary can run: five lines of fields and the
+   description, with room to spare for a homebrew spell's long name. */
+#define SPELL_INFO_LEN 768
+
+/* Everything about a spell in one paragraph, for a menu's "N info". */
+void spell_summary(int spell_id, char *out, size_t n);
+
 void format_price(int cp, char *out, size_t n);
 void format_weight(int tenths, char *out, size_t n);
 

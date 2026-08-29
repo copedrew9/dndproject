@@ -270,7 +270,7 @@ data/character.txt   races, subraces, classes, subclasses, features,
                      table and the height and weight table
 data/equipment.txt   armour, weapons, gear, tools, packs, magic items,
                      trinkets, lifestyles, prices and the tool groups
-data/spells.txt      every spell
+data/spells.txt      every spell, and a sentence on what each one does
 data/world.txt       gods, beasts, sidekicks, conditions, the
                      background tables
 ```
@@ -612,7 +612,7 @@ half-caster slots and specialist spells.
 ```
 data/character.txt     races, classes, subclasses, features, backgrounds
 data/equipment.txt     gear, weapons, armour, magic items, prices, tools
-data/spells.txt        every spell
+data/spells.txt        every spell, and what casting it does
 data/world.txt         gods, beasts, sidekicks, conditions, tables
 homebrew.txt           the DM's own entries, read at run time
 tools/build_data.py    data/ -> src/gen_*.c
@@ -623,6 +623,8 @@ tools/verify_equipment.py  checks the PHB equipment numbers
 tools/verify_deities.py    checks appendix B, column by column
 tools/verify_races.py      checks the MPMM race numbers
 tools/verify_spells.py     checks every spell's stat line
+tools/verify_spell_text.py checks the numbers in every spell description
+tools/verify_spell_info.py asks a real spell menu "1 info" and reads it
 tools/verify_magic_items.py  checks the DMG items' kind, rarity, attunement
 tools/verify_beasts.py     checks the MM stat blocks
 tools/verify_classes.py    checks the class tables and feature levels

@@ -796,6 +796,25 @@ def build_spells():
                cstr(r.str(6)), cstr(r.str(7)), cstr(r.str(8)),
                cstr(r.str(9)), mask))
     out.table("const SpellData BOOK_SPELLS[]", rows, "BOOK_SPELL_COUNT")
+
+    out.table(
+        "const SpellNote SPELL_NOTES[]",
+        ["    { %s,\n      %s }" % (cstr(r.str(0)), cstr(r.str(1)))
+         for r in tags.get("SPELLTEXT", [])],
+        "SPELL_NOTE_COUNT")
+    described = set()
+    for r in tags.get("SPELLTEXT", []):
+        if r.str(0) not in names:
+            r.die("no SPELL named %r" % r.str(0))
+        if r.str(0) in described:
+            r.die("%r is described twice" % r.str(0))
+        described.add(r.str(0))
+    missing = sorted(names - described)
+    if missing:
+        sys.exit("data/spells.txt: %d spell%s with no SPELLTEXT line: %s"
+                 % (len(missing), "" if len(missing) == 1 else "s",
+                    ", ".join(missing[:5])
+                    + (", ..." if len(missing) > 5 else "")))
     out.w("\n/* Until homebrew.c says otherwise, the bank is just the"
           " book. */\n"
           "const SpellData *SPELLS = BOOK_SPELLS;\n"
