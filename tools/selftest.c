@@ -2447,6 +2447,82 @@ static void test_hidden_magic_items(void)
     }
 }
 
+/* A complete life path has to fit.
+ *
+ * Xanathar's walks thirteen tables and joins the answers into one line.
+ * The table names and their separators cost 241 characters before a single
+ * answer is added, so the shortest complete life path runs past 400 -- and
+ * the field used to be 256, which meant the join broke out mid-word around
+ * the seventh table and stored the fragment. Nothing noticed, because a
+ * truncated string is still a string.
+ */
+static void test_life_path_fits(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    size_t need = 0;
+    int i;
+
+    printf("a whole life path fits on the sheet\n");
+
+    /* The scaffolding alone, with the longest row each table can produce. */
+    for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+        const LifeTable *t = &LIFE_TABLES[i];
+        size_t longest = 0;
+        int k;
+        for (k = 0; k < t->count; k++) {
+            size_t len = strlen(t->rows[k].text);
+            if (len > longest) longest = len;
+        }
+        need += strlen(t->name) + 2 + longest + 2;   /* "Name: text" + ". " */
+    }
+    check(need < MAX_BACKSTORY, "the longest life path fits the field",
+          (long)need, (long)MAX_BACKSTORY);
+
+    /* And one really does survive being written and read back. */
+    plain_fighter(&c, "SelftestLife");
+    {
+        size_t used = 0;
+        for (i = 0; i < LIFE_TABLE_COUNT; i++) {
+            const LifeTable *t = &LIFE_TABLES[i];
+            int w = snprintf(c.backstory + used, sizeof c.backstory - used,
+                             "%s%s: %s", i ? ". " : "", t->name,
+                             t->rows[t->count - 1].text);
+            if (w < 0 || (size_t)w >= sizeof c.backstory - used) break;
+            used += (size_t)w;
+        }
+        EQ(i, LIFE_TABLE_COUNT, "every table is written, none dropped");
+    }
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    check(!strcmp(back.backstory, c.backstory),
+          "the life path comes back whole", 1, 1);
+    remove(path);
+}
+
+/* A cleric, paladin or warlock has to name what they serve. The rule is
+   about which classes, not about the menu, so that is what is checked --
+   the wizard's prompts are exercised by tools/drive.py. */
+static void test_patron_is_required(void)
+{
+    static const struct { int cls; int required; } WANT[] = {
+        { CLS_CLERIC,  1 }, { CLS_PALADIN, 1 }, { CLS_WARLOCK, 1 },
+        { CLS_FIGHTER, 0 }, { CLS_WIZARD,  0 }, { CLS_DRUID,   0 },
+        { CLS_ROGUE,   0 }, { CLS_BARD,    0 },
+    };
+    int i;
+
+    printf("who has to name a patron\n");
+
+    for (i = 0; i < (int)(sizeof WANT / sizeof WANT[0]); i++) {
+        char what[96];
+        snprintf(what, sizeof what, "%s %s name one",
+                 CLASSES[WANT[i].cls].name,
+                 WANT[i].required ? "must" : "need not");
+        EQ(class_must_name_a_patron(WANT[i].cls), WANT[i].required, what);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2669,6 +2745,8 @@ int main(void)
     test_magic_weapon_attacks();
     test_every_magic_rule_does_something();
     test_hidden_magic_items();
+    test_life_path_fits();
+    test_patron_is_required();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

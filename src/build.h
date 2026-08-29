@@ -7,6 +7,12 @@
 
 /* Top level flows. */
 void wizard_create(Character *c);
+
+/* Whether a class draws its power from someone it has to name: a cleric's
+   god, a paladin's oath, a warlock's patron. Those three are asked for one
+   and not offered a way past; everyone else is asked whether they keep a
+   faith at all. */
+int class_must_name_a_patron(int class_id);
 void wizard_level_up(Character *c);
 
 /* Walks every class level, granting hit points, subclasses and choices. */

@@ -11,6 +11,13 @@
 
 #define MAX_NAME 64
 #define MAX_TEXT 256
+/* The backstory is the one line of prose on a character that is not typed
+   by hand. Xanathar's "This Is Your Life" walks thirteen tables and joins
+   the answers, and the table names and separators alone cost 241
+   characters before a single answer -- so the shortest complete life path
+   is over 400 and MAX_TEXT could never hold one. It used to break out of
+   the loop mid-word around the seventh table and store the fragment. */
+#define MAX_BACKSTORY 1024
 #define MAX_CLASSES 12      /* a character may not exceed 20 total levels */
 #define MAX_SPELLS 128
 #define MAX_ITEMS 96
@@ -225,7 +232,7 @@ typedef struct {
     char bond[MAX_TEXT];
     char flaw[MAX_TEXT];
     char appearance[MAX_TEXT];
-    char backstory[MAX_TEXT];
+    char backstory[MAX_BACKSTORY];
     int age, height_in, weight_lb;
     char eyes[MAX_NAME], skin[MAX_NAME], hair[MAX_NAME];
 } Character;

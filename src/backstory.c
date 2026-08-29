@@ -87,7 +87,7 @@ void build_backstory(Character *c)
         "Roll the whole thing at once",
         "Leave it; I will write my own"
     };
-    char out[MAX_TEXT];
+    char out[MAX_BACKSTORY];
     size_t used = 0;
     int i, mode, wrote = 0;
 

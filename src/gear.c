@@ -676,7 +676,25 @@ static const char *chosen_domain(const Character *c)
     return NULL;
 }
 
-static void choose_deity(Character *c)
+/* Classes whose power is somebody else's.
+ *
+ * A cleric serves a god, a paladin swears an oath, and a warlock strikes a
+ * bargain with an extraplanar patron: for all three the source is part of
+ * the character rather than a decoration on it, so naming it is not
+ * optional. Everyone else may keep a faith and is asked instead. */
+int class_must_name_a_patron(int class_id)
+{
+    return class_id == CLS_CLERIC || class_id == CLS_PALADIN
+        || class_id == CLS_WARLOCK;
+}
+
+/* Offers the deity tables, and says whether one was actually named.
+ *
+ * When it is required the way out is not offered at all, rather than
+ * offered and refused: a menu that cannot be declined always ends in a
+ * deity, where a loop around a decline would spin forever against a
+ * closed input. */
+static int choose_deity(Character *c, int required)
 {
     const char *pantheons[16];
     int pn = 0, i, pick;
@@ -690,13 +708,16 @@ static void choose_deity(Character *c)
         }
         if (!seen) pantheons[pn++] = DEITIES[i].pantheon;
     }
-    pantheons[pn] = "No deity in particular";
+    /* A deity table with nothing in it -- a homebrew file that replaced it,
+       say -- leaves nothing to require. */
+    if (pn == 0) return 0;
+    if (!required) pantheons[pn] = "No deity in particular";
 
     if (domain) {
         printf("\n  Deities marked with a star suggest the %s.\n", domain);
     }
-    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + 1);
-    if (pick == pn) return;
+    pick = ui_menu("  Which pantheon?", pantheons, NULL, pn + !required);
+    if (!required && pick == pn) return 0;
 
     {
         const char *opts[128];
@@ -719,7 +740,7 @@ static void choose_deity(Character *c)
             map[n] = i;
             n++;
         }
-        if (n == 0) return;
+        if (n == 0) return 0;
 
         choice = ui_menu("  Your deity:", opts, det, n);
         add_choice(c, "Deity", DEITIES[map[choice]].name);
@@ -728,6 +749,7 @@ static void choose_deity(Character *c)
             printf("  %s does not suggest the %s, which is worth agreeing "
                    "with your DM.\n", DEITIES[map[choice]].name, domain);
         }
+        return 1;
     }
 }
 
@@ -765,16 +787,23 @@ void choose_personality(Character *c)
     pick_or_type("Bond", bg ? bg->bonds : NULL, c->bond, sizeof c->bond);
     pick_or_type("Flaw", bg ? bg->flaws : NULL, c->flaw, sizeof c->flaw);
 
-    /* A cleric or paladin serves someone in particular; everyone else may
-       still keep a faith. */
+    /* A cleric, paladin or warlock has to name what they serve; everyone
+       else may still keep a faith, and is asked. */
     {
         int devout = 0;
+        const char *why = NULL;
         for (i = 0; i < c->class_count; i++) {
             int id = c->classes[i].class_id;
-            if (id == CLS_CLERIC || id == CLS_PALADIN) devout = 1;
+            if (!class_must_name_a_patron(id)) continue;
+            devout = 1;
+            why = CLASSES[id].name;
         }
-        if (ui_yesno("\n  Choose a deity for your character?", devout)) {
-            choose_deity(c);
+        if (devout) {
+            printf("\n  A %s draws their power from someone in particular, "
+                   "so this one is not a choice.\n", why);
+            choose_deity(c, 1);
+        } else if (ui_yesno("\n  Choose a deity for your character?", 0)) {
+            choose_deity(c, 0);
         }
     }
 
