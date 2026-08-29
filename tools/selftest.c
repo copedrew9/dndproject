@@ -3044,6 +3044,75 @@ static void test_entries_the_books_have(void)
     EQ(found, 1, "Bond of the Talisman is in the invocations");
 }
 
+/* A note with a title and nothing under it. The loader used to read an
+   empty body as the old one-line shape and put the title in the body, and
+   the sheet then declined to print a body that is its own title -- so the
+   sheet lost a line on reload, which is what tools/stress.py caught. The
+   old shape still has to work: a note record with only two fields is a
+   single line that serves as both. */
+static void test_note_with_no_body(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    FILE *f;
+
+    printf("a note with nothing under its title\n");
+
+    plain_fighter(&c, "SelftestEmptyNote");
+    c.note_count = 2;
+    snprintf(c.notes[0].title, sizeof c.notes[0].title, "%s", "A debt");
+    c.notes[0].body[0] = '\0';
+    snprintf(c.notes[1].title, sizeof c.notes[1].title, "%s", "A patron");
+    snprintf(c.notes[1].body, sizeof c.notes[1].body, "%s",
+             "She wants the ring back.");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.note_count, 2, "both notes");
+    check(!strcmp(back.notes[0].title, "A debt"), "the title", 1, 1);
+    EQ((int)strlen(back.notes[0].body), 0, "and an empty body, still empty");
+    check(!strcmp(back.notes[1].body, "She wants the ring back."),
+          "the other note's body", 1, 1);
+
+    /* The old shape: a NOTE of one field, which is both title and body.
+       Made by rewriting the record in the sheet just written, so the rest
+       of the file is a real one rather than a guess at the minimum. */
+    {
+        static char text[200000];
+        size_t got;
+        char *at;
+
+        f = fopen(path, "r");
+        check(f != NULL, "the sheet opened", 1, 1);
+        got = f ? fread(text, 1, sizeof text - 1, f) : 0;
+        if (f) fclose(f);
+        text[got] = '\0';
+
+        at = strstr(text, "NOTE|A patron|She wants the ring back.");
+        check(at != NULL, "the two-field note is in the file", 1, 1);
+
+        f = fopen(path, "w");
+        check(f != NULL, "an older file written", 1, 1);
+        if (f && at) {
+            /* Everything before that record, the record cut back to its
+               one field, then everything after the line it was on. */
+            const char *eol = strchr(at, '\n');
+            fwrite(text, 1, (size_t)(at - text), f);
+            fputs("NOTE|A patron", f);
+            if (eol) fputs(eol, f);
+            fclose(f);
+        } else if (f) {
+            fclose(f);
+        }
+        check(load_character(path, &back) == 0, "and read", 1, 1);
+        EQ(back.note_count, 2, "both notes still");
+        check(!strcmp(back.notes[1].title, "A patron"),
+              "its line is the title", 1, 1);
+        check(!strcmp(back.notes[1].body, "A patron"),
+              "and the body too", 1, 1);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3275,6 +3344,7 @@ int main(void)
     test_shop_file();
     test_purse_has_a_ceiling();
     test_entries_the_books_have();
+    test_note_with_no_body();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

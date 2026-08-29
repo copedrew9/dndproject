@@ -169,7 +169,7 @@ int main(int argc, char **argv)
         "Manage a character's inventory",
         "Manage a character's sidekicks",
         "Homebrew (your own items and spells)",
-        "Shopbuilder (a shop for your table, saved to its own file)",
+        "Shopbuilder (build a shop for your table)",
         "Notes and character details",
         "Quit"
     };

@@ -78,7 +78,13 @@ def menu_number(tail, wanted):
 
 RANGE_RE = re.compile(r"\[(-?\d+)-(-?\d+)\]:\s*$")
 YESNO_RE = re.compile(r"\[(?:Y/n|y/N)\]:\s*$")
+# A character sheet the program says it has written. The homebrew screen
+# prints the same sentence about homebrew.txt, which is not a character:
+# counting it made main_menu believe a character existed, so the session
+# stopped creating one, and the run then failed with "no character file
+# written" -- a harness bug reported as the program's.
 SAVED_RE = re.compile(r"Saved to (.+\.txt)")
+NOT_A_SHEET = ("homebrew.txt",)
 
 # Printed immediately above the main menu and nowhere else, which is what
 # makes it a safe way to recognise the main menu.
@@ -250,7 +256,15 @@ class Session:
         m = RANGE_RE.search(prompt)
         if m:
             lo, hi = int(m.group(1)), int(m.group(2))
-            tail = "".join(transcript[-4:])[-600:]
+            # Wide enough to hold the whole main menu, banner included.
+            # It was 600, which fitted an eleven-entry menu and not a
+            # twelve-entry one: the banner fell off the front, every main
+            # menu was answered as though it were some other screen, and
+            # sessions ended having never created a character -- reported
+            # as "no character file written", which reads like the
+            # program's fault and is not. Sized from the menu itself, with
+            # room for the menu to grow again.
+            tail = "".join(transcript[-6:])[-2000:]
             # The main menu is the one under the program's own banner, not
             # merely the one that asks "What would you like to do?". Two
             # screens ask that -- the other is the note editor -- and taking
@@ -333,7 +347,7 @@ def run_once(binary, seed, ops, nasty_odds, use_valgrind, workdir,
                                    % max_prompts)
             for m in SAVED_RE.finditer("".join(transcript[-3:])):
                 f = os.path.basename(m.group(1))
-                if f not in session.saved:
+                if f not in session.saved and f not in NOT_A_SHEET:
                     session.saved.append(f)
             reply = session.answer(prompt, transcript)
             replies.append(reply)

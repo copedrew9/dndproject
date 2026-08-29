@@ -1169,8 +1169,16 @@ int load_character(const char *path, Character *c)
                 snprintf(nt->body, sizeof nt->body, "%s",
                          (n >= 3) ? fields[2] : "");
                 /* Notes written before they had a title and a body of
-                   their own are a single line; keep it as both. */
-                if (!nt->body[0]) {
+                   their own are a single line; keep it as both.
+
+                   The test is the missing field, not the empty body. A
+                   note whose body is deliberately empty writes all three
+                   fields with nothing in the third, and reading that as
+                   the old shape put the title in the body -- where the
+                   sheet then declined to print it, because a note whose
+                   body is its title prints once. So the sheet lost a line
+                   on reload, which is what tools/stress.py caught. */
+                if (n < 3) {
                     size_t tn = strlen(nt->title);
                     if (tn >= sizeof nt->body) tn = sizeof nt->body - 1;
                     memcpy(nt->body, nt->title, tn);
