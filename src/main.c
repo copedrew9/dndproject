@@ -9,6 +9,7 @@
 #include "build.h"
 #include "details.h"
 #include "homebrew.h"
+#include "game.h"
 #include "inventory.h"
 #include "sidekick.h"
 #include "reference.h"
@@ -160,6 +161,7 @@ int main(int argc, char **argv)
     static const char *const menu[] = {
         "Create a new character",
         "Load a character and level up",
+        "Game mode (play a saved character)",
         "View a saved character",
         "Content settings (books and optional rules)",
         "Reference (equipment, magic items, prices, conditions)",
@@ -205,19 +207,20 @@ int main(int argc, char **argv)
         printf("  D&D 5th Edition Character Creator\n");
         ui_rule();
 
-        pick = ui_menu("  What would you like to do?", menu, NULL, 10);
+        pick = ui_menu("  What would you like to do?", menu, NULL, 11);
         switch (pick) {
         case 0: do_create(); break;
         case 1: do_level_up(); break;
-        case 2: do_view(); break;
-        case 3: settings_menu(&SETTINGS); break;
-        case 4: reference_menu(); break;
-        case 5: edit_saved("Manage a Character's Gear", manage_inventory);
+        case 2: edit_saved("Game Mode", game_mode); break;
+        case 3: do_view(); break;
+        case 4: settings_menu(&SETTINGS); break;
+        case 5: reference_menu(); break;
+        case 6: edit_saved("Manage a Character's Gear", manage_inventory);
                 break;
-        case 6: edit_saved("Manage a Character's Sidekicks", manage_sidekicks);
+        case 7: edit_saved("Manage a Character's Sidekicks", manage_sidekicks);
                 break;
-        case 7: homebrew_menu(); break;
-        case 8: edit_saved("Notes and Character Details", edit_details);
+        case 8: homebrew_menu(); break;
+        case 9: edit_saved("Notes and Character Details", edit_details);
                 break;
         default: return 0;
         }

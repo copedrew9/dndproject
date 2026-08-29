@@ -7,6 +7,7 @@
 #include "data.h"
 #include "sidekick.h"
 #include "build.h"
+#include "game.h"
 #include "data_spells.h"
 #include "saveload.h"
 #include "homebrew.h"
@@ -2625,6 +2626,97 @@ static void test_two_copies_stay_two(void)
     }
 }
 
+/* What happens at the table has to survive the table breaking up.
+ *
+ * Everything game mode changes is on the character rather than in a file
+ * beside it, which is only worth anything if it is written and read back.
+ * A sheet that says 42 hit points and a scrap of paper saying 11 are gone
+ * is two sources for one number.
+ */
+static void test_play_state_survives(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int max, i;
+
+    printf("what happens at the table\n");
+
+    base_character(&c, "SelftestPlay");
+    c.race_id = 0;
+    add_class(&c, CLS_WIZARD, 6, -1);
+    for (i = 0; i < 6; i++) c.hp_rolls[i] = 4;
+    c.hp_roll_count = 6;
+    max = hit_points_max(&c);
+    check(max > 0, "the character has hit points", 1, 1);
+
+    /* Hurt, exhausted, poisoned, out of slots, out of hit dice, in debt to
+       a ledger and using something with charges. */
+    c.damage = 7;
+    c.temp_hp = 3;
+    c.death_success = 1;
+    c.death_fail = 2;
+    c.exhaustion = 2;
+    c.conditions = (1u << 9);              /* one condition, whichever */
+    c.slots_used[1] = 2;
+    c.slots_used[3] = 1;
+    c.pact_used = 0;
+    c.hit_dice_used[0] = 3;
+    c.resource_count = 1;
+    snprintf(c.resources[0].name, sizeof c.resources[0].name, "%s",
+             "Arcane Recovery");
+    c.resources[0].max = 1;
+    c.resources[0].used = 1;
+    c.resources[0].per_long_rest = 1;
+    c.ledger_count = 1;
+    c.ledger[0].copper = -250;
+    snprintf(c.ledger[0].what, sizeof c.ledger[0].what, "%s", "a night's inn");
+    if (c.item_count) c.inventory[0].wear = 2;
+
+    EQ(hit_points_now(&c), max - 7, "current hit points are max less damage");
+    EQ(hit_dice_left(&c, 0), 3, "three of six hit dice left");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.damage, 7, "damage survives");
+    EQ(back.temp_hp, 3, "temporary hit points survive");
+    EQ(back.death_success, 1, "death saves made survive");
+    EQ(back.death_fail, 2, "death saves failed survive");
+    EQ(back.exhaustion, 2, "exhaustion survives");
+    EQ((long)back.conditions, (long)c.conditions, "conditions survive");
+    EQ(back.slots_used[1], 2, "spent 1st-level slots survive");
+    EQ(back.slots_used[3], 1, "spent 3rd-level slots survive");
+    EQ(back.hit_dice_used[0], 3, "spent hit dice survive");
+    EQ(back.resource_count, 1, "the tracked resource survives");
+    check(!strcmp(back.resources[0].name, "Arcane Recovery"),
+          "with its name", 1, 1);
+    EQ(back.resources[0].used, 1, "and how much of it is gone");
+    EQ(back.ledger_count, 1, "the ledger survives");
+    EQ(back.ledger[0].copper, -250, "with what was spent");
+    if (c.item_count) {
+        EQ(back.inventory[0].wear, 2, "and how worn the gear is");
+    }
+    remove(path);
+
+    /* A character nobody has played writes no play records at all, so an
+       untouched sheet reads exactly as it did before game mode existed. */
+    {
+        Character fresh;
+        char p2[MAX_NAME + 8];
+        base_character(&fresh, "SelftestUnplayed");
+        fresh.race_id = 0;
+        add_class(&fresh, CLS_FIGHTER, 1, -1);
+        fresh.hp_rolls[0] = 10;
+        fresh.hp_roll_count = 1;
+        check(save_character(&fresh, p2, sizeof p2) == 0, "written", 1, 1);
+        slurp(p2, sheet_a, sizeof sheet_a);
+        check(strstr(sheet_a, "\nPLAY|") == NULL,
+              "an unplayed character writes no play record", 1, 1);
+        check(strstr(sheet_a, "\nSLOTS|") == NULL,
+              "nor a slot record", 1, 1);
+        remove(p2);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2851,6 +2943,7 @@ int main(void)
     test_patron_is_required();
     test_prepared_survives();
     test_two_copies_stay_two();
+    test_play_state_survives();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

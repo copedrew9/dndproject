@@ -33,6 +33,9 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+
+import roundtrip                                    # noqa: E402
 
 BEGIN = "#BEGIN-DNDDATA v1"
 END = "#END-DNDDATA"

@@ -772,10 +772,55 @@ static void write_data(FILE *f, const Character *c)
             fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
                     c->inventory[i].equipped);
             record_put(f, ITEMS[c->inventory[i].item_id].name);
+            if (c->inventory[i].wear) {
+                fprintf(f, "|%d", c->inventory[i].wear);
+            }
             fputc('\n', f);
         }
     }
     if (c->xp) fprintf(f, "XP|%d\n", c->xp);
+    /* What has happened at the table. Written only when something has, so
+       a character nobody has played reads exactly as it did before game
+       mode existed. */
+    if (c->damage || c->temp_hp || c->death_success || c->death_fail
+        || c->exhaustion || c->conditions) {
+        fprintf(f, "PLAY|%d|%d|%d|%d|%d|%u\n", c->damage, c->temp_hp,
+                c->death_success, c->death_fail, c->exhaustion,
+                c->conditions);
+    }
+    {
+        int any = c->pact_used, k;
+        for (k = 1; k <= 9; k++) if (c->slots_used[k]) any = 1;
+        if (any) {
+            fprintf(f, "SLOTS|%d", c->pact_used);
+            for (k = 1; k <= 9; k++) fprintf(f, "|%d", c->slots_used[k]);
+            fputc('\n', f);
+        }
+    }
+    {
+        int any = 0;
+        for (i = 0; i < c->class_count; i++) {
+            if (c->hit_dice_used[i]) any = 1;
+        }
+        if (any) {
+            fprintf(f, "HITDICE");
+            for (i = 0; i < c->class_count; i++) {
+                fprintf(f, "|%d", c->hit_dice_used[i]);
+            }
+            fputc('\n', f);
+        }
+    }
+    for (i = 0; i < c->resource_count; i++) {
+        fprintf(f, "RESOURCE|%d|%d|%d|", c->resources[i].used,
+                c->resources[i].max, c->resources[i].per_long_rest);
+        record_put(f, c->resources[i].name);
+        fputc('\n', f);
+    }
+    for (i = 0; i < c->ledger_count; i++) {
+        fprintf(f, "LEDGER|%d|", c->ledger[i].copper);
+        record_put(f, c->ledger[i].what);
+        fputc('\n', f);
+    }
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
             c->gold, c->platinum);
     for (i = 0; i < c->sidekick_count; i++) {
@@ -1170,8 +1215,15 @@ int load_character(const char *path, Character *c)
         } else if (!strcmp(fields[0], "ITEM") && n >= 4) {
             int id = find_item(fields[3]);
             if (id >= 0) {
+                int before = c->item_count;
                 add_item(c, id, record_int(fields[1], 1, MAX_STACK),
                          record_int(fields[2], 0, 1));
+                /* How worn it is, written only when it is. A file from
+                   before game mode has no such column and reads as sound. */
+                if (n >= 5 && c->item_count > before) {
+                    c->inventory[c->item_count - 1].wear =
+                        record_int(fields[4], 0, 2);
+                }
             }
             else warn_unknown("item", fields[3]);
         } else if (!strcmp(fields[0], "SIDEKICK") && n >= 14) {
@@ -1268,6 +1320,37 @@ int load_character(const char *path, Character *c)
             } else {
                 warn_unknown("magic item", fields[3]);
             }
+        } else if (!strcmp(fields[0], "PLAY") && n >= 7) {
+            c->damage        = record_int(fields[1], 0, 9999);
+            c->temp_hp       = record_int(fields[2], 0, 9999);
+            c->death_success = record_int(fields[3], 0, 3);
+            c->death_fail    = record_int(fields[4], 0, 3);
+            c->exhaustion    = record_int(fields[5], 0, MAX_EXHAUSTION);
+            c->conditions    = (unsigned int)record_int(fields[6], 0,
+                                                        (1 << 20) - 1);
+        } else if (!strcmp(fields[0], "SLOTS") && n >= 2) {
+            int k;
+            c->pact_used = record_int(fields[1], 0, 99);
+            for (k = 2; k < n && k - 1 <= 9; k++) {
+                c->slots_used[k - 1] = record_int(fields[k], 0, 99);
+            }
+        } else if (!strcmp(fields[0], "HITDICE") && n >= 2) {
+            int k;
+            for (k = 1; k < n && k - 1 < MAX_CLASSES; k++) {
+                c->hit_dice_used[k - 1] = record_int(fields[k], 0, MAX_LEVEL);
+            }
+        } else if (!strcmp(fields[0], "RESOURCE") && n >= 5
+                   && c->resource_count < MAX_RESOURCES) {
+            Resource *r = &c->resources[c->resource_count++];
+            r->used = record_int(fields[1], 0, 999);
+            r->max = record_int(fields[2], 0, 999);
+            r->per_long_rest = record_int(fields[3], 0, 1);
+            copy_field(r->name, sizeof r->name, fields[4]);
+        } else if (!strcmp(fields[0], "LEDGER") && n >= 3
+                   && c->ledger_count < MAX_LEDGER) {
+            LedgerEntry *e = &c->ledger[c->ledger_count++];
+            e->copper = record_int(fields[1], -MAX_COINS, MAX_COINS);
+            copy_field(e->what, sizeof e->what, fields[2]);
         } else if (!strcmp(fields[0], "XP") && n >= 2) {
             /* Written only when non-zero, so a file without the record is a
                character who has earned none. */

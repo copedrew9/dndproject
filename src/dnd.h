@@ -32,6 +32,13 @@
    so a stack may stand higher than a single purchase -- but not without a
    ceiling: ninety-six lines of an unbounded quantity of the heaviest thing
    in the book is not a heavy pack, it is an overflowed weight. */
+/* Game mode: how many resources a character may track by hand, and how
+   many purchases the ledger remembers. Both are generous for one session
+   and small enough to sit in the file. */
+#define MAX_RESOURCES 16
+#define MAX_LEDGER 32
+#define MAX_EXHAUSTION 6
+
 #define MAX_QUANTITY 99
 #define MAX_STACK 999
 #define MAX_COINS 999999
@@ -104,6 +111,12 @@ typedef struct {
        carrying it either way. */
     int concealed;      /* print the name and nothing else */
     int curse_hidden;   /* print the entry, but not what it costs you */
+    /* How worn the thing is. The Player's Handbook has no general rule for
+       equipment wearing out -- it is a house rule at most tables that use
+       one at all -- so this records what the table decided rather than
+       computing anything: 0 sound, 1 damaged, 2 broken. Nothing here
+       changes a number on the sheet. */
+    int wear;
 } InventoryEntry;
 
 #define MAX_ATTUNED 3
@@ -112,6 +125,26 @@ typedef struct {
 #define MAX_LORE 2048
 #define MAX_SK_CHOICES 12
 
+
+/* Something with a limited number of uses between rests: Bardic
+   Inspiration, Ki, sorcery points, Channel Divinity, Rage, a wand's
+   charges. The books spell out how many of each a character has, but the
+   count depends on level, subclass and sometimes on a feat, so the table
+   sets the maximum once and the program only counts down from it. */
+typedef struct {
+    char name[MAX_NAME];
+    int used;
+    int max;
+    int per_long_rest;      /* 0 when a short rest brings it back */
+} Resource;
+
+/* Where the money went. Coins tell a player how much they have and never
+   how they came to have that much, which is the question that starts an
+   argument three sessions later. */
+typedef struct {
+    int copper;             /* negative when spent, positive when earned */
+    char what[MAX_NAME];
+} LedgerEntry;
 
 /* Free-form in-class choices: fighting styles, pact boons, metamagic,
    eldritch invocations, battle master maneuvers, expertise notes. */
@@ -242,6 +275,39 @@ typedef struct {
     char backstory[MAX_BACKSTORY];
     int age, height_in, weight_lb;
     char eyes[MAX_NAME], skin[MAX_NAME], hair[MAX_NAME];
+
+    /* ------------------------------------------------------- at the table
+     *
+     * Everything above is what the character IS, and is settled when they
+     * are made or when they gain a level. Everything here is what has
+     * happened to them since, and changes between one roll and the next:
+     * how hurt they are, what they have spent, what is wrong with them.
+     *
+     * It is kept on the character rather than in a separate file because
+     * it is the same character -- a sheet that says 42 hit points and a
+     * note elsewhere saying 11 of them are gone is two sources for one
+     * number, and they drift.
+     */
+    /* Spell slots spent, by level, and the pact slots a warlock has used.
+       The maximum is worked out from the class table every time it is
+       needed; what has to be remembered is only how many are gone. */
+    int slots_used[10];
+    int pact_used;
+
+    int damage;                 /* hit points lost; current = max - damage */
+    int temp_hp;                /* a separate pool, lost first, never healed */
+    int hit_dice_used[MAX_CLASSES];   /* spent on a short rest, by class */
+    int death_success, death_fail;    /* death saving throws, 0-3 each */
+    int exhaustion;             /* 0 to MAX_EXHAUSTION */
+    /* One bit per entry of CONDITIONS[], except exhaustion, which has
+       levels rather than a yes or no and is counted above. */
+    unsigned int conditions;
+
+    Resource resources[MAX_RESOURCES];
+    int resource_count;
+
+    LedgerEntry ledger[MAX_LEDGER];
+    int ledger_count;
 } Character;
 
 /* ---------------------------------------------------------- derived numbers */

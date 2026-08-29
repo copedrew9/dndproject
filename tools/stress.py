@@ -195,11 +195,14 @@ class Session:
             pick = self.next_screen
             self.next_screen += 1
             return str(pick)
-        # Weighted so the screens that carry state -- level up, inventory,
-        # homebrew -- come up more often than the read-only ones.
+        # Weighted so the screens that carry state -- level up, game mode,
+        # inventory, homebrew -- come up more often than the read-only
+        # ones. The list runs to one short of the menu's size, and entries
+        # past what this knows about are covered by --tour, which walks
+        # every screen in turn.
         pick = self.rng.choices(
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            weights=[2, 4, 2, 3, 2, 4, 3, 4, 3])[0]
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+            weights=[2, 4, 4, 2, 3, 2, 4, 3, 4, 3])[0]
         return pick if int(pick) < size else "1"
 
     def text(self, prompt):
@@ -364,8 +367,14 @@ def view_sheet(binary, workdir, filename):
 
     Returns what it printed and whether it ended cleanly.
     """
+    # The main menu's entry for viewing is found by what it says rather
+    # than by a fixed number. It was "3" until game mode was added above
+    # it, and a hardcoded number does not fail loudly when a menu grows --
+    # it quietly drives a different screen and reports the empty result as
+    # a round-trip failure in the character.
+    entry = roundtrip.view_entry(binary, workdir)
     proc = subprocess.run([binary, "--seed", "1"],
-                          input=("3\n%s\n" % filename).encode(),
+                          input=("%s\n%s\n" % (entry, filename)).encode(),
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           cwd=workdir, timeout=300)
     err = proc.stderr.decode("utf-8", "replace")
