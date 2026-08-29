@@ -140,6 +140,15 @@ SANFLAGS = -std=c99 -O1 -g -fsanitize=address,undefined \
 	   -fno-sanitize-recover=all -fno-omit-frame-pointer
 SANENV = ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1
 
+# Every race crossed with every class, built through the wizard rather than
+# in memory. Slow -- a thousand builds is most of an hour -- so it is not
+# part of `make check`; combos.c covers the same ground in memory two
+# hundred thousand times over. What this reaches that it cannot is the
+# prompts: the racial skill choice, the subclass menu, the equipment
+# packages. Run the two halves at once on a machine with cores to spare.
+sweep:
+	python3 tools/sweep_race_class.py 1,5
+
 asan:
 	$(MAKE) clean
 	$(MAKE) CFLAGS="$(SANFLAGS)" all $(COMBOBIN) $(TESTBIN)
@@ -160,4 +169,4 @@ clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) \
 	  $(DUMPBIN).d $(COMBOBIN) $(COMBOBIN).d
 
-.PHONY: all clean check test combos data dataverify audit verify asan
+.PHONY: all clean check test combos data dataverify audit verify asan sweep

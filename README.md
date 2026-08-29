@@ -475,11 +475,29 @@ flushing, the harness can synchronise on real prompts and answer anything.
 ```sh
 make check                                  # the suite below
 make asan                                   # the same, with the sanitizers
+make sweep                                  # every race x every class, built
 python3 tools/drive.py --runs 30            # 30 random characters
 python3 tools/drive.py --runs 10 --levelup  # create, save, reload, level up
 python3 tools/drive.py --runs 8 --valgrind  # under valgrind
 python3 tools/drive.py --runs 5 --keep out  # keep the sheets to inspect
+python3 tools/drive.py --class Wizard --level 3 --race Tortle
+python3 tools/drive.py --class Rogue --subclass "Arcane Trickster"
 ```
+
+`--class`, `--subclass`, `--race` and `--level` aim a run instead of leaving
+it to the dice. Without them a wizard of a chosen level comes up about one
+run in a hundred and an Eldritch Knight far less often, which is why the
+spell bugs in both went years without being exercised. An aimed run also
+leaves the source books alone, since toggling them at random switches off
+the very book the wanted race comes from.
+
+`make sweep` builds every one of the 42 races crossed with every one of the
+13 classes through the wizard itself -- a thousand characters, most of an
+hour. `tools/combos.c` covers the same ground in memory two hundred
+thousand times over and far faster; what the sweep reaches that it cannot
+is the prompts, which is where a pack that arrived unopened, a cleric
+handed nothing for an option it offered, and a race whose menu entry was a
+substring of another's were all found.
 
 `--record FILE` writes the answers a run gave, so a failure can be replayed
 against the binary directly.
