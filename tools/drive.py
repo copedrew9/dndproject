@@ -61,6 +61,24 @@ def read_prompt(proc, transcript):
             raise RuntimeError("runaway output")
 
 
+MENU_LINE = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
+
+
+def menu_number(tail, wanted):
+    """The number of the menu entry whose text contains `wanted`, or None.
+
+    The menus grow as features are added, so their entries are found by
+    what they say rather than by where they sit. Read out of the accumulated
+    transcript for the same reason at_main_menu is: one read can split a
+    menu from the prompt that follows it.
+    """
+    for line in tail.splitlines():
+        m = MENU_LINE.match(line)
+        if m and wanted.lower() in m.group(2).lower():
+            return m.group(1)
+    return None
+
+
 def answer(prompt, rng, free_text_name):
     # A line of a text block. A blank line ends it, which is what this
     # harness wants: the notes screen is not what it is here to exercise.
@@ -89,7 +107,8 @@ def answer(prompt, rng, free_text_name):
     return ""
 
 
-def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
+def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
+             magic=0):
     cmd = [binary, "--seed", str(seed)]
     if use_valgrind:
         cmd = ["valgrind", "--error-exitcode=99", "--quiet",
@@ -106,6 +125,7 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
     replies = []
     name = rng.choice(NAMES) + str(seed)
     steps = 0
+    got = 0
 
     try:
         # Main menu: create a character.
@@ -125,6 +145,34 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False):
             tail = "".join(transcript[-4:])[-600:]
             at_main_menu = (menu_size is not None
                             and "What would you like to do" in tail)
+            # Magic items are only reachable through the inventory, and
+            # the inventory is only offered after a level-up -- creation
+            # hands out a class's starting equipment and nothing else. So a
+            # corpus built from plain creation runs contains no magic item
+            # at all, and every check made against it is silent about them.
+            # --magic walks the one path that reaches them.
+            if magic and not at_main_menu:
+                if "Change what this character is carrying" in prompt:
+                    replies.append("y")
+                    proc.stdin.write(b"y\n")
+                    proc.stdin.flush()
+                    continue
+                if "Pick up another magic item" in prompt:
+                    got += 1
+                    reply = "y" if got < magic else "n"
+                    replies.append(reply)
+                    proc.stdin.write((reply + "\n").encode())
+                    proc.stdin.flush()
+                    continue
+                if "Inventory:" in tail:
+                    want = "Pick up a magic item" if got < magic else "Done"
+                    pick = menu_number(tail, want)
+                    if pick:
+                        replies.append(pick)
+                        proc.stdin.write((pick + "\n").encode())
+                        proc.stdin.flush()
+                        continue
+
             if at_main_menu:
                 saves = sum(t.count("Saved to") for t in transcript)
                 wanted = 2 if levelup else 1
@@ -164,6 +212,10 @@ def main():
                     help="copy each produced character sheet into DIR")
     ap.add_argument("--levelup", action="store_true",
                     help="after creating, reload the character and level it up")
+    ap.add_argument("--magic", type=int, default=0, metavar="N",
+                    help="pick up N magic items on the way through; implies "
+                         "--levelup, since the inventory is only offered "
+                         "after a level-up")
     args = ap.parse_args()
 
     global RECORD_TO
@@ -180,7 +232,7 @@ def main():
             try:
                 rc, transcript, err, name = run_once(
                     binary, seed, rng, args.valgrind, workdir, args.verbose,
-                    args.levelup)
+                    args.levelup or bool(args.magic), args.magic)
             except Exception as exc:            # noqa: BLE001
                 print("run %d (seed %d): harness error: %s" % (i, seed, exc))
                 failures += 1
