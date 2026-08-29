@@ -3,6 +3,10 @@
  * Builds characters in memory and checks the numbers the PHB says they
  * should have. Build and run with "make test".
  */
+/* dup/dup2, so the prompt-layer test can put stdout back after
+   capturing it. -std=c99 hides the POSIX declarations otherwise. */
+#define _POSIX_C_SOURCE 200809L
+
 #include "dnd.h"
 #include "data.h"
 #include "sidekick.h"
@@ -18,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 
@@ -3726,6 +3731,95 @@ static void test_things_playing_it_found(void)
     }
 }
 
+/* The prompt layer, driven through its own reader.
+ *
+ * ui_int reads stdin and writes stdout, so nothing here has ever been
+ * tested except by playing the program. Both of the things below were
+ * found that way, and both are cheap to check by pointing stdin at a file
+ * and reading back what was printed. */
+static void feed(const char *text, char *out, size_t n)
+{
+    FILE *in = fopen("SelftestUiIn.txt", "w");
+    FILE *back;
+    int saved;
+    long got = 0;
+
+    if (in) { fputs(text, in); fclose(in); }
+    if (!freopen("SelftestUiIn.txt", "r", stdin)) return;
+
+    /* stdout is a pipe under make, so it cannot be reopened by name
+       afterwards. Keep the descriptor and put it back. */
+    fflush(stdout);
+    saved = dup(fileno(stdout));
+    if (saved < 0) return;
+    if (!freopen("SelftestUiOut.txt", "w", stdout)) { close(saved); return; }
+
+    {
+        static const char *const INFO[3] = {
+            "The first one, explained.", "", "The third one, explained."
+        };
+        ui_set_info(INFO, 3);
+        (void)ui_int("  Pick", 1, 3);
+        ui_set_info(NULL, 0);
+    }
+
+    fflush(stdout);
+    dup2(saved, fileno(stdout));
+    close(saved);
+    clearerr(stdout);
+
+    /* stdin is still pointed at the file this fed in. Nothing later reads
+       it, but a prompt that did would see end of input and exit the whole
+       run, so it is put somewhere harmless. */
+    if (!freopen("/dev/null", "r", stdin)) { /* nothing later reads it */ }
+
+    back = fopen("SelftestUiOut.txt", "r");
+    if (back) {
+        got = (long)fread(out, 1, n - 1, back);
+        fclose(back);
+    }
+    out[got > 0 ? got : 0] = '\0';
+}
+
+static void test_the_prompt_layer(void)
+{
+    static char said[8192];
+
+    printf("asking a menu about itself\n");
+
+    /* An entry number outside the menu is answered as such, whatever its
+       size. "4294967297 info" used to be narrowed to an int -- coming out
+       as 1 -- and answered about the first entry. */
+    feed("4294967297 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry 4294967297") != NULL,
+          "a huge entry number is out of range, not entry one", 1, 1);
+    check(strstr(said, "The first one") == NULL,
+          "and is not answered about the first entry", 1, 1);
+
+    feed("0 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry 0") != NULL, "nor is zero an entry", 1, 1);
+
+    feed("-1 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry -1") != NULL, "nor is minus one", 1, 1);
+
+    feed("99999999999999999999 info\n1\n", said, sizeof said);
+    check(strstr(said, "not an entry number") != NULL,
+          "a number too large to read says so", 1, 1);
+
+    /* An entry that exists but has nothing to say is a different answer
+       from one that does not exist. */
+    feed("2 info\n1\n", said, sizeof said);
+    check(strstr(said, "nothing more to say about 2") != NULL,
+          "an entry with no text says so", 1, 1);
+
+    feed("3 info\n1\n", said, sizeof said);
+    check(strstr(said, "The third one") != NULL,
+          "and one with text gives it", 1, 1);
+
+    remove("SelftestUiIn.txt");
+    remove("SelftestUiOut.txt");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3959,6 +4053,7 @@ int main(void)
     test_sheet_numbers_the_audit_found();
     test_traits_the_numbers_ignored();
     test_things_playing_it_found();
+    test_the_prompt_layer();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

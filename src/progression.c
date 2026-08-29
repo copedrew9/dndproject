@@ -906,22 +906,33 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 
     while (taken < want) {
         char prompt[160];
-        int pick;
+        int pick, k;
 
+        if (n == 0) break;              /* cannot happen; cheap to be sure */
         snprintf(prompt, sizeof prompt, "  Choose %s %d of %d (level %d):",
                  what, taken + 1, want, level);
         pick = ui_menu(prompt, opts, det, n);
 
-        if (already_known(c, map[pick])) {
-            printf("    You already have that one.\n");
-            continue;
-        }
         add_spell(c, map[pick], class_id, 1, 0);
         printf("    Added %s -- %s, %s, %s, %s\n",
                SPELLS[map[pick]].name, SPELLS[map[pick]].casting_time,
                SPELLS[map[pick]].range, SPELLS[map[pick]].components,
                SPELLS[map[pick]].duration);
         taken++;
+
+        /* Off the list, so the next prompt does not offer it again.
+           The list used to be built once and never touched, so a spell
+           taken as the first of four was still numbered among the choices
+           for the second, and picking it again was answered with "You
+           already have that one" -- after the choice, rather than by not
+           offering it. Choosing four spells from a list of four became a
+           guessing game about which numbers had moved. */
+        for (k = pick; k + 1 < n; k++) {
+            opts[k] = opts[k + 1];
+            det[k]  = det[k + 1];
+            map[k]  = map[k + 1];
+        }
+        n--;
     }
 }
 
