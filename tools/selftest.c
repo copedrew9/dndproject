@@ -3334,6 +3334,54 @@ static void test_packs_unpack(void)
     }
     EQ(packs, 7, "the seven packs of the Player's Handbook");
 
+    /* The point of the whole exercise: taking a pack leaves the contents
+       carried and the pack itself nowhere. */
+    for (i = 0; i < ITEM_COUNT; i++) {
+        int j, k, still_packed = 0, wrong = 0;
+        if (ITEMS[i].category != ITEM_PACK) continue;
+
+        plain_fighter(&c, "SelftestPack");
+        c.item_count = 0;
+        add_pack(&c, i, 1);
+
+        for (j = 0; j < c.item_count; j++) {
+            if (c.inventory[j].is_magic) continue;
+            if (ITEMS[c.inventory[j].item_id].category == ITEM_PACK) {
+                still_packed++;
+            }
+        }
+        if (still_packed) {
+            printf("  FAIL taking %s leaves a pack in the inventory\n",
+                   ITEMS[i].name);
+            failures++;
+        }
+
+        /* And what is carried is exactly the rows, quantity for quantity. */
+        for (j = 0; j < PACK_ITEM_COUNT; j++) {
+            int id, found = 0;
+            if (!same_fold(PACK_ITEMS[j].pack, ITEMS[i].name)) continue;
+            id = find_item(PACK_ITEMS[j].item);
+            for (k = 0; k < c.item_count; k++) {
+                if (c.inventory[k].is_magic) continue;
+                if (c.inventory[k].item_id != id) continue;
+                found = 1;
+                if (c.inventory[k].quantity != PACK_ITEMS[j].quantity) {
+                    printf("  FAIL %s should hold %d x %s, holds %d\n",
+                           ITEMS[i].name, PACK_ITEMS[j].quantity,
+                           PACK_ITEMS[j].item, c.inventory[k].quantity);
+                    failures++;
+                }
+            }
+            if (!found) {
+                printf("  FAIL %s should hold %s and does not\n",
+                       ITEMS[i].name, PACK_ITEMS[j].item);
+                failures++;
+                wrong++;
+            }
+        }
+        (void)wrong;
+    }
+
     /* Anything that is not a pack is refused, so the caller adds it
        plainly. */
     plain_fighter(&c, "SelftestPack");

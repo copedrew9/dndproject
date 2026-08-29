@@ -337,6 +337,64 @@ static void remove_gear(Character *c)
     }
 }
 
+/* Unpacking a pack a character is already carrying.
+ *
+ * A pack taken now comes apart the moment it is acquired, so this is for
+ * the sheets written before that: an old character still holds one line
+ * reading "Explorer's pack". It is an action rather than something the
+ * loader does, because a saved sheet has to reload unchanged --
+ * tools/roundtrip.py checks exactly that -- and a loader that quietly
+ * expanded a pack would print a different sheet from the one it read. */
+static void unpack_carried(Character *c)
+{
+    for (;;) {
+        const char *opts[MAX_ITEMS + 1];
+        static char lines[MAX_ITEMS][128];
+        int map[MAX_ITEMS], n = 0, i, pick;
+
+        for (i = 0; i < c->item_count && n < MAX_ITEMS; i++) {
+            if (c->inventory[i].is_magic) continue;
+            if (ITEMS[c->inventory[i].item_id].category != ITEM_PACK) continue;
+            snprintf(lines[n], sizeof lines[n], "%d x %s",
+                     c->inventory[i].quantity,
+                     ITEMS[c->inventory[i].item_id].name);
+            opts[n] = lines[n];
+            map[n] = i;
+            n++;
+        }
+        if (n == 0) {
+            printf("  You are not carrying a pack that is still packed.\n");
+            return;
+        }
+        opts[n] = "Done";
+
+        pick = ui_menu("  Unpack which?", opts, NULL, n + 1);
+        if (pick == n) return;
+
+        {
+            int at = map[pick];
+            int id = c->inventory[at].item_id;
+            int qty = c->inventory[at].quantity;
+            int parts;
+
+            /* Take the pack off first, so the contents are not competing
+               with it for the last inventory slot. */
+            remove_inventory_entry(c, at, qty);
+            parts = add_pack(c, id, qty);
+            if (parts <= 0) {
+                /* Nothing known to be in it -- put it back rather than
+                   losing it. */
+                add_item(c, id, qty, 0);
+                printf("  Nothing is recorded as being in %s.\n",
+                       ITEMS[id].name);
+                return;
+            }
+            printf("  %s came apart into %d things.\n", ITEMS[id].name,
+                   parts);
+        }
+    }
+}
+
 /* ------------------------------------------------------ wearing and wielding */
 
 /* Armour and shields come from two tables now, so these answer the two
@@ -738,6 +796,7 @@ void manage_inventory(Character *c)
             "Pick up a potion",
             "Gems and oddments",
             "Put something down",
+            "Unpack a pack you are still carrying",
             "Wear or take off armor and shields",
             "Attune to magic items",
             "Hide or reveal what a magic item is",
@@ -746,17 +805,18 @@ void manage_inventory(Character *c)
         };
 
         show_carried(c);
-        switch (ui_menu("  Inventory:", modes, NULL, 11)) {
+        switch (ui_menu("  Inventory:", modes, NULL, 12)) {
         case 0: inventory_reference(c);  break;
         case 1: add_from_catalogue(c);   break;
         case 2: add_magic(c);            break;
         case 3: add_potion(c);           break;
         case 4: valuables_menu(c);       break;
         case 5: remove_gear(c);          break;
-        case 6: equip_gear(c);           break;
-        case 7: attune_items(c);         break;
-        case 8: conceal_items(c);        break;
-        case 9: adjust_coins(c);         break;
+        case 6: unpack_carried(c);       break;
+        case 7: equip_gear(c);           break;
+        case 8: attune_items(c);         break;
+        case 9: conceal_items(c);        break;
+        case 10: adjust_coins(c);        break;
         default: return;
         }
     }
