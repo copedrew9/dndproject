@@ -359,12 +359,29 @@ int armour_class(const Character *c)
         best = r->armor_base + add;
     } else if (armour) {
         const ItemData *it = &ITEMS[armour->item_id];
-        int add = (it->dex_cap < 0) ? dex
-                : (it->dex_cap == 0) ? 0
-                : (dex < it->dex_cap ? dex : it->dex_cap);
-        best = it->base_ac + add;
+        int cap = it->dex_cap;
+        /* Medium Armor Master raises medium armour's cap from +2 to +3.
+           The cap was read straight off the row and nothing consulted the
+           feats, so the sheet printed the feat and ignored it. */
+        if (cap == 2 && has_named_feat(c, "Medium Armor Master")) cap = 3;
+        {
+            int add = (cap < 0) ? dex : (cap == 0) ? 0
+                    : (dex < cap ? dex : cap);
+            best = it->base_ac + add;
+        }
     } else {
         best = 10 + dex;
+    }
+
+    /* A race's own hide. The trait was printed and the number ignored, so a
+       tortle walked around at Armor Class 9. It is worked out here rather
+       than as one of the alternatives below because a tortle "gains no
+       benefit from wearing armor": the shell is the floor, armour or not,
+       and taking the better of the two is what says so. */
+    if (c->race_id >= 0 && RACES[c->race_id].natural_ac) {
+        int nat = RACES[c->race_id].natural_ac;
+        if (RACES[c->race_id].natural_ac_dex) nat += dex;
+        if (nat > best) best = nat;
     }
 
     /* Unarmored Defense and Draconic Resilience apply only without armour;
@@ -425,9 +442,22 @@ int armour_class(const Character *c)
         best += 1;
     }
 
+    /* Dual Wielder gives "+1 bonus to AC while you are wielding a separate
+       melee weapon in each hand". It used to be added whenever the feat was
+       held, so a wizard with empty hands got it. Two equipped melee weapons
+       is the closest the sheet can come to "one in each hand". */
     if (has_named_feat(c, "Dual Wielder") && !using_shield) {
-        /* +1 only while wielding two weapons; recorded here as the best case. */
-        best += 1;
+        int melee = 0, k;
+        for (k = 0; k < c->item_count; k++) {
+            const ItemData *it;
+            if (c->inventory[k].is_magic || !c->inventory[k].equipped) continue;
+            it = &ITEMS[c->inventory[k].item_id];
+            if (it->category == ITEM_SIMPLE_MELEE
+                || it->category == ITEM_MARTIAL_MELEE) {
+                melee += c->inventory[k].quantity;
+            }
+        }
+        if (melee >= 2) best += 1;
     }
     return best;
 }
@@ -711,6 +741,24 @@ int attacks_of(const Character *c, Attack *out, int max)
             snprintf(a->note, sizeof a->note,
                      "Martial Arts; a bonus-action strike after the Attack "
                      "action");
+        } else if (c->race_id >= 0 && RACES[c->race_id].natural_weapon[0]) {
+            /* Claws, talons, hooves, horns, a fanged maw: "your unarmed
+               strike deals 1d6 + your Strength modifier slashing damage".
+               Seven races say so and the sheet printed the trait beside an
+               unarmed strike of 1 plus Strength. The die and its type come
+               off the row; the modifier is added as it is for any weapon. */
+            const char *nat = RACES[c->race_id].natural_weapon;
+            const char *sp = strchr(nat, ' ');
+            if (sp) {
+                /* "1d6 slashing" becomes "1d6+3 slashing": the modifier
+                   goes between the die and the damage type, as it does for
+                   every other weapon on the sheet. */
+                snprintf(a->damage, sizeof a->damage, "%.*s%+d %s",
+                         (int)(sp - nat), nat, ability, sp + 1);
+            } else {
+                snprintf(a->damage, sizeof a->damage, "%s%+d", nat, ability);
+            }
+            a->note[0] = '\0';
         } else {
             /* An unarmed strike deals 1 plus the Strength modifier, and
                never less than nothing. */
@@ -880,7 +928,13 @@ int magic_defences(const Character *c, char *out, size_t n)
 
 int carrying_capacity(const Character *c)
 {
-    return ability_score(c, ABL_STR) * 15;
+    int lbs = ability_score(c, ABL_STR) * 15;
+    /* Powerful Build, Little Giant and Equine Build all say the same thing:
+       "you count as one size larger when determining your carrying
+       capacity", which for a Medium character is double. Five races carry
+       it, printed it as a trait, and carried the same as anyone else. */
+    if (c->race_id >= 0 && RACES[c->race_id].powerful_build) lbs *= 2;
+    return lbs;
 }
 
 /* What is carried, in tenths of a pound.

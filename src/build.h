@@ -40,7 +40,27 @@ int  has_choice_starting(const Character *c, const char *label,
                          const char *value);
 int  has_choice_exactly(const Character *c, const char *label,
                         const char *value);
+/* The gold a class starts with when the average is taken rather than
+   rolled, which is the Player's Handbook's own average column. */
+int  average_starting_gold(const ClassData *cd);
+
+/* The extra proficiencies a class grants when you multiclass INTO it: one
+   skill for a bard, ranger or rogue, and the rogue's thieves' tools. */
+void grant_multiclass_extras(Character *c, int class_id);
+
 void add_item(Character *c, int item_id, int qty, int equipped);
+
+/* Taking a pack takes what is in it, and not the pack: a pack's weight is
+   the sum of its parts, so carrying both would count everything twice.
+   Returns how many kinds of thing went on, or -1 when this is not a pack
+   (or the bank holds none of its contents), so the caller adds it plainly
+   instead. */
+int  add_pack(Character *c, int pack_id, int qty);
+
+/* Add an item, or what is in it when it is a pack. Every acquisition path
+   goes through this so that no route can put a pack on a sheet. */
+int  add_gear(Character *c, int item_id, int qty, int equipped);
+int  inventory_has_room(const Character *c);
 void add_item_by_name(Character *c, const char *name, int qty, int equipped);
 
 /* Magic items live in the same list, flagged so they index MAGIC_ITEMS. */
@@ -87,6 +107,12 @@ int  spell_slots_for(const Character *c, int out[10]);
 int  pact_slots_for(const Character *c, int *count, int *level);
 int  spells_prepared_count(const Character *c, int class_id);
 int  known_spell_count(const Character *c, int class_id, int cantrips);
+
+/* A warlock patron's expanded spell list: the spells the patron adds to the
+   list this character may choose from, comma separated and lowercase-safe,
+   or NULL for anyone else. It widens the choice and is never granted --
+   which is the whole difference between a patron and a cleric's domain. */
+const char *warlock_expanded_list(const Character *c, int class_id);
 
 /* True when the character meets the PHB multiclassing prerequisites. */
 int  multiclass_ok_public(const Character *c, int class_id, int *why);

@@ -69,6 +69,17 @@ typedef struct {
        origins setting says. Appended last so the older rows, which leave it
        out, are zero-filled. */
     int origin_choice;
+    /* What a race's traits promise that a number has to honour. All of
+       these were prose on the sheet and nothing else: the trait was
+       printed, and the Armor Class, the skill list, the carrying capacity
+       and the unarmed strike went on as though it were not there. */
+    int natural_ac;             /* unarmoured base AC; 0 = none */
+    int natural_ac_dex;         /* whether Dexterity is added to it */
+    int powerful_build;         /* counts as one size larger to carry */
+    const char *natural_weapon; /* "1d6 slashing"; "" = ordinary fists */
+    const char *fixed_skills;   /* comma separated, always proficient */
+    int choice_skill_count;     /* how many to choose from the next */
+    const char *choice_skills;  /* comma separated, "" = none */
 } RaceData;
 
 typedef struct {
@@ -183,6 +194,12 @@ typedef struct {
     /* Some subclasses carry a further choice (totem animal, land terrain). */
     const char *option_label;
     const char *options;        /* '|' separated, "" when none */
+    /* Armour, weapons and tools the subclass makes you proficient with,
+       comma separated, "" when none. These were a hard-coded list of six
+       in progression.c while thirteen subclasses printed the promise on
+       the sheet, so seven of them left the proficiency ungranted -- and an
+       attack with a martial weapon short its proficiency bonus. */
+    const char *grants;
 } SubclassData;
 
 typedef struct {
@@ -255,6 +272,11 @@ extern const unsigned char INFUSED_ITEMS[MAX_LEVEL + 1];
 
 /* Eldritch Knight / Arcane Trickster progressions. */
 extern const unsigned char *const THIRD_CANTRIPS;
+/* The Eldritch Knight learns two cantrips and a third at 10th; the Arcane
+   Trickster learns three -- mage hand and two more -- and a fourth at
+   10th. They shared one row, so every Arcane Trickster was a cantrip
+   short at every level. */
+extern const unsigned char *const TRICKSTER_CANTRIPS;
 extern const unsigned char *const THIRD_SPELLS_KNOWN;
 
 /* The experience needed for each character level (PHB p.15). Indexed by
@@ -350,6 +372,28 @@ extern const ItemData BOOK_ITEMS[];
 extern const int BOOK_ITEM_COUNT;
 
 int find_item(const char *name);
+
+/* What is inside an equipment pack.
+ *
+ * The pack's own row carries its contents as prose, which reads well and
+ * is no use to anything: a player who takes an explorer's pack wants the
+ * bedroll and the rations on the sheet, to drop, sell and count. So the
+ * same contents are held again as rows, each naming a real ITEM and how
+ * many of it, and taking a pack puts those on the character instead of the
+ * pack.
+ *
+ * Instead of, not as well as: a pack's weight_tenths IS the sum of its
+ * parts, exactly, for all seven, so carrying both would count everything
+ * twice. tools/verify_packs.py checks the contents against the book and
+ * the sum against the row. */
+typedef struct {
+    const char *pack;           /* an ITEM of category ITEM_PACK */
+    const char *item;           /* an ITEM the pack contains */
+    int quantity;
+} PackItem;
+
+extern const PackItem PACK_ITEMS[];
+extern const int PACK_ITEM_COUNT;
 
 /* Item detail: descriptions, and what an item does when it has no stat line.
  * data_itemtext.c carries the prose; data_equipment.c carries the numbers. */

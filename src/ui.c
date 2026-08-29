@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 
 #define LINE_WIDTH 76
 
@@ -132,16 +134,34 @@ static UiEscape escape_word(const char *s)
     return (UiEscape)0;
 }
 
-/* "3 info" -- the number of a menu entry followed by the word. Returns the
-   1-based entry, or 0 when the line is not asking for information. */
-static int info_request(const char *s)
+/* "3 info" -- the number of a menu entry followed by the word.
+ *
+ * Returns whether the line asks for information at all, and fills *which
+ * with the number it named, which the caller range-checks. Two things are
+ * deliberate. The number is not narrowed to an int here: "4294967296 info"
+ * narrowed to 0 and "2147483649 info" to a negative, and either could come
+ * out inside the menu and answer about the wrong entry. And a request with
+ * a number outside the menu is still a request -- "0 info" used to fall
+ * through to the ordinary number parse and be answered with the menu's
+ * range, which says nothing about the word the player actually typed.
+ *
+ * `over` is set when the number was too large for a long at all, so the
+ * caller can say so rather than quoting the saturated value back.
+ */
+static int info_request(const char *s, long *which, int *over)
 {
     char *end;
     long v;
 
+    *which = 0;
+    *over = 0;
+    errno = 0;
     v = strtol(s, &end, 10);
-    if (end == s || v < 1) return 0;
-    return word_is(end, "info") ? (int)v : 0;
+    if (end == s) return 0;
+    if (!word_is(end, "info")) return 0;
+    if (errno == ERANGE || v == LONG_MAX || v == LONG_MIN) *over = 1;
+    *which = v;
+    return 1;
 }
 
 /* Prompts ------------------------------------------------------------------ */
@@ -172,11 +192,20 @@ int ui_int(const char *prompt, int lo, int hi)
             }
         }
         if (info_list) {
-            int which = info_request(buf);
-            if (which) {
-                if (which > info_count || !info_list[which - 1]
-                    || !info_list[which - 1][0]) {
-                    printf("  There is nothing more to say about %d.\n",
+            long which;
+            int over;
+            if (info_request(buf, &which, &over)) {
+                if (over || which < 1 || which > info_count) {
+                    if (over) {
+                        printf("  That is not an entry number; ask about 1 "
+                               "to %d.\n", info_count);
+                    } else {
+                        printf("  There is no entry %ld; ask about 1 to "
+                               "%d.\n", which, info_count);
+                    }
+                } else if (!info_list[which - 1]
+                           || !info_list[which - 1][0]) {
+                    printf("  There is nothing more to say about %ld.\n",
                            which);
                 } else {
                     printf("\n");

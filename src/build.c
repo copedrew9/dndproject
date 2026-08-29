@@ -317,6 +317,88 @@ void add_item(Character *c, int item_id, int qty, int equipped)
     c->item_count++;
 }
 
+/* Whether this exact item is already carried unequipped, so adding more of
+   it stacks rather than needing a new slot. */
+static int carrying_already(const Character *c, int item_id)
+{
+    int i;
+    for (i = 0; i < c->item_count; i++) {
+        if (!c->inventory[i].is_magic && c->inventory[i].item_id == item_id
+            && !c->inventory[i].equipped) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Whether a character has room for another kind of thing. add_item drops
+   what will not fit and says nothing, which was harmless while a pack was
+   one entry and is not now that it is a dozen. */
+int inventory_has_room(const Character *c)
+{
+    return c->item_count < MAX_ITEMS;
+}
+
+/* Add an item, or -- if it is a pack -- what is in it.
+ *
+ * Every place a character acquires gear goes through this, so that a pack
+ * cannot reach an inventory by a route somebody forgot. It could: the
+ * starting-equipment resolver has an alias table that calls add_item and
+ * returns before the unpacking below is reached, and the Priest's pack is
+ * the one pack with an entry in it -- so a cleric whose equipment line
+ * matched the alias carried "1 x Priest's pack" while all six of the
+ * others came apart. Returns how many kinds of thing went on. */
+int add_gear(Character *c, int item_id, int qty, int equipped)
+{
+    int parts;
+    if (!equipped) {
+        parts = add_pack(c, item_id, qty);
+        if (parts > 0) return parts;
+    }
+    add_item(c, item_id, qty, equipped);
+    return 1;
+}
+
+/* Taking a pack takes what is in it.
+ *
+ * A pack on the sheet is a word: "Explorer's pack" tells a player nothing
+ * they can drop, sell, eat or count, and the rations and the bedroll are
+ * the whole reason to have one. So the contents go on instead -- instead
+ * of, not as well as, because a pack's weight IS the sum of its parts and
+ * carrying both would count everything twice.
+ *
+ * Returns how many kinds of thing were added, or -1 when this is not a
+ * pack, so the caller can fall back to adding it plainly. */
+int add_pack(Character *c, int pack_id, int qty)
+{
+    int i, added = 0, dropped = 0;
+
+    if (pack_id < 0 || pack_id >= ITEM_COUNT) return -1;
+    if (ITEMS[pack_id].category != ITEM_PACK) return -1;
+    if (qty <= 0) return -1;
+
+    for (i = 0; i < PACK_ITEM_COUNT; i++) {
+        int id;
+        if (!same_fold(PACK_ITEMS[i].pack, ITEMS[pack_id].name)) continue;
+        id = find_item(PACK_ITEMS[i].item);
+        if (id < 0) continue;           /* a bank the DM has narrowed */
+        if (!inventory_has_room(c)
+            && !carrying_already(c, id)) {
+            dropped++;
+            continue;
+        }
+        add_item(c, id, PACK_ITEMS[i].quantity * qty, 0);
+        added++;
+    }
+    if (dropped) {
+        printf("      %d thing%s from the pack would not fit and was left "
+               "behind.\n", dropped, dropped == 1 ? "" : "s");
+    }
+    /* A pack the data has no contents for stays a pack rather than
+       vanishing. */
+    return added ? added : -1;
+}
+
 void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
 {
     int i;
@@ -637,10 +719,56 @@ static void choose_race(Character *c)
         while ((piece = next_csv(&cursor)) != NULL) add_language(c, piece);
     }
 
-    /* Fixed racial proficiencies that the traits text describes. */
-    if (strcmp(RACES[pick].name, "Elf") == 0) c->skill_prof[SKL_PERCEPTION] = 1;
-    if (strcmp(RACES[pick].name, "Half-Orc") == 0) {
-        c->skill_prof[SKL_INTIMIDATION] = 1;
+    /* The skills a race's traits promise.
+     *
+     * These were prose and nothing else for every race but the elf and the
+     * half-orc, which were the two written out by hand here. Fourteen more
+     * printed "proficiency in Perception" on the sheet and left Perception
+     * unproficient, so the modifier and the passive Perception were both
+     * short. They come off the row now, so a race added to data/ brings its
+     * skills with it. */
+    {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", RACES[pick].fixed_skills);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            int sk;
+            if (!*piece) continue;
+            sk = skill_by_name(piece);
+            if (sk >= 0) c->skill_prof[sk] = 1;
+        }
+    }
+    /* And the ones it offers a choice of: "proficiency in two of Animal
+       Handling, Medicine, Nature, Perception, Stealth or Survival". */
+    if (RACES[pick].choice_skill_count > 0
+        && RACES[pick].choice_skills[0]) {
+        const char *opts[SKL_COUNT];
+        static char names[SKL_COUNT][MAX_NAME];
+        int map[SKL_COUNT], n = 0, picks[SKL_COUNT], got, k;
+        char buf[256], *cursor = buf, *piece;
+
+        snprintf(buf, sizeof buf, "%s", RACES[pick].choice_skills);
+        while ((piece = next_csv(&cursor)) != NULL && n < SKL_COUNT) {
+            int sk;
+            if (!*piece) continue;
+            sk = skill_by_name(piece);
+            if (sk < 0 || c->skill_prof[sk]) continue;
+            snprintf(names[n], sizeof names[n], "%s", SKILL_NAME[sk]);
+            opts[n] = names[n];
+            map[n] = sk;
+            n++;
+        }
+        if (n > 0) {
+            char prompt[96];
+            int want = RACES[pick].choice_skill_count;
+            if (want > n) want = n;
+            snprintf(prompt, sizeof prompt,
+                     "%s: choose %d skill%s:", RACES[pick].name, want,
+                     want == 1 ? "" : "s");
+            got = ui_multi(prompt, opts, NULL, n, want, picks);
+            for (k = 0; k < got; k++) {
+                if (picks[k] >= 0) c->skill_prof[map[picks[k]]] = 1;
+            }
+        }
     }
     if (c->subrace_id >= 0) {
         const char *sn = SUBRACES[c->subrace_id].name;
@@ -1374,6 +1502,42 @@ static void choose_background(Character *c)
         ui_multi("Language from your background:", opts, avail, n, 1, picks);
         if (picks[0] >= 0) add_language(c, opts[picks[0]]);
     }
+}
+
+/* The one skill a bard, ranger or rogue grants when you multiclass INTO
+ * it, and the rogue's thieves' tools.
+ *
+ * choose_class_skills() below does this at creation and is static and
+ * whole-character; a level-up that takes a new class reaches neither, so
+ * the free proficiency was granted to a character built as a multiclass
+ * and dropped from one that multiclassed later. add_prof_list cannot do it
+ * either: it drops any piece containing "skill" on purpose, because
+ * choosing one needs a prompt.
+ */
+void grant_multiclass_extras(Character *c, int class_id)
+{
+    const ClassData *cd = &CLASSES[class_id];
+    const char *opts[SKL_COUNT];
+    int avail[SKL_COUNT], picks[2];
+    int k, available = 0;
+    char prompt[128];
+
+    if (class_id == CLS_ROGUE) add_tool(c, "Thieves' tools");
+    if (class_id != CLS_BARD && class_id != CLS_RANGER
+        && class_id != CLS_ROGUE) {
+        return;
+    }
+    for (k = 0; k < cd->skill_option_count; k++) {
+        opts[k] = SKILL_NAME[cd->skill_options[k]];
+        avail[k] = !c->skill_prof[cd->skill_options[k]];
+        if (avail[k]) available++;
+    }
+    if (available < 1) return;
+
+    snprintf(prompt, sizeof prompt, "%s: one skill for multiclassing in:",
+             cd->name);
+    ui_multi(prompt, opts, avail, cd->skill_option_count, 1, picks);
+    if (picks[0] >= 0) c->skill_prof[cd->skill_options[picks[0]]] = 1;
 }
 
 /* Class skill proficiencies. Only the class you started in grants these

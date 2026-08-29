@@ -3,6 +3,10 @@
  * Builds characters in memory and checks the numbers the PHB says they
  * should have. Build and run with "make test".
  */
+/* dup/dup2, so the prompt-layer test can put stdout back after
+   capturing it. -std=c99 hides the POSIX declarations otherwise. */
+#define _POSIX_C_SOURCE 200809L
+
 #include "dnd.h"
 #include "data.h"
 #include "sidekick.h"
@@ -12,9 +16,13 @@
 #include "saveload.h"
 #include "homebrew.h"
 #include "shop.h"
+#include "reference.h"
+#include "ui.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 
@@ -3113,6 +3121,705 @@ static void test_note_with_no_body(void)
     }
 }
 
+/* Damage at 0 hit points, PHB p.197. The program printed that enough damage
+   in one blow kills outright and then never worked out whether this blow
+   was enough; nor did being hit while down cost a death save. Found by
+   playing: a 7 hit point character at 0 took 100 damage and the screen said
+   "0 successes and 0 failures". */
+static void test_damage_at_zero(void)
+{
+    Character c;
+    int max, absorbed, spare;
+
+    printf("damage at 0 hit points\n");
+
+    plain_fighter(&c, "SelftestDown");
+    c.base_score[ABL_CON] = 10;
+    max = hit_points_max(&c);
+    check(max > 2, "a hit point maximum to work with", max, 3);
+
+    /* Hurt but standing. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, 1, 0, &absorbed, &spare), HURT_STANDING, "a scratch");
+    EQ(hit_points_now(&c), max - 1, "costs one hit point");
+    EQ(c.death_fail, 0, "and no death save");
+
+    /* Temporary hit points go first and are not a death save. */
+    c.damage = 0; c.temp_hp = 5; c.death_fail = 0;
+    EQ(take_damage(&c, 3, 0, &absorbed, &spare), HURT_SOAKED,
+       "temporary hit points take it");
+    EQ(absorbed, 3, "all three of them");
+    EQ(c.temp_hp, 2, "two temporary left");
+    EQ(hit_points_now(&c), max, "and no real damage");
+
+    /* Brought to 0 with little to spare: down, not dead, no failure yet. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max + 1, 0, &absorbed, &spare), HURT_DOWNED,
+       "brought to nothing");
+    EQ(hit_points_now(&c), 0, "at 0 hit points");
+    EQ(c.death_fail, 0, "and being knocked down is not itself a failure");
+
+    /* Hit while down: one failure. */
+    EQ(take_damage(&c, 1, 0, &absorbed, &spare), HURT_SAVE_FAILED,
+       "hit while down");
+    EQ(c.death_fail, 1, "one failed death save");
+
+    /* A critical while down: two. */
+    EQ(take_damage(&c, 1, 1, &absorbed, &spare), HURT_SAVE_FAILED,
+       "a critical while down");
+    EQ(c.death_fail, 3, "two more, and the count stops at three");
+
+    /* The remainder reaching the maximum kills outright, from full health. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max * 2, 0, &absorbed, &spare), HURT_DEAD,
+       "twice the maximum in one blow");
+    EQ(spare, max, "leaves exactly the maximum over");
+    EQ(c.death_fail, 3, "which is death");
+
+    /* And one point short of it does not. */
+    c.damage = 0; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max * 2 - 1, 0, &absorbed, &spare), HURT_DOWNED,
+       "one point short of outright death");
+    EQ(c.death_fail, 0, "is only down");
+
+    /* At 0 already, a blow of the whole maximum kills outright rather than
+       counting as a failure. */
+    c.damage = max; c.temp_hp = 0; c.death_fail = c.death_success = 0;
+    EQ(take_damage(&c, max, 0, &absorbed, &spare), HURT_DEAD,
+       "the maximum in one blow while down");
+    EQ(c.death_fail, 3, "is death, not a failed save");
+}
+
+/* SPELLS by whole name, case-insensitively; the lookup inside
+   progression.c is static and this is the only caller out here. The
+   spell_named() above takes a length and answers a different question. */
+static int spell_by_whole_name(const char *name)
+{
+    int i;
+    for (i = 0; i < SPELL_COUNT; i++) {
+        if (same_fold(SPELLS[i].name, name)) return i;
+    }
+    return -1;
+}
+
+/* A warlock's patron widens the list; it does not hand the spells over.
+ *
+ * The Player's Handbook says the Expanded Spell List is "added to the
+ * warlock spell list for you". The program granted those spells to the
+ * character instead, and because they were not flagged always-prepared they
+ * counted against the spells the warlock may know -- so the allowance ran
+ * out and a 5th-level warlock was asked to choose nothing at all. Found by
+ * building one and watching it go straight from "You know 6 spells." to the
+ * equipment step. */
+static void test_patron_widens_rather_than_grants(void)
+{
+    Character c;
+    int i, patron = -1, checked = 0;
+
+    printf("a warlock patron's expanded list\n");
+
+    /* Any patron with an expanded list will do. */
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        if (SUBCLASSES[i].class_id != CLS_WARLOCK) continue;
+        if (!SUBCLASSES[i].bonus_spells || !SUBCLASSES[i].bonus_spells[0]) {
+            continue;
+        }
+        patron = i;
+        break;
+    }
+    check(patron >= 0, "a patron with an expanded list", patron >= 0, 1);
+    if (patron < 0) return;
+
+    reset(&c);
+    add_class(&c, CLS_WARLOCK, 5, patron);
+
+    {
+        const char *list = warlock_expanded_list(&c, CLS_WARLOCK);
+        check(list != NULL && list[0], "the patron offers a list", 1, 1);
+
+        /* Every name in it has to be a real spell, and none of them may
+           already be on the warlock's own list -- otherwise it is not
+           widening anything. */
+        if (list) {
+            char buf[2048], *cursor = buf, *piece;
+            snprintf(buf, sizeof buf, "%s", list);
+            while ((piece = next_csv(&cursor)) != NULL) {
+                int sid;
+                if (!*piece) continue;
+                sid = spell_by_whole_name(piece);
+                if (sid < 0) {
+                    printf("  FAIL the patron offers \"%s\", which is no "
+                           "spell\n", piece);
+                    failures++;
+                    continue;
+                }
+                if (SPELLS[sid].classes & SPL_WARLOCK) {
+                    printf("  FAIL the patron \"adds\" %s, which warlocks "
+                           "already have\n", SPELLS[sid].name);
+                    failures++;
+                }
+                checked++;
+            }
+        }
+        check(checked > 0, "and it names some spells", checked, 1);
+    }
+
+    /* Nobody else has one. */
+    reset(&c);
+    add_class(&c, CLS_CLERIC, 5, -1);
+    check(warlock_expanded_list(&c, CLS_CLERIC) == NULL,
+          "a cleric has no expanded list", 1, 1);
+
+    /* A warlock with no patron chosen yet has nothing to add. */
+    reset(&c);
+    add_class(&c, CLS_WARLOCK, 1, -1);
+    check(warlock_expanded_list(&c, CLS_WARLOCK) == NULL,
+          "nor a warlock without a patron", 1, 1);
+}
+
+/* Taking a pack takes what is in it.
+ *
+ * The sheet used to say "1 x Explorer's pack" and nothing else, so a player
+ * could not drop, sell, eat or count any of it. The contents go on instead
+ * of the pack, which is only safe because a pack's weight is exactly the
+ * sum of its parts -- carrying both would count everything twice. That sum
+ * is the invariant here; tools/verify_packs.py checks the contents
+ * themselves against the Player's Handbook. */
+static void test_packs_unpack(void)
+{
+    Character c;
+    int i, packs = 0;
+
+    printf("what is inside a pack\n");
+
+    for (i = 0; i < ITEM_COUNT; i++) {
+        int j, parts = 0, weight = 0, before, after;
+        if (ITEMS[i].category != ITEM_PACK) continue;
+        packs++;
+
+        for (j = 0; j < PACK_ITEM_COUNT; j++) {
+            int id;
+            if (!same_fold(PACK_ITEMS[j].pack, ITEMS[i].name)) continue;
+            id = find_item(PACK_ITEMS[j].item);
+            if (id < 0) {
+                printf("  FAIL %s holds \"%s\", which is no item\n",
+                       ITEMS[i].name, PACK_ITEMS[j].item);
+                failures++;
+                continue;
+            }
+            weight += ITEMS[id].weight_tenths * PACK_ITEMS[j].quantity;
+            parts++;
+        }
+        if (parts == 0) {
+            printf("  FAIL %s has no contents\n", ITEMS[i].name);
+            failures++;
+            continue;
+        }
+        if (weight != ITEMS[i].weight_tenths) {
+            printf("  FAIL %s weighs %d tenths and its parts weigh %d\n",
+                   ITEMS[i].name, ITEMS[i].weight_tenths, weight);
+            failures++;
+        }
+
+        /* And the program agrees: unpacking one onto a character adds the
+           same weight the pack itself would have. */
+        plain_fighter(&c, "SelftestPack");
+        c.item_count = 0;
+        before = current_weight_tenths(&c);
+        {
+            int went_on = add_pack(&c, i, 1);
+            check(went_on == parts, ITEMS[i].name, went_on, parts);
+        }
+        after = current_weight_tenths(&c);
+        if (after - before != ITEMS[i].weight_tenths) {
+            printf("  FAIL unpacking %s added %d tenths, the pack weighs "
+                   "%d\n", ITEMS[i].name, after - before,
+                   ITEMS[i].weight_tenths);
+            failures++;
+        }
+    }
+    EQ(packs, 7, "the seven packs of the Player's Handbook");
+
+    /* The point of the whole exercise: taking a pack leaves the contents
+       carried and the pack itself nowhere. */
+    for (i = 0; i < ITEM_COUNT; i++) {
+        int j, k, still_packed = 0, wrong = 0;
+        if (ITEMS[i].category != ITEM_PACK) continue;
+
+        plain_fighter(&c, "SelftestPack");
+        c.item_count = 0;
+        add_pack(&c, i, 1);
+
+        for (j = 0; j < c.item_count; j++) {
+            if (c.inventory[j].is_magic) continue;
+            if (ITEMS[c.inventory[j].item_id].category == ITEM_PACK) {
+                still_packed++;
+            }
+        }
+        if (still_packed) {
+            printf("  FAIL taking %s leaves a pack in the inventory\n",
+                   ITEMS[i].name);
+            failures++;
+        }
+
+        /* And what is carried is exactly the rows, quantity for quantity. */
+        for (j = 0; j < PACK_ITEM_COUNT; j++) {
+            int id, found = 0;
+            if (!same_fold(PACK_ITEMS[j].pack, ITEMS[i].name)) continue;
+            id = find_item(PACK_ITEMS[j].item);
+            for (k = 0; k < c.item_count; k++) {
+                if (c.inventory[k].is_magic) continue;
+                if (c.inventory[k].item_id != id) continue;
+                found = 1;
+                if (c.inventory[k].quantity != PACK_ITEMS[j].quantity) {
+                    printf("  FAIL %s should hold %d x %s, holds %d\n",
+                           ITEMS[i].name, PACK_ITEMS[j].quantity,
+                           PACK_ITEMS[j].item, c.inventory[k].quantity);
+                    failures++;
+                }
+            }
+            if (!found) {
+                printf("  FAIL %s should hold %s and does not\n",
+                       ITEMS[i].name, PACK_ITEMS[j].item);
+                failures++;
+                wrong++;
+            }
+        }
+        (void)wrong;
+    }
+
+    /* Anything that is not a pack is refused, so the caller adds it
+       plainly. */
+    plain_fighter(&c, "SelftestPack");
+    EQ(add_pack(&c, find_item("Dagger"), 1), -1, "a dagger is not a pack");
+    EQ(add_pack(&c, -1, 1), -1, "and nor is nothing");
+}
+
+/* Three things a sheet printed wrongly, found by reading real sheets.
+ *
+ * The starting-gold average truncated before it multiplied, so 5d4 x 10
+ * came out at 120 gp where the Player's Handbook's own average column says
+ * 125. A monk of 14th level is proficient in every saving throw and
+ * save_bonus() adds the bonus, but the sheet's "(proficient)" note read
+ * only the class's own two, so four saves were annotated as unproficient
+ * beside a number that said otherwise. And the subrace trait list was
+ * printed before it was split, so the whole '|' separated string appeared
+ * as one trait and each piece again after it. */
+static void test_sheet_numbers_the_audit_found(void)
+{
+    Character c;
+    int i;
+
+    printf("three things a sheet printed wrongly\n");
+
+    /* The PHB's Starting Wealth by Class table, average column. */
+    {
+        static const struct { const char *name; int average; } GOLD[] = {
+            { "Barbarian", 50 }, { "Bard", 125 }, { "Cleric", 125 },
+            { "Druid", 50 },     { "Fighter", 125 }, { "Monk", 12 },
+            { "Paladin", 125 },  { "Ranger", 125 }, { "Rogue", 100 },
+            { "Sorcerer", 75 },  { "Warlock", 100 }, { "Wizard", 100 },
+        };
+        size_t g;
+        for (g = 0; g < sizeof GOLD / sizeof GOLD[0]; g++) {
+            int at = -1, got;
+            for (i = 0; i < CLASS_COUNT; i++) {
+                if (!strcmp(CLASSES[i].name, GOLD[g].name)) at = i;
+            }
+            if (at < 0) continue;
+            got = average_starting_gold(&CLASSES[at]);
+            check(got == GOLD[g].average, GOLD[g].name, got,
+                  GOLD[g].average);
+        }
+    }
+
+    /* Diamond Soul: every save proficient from 14th, and the number to
+       match. */
+    reset(&c);
+    c.race_id = 0;
+    add_class(&c, CLS_MONK, 14, -1);
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    for (i = 0; i < ABL_COUNT; i++) {
+        int want = proficiency_bonus(&c);
+        check(save_bonus(&c, (Ability)i) == want, "monk 14 save is proficient",
+              save_bonus(&c, (Ability)i), want);
+    }
+    reset(&c);
+    c.race_id = 0;
+    add_class(&c, CLS_MONK, 13, -1);
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    check(save_bonus(&c, ABL_CHA) == 0, "and not at 13th",
+          save_bonus(&c, ABL_CHA), 0);
+
+    /* No trait text may reach a sheet with a separator still in it. */
+    for (i = 0; i < SUBRACE_COUNT; i++) {
+        const char *t = SUBRACES[i].traits;
+        int pieces = 1;
+        const char *p;
+        if (!t || !t[0]) continue;
+        for (p = t; *p; p++) if (*p == '|') pieces++;
+        if (pieces > 1) break;
+    }
+    check(i < SUBRACE_COUNT, "a subrace with more than one trait", 1, 1);
+}
+
+/* Eight things a race's or a subclass's own text promised and no number
+   honoured. Each was printed on the sheet as a trait or a feature and then
+   ignored by the thing it was about. */
+static void test_traits_the_numbers_ignored(void)
+{
+    Character c;
+    int i;
+
+    printf("traits the numbers used to ignore\n");
+
+    /* Natural armour. A tortle's shell is AC 17 whatever its Dexterity and
+       whatever it wears; a lizardfolk's is 13 + Dexterity. */
+    {
+        static const struct { const char *race; int dex; int want; } AC[] = {
+            { "Tortle", 8, 17 }, { "Tortle", 18, 17 },
+            { "Lizardfolk", 16, 16 }, { "Lizardfolk", 8, 12 },
+            { "Human", 16, 13 },
+        };
+        size_t k;
+        for (k = 0; k < sizeof AC / sizeof AC[0]; k++) {
+            int at = find_race(AC[k].race);
+            if (at < 0) continue;
+            plain_fighter(&c, "SelftestHide");
+            c.race_id = at;
+            c.item_count = 0;
+            c.base_score[ABL_DEX] = AC[k].dex;
+            check(armour_class(&c) == AC[k].want, AC[k].race,
+                  armour_class(&c), AC[k].want);
+        }
+    }
+
+    /* Powerful Build doubles what you can carry. */
+    {
+        int at = find_race("Goliath");
+        if (at >= 0) {
+            plain_fighter(&c, "SelftestCarry");
+            c.race_id = at;
+            c.base_score[ABL_STR] = 15;
+            EQ(carrying_capacity(&c), 450, "a goliath carries double");
+        }
+        plain_fighter(&c, "SelftestCarry");
+        c.race_id = find_race("Human");
+        c.base_score[ABL_STR] = 15;
+        EQ(carrying_capacity(&c), 225, "and a human does not");
+    }
+
+    /* Claws, horns and hooves replace the fist. */
+    {
+        static const struct { const char *race; const char *want; } NW[] = {
+            { "Tortle", "1d6+3 slashing" },
+            { "Minotaur", "1d6+3 piercing" },
+            { "Centaur", "1d6+3 bludgeoning" },
+            { "Human", "4 bludgeoning" },
+        };
+        size_t k;
+        for (k = 0; k < sizeof NW / sizeof NW[0]; k++) {
+            Attack a[16];
+            int n, at = find_race(NW[k].race), found = 0;
+            if (at < 0) continue;
+            plain_fighter(&c, "SelftestFist");
+            c.race_id = at;
+            c.item_count = 0;
+            c.base_score[ABL_STR] = 16;
+            n = attacks_of(&c, a, 16);
+            for (i = 0; i < n; i++) {
+                if (strcmp(a[i].name, "Unarmed strike")) continue;
+                found = 1;
+                check(!strcmp(a[i].damage, NW[k].want), NW[k].race, 1, 1);
+                if (strcmp(a[i].damage, NW[k].want)) {
+                    printf("      got %s, want %s\n", a[i].damage,
+                           NW[k].want);
+                }
+            }
+            check(found, "an unarmed strike is listed", found, 1);
+        }
+    }
+
+    /* Every race whose traits promise a skill has it, and the skills it
+       promises are real ones. */
+    for (i = 0; i < RACE_COUNT; i++) {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", RACES[i].fixed_skills);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (skill_by_name(piece) < 0) {
+                printf("  FAIL %s is proficient in \"%s\", which is no "
+                       "skill\n", RACES[i].name, piece);
+                failures++;
+            }
+        }
+        snprintf(buf, sizeof buf, "%s", RACES[i].choice_skills);
+        cursor = buf;
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (skill_by_name(piece) < 0) {
+                printf("  FAIL %s offers \"%s\", which is no skill\n",
+                       RACES[i].name, piece);
+                failures++;
+            }
+        }
+        if (RACES[i].choice_skill_count && !RACES[i].choice_skills[0]) {
+            printf("  FAIL %s chooses %d skills from nothing\n",
+                   RACES[i].name, RACES[i].choice_skill_count);
+            failures++;
+        }
+    }
+    check(find_race("Elf") >= 0
+          && strstr(RACES[find_race("Elf")].fixed_skills, "Perception")
+              != NULL, "an elf is proficient in Perception", 1, 1);
+    check(find_race("Tabaxi") < 0
+          || strstr(RACES[find_race("Tabaxi")].fixed_skills, "Stealth")
+              != NULL, "a tabaxi in Stealth", 1, 1);
+
+    /* Every proficiency a subclass grants is a real one. */
+    for (i = 0; i < SUBCLASS_COUNT; i++) {
+        char buf[256], *cursor = buf, *piece;
+        snprintf(buf, sizeof buf, "%s", SUBCLASSES[i].grants);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            if (strstr(piece, "tools") || strstr(piece, "kit")) {
+                if (find_item(piece) < 0) {
+                    printf("  FAIL %s grants \"%s\", which is no tool\n",
+                           SUBCLASSES[i].name, piece);
+                    failures++;
+                }
+            }
+        }
+    }
+    {
+        int at = -1;
+        for (i = 0; i < SUBCLASS_COUNT; i++) {
+            if (!strcmp(SUBCLASSES[i].name, "Battle Smith")) at = i;
+        }
+        check(at >= 0 && strstr(SUBCLASSES[at].grants, "Martial weapons")
+                  != NULL,
+              "a battle smith is proficient with martial weapons", 1, 1);
+    }
+
+    /* The two third casters do not learn the same number of cantrips: the
+       Arcane Trickster's three include mage hand. Asked of a character, so
+       that the table AND the code that chooses between the two tables are
+       both covered -- checking the rows alone passes even when the code
+       reads the wrong one. */
+    {
+        static const struct { const char *sub; int cls; int lvl; int want; }
+        CANTRIPS[] = {
+            { "Eldritch Knight",  CLS_FIGHTER, 3,  2 },
+            { "Eldritch Knight",  CLS_FIGHTER, 9,  2 },
+            { "Eldritch Knight",  CLS_FIGHTER, 10, 3 },
+            { "Eldritch Knight",  CLS_FIGHTER, 20, 3 },
+            { "Arcane Trickster", CLS_ROGUE,   3,  3 },
+            { "Arcane Trickster", CLS_ROGUE,   9,  3 },
+            { "Arcane Trickster", CLS_ROGUE,   10, 4 },
+            { "Arcane Trickster", CLS_ROGUE,   20, 4 },
+        };
+        size_t k;
+        for (k = 0; k < sizeof CANTRIPS / sizeof CANTRIPS[0]; k++) {
+            int at = -1, got;
+            for (i = 0; i < SUBCLASS_COUNT; i++) {
+                if (!strcmp(SUBCLASSES[i].name, CANTRIPS[k].sub)) at = i;
+            }
+            if (at < 0) continue;
+            reset(&c);
+            c.race_id = 0;
+            add_class(&c, CANTRIPS[k].cls, CANTRIPS[k].lvl, at);
+            got = known_spell_count(&c, CANTRIPS[k].cls, 1);
+            check(got == CANTRIPS[k].want, CANTRIPS[k].sub, got,
+                  CANTRIPS[k].want);
+        }
+    }
+}
+
+/* Four things the program printed or promised and did not do, found by
+   playing it rather than by reading it. */
+static void test_things_playing_it_found(void)
+{
+    printf("four things playing it turned up\n");
+
+    /* A price the books never print but a DM can type: gold, silver and
+       copper together. It used to collapse to one odd unit -- 25 gp 5 sp
+       3 cp came back as "2553 cp" -- and 2,550 copper, which is 25 gp
+       5 sp, came back as "255 sp". */
+    {
+        static const struct { int cp; const char *want; } PRICE[] = {
+            { 0,       "--" },
+            { 1,       "1 cp" },
+            { 5,       "5 cp" },
+            { 10,      "1 sp" },
+            { 50,      "5 sp" },
+            { 100,     "1 gp" },
+            { 7500,    "75 gp" },
+            { 2550,    "25 gp 5 sp" },
+            { 2553,    "25 gp 5 sp 3 cp" },
+            { 105,     "1 gp 5 cp" },
+            { 9999,    "99 gp 9 sp 9 cp" },
+        };
+        size_t k;
+        for (k = 0; k < sizeof PRICE / sizeof PRICE[0]; k++) {
+            char got[40];
+            format_price(PRICE[k].cp, got, sizeof got);
+            check(!strcmp(got, PRICE[k].want), PRICE[k].want, 1, 1);
+            if (strcmp(got, PRICE[k].want)) {
+                printf("      %d cp gave \"%s\"\n", PRICE[k].cp, got);
+            }
+        }
+    }
+
+    /* And every price the books DO print still reads as one unit, which is
+       what made the change safe. */
+    {
+        int i, mixed = 0;
+        for (i = 0; i < ITEM_COUNT; i++) {
+            char got[40];
+            if (ITEMS[i].book != BOOK_PHB) continue;
+            format_price(ITEMS[i].cost_cp, got, sizeof got);
+            if (strchr(got, ' ') && strstr(got, " gp") && strstr(got, " sp")) {
+                mixed++;
+            }
+        }
+        EQ(mixed, 0, "no book price needs more than one coin");
+    }
+
+    /* The cleric's two "(if proficient)" options name real items once the
+       qualifier is off. Nothing stripped it, so both fell through to being
+       noted as text and the cleric was handed nothing. */
+    check(find_item("Warhammer") >= 0, "a warhammer is a real item", 1, 1);
+    check(find_item("Chain mail") >= 0, "and chain mail is too", 1, 1);
+    {
+        int i, found = 0;
+        for (i = 0; i < CLASS_COUNT; i++) {
+            if (strcmp(CLASSES[i].name, "Cleric")) continue;
+            found = strstr(CLASSES[i].equipment, "(if proficient)") != NULL;
+        }
+        check(found, "the cleric's equipment still carries the qualifier "
+                     "the code has to strip", found, 1);
+    }
+
+    /* Multiclassing into a bard, ranger or rogue grants one skill; the
+       rogue also grants thieves' tools. The level-up path granted neither,
+       because the creation path is where the prompt lived. */
+    {
+        Character c;
+        int i, before, after;
+        static const int WHO[] = { CLS_BARD, CLS_RANGER, CLS_ROGUE };
+        size_t k;
+        for (k = 0; k < sizeof WHO / sizeof WHO[0]; k++) {
+            const ClassData *cd = &CLASSES[WHO[k]];
+            check(cd->skill_option_count > 0, cd->name,
+                  cd->skill_option_count, 1);
+            check(strstr(cd->mc_profs, "skill") != NULL,
+                  "  and says so in its multiclass line", 1, 1);
+        }
+        /* The rogue's tools are granted without a prompt, so this one can
+           be driven all the way. */
+        plain_fighter(&c, "SelftestMulti");
+        before = c.tool_prof_count;
+        grant_multiclass_extras(&c, CLS_FIGHTER);
+        after = c.tool_prof_count;
+        EQ(after, before, "a fighter grants no tools for multiclassing");
+        for (i = 0; i < c.tool_prof_count; i++) {
+            if (!strcmp(c.tool_profs[i], "Thieves' tools")) {
+                printf("  FAIL a fighter should not grant thieves' tools\n");
+                failures++;
+            }
+        }
+    }
+}
+
+/* The prompt layer, driven through its own reader.
+ *
+ * ui_int reads stdin and writes stdout, so nothing here has ever been
+ * tested except by playing the program. Both of the things below were
+ * found that way, and both are cheap to check by pointing stdin at a file
+ * and reading back what was printed. */
+static void feed(const char *text, char *out, size_t n)
+{
+    FILE *in = fopen("SelftestUiIn.txt", "w");
+    FILE *back;
+    int saved;
+    long got = 0;
+
+    if (in) { fputs(text, in); fclose(in); }
+    if (!freopen("SelftestUiIn.txt", "r", stdin)) return;
+
+    /* stdout is a pipe under make, so it cannot be reopened by name
+       afterwards. Keep the descriptor and put it back. */
+    fflush(stdout);
+    saved = dup(fileno(stdout));
+    if (saved < 0) return;
+    if (!freopen("SelftestUiOut.txt", "w", stdout)) { close(saved); return; }
+
+    {
+        static const char *const INFO[3] = {
+            "The first one, explained.", "", "The third one, explained."
+        };
+        ui_set_info(INFO, 3);
+        (void)ui_int("  Pick", 1, 3);
+        ui_set_info(NULL, 0);
+    }
+
+    fflush(stdout);
+    dup2(saved, fileno(stdout));
+    close(saved);
+    clearerr(stdout);
+
+    /* stdin is still pointed at the file this fed in. Nothing later reads
+       it, but a prompt that did would see end of input and exit the whole
+       run, so it is put somewhere harmless. */
+    if (!freopen("/dev/null", "r", stdin)) { /* nothing later reads it */ }
+
+    back = fopen("SelftestUiOut.txt", "r");
+    if (back) {
+        got = (long)fread(out, 1, n - 1, back);
+        fclose(back);
+    }
+    out[got > 0 ? got : 0] = '\0';
+}
+
+static void test_the_prompt_layer(void)
+{
+    static char said[8192];
+
+    printf("asking a menu about itself\n");
+
+    /* An entry number outside the menu is answered as such, whatever its
+       size. "4294967297 info" used to be narrowed to an int -- coming out
+       as 1 -- and answered about the first entry. */
+    feed("4294967297 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry 4294967297") != NULL,
+          "a huge entry number is out of range, not entry one", 1, 1);
+    check(strstr(said, "The first one") == NULL,
+          "and is not answered about the first entry", 1, 1);
+
+    feed("0 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry 0") != NULL, "nor is zero an entry", 1, 1);
+
+    feed("-1 info\n1\n", said, sizeof said);
+    check(strstr(said, "no entry -1") != NULL, "nor is minus one", 1, 1);
+
+    feed("99999999999999999999 info\n1\n", said, sizeof said);
+    check(strstr(said, "not an entry number") != NULL,
+          "a number too large to read says so", 1, 1);
+
+    /* An entry that exists but has nothing to say is a different answer
+       from one that does not exist. */
+    feed("2 info\n1\n", said, sizeof said);
+    check(strstr(said, "nothing more to say about 2") != NULL,
+          "an entry with no text says so", 1, 1);
+
+    feed("3 info\n1\n", said, sizeof said);
+    check(strstr(said, "The third one") != NULL,
+          "and one with text gives it", 1, 1);
+
+    remove("SelftestUiIn.txt");
+    remove("SelftestUiOut.txt");
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -3340,6 +4047,13 @@ int main(void)
     test_prepared_survives();
     test_two_copies_stay_two();
     test_play_state_survives();
+    test_damage_at_zero();
+    test_patron_widens_rather_than_grants();
+    test_packs_unpack();
+    test_sheet_numbers_the_audit_found();
+    test_traits_the_numbers_ignored();
+    test_things_playing_it_found();
+    test_the_prompt_layer();
     test_valuables();
     test_shop_file();
     test_purse_has_a_ceiling();

@@ -91,8 +91,50 @@ def parse_money(s):
     return int(m.group(1).replace(",", "")) * COIN[m.group(2)]
 
 
+# Rows the equipment tables do not carry, because the book names them only
+# inside an equipment pack and prices them nowhere at all. They exist as
+# rows so that taking a pack can put its contents on the sheet -- see the
+# PACKITEM block in data/equipment.txt and tools/verify_packs.py, which
+# checks each against the pack sentence that names it.
+#
+# Their cost is 0 and their weight is the project's own, chosen so that
+# each pack's parts sum to exactly the weight the pack row carries. The
+# book gives neither.
+PACK_ONLY = {
+    "Alms box":            "Priest's Pack",
+    "Block of incense":    "Priest's Pack",
+    "Book of lore":        "Scholar's Pack",
+    "Censer":              "Priest's Pack",
+    "Little bag of sand":  "Scholar's Pack",
+    "Small knife":         "Scholar's Pack",
+    "String (10 feet)":    "Burglar's Pack",
+    "Vestments":           "Priest's Pack",
+}
+
+# Weights the book prints that a tenth of a pound cannot express. Two rows
+# in the whole Player's Handbook are a quarter of a pound -- the dart and
+# the piton -- and data/ stores each as 2 (0.2 lb), which is as close as the
+# unit gets. That is a real difference from the book and it is named here
+# rather than hidden.
+#
+# It used to be hidden. parse_weight rounded the book's "1/4 lb." to 2
+# tenths and then compared it against our 2, so the checker agreed with the
+# limitation instead of reporting it, and could not have caught a genuine
+# error of that size either. It now parses exactly, and a row that does not
+# match is a failure unless it is named below -- so a new quarter-pound item
+# is reported rather than quietly rounded.
+UNREPRESENTABLE = {
+    "Dart": (25, 2),        # book hundredths, our tenths
+    "Piton": (25, 2),
+}
+
+
 def parse_weight(s):
-    """'1 1/2 lb.' -> 15 tenths of a pound. '-' -> 0."""
+    """'1 1/2 lb.' -> 150 hundredths of a pound. '-' -> 0.
+
+    Hundredths rather than tenths so a quarter pound is exact. The ITEM rows
+    are stored in tenths, so a comparison multiplies ours by 10.
+    """
     s = clean(s)
     if s in ("-", ""):
         return 0
@@ -101,10 +143,15 @@ def parse_weight(s):
         return None
     whole = int(m.group(1).replace(",", "").replace(" ", "")) if m.group(1) \
         else 0
-    tenths = whole * 10
+    hundredths = whole * 100
     if m.group(2):
-        tenths += int(round(10.0 * int(m.group(2)) / int(m.group(3))))
-    return tenths
+        num, den = int(m.group(2)), int(m.group(3))
+        if den == 0:
+            return None
+        if (100 * num) % den:
+            return None         # a fraction not even hundredths can hold
+        hundredths += (100 * num) // den
+    return hundredths
 
 
 def book_rows():
@@ -223,6 +270,8 @@ def main():
                  for m in PACK.finditer(text))
     items = [r for r in read_file("equipment.txt") if r.tag == "ITEM"]
     checked = missing = bad = 0
+    unrepresentable = []
+    pack_only = []
 
     for r in items:
         name = r.str(0)
@@ -241,6 +290,9 @@ def main():
             continue
         want = rows.get(key(ALIAS.get(name, name)))
         if want is None:
+            if name in PACK_ONLY:
+                pack_only.append(name)
+                continue
             print("  not in the tables: %s" % name)
             missing += 1
             continue
@@ -262,9 +314,13 @@ def main():
                     continue
                 weight = parse_weight(cell)
                 break
-            if weight is not None and weight != r.int(4):
-                problems.append("weight %d, book says %d (tenths of a pound)"
-                                % (r.int(4), weight))
+            if weight is not None and weight != r.int(4) * 10:
+                named = UNREPRESENTABLE.get(r.str(0))
+                if named and named == (weight, r.int(4)):
+                    unrepresentable.append(r.str(0))
+                else:
+                    problems.append("weight %d tenths, book says %g lb"
+                                    % (r.int(4), weight / 100.0))
 
         # Armour: base AC, the Dexterity cap, Strength and stealth.
         for cell in rest:
@@ -313,6 +369,29 @@ def main():
         print("  %s" % p)
     checked += n_checked
     bad += n_bad
+
+    if pack_only:
+        print("\n  %d row%s the tables do not price, named only inside a "
+              "pack:" % (len(pack_only), "" if len(pack_only) == 1 else "s"))
+        for n in sorted(pack_only):
+            print("      %-20s %s" % (n, PACK_ONLY[n]))
+    if len(pack_only) != len(PACK_ONLY):
+        print("  the named list of pack-only rows is out of date: %d named, "
+              "%d met" % (len(PACK_ONLY), len(pack_only)))
+        bad += 1
+
+    if unrepresentable:
+        print("\n  %d weight%s the tenth-of-a-pound unit cannot express, "
+              "stored as close as it gets:" % (len(unrepresentable),
+                                               "" if len(unrepresentable) == 1
+                                               else "s"))
+        for n in sorted(unrepresentable):
+            print("      %-20s the book says 1/4 lb, we store 0.2" % n)
+    if len(unrepresentable) != len(UNREPRESENTABLE):
+        print("  the named list of unrepresentable weights is out of date: "
+              "%d named, %d met" % (len(UNREPRESENTABLE),
+                                    len(unrepresentable)))
+        bad += 1
 
     print("\n%d PHB items checked against the tables, %d disagree, "
           "%d not found" % (checked, bad, missing))

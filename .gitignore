@@ -13,3 +13,6 @@ combosweep
 !data/*.txt
 !TextFiles/*.txt
 !homebrew.txt
+
+# Scratch worktrees made by tooling, not part of the program.
+.claude/

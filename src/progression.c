@@ -132,7 +132,11 @@ int known_spell_count(const Character *c, int class_id, int cantrips)
     sub = c->classes[slot].subclass_id;
 
     if (is_third_caster(sub)) {
-        return cantrips ? THIRD_CANTRIPS[lvl] : THIRD_SPELLS_KNOWN[lvl];
+        if (!cantrips) return THIRD_SPELLS_KNOWN[lvl];
+        /* The two third casters do not learn the same number of cantrips:
+           the Arcane Trickster's three include mage hand. */
+        return subclass_is(sub, "Arcane Trickster")
+             ? TRICKSTER_CANTRIPS[lvl] : THIRD_CANTRIPS[lvl];
     }
     if (cantrips) {
         return CLASSES[class_id].cantrips_known
@@ -451,28 +455,31 @@ void choose_subclass_for(Character *c, int slot)
         }
     }
 
-    /* Subclass proficiency grants. */
+    /* What the subclass makes you proficient with.
+     *
+     * This was six subclasses written out by hand while thirteen print the
+     * promise in their feature text, so seven of them -- the Hexblade, the
+     * Armorer, the Battle Smith, the Artillerist, the Forge Domain, the
+     * College of Swords and the Bladesinger -- said "gain proficiency with
+     * martial weapons" on the sheet and left the attack bonus short. It
+     * comes off the row now, so a subclass added to data/ brings its
+     * proficiencies with it. */
     {
         int sub = c->classes[slot].subclass_id;
-        if (subclass_is(sub, "College of Valor")) {
-            add_prof(c, "Medium armor");
-            add_prof(c, "Shields");
-            add_prof(c, "Martial weapons");
-        }
-        /* Life, Nature, Tempest and War domains grant heavy armour; the
-           latter two also grant martial weapons. */
-        if (strcmp(SUBCLASSES[sub].name, "Life Domain") == 0
-            || strcmp(SUBCLASSES[sub].name, "Nature Domain") == 0) {
-            add_prof(c, "Heavy armor");
-        }
-        if (strcmp(SUBCLASSES[sub].name, "Tempest Domain") == 0
-            || strcmp(SUBCLASSES[sub].name, "War Domain") == 0) {
-            add_prof(c, "Heavy armor");
-            add_prof(c, "Martial weapons");
-        }
-        if (strcmp(SUBCLASSES[sub].name, "Assassin") == 0) {
-            add_tool(c, "Disguise kit");
-            add_tool(c, "Poisoner's kit");
+        char buf[256], *cursor = buf, *piece;
+
+        snprintf(buf, sizeof buf, "%s", SUBCLASSES[sub].grants);
+        while ((piece = next_csv(&cursor)) != NULL) {
+            if (!*piece) continue;
+            /* A kit or a set of tools is a tool; everything else -- armour,
+               a shield, a weapon, a skill -- is a proficiency. */
+            if (strstr(piece, "tools") || strstr(piece, "kit")) {
+                add_tool(c, piece);
+            } else {
+                int sk = skill_by_name(piece);
+                if (sk >= 0) c->skill_prof[sk] = 1;
+                else add_prof(c, piece);
+            }
         }
     }
 
@@ -632,17 +639,138 @@ static const char *additional_spells_for(const Character *c, int class_id)
 }
 
 /* True when `name` appears in a comma separated list. */
+static const int *bonus_spell_levels(int class_id);
+
+/* A warlock's patron does not hand over its spells. The Player's Handbook
+ * says the expanded list is "added to the warlock spell list for you" --
+ * it widens what you may choose, and you still choose every spell you know.
+ * Every other subclass with bonus spells is the opposite: a cleric's
+ * domain, a paladin's oath, a druid's circle are handed over and always
+ * prepared, and do not touch the number the class may learn.
+ *
+ * The program granted them to a warlock as well, with the always-prepared
+ * flag off. That was wrong twice over. The spells arrived unchosen, and
+ * because they were not flagged they counted against the allowance --
+ * recorded_for() sees them, manage_spells subtracts them, and the total
+ * reaches zero. A 5th-level warlock was told "You know 6 spells" and then
+ * asked nothing at all: every one of its six was the patron's.
+ *
+ * So the same rows are read back out here and offered as the extra list
+ * instead. Returns NULL for anyone else.
+ */
+const char *warlock_expanded_list(const Character *c, int class_id)
+{
+    static char out[2048];
+    const SubclassData *sc;
+    char buf[1024];
+    const char *groups[8];
+    const int *at;
+    int slot, sub, lvl, n, g;
+    size_t used = 0;
+
+    if (class_id != CLS_WARLOCK) return NULL;
+    slot = find_class_slot(c, class_id);
+    if (slot < 0) return NULL;
+    sub = c->classes[slot].subclass_id;
+    if (sub < 0) return NULL;
+
+    lvl = c->classes[slot].level;
+    at = bonus_spell_levels(class_id);
+    out[0] = '\0';
+
+    sc = &SUBCLASSES[sub];
+    if (sc->bonus_spells && sc->bonus_spells[0]) {
+        n = split_pipe(sc->bonus_spells, buf, sizeof buf, groups, 8);
+        for (g = 0; g < n && g < 5; g++) {
+            if (lvl < at[g]) break;
+            used += (size_t)snprintf(out + used, sizeof out - used, "%s%s",
+                                     used ? "," : "", groups[g]);
+            if (used >= sizeof out) { used = sizeof out - 1; break; }
+        }
+    }
+
+    /* The Genie warlock's kind hangs off the option rather than the
+       subclass, exactly as it does for a druid's terrain. */
+    {
+        int opt = c->classes[slot].subclass_option;
+        int i;
+        for (i = 0; opt >= 0 && i < OPTION_SPELLS_COUNT; i++) {
+            char obuf[512], sbuf[1024], lbuf[64];
+            const char *onames[16], *ogroups[8];
+            int no, ng, oat[8], nat = 0;
+            const char *q;
+
+            if (!subclass_is(sub, OPTION_SPELLS[i].subclass)) continue;
+            no = split_pipe(SUBCLASSES[sub].options, obuf, sizeof obuf,
+                            onames, 16);
+            if (opt >= no) continue;
+            if (strcmp(onames[opt], OPTION_SPELLS[i].option) != 0) continue;
+
+            strncpy(lbuf, OPTION_SPELLS[i].levels, sizeof lbuf - 1);
+            lbuf[sizeof lbuf - 1] = '\0';
+            for (q = lbuf; *q && nat < 8; ) {
+                while (*q == ' ' || *q == ',') q++;
+                if (*q >= '0' && *q <= '9') {
+                    int v = 0;
+                    while (*q >= '0' && *q <= '9') v = v * 10 + (*q++ - '0');
+                    oat[nat++] = v;
+                } else if (*q) {
+                    q++;
+                }
+            }
+            ng = split_pipe(OPTION_SPELLS[i].spells, sbuf, sizeof sbuf,
+                            ogroups, 8);
+            for (g = 0; g < ng && g < nat; g++) {
+                if (lvl < oat[g]) break;
+                used += (size_t)snprintf(out + used, sizeof out - used,
+                                         "%s%s", used ? "," : "", ogroups[g]);
+                if (used >= sizeof out) { used = sizeof out - 1; break; }
+            }
+            break;
+        }
+    }
+
+    return out[0] ? out : NULL;
+}
+
+/* Everything this class may choose from beyond its own list: Tasha's
+   additional spells, and a warlock patron's expanded list. */
+static const char *choosable_extras(const Character *c, int class_id)
+{
+    static char both[3072];
+    const char *tasha = additional_spells_for(c, class_id);
+    const char *patron = warlock_expanded_list(c, class_id);
+
+    if (!tasha) return patron;
+    if (!patron) return tasha;
+    snprintf(both, sizeof both, "%s,%s", tasha, patron);
+    return both;
+}
+
+/* Whether a comma-separated list names this spell.
+ *
+ * Case-insensitively, because the two lists it reads are written by
+ * different hands. Tasha's additional spells are stored entirely in lower
+ * case, so a case-sensitive compare worked for as long as that was the only
+ * caller. A warlock patron's expanded list is stored the way the book
+ * prints it, which keeps the capital in "Tasha's hideous laughter" and
+ * "Evard's black tentacles" -- and those two spells silently fell off the
+ * list the moment a patron's list was offered rather than granted. */
 static int name_in_list(const char *list, const char *name)
 {
     const char *p = list;
     size_t len = strlen(name);
 
     while (p && *p) {
+        size_t i;
         while (*p == ' ' || *p == ',') p++;
-        if (strncmp(p, name, len) == 0
-            && (p[len] == '\0' || p[len] == ',')) {
-            return 1;
+        for (i = 0; i < len; i++) {
+            int a = (unsigned char)p[i], b = (unsigned char)name[i];
+            if (a >= 'A' && a <= 'Z') a += 32;
+            if (b >= 'A' && b <= 'Z') b += 32;
+            if (a != b) break;
         }
+        if (i == len && (p[len] == '\0' || p[len] == ',')) return 1;
         p = strchr(p, ',');
     }
     return 0;
@@ -750,7 +878,7 @@ static int available_count(const Character *c, int bit, int level,
 static void pick_spells(Character *c, int bit, int class_id, int level,
                         int want, const char *what)
 {
-    const char *extra = additional_spells_for(c, class_id);
+    const char *extra = choosable_extras(c, class_id);
     const char *opts[400];
     const char *det[400];
     static char lines[400][160];
@@ -778,22 +906,33 @@ static void pick_spells(Character *c, int bit, int class_id, int level,
 
     while (taken < want) {
         char prompt[160];
-        int pick;
+        int pick, k;
 
+        if (n == 0) break;              /* cannot happen; cheap to be sure */
         snprintf(prompt, sizeof prompt, "  Choose %s %d of %d (level %d):",
                  what, taken + 1, want, level);
         pick = ui_menu(prompt, opts, det, n);
 
-        if (already_known(c, map[pick])) {
-            printf("    You already have that one.\n");
-            continue;
-        }
         add_spell(c, map[pick], class_id, 1, 0);
         printf("    Added %s -- %s, %s, %s, %s\n",
                SPELLS[map[pick]].name, SPELLS[map[pick]].casting_time,
                SPELLS[map[pick]].range, SPELLS[map[pick]].components,
                SPELLS[map[pick]].duration);
         taken++;
+
+        /* Off the list, so the next prompt does not offer it again.
+           The list used to be built once and never touched, so a spell
+           taken as the first of four was still numbered among the choices
+           for the second, and picking it again was answered with "You
+           already have that one" -- after the choice, rather than by not
+           offering it. Choosing four spells from a list of four became a
+           guessing game about which numbers had moved. */
+        for (k = pick; k + 1 < n; k++) {
+            opts[k] = opts[k + 1];
+            det[k]  = det[k + 1];
+            map[k]  = map[k + 1];
+        }
+        n--;
     }
 }
 
@@ -824,6 +963,7 @@ static void add_option_spells(Character *c, int slot)
     int i;
 
     if (sub < 0 || opt < 0) return;
+    if (id == CLS_WARLOCK) return;      /* a menu, not a grant */
 
     for (i = 0; i < OPTION_SPELLS_COUNT; i++) {
         char obuf[512], sbuf[1024], lbuf[64];
@@ -855,15 +995,33 @@ static void add_option_spells(Character *c, int slot)
         ng = split_pipe(OPTION_SPELLS[i].spells, sbuf, sizeof sbuf, groups, 8);
         for (g = 0; g < ng && g < nat; g++) {
             if (lvl < at[g]) break;
-            /* A warlock's expanded list is a menu, not a grant; everyone
-               else has these always prepared. */
-            grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
+            grant_spell_group(c, groups[g], id, 1);
         }
         return;
     }
 }
 
-/* Adds the always-prepared domain, oath, circle or patron spells earned so far. */
+/* The class levels at which each group of a subclass's bonus spells opens.
+   Domain and origin spells arrive at 1/3/5/7/9; druid circle spells at
+   2/3/5/7/9; oath, archetype and specialist spells at 3/5/9/13/17. A
+   warlock patron's expanded list unlocks with the spell level, which for a
+   warlock is class level 1/3/5/7/9. */
+static const int *bonus_spell_levels(int class_id)
+{
+    static const int early_at[5]   = {1, 3, 5, 7, 9};
+    static const int druid_at[5]   = {2, 3, 5, 7, 9};
+    static const int martial_at[5] = {3, 5, 9, 13, 17};
+
+    if (class_id == CLS_PALADIN || class_id == CLS_RANGER
+        || class_id == CLS_ARTIFICER) {
+        return martial_at;
+    }
+    if (class_id == CLS_DRUID) return druid_at;
+    return early_at;
+}
+
+/* Adds the always-prepared domain, oath, circle or patron spells earned so
+   far. A warlock is not here: see warlock_expanded_list(). */
 static void add_bonus_spells(Character *c, int slot)
 {
     const SubclassData *sc;
@@ -872,33 +1030,18 @@ static void add_bonus_spells(Character *c, int slot)
     int lvl = c->classes[slot].level;
     char buf[1024];
     const char *groups[8];
+    const int *at = bonus_spell_levels(id);
     int n, g;
-    /* Domain and origin spells arrive at 1/3/5/7/9; druid circle spells at
-       2/3/5/7/9; oath, archetype and specialist spells at 3/5/9/13/17. A
-       warlock patron's expanded list unlocks with the spell level, which for
-       a warlock is class level 1/3/5/7/9. */
-    static const int early_at[5]   = {1, 3, 5, 7, 9};
-    static const int druid_at[5]   = {2, 3, 5, 7, 9};
-    static const int martial_at[5] = {3, 5, 9, 13, 17};
-    const int *at;
 
     if (sub < 0) return;
+    if (id == CLS_WARLOCK) return;
     sc = &SUBCLASSES[sub];
     if (!sc->bonus_spells || !sc->bonus_spells[0]) return;
-
-    if (id == CLS_PALADIN || id == CLS_RANGER || id == CLS_ARTIFICER) {
-        at = martial_at;
-    } else if (id == CLS_DRUID) {
-        at = druid_at;
-    } else {
-        at = early_at;
-    }
 
     n = split_pipe(sc->bonus_spells, buf, sizeof buf, groups, 8);
     for (g = 0; g < n && g < 5; g++) {
         if (lvl < at[g]) break;
-        /* Warlock expanded lists are options, not grants. */
-        grant_spell_group(c, groups[g], id, id != CLS_WARLOCK);
+        grant_spell_group(c, groups[g], id, 1);
     }
 }
 
@@ -940,10 +1083,20 @@ static void offer_spell_swap(Character *c, int class_id)
     static char lines[MAX_SPELLS][120];
     int map[MAX_SPELLS], n = 0, i, slot, bit, maxlvl, pick;
 
-    if (cd->prep != PREP_KNOWN) return;
-
     slot = find_class_slot(c, class_id);
     if (slot < 0) return;
+
+    /* The classes that know a fixed list, and the two archetypes that do:
+       "Whenever you gain a level in this class, you can replace one of the
+       wizard spells you know with another" is printed for the Eldritch
+       Knight and the Arcane Trickster in the same words the bard, ranger,
+       sorcerer and warlock get it in. The fighter and the rogue are
+       PREP_NONE in the class table, so the guard on prep alone never
+       reached them. */
+    if (cd->prep != PREP_KNOWN
+        && !is_third_caster(c->classes[slot].subclass_id)) {
+        return;
+    }
     bit = spell_class_bit(class_id, c->classes[slot].subclass_id);
     if (!bit) return;
     maxlvl = max_spell_level_for(c, slot);
@@ -963,7 +1116,9 @@ static void offer_spell_swap(Character *c, int class_id)
     if (n == 0) return;
 
     printf("\n  Gaining a level lets you replace one %s spell you know "
-           "with another.\n", cd->name);
+           "with another.\n",
+           is_third_caster(c->classes[slot].subclass_id)
+               ? SUBCLASSES[c->classes[slot].subclass_id].name : cd->name);
     if (!ui_yesno("  Swap one out?", 0)) return;
 
     opts[n] = "Change my mind";
@@ -980,7 +1135,7 @@ static void offer_spell_swap(Character *c, int class_id)
         int want = level <= maxlvl ? level : maxlvl;
 
         if (available_count(c, bit, want,
-                            additional_spells_for(c, class_id)) == 0) {
+                            choosable_extras(c, class_id)) == 0) {
             printf("  There is no other %s spell of level %d to take "
                    "instead, so %s stays.\n", cd->name, want, name);
             return;
@@ -1123,7 +1278,7 @@ void manage_spells(Character *c, int class_id)
     /* Never ask for more than the class list can still supply, or than the
        sheet has room for. */
     {
-        const char *extra = additional_spells_for(c, class_id);
+        const char *extra = choosable_extras(c, class_id);
         int supply = 0;
         for (lvl = 1; lvl <= maxlvl; lvl++) {
             supply += available_count(c, bit, lvl, extra);
@@ -1147,12 +1302,12 @@ void manage_spells(Character *c, int class_id)
         choose_level = ui_int(prompt, 1, maxlvl);
 
         if (available_count(c, bit, choose_level,
-                            additional_spells_for(c, class_id)) == 0) {
+                            choosable_extras(c, class_id)) == 0) {
             printf("    No %s spells of that level are left to learn.\n",
                    cd->name);
             /* If nothing is left anywhere, stop rather than ask again. */
             {
-                const char *extra2 = additional_spells_for(c, class_id);
+                const char *extra2 = choosable_extras(c, class_id);
                 int supply = 0;
                 for (lvl = 1; lvl <= maxlvl; lvl++) {
                     supply += available_count(c, bit, lvl, extra2);
@@ -1821,6 +1976,7 @@ void wizard_level_up(Character *c)
         c->classes[slot].subclass_id = -1;
         c->classes[slot].subclass_option = -1;
         add_prof_list(c, CLASSES[pick].mc_profs, CLASSES[pick].name);
+        grant_multiclass_extras(c, pick);
     }
 
     if (ui_yesno("\n  Roll the hit die for this level?", 0)) hp_use_average = 0;

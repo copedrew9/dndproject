@@ -163,7 +163,7 @@ static void pick_from_category(Character *c, int cat_a, int cat_b,
 
     snprintf(prompt, sizeof prompt, "      Choose a %s:", label);
     pick = ui_menu(prompt, opts, NULL, n);
-    add_item(c, map[pick], 1, 0);
+    add_gear(c, map[pick], 1, 0);
     printf("      Added %s.\n", ITEMS[map[pick]].name);
 }
 
@@ -226,6 +226,28 @@ static void add_phrase(Character *c, const char *phrase)
     qty = leading_quantity(&p);
     if (strncmp(p, "any ", 4) == 0) p += 4;
 
+    /* "a warhammer (if proficient)" and "chain mail (if proficient)" are
+       the cleric's, and the qualifier is about who may take the option,
+       not about what the thing is called. Nothing stripped it, so neither
+       matched an item and both fell through to being noted as text -- a
+       cleric who picked the warhammer or the chain mail was handed
+       nothing. Only this one qualifier is stripped, because item names
+       legitimately end in brackets: "Rations (1 day)", "Oil (flask)",
+       "Orb (arcane focus)". */
+    {
+        static const char QUALIFIER[] = " (if proficient)";
+        size_t plen = strlen(p);
+        size_t qlen = sizeof QUALIFIER - 1;
+        if (plen > qlen && strcmp(p + plen - qlen, QUALIFIER) == 0) {
+            static char trimmed[256];
+            size_t keep = plen - qlen;
+            if (keep >= sizeof trimmed) keep = sizeof trimmed - 1;
+            memcpy(trimmed, p, keep);
+            trimmed[keep] = '\0';
+            p = trimmed;
+        }
+    }
+
     for (i = 0; i < sizeof CATEGORIES / sizeof CATEGORIES[0]; i++) {
         if (strcmp(p, CATEGORIES[i].phrase) == 0) {
             int k;
@@ -243,7 +265,7 @@ static void add_phrase(Character *c, const char *phrase)
         id = find_item(ALIASES[i].item);
         if (id >= 0) {
             /* qty 0 in the table means the entry already bundles the count. */
-            add_item(c, id, ALIASES[i].qty ? qty : 1, 0);
+            add_gear(c, id, ALIASES[i].qty ? qty : 1, 0);
             printf("      Added %s.\n", ITEMS[id].name);
         }
         return;
@@ -261,8 +283,13 @@ static void add_phrase(Character *c, const char *phrase)
         }
     }
     if (id >= 0) {
-        add_item(c, id, qty, 0);
-        printf("      Added %d x %s.\n", qty, ITEMS[id].name);
+        int parts = add_gear(c, id, qty, 0);
+        if (parts > 1) {
+            printf("      Added %d x %s, unpacked into %d things.\n",
+                   qty, ITEMS[id].name, parts);
+        } else {
+            printf("      Added %d x %s.\n", qty, ITEMS[id].name);
+        }
     } else {
         add_choice(c, "Equipment", phrase);
         printf("      Noted: %s\n", phrase);
@@ -416,6 +443,19 @@ static void take_starting_package(Character *c)
     }
 }
 
+/* The gold a class starts with when the average is taken rather than
+   rolled.
+ *
+ * The average of a d4 is 2.5, so the expected value is dice x 5 / 2 times
+ * the class's multiplier. The division used to come first and truncate:
+ * 5d4 x 10 came out at 120 gp where the Player's Handbook's own average
+ * column says 125. Multiplying first gives every class the book's number.
+ */
+int average_starting_gold(const ClassData *cd)
+{
+    return (cd->gold_dice * 5 * cd->gold_mult) / 2;
+}
+
 static void buy_with_gold(Character *c)
 {
     const ClassData *cd = &CLASSES[c->classes[0].class_id];
@@ -430,8 +470,7 @@ static void buy_with_gold(Character *c)
                * cd->gold_mult;
         printf("    Rolled %d gp.\n", rolled);
     } else {
-        /* The average of d4 is 2.5; use the rounded expected value. */
-        rolled = (cd->gold_dice * 5 / 2) * cd->gold_mult;
+        rolled = average_starting_gold(cd);
         printf("    Taking the average: %d gp.\n", rolled);
     }
     c->gold += rolled;
@@ -544,8 +583,13 @@ static void shop(Character *c)
                     c->silver = left / 10;
                     c->copper = left % 10;
                 }
-                add_item(c, map[pick], qty, 0);
-                printf("  Added %d x %s.\n", qty, ITEMS[map[pick]].name);
+                if (add_gear(c, map[pick], qty, 0) > 1) {
+                    printf("  Added %d x %s, unpacked.\n", qty,
+                           ITEMS[map[pick]].name);
+                } else {
+                    printf("  Added %d x %s.\n", qty,
+                           ITEMS[map[pick]].name);
+                }
             }
         }
     }

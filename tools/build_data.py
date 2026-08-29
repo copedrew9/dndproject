@@ -322,13 +322,16 @@ def build_character():
         count = (last - first) if name in window else 0
         rows.append(
             "    { %s, %s, {%s}, %d, %s, %d,\n      %s, %d, %d, %d, %d, %d,"
-            " %d, %d, %d,\n      %s, %d }"
+            " %d, %d, %d,\n      %s, %d,\n      %d, %d, %d, %s,\n      %s,"
+            " %d, %s }"
             % (cstr(r.str(0)), lookup(BOOKS, r, 1, "book"),
                ",".join(str(r.int(2 + k)) for k in range(6)),
                r.int(8), lookup(SIZES, r, 9, "size"), r.int(10),
                cstr(r.str(11)), r.int(12), r.int(13), r.int(14), r.int(15),
                r.int(16), r.int(17), first, count,
-               cstr(r.str(19)), r.int(18)))
+               cstr(r.str(19)), r.int(18),
+               r.int(20), r.int(21), r.int(22), cstr(r.str(23)),
+               cstr(r.str(24)), r.int(25), cstr(r.str(26))))
     out.table("const RaceData RACES[]", rows, "RACE_COUNT")
     for r in subraces:
         if r.str(0) not in race_names:
@@ -358,6 +361,7 @@ def build_character():
     progs.emit(out)
 
     for key, decl in (("third-caster cantrips", "THIRD_CANTRIPS"),
+                      ("arcane trickster cantrips", "TRICKSTER_CANTRIPS"),
                       ("third-caster spells known", "THIRD_SPELLS_KNOWN")):
         out.w("\nconst unsigned char *const %s = %s;\n"
               % (decl, progs.name(key, recs[0])))
@@ -462,10 +466,11 @@ def build_character():
     for r in tags.get("SUBCLASS", []):
         subclass_names.append(r.str(1))
         rows.append(
-            "    { %d, %s, %s,\n      %s,\n      %s,\n      %s, %s }"
+            "    { %d, %s, %s,\n      %s,\n      %s,\n      %s, %s,\n"
+            "      %s }"
             % (class_index(r, 0), lookup(BOOKS, r, 2, "book"),
                cstr(r.str(1)), cstr(r.str(3)), cstr(r.str(4)),
-               cstr(r.str(5)), cstr(r.str(6))))
+               cstr(r.str(5)), cstr(r.str(6)), cstr(r.str(7))))
     out.table("const SubclassData SUBCLASSES[]", rows, "SUBCLASS_COUNT")
 
     # --- features
@@ -645,6 +650,19 @@ def build_equipment():
         ["    { %s,\n      %s }" % (cstr(r.str(0)), cstr(r.str(1)))
          for r in tags.get("WEAPONPROP", [])],
         "WEAPON_PROPERTY_COUNT")
+
+    out.table(
+        "const PackItem PACK_ITEMS[]",
+        ["    { %s, %s, %d }" % (cstr(r.str(0)), cstr(r.str(1)), r.int(2))
+         for r in tags.get("PACKITEM", [])],
+        "PACK_ITEM_COUNT")
+    for r in tags.get("PACKITEM", []):
+        if r.str(0) not in item_names:
+            r.die("no ITEM named %r" % r.str(0))
+        if r.str(1) not in item_names:
+            r.die("no ITEM named %r" % r.str(1))
+        if r.int(2) < 1:
+            r.die("a pack cannot hold %d of something" % r.int(2))
 
     out.table(
         "const ToolGroup TOOL_GROUPS[]",

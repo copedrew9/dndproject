@@ -1,5 +1,10 @@
 CC      ?= gcc
-CFLAGS  ?= -std=c99 -Wall -Wextra -O2
+# An implicit declaration is a build error rather than a warning. It is the
+# one warning here that is silently fatal at runtime: a function declared by
+# accident returns int, so a pointer coming back from it is truncated to 32
+# bits. tools/selftest.c had been compiling that way for want of ui.h, and
+# the first use of a pointer-returning helper from it segfaulted.
+CFLAGS  ?= -std=c99 -Wall -Wextra -Werror=implicit-function-declaration -O2
 SRCDIR   = src
 OBJDIR   = build
 BIN      = dndcreator
@@ -58,6 +63,7 @@ audit:
 verify:
 	python3 tools/verify_equipment.py
 	python3 tools/verify_equipment_coverage.py
+	python3 tools/verify_packs.py
 	python3 tools/verify_gems.py
 	python3 tools/verify_deities.py
 	python3 tools/verify_races.py
@@ -118,6 +124,7 @@ check: test combos dataverify verify $(BIN)
 	python3 tools/stress.py --runs 4 --seed 20 --ops 4 --grace 0.02
 	python3 tools/fuzz_files.py --runs 150 --seed 1
 	python3 tools/fuzz_shop.py --runs 120 --seed 1
+	python3 tools/verify_no_packed_packs.py --seeds 2
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race
@@ -132,6 +139,15 @@ check: test combos dataverify verify $(BIN)
 SANFLAGS = -std=c99 -O1 -g -fsanitize=address,undefined \
 	   -fno-sanitize-recover=all -fno-omit-frame-pointer
 SANENV = ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1
+
+# Every race crossed with every class, built through the wizard rather than
+# in memory. Slow -- a thousand builds is most of an hour -- so it is not
+# part of `make check`; combos.c covers the same ground in memory two
+# hundred thousand times over. What this reaches that it cannot is the
+# prompts: the racial skill choice, the subclass menu, the equipment
+# packages. Run the two halves at once on a machine with cores to spare.
+sweep:
+	python3 tools/sweep_race_class.py 1,5
 
 asan:
 	$(MAKE) clean
@@ -153,4 +169,4 @@ clean:
 	rm -rf $(OBJDIR) $(BIN) $(TESTBIN) $(TESTBIN).d $(DUMPBIN) \
 	  $(DUMPBIN).d $(COMBOBIN) $(COMBOBIN).d
 
-.PHONY: all clean check test combos data dataverify audit verify asan
+.PHONY: all clean check test combos data dataverify audit verify asan sweep
