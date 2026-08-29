@@ -902,6 +902,169 @@ static void add_bonus_spells(Character *c, int slot)
     }
 }
 
+/* How many of this class's spells are actually ticked as prepared, as
+   against spells_prepared_count(), which is how many the rules allow. */
+static int spells_marked_prepared(const Character *c, int class_id)
+{
+    int i, n = 0;
+    for (i = 0; i < c->spell_count; i++) {
+        if (c->spells[i].class_id != class_id) continue;
+        if (c->spells[i].always_prepared) continue;
+        if (SPELLS[c->spells[i].spell_id].level == 0) continue;
+        if (c->spells[i].prepared) n++;
+    }
+    return n;
+}
+
+/* Removes one spell from the character, closing the gap behind it. */
+static void forget_spell(Character *c, int at)
+{
+    int i;
+    for (i = at; i + 1 < c->spell_count; i++) c->spells[i] = c->spells[i + 1];
+    c->spell_count--;
+}
+
+/* Trading a spell for another on the day you gain a level.
+ *
+ * The Player's Handbook gives this to the classes that know a fixed list --
+ * a bard, ranger, sorcerer or warlock -- because for them a spell chosen at
+ * 1st level is otherwise carried to 20th. A wizard adds to a spellbook
+ * rather than replacing anything in it, and a cleric, druid or paladin
+ * prepares afresh from the whole list every day, so for those three there
+ * is nothing a swap would mean.
+ */
+static void offer_spell_swap(Character *c, int class_id)
+{
+    const ClassData *cd = &CLASSES[class_id];
+    const char *opts[MAX_SPELLS];
+    static char lines[MAX_SPELLS][120];
+    int map[MAX_SPELLS], n = 0, i, slot, bit, maxlvl, pick;
+
+    if (cd->prep != PREP_KNOWN) return;
+
+    slot = find_class_slot(c, class_id);
+    if (slot < 0) return;
+    bit = spell_class_bit(class_id, c->classes[slot].subclass_id);
+    if (!bit) return;
+    maxlvl = max_spell_level_for(c, slot);
+    if (maxlvl < 1) return;
+
+    for (i = 0; i < c->spell_count && n < MAX_SPELLS; i++) {
+        if (c->spells[i].class_id != class_id) continue;
+        if (c->spells[i].always_prepared) continue;
+        if (SPELLS[c->spells[i].spell_id].level == 0) continue;
+        snprintf(lines[n], sizeof lines[n], "%s (level %d)",
+                 SPELLS[c->spells[i].spell_id].name,
+                 SPELLS[c->spells[i].spell_id].level);
+        opts[n] = lines[n];
+        map[n] = i;
+        n++;
+    }
+    if (n == 0) return;
+
+    printf("\n  Gaining a level lets you replace one %s spell you know "
+           "with another.\n", cd->name);
+    if (!ui_yesno("  Swap one out?", 0)) return;
+
+    opts[n] = "Change my mind";
+    pick = ui_menu("  Replace which spell?", opts, NULL, n + 1);
+    if (pick == n) return;
+
+    {
+        int gone = map[pick];
+        int level = SPELLS[c->spells[gone].spell_id].level;
+        const char *name = SPELLS[c->spells[gone].spell_id].name;
+        /* The replacement has to be one this character could have learned
+           in the first place, so it is drawn from the same list at a level
+           they can already cast. */
+        int want = level <= maxlvl ? level : maxlvl;
+
+        if (available_count(c, bit, want,
+                            additional_spells_for(c, class_id)) == 0) {
+            printf("  There is no other %s spell of level %d to take "
+                   "instead, so %s stays.\n", cd->name, want, name);
+            return;
+        }
+        printf("  Forgetting %s.\n", name);
+        forget_spell(c, gone);
+        pick_spells(c, bit, class_id, want, 1, "replacement");
+    }
+}
+
+/* Which spells are prepared today.
+ *
+ * A cleric, druid, paladin or artificer prepares a fresh list each day from
+ * the whole class list, and a wizard prepares from the spellbook. The
+ * program recorded every spell as prepared and never asked, which is right
+ * on the day the character is made and wrong every day after. Cantrips are
+ * always ready and domain and oath spells are always prepared, so neither
+ * appears here -- only the spells there is a decision to make about.
+ *
+ * The list is offered a spell level at a time because ui_toggle_list holds
+ * 63 entries and a wizard's spellbook can hold more than that.
+ */
+static void mark_prepared(Character *c, int class_id)
+{
+    const ClassData *cd = &CLASSES[class_id];
+    int slot = find_class_slot(c, class_id);
+    int allowed, maxlvl, lvl, total = 0;
+
+    if (cd->prep != PREP_PREPARED && cd->prep != PREP_SPELLBOOK) return;
+    if (slot < 0) return;
+    maxlvl = max_spell_level_for(c, slot);
+    if (maxlvl < 1) return;
+
+    allowed = spells_prepared_count(c, class_id);
+    for (lvl = 1; lvl <= maxlvl; lvl++) {
+        int i;
+        for (i = 0; i < c->spell_count; i++) {
+            if (c->spells[i].class_id != class_id) continue;
+            if (c->spells[i].always_prepared) continue;
+            if (SPELLS[c->spells[i].spell_id].level == lvl) total++;
+        }
+    }
+    if (total == 0) return;
+
+    printf("\n  You may have %d %s spell%s prepared at once.\n",
+           allowed, cd->name, allowed == 1 ? "" : "s");
+    if (!ui_yesno("  Say which ones are prepared now?", 0)) return;
+
+    for (lvl = 1; lvl <= maxlvl; lvl++) {
+        const char *opts[64];
+        static char lines[64][120];
+        int flags[64], map[64], n = 0, i;
+        char prompt[96];
+
+        for (i = 0; i < c->spell_count && n < 63; i++) {
+            if (c->spells[i].class_id != class_id) continue;
+            if (c->spells[i].always_prepared) continue;
+            if (SPELLS[c->spells[i].spell_id].level != lvl) continue;
+            snprintf(lines[n], sizeof lines[n], "%s",
+                     SPELLS[c->spells[i].spell_id].name);
+            opts[n] = lines[n];
+            flags[n] = c->spells[i].prepared;
+            map[n] = i;
+            n++;
+        }
+        if (n == 0) continue;
+
+        snprintf(prompt, sizeof prompt,
+                 "  Level %d -- prepared today (%d of %d used):",
+                 lvl, spells_marked_prepared(c, class_id), allowed);
+        ui_toggle_list(prompt, opts, n, flags);
+        for (i = 0; i < n; i++) c->spells[map[i]].prepared = flags[i];
+    }
+
+    {
+        int have = spells_marked_prepared(c, class_id);
+        if (have > allowed) {
+            printf("  That is %d prepared where you may have %d. The sheet "
+                   "records what you chose; agree the rest with your DM.\n",
+                   have, allowed);
+        }
+    }
+}
+
 void manage_spells(Character *c, int class_id)
 {
     int slot = find_class_slot(c, class_id);
@@ -1588,25 +1751,62 @@ void wizard_level_up(Character *c)
     }
     printf(" (character level %d).\n", total_level(c));
 
-    for (i = 0; i < CLASS_COUNT; i++) {
-        int cur = class_level_of(c, i);
-        int why, ok = (cur > 0) || multiclass_ok_public(c, i, &why);
-        snprintf(labels[i], sizeof labels[i], "%s%s%s",
-                 CLASSES[i].name,
-                 cur ? " (continue)" : " (new class)",
-                 ok ? "" : " -- prerequisites not met");
-        opts[i] = labels[i];
-        det[i] = NULL;
-    }
+    /* Multiclassing is asked before the class list rather than left for
+       the player to spot inside it. A list of all thirteen classes with
+       "(continue)" and "(new class)" mixed together makes taking a level in
+       something new look like the same kind of choice as carrying on, when
+       it is the one decision on this screen that cannot be undone by
+       carrying on differently next time.
+     *
+     * Answering no narrows the list to the classes already taken, and where
+     * there is only one there is nothing to narrow to -- that level goes
+     * where the only class is, with no menu at all. */
+    {
+        int have = c->class_count;
+        int branching = 0;
 
-    for (;;) {
-        int why;
-        pick = ui_menu("Take your next level in:", opts, det, CLASS_COUNT);
-        if (class_level_of(c, pick) > 0) break;
-        if (multiclass_ok_public(c, pick, &why)) break;
-        printf("  You do not meet the multiclassing prerequisites for %s.\n",
-               CLASSES[pick].name);
-        if (!ui_yesno("  Choose a different class?", 1)) break;
+        if (SETTINGS.multiclassing && total_level(c) < MAX_LEVEL) {
+            branching = ui_yesno("\n  Are you going to multiclass?", 0);
+        }
+
+        if (!branching && have == 1) {
+            pick = c->classes[0].class_id;
+            printf("  Another level of %s.\n", CLASSES[pick].name);
+        } else {
+            int map[CLASS_COUNT], n = 0;
+            for (i = 0; i < CLASS_COUNT; i++) {
+                int cur = class_level_of(c, i);
+                int why, ok;
+                if (branching && cur > 0) continue;   /* already have it */
+                if (!branching && cur == 0) continue; /* not one of theirs */
+                ok = (cur > 0) || multiclass_ok_public(c, i, &why);
+                snprintf(labels[n], sizeof labels[n], "%s%s%s",
+                         CLASSES[i].name,
+                         cur ? " (continue)" : " (new class)",
+                         ok ? "" : " -- prerequisites not met");
+                opts[n] = labels[n];
+                det[n] = NULL;
+                map[n] = i;
+                n++;
+            }
+            /* Every class already taken, so there is nothing new to take. */
+            if (n == 0) {
+                printf("  You already have a level in every class this "
+                       "program tracks.\n");
+                return;
+            }
+            for (;;) {
+                int why;
+                pick = map[ui_menu(branching ? "Start which new class?"
+                                             : "Take your next level in:",
+                                   opts, det, n)];
+                if (class_level_of(c, pick) > 0) break;
+                if (multiclass_ok_public(c, pick, &why)) break;
+                printf("  You do not meet the multiclassing prerequisites "
+                       "for %s.\n", CLASSES[pick].name);
+                if (!ui_yesno("  Choose a different class?", 1)) break;
+            }
+        }
     }
 
     slot = find_class_slot(c, pick);
@@ -1630,6 +1830,31 @@ void wizard_level_up(Character *c)
     apply_class_level(c, slot, newlvl, 0);
 
     manage_spells(c, pick);
+    offer_spell_swap(c, pick);
+    mark_prepared(c, pick);
+
+    /* Experience is the table's business, not the program's: it never
+       awards any and never levels anybody up on its own. What it can do is
+       keep the running total beside the threshold, which is the only part
+       a player has to look up. */
+    if (SETTINGS.experience) {
+        int lv = total_level(c);
+        printf("\n  Experience so far: %d.", c->xp);
+        if (lv < MAX_LEVEL) {
+            printf(" Level %d wants %d.", lv + 1, XP_FOR_LEVEL[lv + 1]);
+        }
+        printf("\n");
+        if (ui_yesno("  Add experience earned?", 0)) {
+            int add = ui_int("  How much", 0, 999999);
+            if (add > 9999999 - c->xp) add = 9999999 - c->xp;
+            c->xp += add;
+            printf("  Experience is now %d.\n", c->xp);
+            if (lv < MAX_LEVEL && c->xp >= XP_FOR_LEVEL[lv + 1]) {
+                printf("  That is enough for level %d whenever your DM "
+                       "says so.\n", lv + 1);
+            }
+        }
+    }
 
     printf("\n  %s is now ", c->name);
     for (i = 0; i < c->class_count; i++) {

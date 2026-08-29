@@ -159,7 +159,22 @@ static void add_magic(Character *c)
             n++;
         }
         if (n == 0) {
-            printf("  Nothing matches.\n");
+            /* Two different dead ends read alike otherwise: a search that
+               matched nothing, and a bank with nothing in it because the
+               book the magic items come from is switched off. The second
+               is not the player's typing, and saying so saves them
+               retyping it. */
+            int any = 0;
+            for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+                if (book_enabled(MAGIC_ITEMS[i].book)) { any = 1; break; }
+            }
+            if (!any) {
+                printf("  There are no magic items to choose from: the "
+                       "books they come from are switched off in Content "
+                       "Settings.\n");
+            } else {
+                printf("  Nothing matches.\n");
+            }
             return;
         }
         opts[n] = "Back";

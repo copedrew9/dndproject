@@ -2523,6 +2523,108 @@ static void test_patron_is_required(void)
     }
 }
 
+/* Preparation is a per-spell decision that has to reach the file. Nothing
+   used to set it to anything but 1, so nothing ever proved it could be 0
+   and come back 0. */
+static void test_prepared_survives(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int i, cleric = -1, marked = 0;
+
+    printf("which spells are prepared\n");
+
+    base_character(&c, "SelftestPrep");
+    c.race_id = 0;
+    add_class(&c, CLS_CLERIC, 5, -1);
+    c.hp_rolls[0] = 8;
+    c.hp_roll_count = 1;
+
+    /* Three cleric spells, the middle one left unprepared. */
+    for (i = 0; i < SPELL_COUNT && c.spell_count < 3; i++) {
+        if (SPELLS[i].level != 1) continue;
+        if (!(SPELLS[i].classes & SPL_CLERIC)) continue;
+        c.spells[c.spell_count].spell_id = i;
+        c.spells[c.spell_count].class_id = CLS_CLERIC;
+        c.spells[c.spell_count].prepared = (c.spell_count != 1);
+        c.spells[c.spell_count].always_prepared = 0;
+        c.spell_count++;
+        cleric = i;
+    }
+    EQ(c.spell_count, 3, "three cleric spells to prepare from");
+    if (cleric < 0) return;
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.spell_count, 3, "all three come back");
+    for (i = 0; i < back.spell_count; i++) {
+        if (back.spells[i].prepared) marked++;
+    }
+    EQ(marked, 2, "and the one left unprepared is still unprepared");
+    remove(path);
+}
+
+/* Two copies of one magic item, presented differently, are two entries.
+ *
+ * The stack test in add_magic_item looks at the item, the attunement and
+ * the bonus, and not at the damage type a copy carries or at what the
+ * table is hiding about it. Loading a file through that test folded two
+ * attuned copies into one and quietly dropped an attunement -- the sheet
+ * said "Attuned to 2 of 3" before saving and "1 of 3" after. */
+static void test_two_copies_stay_two(void)
+{
+    Character c, back;
+    char path[MAX_NAME + 8];
+    int id = -1, i;
+
+    printf("two copies of one magic item, told apart\n");
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (MAGIC_ITEMS[i].attunement && MAGIC_ITEMS[i].curse) { id = i; break; }
+    }
+    if (id < 0) {
+        for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+            if (MAGIC_ITEMS[i].attunement) { id = i; break; }
+        }
+    }
+    EQ(id >= 0, 1, "some item needs attunement");
+    if (id < 0) return;
+
+    plain_fighter(&c, "SelftestTwoCopies");
+    {
+        InventoryEntry *a = add_magic_item_copy(&c, id, 1, 1, 0);
+        InventoryEntry *b = add_magic_item_copy(&c, id, 1, 1, 0);
+        check(a != NULL && b != NULL, "both copies added", 1, 1);
+        if (!a || !b) return;
+        b->curse_hidden = 1;        /* the same item, told differently */
+    }
+    EQ(c.item_count, 2, "two entries, not one stack");
+    EQ(attuned_count(&c), 2, "attuned to both");
+
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    check(load_character(path, &back) == 0, "and read back", 1, 1);
+    EQ(back.item_count, 2, "still two entries after the file");
+    EQ(attuned_count(&back), 2, "and still attuned to both");
+    remove(path);
+
+    /* And a reused slot brings nothing of its last occupant with it. */
+    {
+        Character d;
+        InventoryEntry *e;
+        plain_fighter(&d, "SelftestReuse");
+        e = add_magic_item_copy(&d, id, 1, 1, 0);
+        if (!e) return;
+        snprintf(e->variant, sizeof e->variant, "%s", "fire");
+        e->concealed = 1;
+        d.item_count = 0;                   /* as putting it down does */
+        e = add_magic_item_copy(&d, id, 1, 0, 0);
+        check(e != NULL && e->variant[0] == '\0',
+              "a reused slot carries no old variant", 1, 1);
+        check(e != NULL && e->concealed == 0,
+              "and no old hidden flag", 1, 1);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2747,6 +2849,8 @@ int main(void)
     test_hidden_magic_items();
     test_life_path_fits();
     test_patron_is_required();
+    test_prepared_survives();
+    test_two_copies_stay_two();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

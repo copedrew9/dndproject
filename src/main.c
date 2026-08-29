@@ -35,8 +35,12 @@ static void do_create(void)
 {
     Character c;
 
-    wizard_create(&c);
-
+    /* The wizard now ends with its own summary and confirmation, so the
+       sheet is only printed and written when the player says so. */
+    if (!wizard_create(&c)) {
+        printf("\n  Left without saving.\n");
+        return;
+    }
     ui_header("Your Character");
     print_sheet(&c);
     save_and_report(&c);

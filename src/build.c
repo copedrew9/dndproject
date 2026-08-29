@@ -1,5 +1,6 @@
 /* build.c -- the character creation wizard (PHB chapter 1, steps 1-6). */
 #include "build.h"
+#include "saveload.h"
 #include "ui.h"
 
 #include <stdio.h>
@@ -329,14 +330,45 @@ void add_magic_item(Character *c, int magic_id, int qty, int attuned, int plus)
             return;
         }
     }
-    if (c->item_count >= MAX_ITEMS) return;
-    c->inventory[c->item_count].item_id = magic_id;
-    c->inventory[c->item_count].quantity = qty;
-    c->inventory[c->item_count].equipped = 0;
-    c->inventory[c->item_count].is_magic = 1;
-    c->inventory[c->item_count].attuned = attuned;
-    c->inventory[c->item_count].plus = plus;
+    add_magic_item_copy(c, magic_id, qty, attuned, plus);
+}
+
+/* One copy of a magic item, never merged into an existing stack.
+ *
+ * add_magic_item() folds a second copy into the first when the item, the
+ * attunement and the bonus all match, which is what a player picking the
+ * same ring up twice wants. A saved file is the other case: it already
+ * says how many copies there are, and two records of one item are two
+ * entries on purpose -- they differ in something the stack test does not
+ * look at, the damage type the copy was made against or what the table has
+ * chosen to tell the player about it. Merging those loses the second one's
+ * presentation, and with it its attunement, because the merged entry has
+ * only one.
+ *
+ * Returns the entry so a caller can fill in what it alone knows, or NULL
+ * when the inventory is full.
+ */
+InventoryEntry *add_magic_item_copy(Character *c, int magic_id, int qty,
+                                    int attuned, int plus)
+{
+    InventoryEntry *e;
+
+    if (magic_id < 0 || magic_id >= MAGIC_ITEM_COUNT || qty <= 0) return NULL;
+    if (c->item_count >= MAX_ITEMS) return NULL;
+
+    e = &c->inventory[c->item_count];
+    /* Slots are reused after something is put down, so everything is set
+       rather than only the fields this call was given: a stale variant or
+       a stale hidden flag left by the last occupant would otherwise attach
+       itself to the new item. */
+    memset(e, 0, sizeof *e);
+    e->item_id = magic_id;
+    e->quantity = qty;
+    e->is_magic = 1;
+    e->attuned = attuned;
+    e->plus = plus;
     c->item_count++;
+    return e;
 }
 
 /* Drops qty of one entry, closing the gap when nothing is left. */
@@ -1418,6 +1450,22 @@ static void grant_class_tools(Character *c)
  * makes the jump safe: a local written between setjmp and longjmp is
  * indeterminate afterwards, and a static is not.
  */
+/* The books come first, before anything is chosen, because everything
+ * afterwards is drawn from them: a race, a class, a spell or a feat from a
+ * book that is switched off is never offered at all. Asked at the end, or
+ * left on the main menu for a player to find, it silently decides a build
+ * that has already been made.
+ */
+static void step_books(Character *c)
+{
+    (void)c;
+    ui_header("Step 0: Which Books Are In Play");
+    ui_para("Everything the wizard offers comes from the books switched on "
+            "here, so this is settled before anything else. The defaults "
+            "are the Player's Handbook and the rules most tables use.");
+    settings_menu(&SETTINGS);
+}
+
 static void step_name(Character *c)
 {
     ui_line("\nCharacter name", c->name, sizeof c->name);
@@ -1429,15 +1477,22 @@ static void step_name(Character *c)
    driver, and the level it settles is wanted by build_levels. */
 static void step_classes(Character *c);
 static void step_abilities(Character *c);
+static void wizard_escape(UiEscape e);
 
 static struct {
     jmp_buf step;               /* where a prompt jumps back to */
     Character snap[16];         /* the character before each step */
+    /* Which books are in play is not on the character but decides what the
+       wizard offers, so going back over the step that sets them has to put
+       them back too -- otherwise backing past it leaves a build being made
+       from books the player has since turned off. */
+    Settings books[16];
     unsigned long rng[16];      /* and the dice before it, so back can undo */
     UiEscape raised;
     int at;                     /* the step being run */
     int target_level;
     int restarts;
+    int keep;                   /* what the confirm screen decided */
 } WIZ;
 
 static void step_classes(Character *c)
@@ -1474,7 +1529,116 @@ static void step_levels(Character *c)
     build_levels(c);
 }
 
+/* Everything that was decided, before anything is written.
+ *
+ * The sheet says what the character is; this says what was chosen to make
+ * it that, which is the thing worth checking before it goes to a file. The
+ * choices list is already kept for the sheet -- every fighting style, pact
+ * boon, expertise and skill pick is recorded there as it is made -- so
+ * this is a reading of it rather than a second record that could drift.
+ */
+static void summarise(const Character *c)
+{
+    int i;
+
+    ui_header("Before This Is Saved");
+    printf("  %s", c->name);
+    if (c->player[0]) printf("   (played by %s)", c->player);
+    printf("\n  %s", ALIGNMENT_NAME[c->alignment]);
+    if (c->race_id >= 0) {
+        printf(", %s", RACES[c->race_id].name);
+        if (c->subrace_id >= 0) printf(" (%s)", SUBRACES[c->subrace_id].name);
+    }
+    for (i = 0; i < c->class_count; i++) {
+        const ClassLevel *cl = &c->classes[i];
+        printf("%s%s %d", i ? " / " : ", ", CLASSES[cl->class_id].name,
+               cl->level);
+        if (cl->subclass_id >= 0) {
+            printf(" (%s)", SUBCLASSES[cl->subclass_id].name);
+        }
+    }
+    if (c->background_id >= 0) {
+        printf(", %s", BACKGROUNDS[c->background_id].name);
+    } else if (c->background_name[0]) {
+        printf(", %s", c->background_name);
+    }
+    printf("\n");
+
+    printf("\n  ");
+    for (i = 0; i < ABL_COUNT; i++) {
+        int score = ability_score(c, (Ability)i);
+        printf("%s %d (%+d)   ", ABILITY_ABBREV[i], score,
+               ability_mod_of(score));
+    }
+    printf("\n  Hit points %d   Armor Class %d   Speed %d feet\n",
+           hit_points_max(c), armour_class(c), speed_of(c));
+
+    if (c->language_count) {
+        printf("\n  Languages: ");
+        for (i = 0; i < c->language_count; i++) {
+            printf("%s%s", i ? ", " : "", c->languages[i]);
+        }
+        printf("\n");
+    }
+    {
+        int wrote = 0;
+        for (i = 0; i < SKL_COUNT; i++) {
+            if (!c->skill_prof[i]) continue;
+            printf("%s%s", wrote ? ", " : "  Skills: ", SKILL_NAME[i]);
+            wrote = 1;
+        }
+        if (wrote) printf("\n");
+    }
+    if (c->spell_count) printf("  Spells: %d recorded\n", c->spell_count);
+    if (c->item_count) printf("  Carrying %d kinds of thing\n", c->item_count);
+
+    if (c->choice_count) {
+        printf("\n  What you chose along the way:\n");
+        for (i = 0; i < c->choice_count; i++) {
+            printf("    %-22s %s\n", c->choices[i].label,
+                   c->choices[i].value);
+        }
+    }
+}
+
+static void step_confirm(Character *c)
+{
+    static const char *const what[] = {
+        "Save this character",
+        "See the whole sheet first",
+        "Go back and change something",
+        "Throw it away and start again",
+        "Leave without saving"
+    };
+
+    for (;;) {
+        summarise(c);
+        switch (ui_menu("  Is that right?", what, NULL, 5)) {
+        case 0:
+            WIZ.keep = 1;
+            return;
+        case 1:
+            ui_header("Your Character");
+            print_sheet(c);
+            break;
+        case 2:
+            /* The same jump a typed "b" makes, so one piece of machinery
+               handles both and the step before this one is re-entered from
+               its own snapshot. */
+            wizard_escape(UI_ESC_BACK);
+            break;
+        case 3:
+            wizard_escape(UI_ESC_QUIT);
+            break;
+        default:
+            WIZ.keep = 0;
+            return;
+        }
+    }
+}
+
 static const struct { const char *name; void (*fn)(Character *); } STEPS[] = {
+    { "the books",          step_books },
     { "your name",          step_name },
     { "race",               choose_race },
     { "class",              step_classes },
@@ -1485,6 +1649,7 @@ static const struct { const char *name; void (*fn)(Character *); } STEPS[] = {
     { "levels",             step_levels },
     { "equipment",          choose_equipment },
     { "personality",        choose_personality },
+    { "the finished sheet", step_confirm },
 };
 #define STEP_COUNT ((int)(sizeof STEPS / sizeof STEPS[0]))
 
@@ -1494,13 +1659,18 @@ static void wizard_escape(UiEscape e)
     longjmp(WIZ.step, 1);
 }
 
-void wizard_create(Character *c)
+int wizard_create(Character *c)
 {
     WIZ.restarts = 0;
+    WIZ.keep = 0;
 
     for (;;) {
         int done = 0;
 
+        if (WIZ.restarts) {
+            SETTINGS = WIZ.books[0];
+            ui_set_manual_dice(SETTINGS.manual_dice);
+        }
         memset(c, 0, sizeof *c);
         c->race_id = c->subrace_id = c->background_id = -1;
         c->ancestry_id = -1;
@@ -1519,6 +1689,7 @@ void wizard_create(Character *c)
         ui_set_escape(wizard_escape);
         while (WIZ.at < STEP_COUNT) {
             WIZ.snap[WIZ.at] = *c;
+            WIZ.books[WIZ.at] = SETTINGS;
             WIZ.rng[WIZ.at] = ui_rng_state();
             if (setjmp(WIZ.step) == 0) {
                 STEPS[WIZ.at].fn(c);
@@ -1530,6 +1701,8 @@ void wizard_create(Character *c)
                 } else {
                     WIZ.at--;
                     *c = WIZ.snap[WIZ.at];
+                    SETTINGS = WIZ.books[WIZ.at];
+                    ui_set_manual_dice(SETTINGS.manual_dice);
                     ui_rng_restore(WIZ.rng[WIZ.at]);
                     printf("\n  Back to %s.\n", STEPS[WIZ.at].name);
                 }
@@ -1539,7 +1712,7 @@ void wizard_create(Character *c)
         }
         ui_set_escape(NULL);
         done = (WIZ.at >= STEP_COUNT);
-        if (done) return;
+        if (done) return WIZ.keep;
 
         WIZ.restarts++;
         printf("\n  Throwing that character away and starting again.\n");

@@ -126,6 +126,7 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
     name = rng.choice(NAMES) + str(seed)
     steps = 0
     got = 0
+    tries = 0
     escapes = 0
 
     try:
@@ -146,6 +147,21 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
             tail = "".join(transcript[-4:])[-600:]
             at_main_menu = (menu_size is not None
                             and "What would you like to do" in tail)
+            # The wizard now ends by asking whether to keep the character,
+            # and only one of the five answers saves. Answering it at random
+            # leaves saves == 0, which sends the main-menu branch below
+            # straight back into "create a character" -- so a harness that
+            # did not know about this screen would build characters until it
+            # hit the prompt cap and report a timeout rather than a bug.
+            # tools/roundtrip.py calls run_once directly and inherits this.
+            if "Is that right?" in tail:
+                pick = menu_number(tail, "Save this character")
+                if pick:
+                    replies.append(pick)
+                    proc.stdin.write((pick + "\n").encode())
+                    proc.stdin.flush()
+                    continue
+
             # b and q are only offered where the wizard can honour them,
             # and the prompt says so. Typing one at the Nth such prompt
             # exercises the jump out of a half-built character: back has to
@@ -185,7 +201,15 @@ def run_once(binary, seed, rng, use_valgrind, workdir, verbose, levelup=False,
                     proc.stdin.flush()
                     continue
                 if "Inventory:" in tail:
-                    want = "Pick up a magic item" if got < magic else "Done"
+                    # The books menu now runs first and the harness answers
+                    # it at random, so a session can switch off the book the
+                    # magic items come from -- and then no amount of asking
+                    # produces one. Give up after a few tries rather than
+                    # asking until the prompt cap and reporting a timeout.
+                    if got < magic and tries < magic * 4:
+                        want, tries = "Pick up a magic item", tries + 1
+                    else:
+                        want = "Done"
                     pick = menu_number(tail, want)
                     if pick:
                         replies.append(pick)

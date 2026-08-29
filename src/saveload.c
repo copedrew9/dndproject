@@ -303,15 +303,19 @@ static void write_sheet(FILE *f, const Character *c)
     fprintf(f, "\n");
     fprintf(f, "  Passive Perception %d\n", passive_perception(c));
     {
-        /* Experience is not tracked, but knowing where the level sits on
-           the advancement table is what tells a player how far off the
-           next one is. */
+        /* What has been earned, and what the next level costs. The two are
+           printed together because the useful number is the difference. */
         int lv = total_level(c);
         if (SETTINGS.experience && lv >= 0 && lv <= MAX_LEVEL) {
-            fprintf(f, "  Experience       %d needed for level %d",
-                    XP_FOR_LEVEL[lv], lv);
+            fprintf(f, "  Experience       %d", c->xp);
             if (lv < MAX_LEVEL) {
-                fprintf(f, ", %d for level %d", XP_FOR_LEVEL[lv + 1], lv + 1);
+                int need = XP_FOR_LEVEL[lv + 1] - c->xp;
+                fprintf(f, " -- %d for level %d", XP_FOR_LEVEL[lv + 1],
+                        lv + 1);
+                if (need > 0) fprintf(f, ", %d to go", need);
+                else fprintf(f, ", enough to level up");
+            } else {
+                fprintf(f, " -- 20th level is the maximum");
             }
             fprintf(f, "\n");
         }
@@ -771,6 +775,7 @@ static void write_data(FILE *f, const Character *c)
             fputc('\n', f);
         }
     }
+    if (c->xp) fprintf(f, "XP|%d\n", c->xp);
     fprintf(f, "COINS|%d|%d|%d|%d|%d\n", c->copper, c->silver, c->electrum,
             c->gold, c->platinum);
     for (i = 0; i < c->sidekick_count; i++) {
@@ -1230,14 +1235,19 @@ int load_character(const char *path, Character *c)
                    clause -- the gem of brightness had one it should never
                    have had -- would otherwise keep spending one of the
                    three slots on it. */
-                add_magic_item(c, id,
-                               record_int(fields[1], 1, MAX_STACK),
-                               MAGIC_ITEMS[id].attunement
-                                   ? record_int(fields[2], 0, 1) : 0,
-                               /* The copy's plus -- except for a belt of
-                                  giant strength, whose column carries the
-                                  Strength it sets instead. */
-                               n >= 5 ? record_int(fields[4], 0, 30) : 0);
+                /* Each record is one entry, not one more of an entry
+                   already read: two rings of resistance made against
+                   different damage, or two copies of one item the table is
+                   telling the player different things about, are distinct
+                   and merging them would drop the second's attunement. */
+                add_magic_item_copy(c, id,
+                                    record_int(fields[1], 1, MAX_STACK),
+                                    MAGIC_ITEMS[id].attunement
+                                        ? record_int(fields[2], 0, 1) : 0,
+                                    /* The copy's plus -- except for a belt
+                                       of giant strength, whose column
+                                       carries the Strength it sets. */
+                                    n >= 5 ? record_int(fields[4], 0, 30) : 0);
                 /* A row the bank declines -- a quantity of zero or less, or
                    an inventory already full -- adds nothing, and the columns
                    after the name then have no entry of their own to land on.
@@ -1258,6 +1268,10 @@ int load_character(const char *path, Character *c)
             } else {
                 warn_unknown("magic item", fields[3]);
             }
+        } else if (!strcmp(fields[0], "XP") && n >= 2) {
+            /* Written only when non-zero, so a file without the record is a
+               character who has earned none. */
+            c->xp = record_int(fields[1], 0, 9999999);
         } else if (!strcmp(fields[0], "COINS") && n >= 6) {
             c->copper   = record_int(fields[1], 0, MAX_COINS);
             c->silver   = record_int(fields[2], 0, MAX_COINS);

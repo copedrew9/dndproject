@@ -60,6 +60,22 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import roundtrip                                     # noqa: E402
 
+MENU_LINE = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
+
+
+def menu_number(tail, wanted):
+    """The number of the menu entry whose text contains `wanted`, or None.
+
+    By what it says rather than where it sits, so adding an option above it
+    does not silently change which one this picks.
+    """
+    for line in tail.splitlines():
+        m = MENU_LINE.match(line)
+        if m and wanted.lower() in m.group(2).lower():
+            return m.group(1)
+    return None
+
+
 RANGE_RE = re.compile(r"\[(-?\d+)-(-?\d+)\]:\s*$")
 YESNO_RE = re.compile(r"\[(?:Y/n|y/N)\]:\s*$")
 SAVED_RE = re.compile(r"Saved to (.+\.txt)")
@@ -245,6 +261,16 @@ class Session:
             if BANNER in tail and lo == 1:
                 self.depth = 0          # a fresh screen, a fresh budget
                 return self.main_menu(hi, transcript)
+            # The wizard ends by asking whether to keep the character, and
+            # only one of the five answers saves. main_menu above creates
+            # until something has been saved, so answering this at random
+            # would build characters until the session's prompt budget ran
+            # out -- the same shape of livelock the note editor caused, and
+            # just as unreadable in the failure report.
+            if "Is that right?" in tail:
+                pick = menu_number(tail, "Save this character")
+                if pick:
+                    return pick
             if lo == 1 and hi == 20 and "level" in prompt.lower():
                 return str(self.rng.choice([1, 1, 2, 3, 5, 8, 11, 14, 17, 20]))
             # An answer outside the stated bounds must be refused and the
@@ -350,9 +376,16 @@ def view_sheet(binary, workdir, filename):
 def is_character_file(path):
     """A character file carries the machine-readable block. A sidekick's
     sheet, written out from the sidekick screen, is a printout with no block
-    and is not meant to be loaded."""
+    and is not meant to be loaded.
+
+    The whole line has to be the marker, which is the test the program
+    itself makes (strcmp against DATA_BEGIN in src/saveload.c). Matching a
+    prefix instead read a sidekick NAMED "#BEGIN-DNDDATA v1" as a character
+    file, because its printout opens with its own name, and then reported
+    the printout's missing data block as a round-trip failure.
+    """
     with open(path, encoding="utf-8", errors="replace") as fh:
-        return any(line.startswith("#BEGIN-DNDDATA") for line in fh)
+        return any(line.rstrip("\r\n") == "#BEGIN-DNDDATA v1" for line in fh)
 
 
 def check_roundtrip(binary, workdir, produced):

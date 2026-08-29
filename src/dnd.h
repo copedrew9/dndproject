@@ -195,6 +195,13 @@ typedef struct {
     int item_count;
     int copper, silver, electrum, gold, platinum;
 
+    /* Experience earned, when the table is using it. Kept as a total rather
+       than derived from the level, because the two disagree on purpose: a
+       character sits on their level until the DM says otherwise, and the
+       gap between the total and the next threshold is the thing a player
+       wants to see. */
+    int xp;
+
     SpellEntry spells[MAX_SPELLS];
     int spell_count;
 
