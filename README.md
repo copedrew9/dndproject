@@ -771,3 +771,8 @@ Anything situational stays prose and is applied at the table: the Defender's
 bonus is re-split between attack and AC every turn, an arrow-catching
 shield's extra +2 applies only against ranged attacks, a robe of
 scintillating colors imposes disadvantage rather than changing a number.
+
+
+# Things still testing 
+- Game Mode is still a work in progress. If you want to help out, please inform me of any interations
+  that are not in Game Mode yet.
