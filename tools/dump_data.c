@@ -547,7 +547,7 @@ static void dump_equipment(void)
     }
 
     head(f, "MAGICITEM", "name | book | type | rarity | attunement (blank "
-                         "when none) | text");
+                         "when none) | text | curse (blank when none)");
     for (i = 0; i < BOOK_MAGIC_ITEM_COUNT; i++) {
         const MagicItem *m = &BOOK_MAGIC_ITEMS[i];
         rec(f, "MAGICITEM");
@@ -557,6 +557,7 @@ static void dump_equipment(void)
         field(f, m->rarity);
         field(f, m->attunement ? m->attunement : "");
         field(f, m->text);
+        field(f, m->curse ? m->curse : "");
         end(f);
     }
 

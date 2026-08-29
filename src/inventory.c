@@ -425,6 +425,77 @@ static void attune_items(Character *c)
     }
 }
 
+/* --------------------------------------------------- what the player is told */
+
+static int is_magic_item(const Character *c, int i)
+{
+    return c->inventory[i].is_magic;
+}
+
+/* Hiding and revealing what a magic item is.
+ *
+ * A DM hands over a rod without saying it is a rod of lordly might, and
+ * says so later. Two things can be withheld separately, because they are
+ * withheld for different reasons and revealed at different moments: the
+ * whole entry, until somebody identifies the thing, and the curse alone,
+ * until it bites. Neither changes what the item does. The bonus still
+ * reaches Armor Class and the attack line, because the character really is
+ * carrying it -- what changes is only what the sheet is willing to say.
+ */
+static void conceal_items(Character *c)
+{
+    for (;;) {
+        const char *opts[MAX_ITEMS + 1];
+        static char lines[MAX_ITEMS][128];
+        int map[MAX_ITEMS], n, pick;
+
+        n = carried_menu(c, is_magic_item, opts, lines, map, MAX_ITEMS);
+        if (n == 0) {
+            printf("  You carry no magic items.\n");
+            return;
+        }
+        opts[n] = "Done";
+
+        printf("\n  A hidden item still does what it does; the sheet just "
+               "does not say what.\n");
+        pick = ui_menu("  Hide or reveal which?", opts, NULL, n + 1);
+        if (pick == n) return;
+
+        {
+            InventoryEntry *e = &c->inventory[map[pick]];
+            const MagicItem *m = &MAGIC_ITEMS[e->item_id];
+            const char *what[4];
+            int k = 0, act;
+            int can_curse = (m->curse != NULL);
+
+            what[k++] = e->concealed ? "Reveal what it is"
+                                     : "Hide everything but the name";
+            if (can_curse) {
+                what[k++] = e->curse_hidden ? "Reveal the curse"
+                                            : "Hide the curse";
+            }
+            what[k++] = "Back";
+
+            printf("\n  %s: %s%s\n", m->name,
+                   e->concealed ? "not yet identified" : "fully written out",
+                   can_curse ? (e->curse_hidden ? ", curse hidden"
+                                                : ", curse shown")
+                             : ", no curse");
+            act = ui_menu("  Do what?", what, NULL, k);
+            if (act == 0) {
+                e->concealed = !e->concealed;
+                printf("  %s %s.\n", m->name,
+                       e->concealed ? "now prints as a name and nothing else"
+                                    : "is written out in full again");
+            } else if (can_curse && act == 1) {
+                e->curse_hidden = !e->curse_hidden;
+                printf("  The curse on %s is now %s.\n", m->name,
+                       e->curse_hidden ? "withheld" : "shown");
+            }
+        }
+    }
+}
+
 /* ------------------------------------------------------------------- coins */
 
 static void adjust_coins(Character *c)
@@ -455,19 +526,21 @@ void manage_inventory(Character *c)
             "Put something down",
             "Wear or take off armor and shields",
             "Attune to magic items",
+            "Hide or reveal what a magic item is",
             "Set your coins",
             "Done"
         };
 
         show_carried(c);
-        switch (ui_menu("  Inventory:", modes, NULL, 8)) {
+        switch (ui_menu("  Inventory:", modes, NULL, 9)) {
         case 0: inventory_reference(c);  break;
         case 1: add_from_catalogue(c);   break;
         case 2: add_magic(c);            break;
         case 3: remove_gear(c);          break;
         case 4: equip_gear(c);           break;
         case 5: attune_items(c);         break;
-        case 6: adjust_coins(c);         break;
+        case 6: conceal_items(c);        break;
+        case 7: adjust_coins(c);         break;
         default: return;
         }
     }

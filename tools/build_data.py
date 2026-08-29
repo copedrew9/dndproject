@@ -680,11 +680,12 @@ def build_equipment():
     for r in tags.get("MAGICITEM", []):
         magic_names.add(r.str(0))
         att = r.str(4)
+        curse = r.str(6) if len(r.f) > 6 else ""
         rows.append(
-            "    { %s, %s,\n      %s, %s,\n      %s,\n      %s }"
+            "    { %s, %s,\n      %s, %s,\n      %s,\n      %s,\n      %s }"
             % (cstr(r.str(0)), lookup(BOOKS, r, 1, "book"), cstr(r.str(2)),
                cstr(r.str(3)), cstr(att) if att else "NULL",
-               cstr(r.str(5))))
+               cstr(r.str(5)), cstr(curse) if curse else "NULL"))
     out.table("const MagicItem BOOK_MAGIC_ITEMS[]", rows,
               "BOOK_MAGIC_ITEM_COUNT")
     out.w("\nconst MagicItem *MAGIC_ITEMS = BOOK_MAGIC_ITEMS;\n"

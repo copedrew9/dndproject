@@ -299,6 +299,39 @@ static void add_all_phrases(Character *c, const char *text)
     if (*start) add_phrase(c, start);
 }
 
+/* Where the next lettered alternative starts, or NULL.
+ *
+ * A marker is "(a)" -- one bracket, one lowercase letter, one bracket --
+ * standing at the start of the line or after a space. The letter has to be
+ * a single character because the alternatives are not the only brackets on
+ * these lines: the paladin's armour reads "(c) chain mail (if proficient)",
+ * and splitting on that one would cut an option in half.
+ */
+static const char *next_alternative(const char *s, const char *start)
+{
+    for (; *s; s++) {
+        if (s[0] != '(' || s[1] < 'a' || s[1] > 'z' || s[2] != ')') continue;
+        if (s != start && s[-1] != ' ') continue;
+        return s;
+    }
+    return NULL;
+}
+
+/* How much of an alternative is the alternative, with the punctuation that
+ * joins it to the next one taken off: "(a) a rapier, " and "(b) a longsword
+ * or " are a rapier and a longsword. */
+static size_t alternative_len(const char *p, size_t len)
+{
+    while (len && p[len - 1] == ' ') len--;
+    if (len >= 2 && p[len - 2] == 'o' && p[len - 1] == 'r'
+        && (len == 2 || p[len - 3] == ' ')) {
+        len -= 2;
+        while (len && p[len - 1] == ' ') len--;
+    }
+    if (len && p[len - 1] == ',') len--;
+    return len;
+}
+
 /* Reads a starting-equipment line, offering the lettered alternatives when
  * the PHB gives a choice, then resolving whatever was chosen into items. */
 static void resolve_equipment_line(Character *c, const char *line)
@@ -319,16 +352,22 @@ static void resolve_equipment_line(Character *c, const char *line)
     strncpy(buf, line, sizeof buf - 1);
     buf[sizeof buf - 1] = '\0';
 
-    p = buf;
-    while (p && *p && n < 8) {
-        const char *next = strstr(p, " or (");
-        size_t len = next ? (size_t)(next - p) : strlen(p);
+    /* Split on the markers themselves rather than on " or (". Three of the
+       PHB's lines offer three things and separate the first two with a
+       comma -- "(a) a burglar's pack, (b) a dungeoneer's pack or (c) an
+       explorer's pack" -- and splitting on the "or" alone put the burglar's
+       and the dungeoneer's pack on one line as a single option, so a rogue
+       could not choose between them. */
+    p = next_alternative(buf, buf);
+    while (p && n < 8) {
+        const char *next = next_alternative(p + 3, buf);
+        size_t len = alternative_len(p, next ? (size_t)(next - p) : strlen(p));
         if (len >= sizeof parts[0]) len = sizeof parts[0] - 1;
         memcpy(parts[n], p, len);
         parts[n][len] = '\0';
         opts[n] = parts[n];
         n++;
-        p = next ? next + 4 : NULL;
+        p = next;
     }
 
     if (n <= 1) {

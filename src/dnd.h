@@ -88,6 +88,15 @@ typedef struct {
        resistance resists, the giant a belt draws its Strength from, the
        weapon a +1 weapon is. */
     char variant[MAX_NAME];
+    /* What the sheet is allowed to say about a magic item. A DM handing
+       one over often wants the player to have the thing without the
+       entry: an unidentified rod is a rod. Both are set by the table and
+       cleared again when the item is identified or the curse bites.
+       Neither changes what the item does -- the numbers it brings still
+       reach Armor Class and the attacks block, because the character is
+       carrying it either way. */
+    int concealed;      /* print the name and nothing else */
+    int curse_hidden;   /* print the entry, but not what it costs you */
 } InventoryEntry;
 
 #define MAX_ATTUNED 3

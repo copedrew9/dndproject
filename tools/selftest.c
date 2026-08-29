@@ -1900,6 +1900,34 @@ static void test_sweep_content(void)
         if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
     }
 
+    /* And again with everything a copy can carry filled in. The pass above
+       writes every item in its blank state -- no bonus, no damage type, no
+       weapon -- which is the one state in which the variant field is empty
+       and cannot be lost. An item whose copy says it is a +3 longsword made
+       against fire has three more things to survive the round trip, and
+       until now nothing wrote one down. */
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        const MagicRule *r = magic_rule_for(MAGIC_ITEMS[i].name);
+        const char *types[16];
+        char inner[MAX_NAME];
+        int nt;
+
+        plain_fighter(&c, "SelftestVariant");
+        add_magic_item(&c, i, 2, MAGIC_ITEMS[i].attunement ? 1 : 0, 3);
+        c.inventory[c.item_count - 1].equipped = 1;
+
+        nt = r ? magic_variant_types(r, types, 16) : 0;
+        if (nt > 0) {
+            snprintf(c.inventory[c.item_count - 1].variant,
+                     sizeof c.inventory[0].variant, "%s", types[nt - 1]);
+        } else if (magic_weapon_kind(MAGIC_ITEMS[i].type, inner, sizeof inner)
+                   == MAGIC_WEAPON_CHOICE) {
+            snprintf(c.inventory[c.item_count - 1].variant,
+                     sizeof c.inventory[0].variant, "%s", "Longsword");
+        }
+        if (!survives_the_file(&c, MAGIC_ITEMS[i].name)) return;
+    }
+
     for (i = 0; i < ITEM_COUNT; i++) {
         plain_fighter(&c, "SelftestItem");
         add_item(&c, i, 1, 0);
@@ -2228,6 +2256,197 @@ static void test_magic_weapon_attacks(void)
     EQ(found, 0, "ammunition gets no line of its own");
 }
 
+/* Every magic rule has to do something.
+ *
+ * The rules are checked against the books by tools/verify_magic_rules.py,
+ * and each of them names a real item, which test_magic_armour_class
+ * confirms. Neither says the rule ever reaches the sheet. A field the
+ * generator writes and the engine never reads is dead data that looks
+ * alive: it round-trips, it verifies against the DMG, and a player picking
+ * that item sees nothing at all.
+ *
+ * So this takes a character's whole observable state -- Armor Class,
+ * speeds, every ability score, every saving throw, every skill, the
+ * resistances line, and every attack -- adds one item, and requires the
+ * state to move. What moved is not asserted here; the rule's own test
+ * does that. What is asserted is that something did.
+ */
+typedef struct {
+    int ac, speed, fly, swim, climb, attacks;
+    int score[ABL_COUNT], save[ABL_COUNT], skill[SKL_COUNT];
+    int bonus[MAX_ATTACKS];
+    char defences[512];
+} Observed;
+
+static void observe(const Character *c, Observed *o)
+{
+    Attack atk[MAX_ATTACKS];
+    int i;
+
+    memset(o, 0, sizeof *o);
+    o->ac = armour_class(c);
+    o->speed = speed_of(c);
+    o->fly = magic_fly_speed(c);
+    o->swim = magic_swim_speed(c);
+    o->climb = magic_climb_speed(c);
+    for (i = 0; i < ABL_COUNT; i++) {
+        o->score[i] = ability_score(c, (Ability)i);
+        o->save[i] = save_bonus(c, (Ability)i);
+    }
+    for (i = 0; i < SKL_COUNT; i++) o->skill[i] = skill_bonus(c, (Skill)i);
+    magic_defences(c, o->defences, sizeof o->defences);
+    o->attacks = attacks_of(c, atk, MAX_ATTACKS);
+    for (i = 0; i < o->attacks && i < MAX_ATTACKS; i++) {
+        o->bonus[i] = atk[i].bonus;
+    }
+}
+
+static void test_every_magic_rule_does_something(void)
+{
+    /* One baseline cannot show every rule working, and the four that a
+       single one hides are exactly the interesting ones: bracers of
+       defense and a robe of the archmagi do nothing to somebody already
+       wearing armour, boots of striding and springing set a speed of 30 on
+       a character who already walks 30, and a belt of giant strength only
+       ever raises a score. So each rule is tried against both a small
+       unarmoured character with poor scores and an armoured one with good
+       ones, and has to move at least one of them. */
+    static const struct { int small, armed; } BASE[] = { { 1, 0 }, { 0, 1 } };
+    Character c;
+    Observed before, after;
+    int i, k, dead = 0;
+
+    printf("every magic rule reaches the sheet\n");
+
+    for (i = 0; i < MAGIC_RULE_COUNT; i++) {
+        const MagicRule *r = &MAGIC_RULES[i];
+        const char *types[16];
+        int id = find_magic_item(r->item);
+        int moved = 0, plus, nt;
+
+        if (id < 0) continue;              /* already reported elsewhere */
+
+        /* A belt of giant strength carries its score in the copy rather
+           than in the rule, so the copy has to carry a big one: three
+           would lower a Strength of 14 and read as no effect at all. */
+        plus = (r->sets_ability && !r->sets_to) ? 29 : 3;
+
+        for (k = 0; k < 2 && !moved; k++) {
+            reset(&c);
+            add_class(&c, CLS_FIGHTER, 5, -1);
+            {
+                int a, score = BASE[k].armed ? 14 : 8;
+                for (a = 0; a < ABL_COUNT; a++) c.base_score[a] = score;
+            }
+            if (BASE[k].small) {
+                /* A gnome walks 25 feet, so boots that set a speed of 30
+                   have something to set. */
+                c.race_id = find_race("Gnome");
+            }
+            add_prof(&c, "All weapons");
+            if (BASE[k].armed) {
+                add_item(&c, find_item("Longsword"), 1, 1);
+                add_item(&c, find_item("Leather armor"), 1, 1);
+            }
+            observe(&c, &before);
+
+            /* Attuned, worn and held: what is tested here is what the rule
+               does when it is doing anything at all. The gating is tested
+               by the rules that gate. */
+            add_magic_item(&c, id, 1, 1, plus);
+            c.inventory[c.item_count - 1].equipped = 1;
+
+            /* A copy that carries its own damage type or its own weapon
+               has to say which before the rule has anything to apply. */
+            nt = magic_variant_types(r, types, 16);
+            if (nt > 0) {
+                snprintf(c.inventory[c.item_count - 1].variant,
+                         sizeof c.inventory[0].variant, "%s", types[0]);
+            } else {
+                char inner[MAX_NAME];
+                if (magic_weapon_kind(MAGIC_ITEMS[id].type, inner,
+                                      sizeof inner) == MAGIC_WEAPON_CHOICE) {
+                    snprintf(c.inventory[c.item_count - 1].variant,
+                             sizeof c.inventory[0].variant, "%s", "Longsword");
+                }
+            }
+
+            observe(&c, &after);
+            if (memcmp(&before, &after, sizeof before)) moved = 1;
+        }
+        if (!moved) {
+            printf("  FAIL %s changes nothing on the sheet\n", r->item);
+            failures++;
+            dead++;
+        }
+    }
+    EQ(dead, 0, "no rule is dead data");
+}
+
+/* What the sheet is allowed to say about a magic item, and what it is not. */
+static void test_hidden_magic_items(void)
+{
+    Character c;
+    char path[MAX_NAME + 8];
+    int cursed = -1, i;
+
+    printf("hiding and revealing a magic item\n");
+
+    for (i = 0; i < MAGIC_ITEM_COUNT; i++) {
+        if (MAGIC_ITEMS[i].curse) { cursed = i; break; }
+    }
+    EQ(cursed >= 0, 1, "some item carries a curse of its own");
+    if (cursed < 0) return;
+
+    /* Written out in full: the entry and the curse both reach the sheet. */
+    plain_fighter(&c, "SelftestHidden");
+    add_magic_item(&c, cursed, 1, MAGIC_ITEMS[cursed].attunement ? 1 : 0, 0);
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "the name is on the sheet", 1, 1);
+    check(strstr(sheet_a, "Cursed") != NULL || strstr(sheet_a, "cursed") != NULL,
+          "and so is the curse", 1, 1);
+    remove(path);
+
+    /* Curse withheld: the entry stays, the curse goes. */
+    c.inventory[0].curse_hidden = 1;
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "the name survives hiding the curse", 1, 1);
+    check(strstr(sheet_a, "Cursed:") == NULL,
+          "but the curse does not", 1, 1);
+    remove(path);
+
+    /* Concealed: the name and nothing else. */
+    c.inventory[0].curse_hidden = 0;
+    c.inventory[0].concealed = 1;
+    check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+    slurp(path, sheet_a, sizeof sheet_a);
+    check(strstr(sheet_a, MAGIC_ITEMS[cursed].name) != NULL,
+          "a concealed item still shows its name", 1, 1);
+    check(strstr(sheet_a, "not yet identified") != NULL,
+          "and says it is unidentified", 1, 1);
+    check(strstr(sheet_a, "Cursed:") == NULL,
+          "and gives away nothing else", 1, 1);
+    remove(path);
+
+    /* Both flags survive the file, and hiding changes no number. */
+    {
+        Character back;
+        int ac_before = armour_class(&c);
+        c.inventory[0].curse_hidden = 1;
+        check(save_character(&c, path, sizeof path) == 0, "sheet written", 1, 1);
+        check(load_character(path, &back) == 0, "and read back", 1, 1);
+        EQ(back.inventory[0].concealed, 1, "concealed survives the file");
+        EQ(back.inventory[0].curse_hidden, 1, "so does the hidden curse");
+        EQ(armour_class(&back), ac_before,
+           "hiding an item changes nothing it does");
+        remove(path);
+    }
+}
+
 static void test_racial_feat_by_size(void)
 {
     int f, r, small = 0;
@@ -2448,6 +2667,8 @@ int main(void)
     test_magic_armour_claims();
     test_magic_checks_and_curses();
     test_magic_weapon_attacks();
+    test_every_magic_rule_does_something();
+    test_hidden_magic_items();
     test_racial_feat_by_size();
     test_absurd_numbers();
     test_inventory_id_spaces();

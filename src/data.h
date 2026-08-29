@@ -539,6 +539,13 @@ typedef struct {
     const char *rarity;
     const char *attunement;     /* NULL when no attunement is required */
     const char *text;
+    /* What the item does to whoever carries it that the entry does not
+       advertise, kept apart from the text so a DM can withhold it. NULL
+       when the item is not cursed. Splitting the sentence out of the text
+       by looking for the word would be a guess: the axe of the dwarvish
+       lords says "It is cursed:" in the middle of its entry and the armour
+       of vulnerability puts a sentence after its curse. */
+    const char *curse;
 } MagicItem;
 
 extern const MagicItem *MAGIC_ITEMS;

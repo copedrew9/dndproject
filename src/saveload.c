@@ -536,14 +536,25 @@ static void write_sheet(FILE *f, const Character *c)
                        "the right situation.\n");
             for (i = 0; i < c->item_count; i++) {
                 const MagicItem *m;
-                if (!c->inventory[i].is_magic) continue;
-                m = &MAGIC_ITEMS[c->inventory[i].item_id];
-                fprintf(f, "\n  %d x %s%s\n", c->inventory[i].quantity,
-                        m->name, c->inventory[i].attuned ? " (attuned)" : "");
+                const InventoryEntry *e = &c->inventory[i];
+                if (!e->is_magic) continue;
+                m = &MAGIC_ITEMS[e->item_id];
+                fprintf(f, "\n  %d x %s%s\n", e->quantity,
+                        m->name, e->attuned ? " (attuned)" : "");
+                /* An item the table has not identified for this character
+                   prints as a name and nothing else. What it does is still
+                   done -- the numbers reached Armor Class and the attacks
+                   block above -- but the sheet does not say why, which is
+                   the point of handing one over unidentified. */
+                if (e->concealed) {
+                    fprintf(f, "    (not yet identified)\n");
+                    continue;
+                }
                 fprintf(f, "    %s, %s%s%s\n", m->type, m->rarity,
                         m->attunement ? " -- " : "",
                         m->attunement ? m->attunement : "");
                 wrap_to(f, m->text, 4);
+                if (m->curse && !e->curse_hidden) wrap_to(f, m->curse, 4);
             }
         }
     }
@@ -750,6 +761,8 @@ static void write_data(FILE *f, const Character *c)
             fprintf(f, "|%d|%d|", c->inventory[i].plus,
                     c->inventory[i].equipped);
             record_put(f, c->inventory[i].variant);
+            fprintf(f, "|%d|%d", c->inventory[i].concealed,
+                    c->inventory[i].curse_hidden);
             fputc('\n', f);
         } else {
             fprintf(f, "ITEM|%d|%d|", c->inventory[i].quantity,
@@ -1236,6 +1249,11 @@ int load_character(const char *path, Character *c)
                         snprintf(e->variant, sizeof e->variant, "%s",
                                  fields[6]);
                     }
+                    /* What the table has chosen not to tell the player.
+                       Older files carry neither column, and an item nobody
+                       hid anything about reads the same either way. */
+                    if (n >= 8) e->concealed = record_int(fields[7], 0, 1);
+                    if (n >= 9) e->curse_hidden = record_int(fields[8], 0, 1);
                 }
             } else {
                 warn_unknown("magic item", fields[3]);

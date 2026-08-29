@@ -117,6 +117,11 @@ ARMOUR_KIND = re.compile(r"rmor\s*\(([^)]*)\)", re.I)
 # magic weapon's bonus wherever the weapon has a fixed one.
 WEAPON_PLUS = re.compile(r"\+\s*(\d)\s+bonus to attack and damage", re.I)
 
+# How the DMG announces a curse. It heads the paragraph "Curse." in most
+# entries and says "cursed" in the sentence itself in the rest.
+CURSE = re.compile(r"\bCurse\.|\bis cursed\b|\bcursed item\b|"
+                   r"\bThis (?:\w+ )?is cursed\b", re.I)
+
 
 def flat(s):
     """The entry's text with the extraction's spacing thrown away."""
@@ -500,6 +505,27 @@ def main():
             print("      the entry gives a +%s bonus to attack and damage "
                   "rolls and the item has no rule at all"
                   % swings.group(1))
+
+    # A curse the DMG states and the row does not carry. The curse field
+    # exists so a DM can withhold it, which only works if it is in the field
+    # rather than buried in the description -- an item whose curse is still
+    # part of its text cannot have it hidden, and nothing else would say so.
+    for r in read_file("equipment.txt"):
+        if r.tag != "MAGICITEM":
+            continue
+        got = found.get(r.str(0))
+        if not got:
+            continue
+        has = len(r.f) > 6 and r.f[6].strip()
+        says = CURSE.search(got[1])
+        if says and not has:
+            wrong += 1
+            print("  %s\n      the entry says %r and the row carries no "
+                  "curse of its own, so a DM cannot withhold it"
+                  % (r.str(0), says.group(0)[:60]))
+        elif has and not says:
+            unchecked.append((r.str(0), "carries a curse the extraction does "
+                                        "not show in its entry"))
 
     carry = {r.str(0) for r in rules if "weapon_plus=" in "|".join(r.f[1:])}
     for name in sorted(UNCONFIRMED):
