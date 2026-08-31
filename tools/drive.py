@@ -92,6 +92,41 @@ def menu_number(tail, wanted):
     return exact or loose
 
 
+def menu_on_screen(tail, *titles):
+    """Which of these menu titles was drawn last in the window, or None.
+
+    Screens stay in the window after they are gone, so "is this menu's title
+    somewhere in the tail" answers yes for every menu recently passed
+    through: a check that asked that question of the shop's Category screen
+    answered the Item screen with a category number and bought whatever
+    happened to sit at that entry. The menu now on screen is the one whose
+    title is last.
+    """
+    best, at = None, -1
+    for title in titles:
+        where = tail.rfind(title)
+        if where > at:
+            best, at = title, where
+    return best
+
+
+def menu_number_in(tail, title, wanted):
+    """menu_number against the last drawing of one named menu.
+
+    The window a harness looks at holds several screens at once, and a label
+    like "Done" is on most of them, so matching anywhere in it picks
+    whichever menu happened to be there first. That is not a near miss: an
+    inventory check answered the two-entry "Wear or take off which?" menu
+    with the twelfth entry of the Inventory menu above it, was re-asked, and
+    ended up toggling the armour back off -- so the check passed over a
+    program that had equipped it. Everything after the last occurrence of a
+    menu's own title is the menu now on screen.
+    """
+    if title in tail:
+        tail = tail.rsplit(title, 1)[-1]
+    return menu_number(tail, wanted)
+
+
 def answer(prompt, rng, free_text_name, want=None, tail=""):
     """One reply. `want` is an optional {"class": name, "level": n} that
     aims the run rather than leaving it to the dice, so a caster can be

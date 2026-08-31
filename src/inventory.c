@@ -417,6 +417,38 @@ static const char *entry_name(const Character *c, int i)
 
 /* Only one suit of armour and one shield can be worn at a time, so equipping
  * one takes the other off rather than silently stacking two armour bonuses. */
+/* Which kind of armour an entry is -- ITEM_LIGHT_ARMOR through
+ * ITEM_SHIELD -- or -1 when it is not armour, or is armour whose own entry
+ * does not say which kind.
+ *
+ * A magic suit carries no category column; what it carries is the Armor
+ * Class it sets and the Dexterity it allows, which is the same thing said
+ * another way. Full Dexterity is light, a cap is medium, none is heavy --
+ * exactly how the equipment table encodes it. The three suits written as
+ * "+1, +2, or +3" state no Armor Class at all and so cannot be placed;
+ * they answer -1 and are left alone rather than guessed at. So does elven
+ * chain, for the opposite reason: it is worn "even if you lack proficiency
+ * with medium armor", so there is nothing to warn anyone about.
+ */
+int entry_armour_category(const Character *c, int i)
+{
+    if (c->inventory[i].is_magic) {
+        const MagicRule *r =
+            magic_rule_for(MAGIC_ITEMS[c->inventory[i].item_id].name);
+
+        if (!r) return -1;
+        if (r->shield) return ITEM_SHIELD;
+        if (r->armor_base <= 0 || r->armor_prof) return -1;
+        return r->armor_dex < 0 ? ITEM_LIGHT_ARMOR
+             : r->armor_dex > 0 ? ITEM_MEDIUM_ARMOR
+                                : ITEM_HEAVY_ARMOR;
+    }
+    {
+        int cat = ITEMS[c->inventory[i].item_id].category;
+        return cat <= ITEM_SHIELD ? cat : -1;
+    }
+}
+
 /* Armour and shields, magical or not. */
 static int is_wearable(const Character *c, int i)
 {
@@ -456,6 +488,29 @@ static void equip_gear(Character *c)
                 c->inventory[idx].equipped = 0;
                 printf("  Took off %s.\n", what);
             } else {
+                /* The wizard asks before putting armour on that the
+                   character cannot use; this screen is the other way to
+                   put it on, and asks the same question. Choosing it from
+                   a menu is a decision either way, but not always an
+                   informed one: what "not proficient" costs -- every
+                   Strength and Dexterity check, save and attack at
+                   disadvantage, and no spellcasting at all -- is nowhere
+                   on this screen. */
+                int cat = entry_armour_category(c, idx);
+
+                if (cat >= 0 && !armour_proficient(c, cat)) {
+                    char ask[MAX_TEXT];
+
+                    snprintf(ask, sizeof ask,
+                             "\n  Do you want to equip the %s? You are not "
+                             "proficient with it and so will be hindered "
+                             "by it.", what);
+                    if (!ui_yesno(ask, 0)) {
+                        printf("  Left it where it was.\n");
+                        continue;
+                    }
+                }
+
                 /* One suit of armour and one shield at a time, whether
                    either of them is magical or not. */
                 for (i = 0; i < c->item_count; i++) {

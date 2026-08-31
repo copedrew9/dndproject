@@ -24,35 +24,64 @@ static void print_price(int cp, char *out, size_t n)
     else                            snprintf(out, n, "%d cp", cp);
 }
 
-/* The Armor Class a suit would give this character if worn. */
-static int armour_ac(const Character *c, const ItemData *it)
+/* The Armor Class this character would have with one entry -- and no other
+ * armour -- worn; index < 0 means wearing none of it.
+ *
+ * The flags are set for real and put back afterwards rather than the number
+ * being added up here, because armour_class() is the one place that knows
+ * the whole story: a barbarian's or monk's Unarmored Defense, a tortle's
+ * shell, the cap Medium Armor Master raises, a worn magic suit. Armour has
+ * to win by the same arithmetic the sheet prints, or the wizard can put a
+ * barbarian in hide armour and lower the number it goes on to show.
+ */
+static int ac_wearing(Character *c, int index)
 {
-    int dex = ability_mod(c, ABL_DEX);
+    unsigned char was[MAX_ITEMS];
+    int i, ac;
 
-    return it->base_ac + ((it->dex_cap < 0) ? dex
-                        : (it->dex_cap == 0) ? 0
-                        : (dex < it->dex_cap ? dex : it->dex_cap));
+    for (i = 0; i < c->item_count; i++) {
+        was[i] = (unsigned char)c->inventory[i].equipped;
+        if (c->inventory[i].is_magic) continue;
+        if (ITEMS[c->inventory[i].item_id].category <= ITEM_HEAVY_ARMOR)
+            c->inventory[i].equipped = (i == index);
+    }
+    ac = armour_class(c);
+    for (i = 0; i < c->item_count; i++) {
+        c->inventory[i].equipped = (int)was[i];
+    }
+    return ac;
 }
 
-/* Equips the best armour and a shield if the character owns any.
+/* Which armour a character is best off wearing, and what to ask about.
  *
- * "Best" used to mean the highest Armor Class and nothing else, which put
- * the plate a wizard bought out of curiosity straight onto the wizard:
- * armour you are not proficient with means disadvantage on every ability
- * check, save and attack that uses Strength or Dexterity, and no spells at
- * all. The program silently chose that, and the sheet showed a very good
- * Armor Class with none of the cost.
+ * "Best" used to mean the highest Armor Class among the armour they owned,
+ * and nothing else, which was wrong in two directions at once.
  *
- * So the best armour the character is proficient with goes on by itself,
- * and anything better than that which they cannot use is offered rather
- * than assumed -- once, naming what it is, and only here, where the player
- * is at the prompt. Loading a character equips what the file says and asks
- * nothing.
+ * It put the plate a wizard bought out of curiosity straight onto the
+ * wizard: armour you are not proficient with means disadvantage on every
+ * ability check, save and attack that uses Strength or Dexterity, and no
+ * spellcasting at all. The program chose that silently, and the sheet
+ * showed a very good Armor Class with none of the cost.
+ *
+ * And it compared armour only against other armour, never against wearing
+ * none: a barbarian's Unarmored Defense and a monk's, a tortle's shell and
+ * a lizardfolk's scales can all beat a suit the character is perfectly
+ * entitled to wear. Hide armour on a barbarian with a good Constitution is
+ * Armor Class 14 where bare skin is 15, and the wizard put the hide on.
+ *
+ * So this reports the decision rather than making it: what to wear, what
+ * was left off because bare skin beats it, and what would be better still
+ * if the character were willing to be hindered by it. Whether to ask about
+ * that last one is the caller's business, and only a caller with a player
+ * in front of it should.
  */
-static void auto_equip(Character *c)
+void choose_armour(Character *c, ArmourChoice *out)
 {
     int i, best = -1, best_ac = -1, other = -1, other_ac = -1;
-    int shields = 0, wear_shield = 1;
+
+    out->wear = out->unusable = out->spurned = -1;
+    out->bare_ac = ac_wearing(c, -1);
+    out->wear_ac = out->bare_ac;
 
     for (i = 0; i < c->item_count; i++) {
         const ItemData *it;
@@ -60,10 +89,9 @@ static void auto_equip(Character *c)
 
         if (c->inventory[i].is_magic) continue;
         it = &ITEMS[c->inventory[i].item_id];
-        if (it->category == ITEM_SHIELD) { shields = 1; continue; }
         if (it->category > ITEM_HEAVY_ARMOR) continue;
 
-        ac = armour_ac(c, it);
+        ac = ac_wearing(c, i);
         if (armour_proficient(c, it->category)) {
             if (ac > best_ac) { best_ac = ac; best = i; }
         } else if (ac > other_ac) {
@@ -71,23 +99,59 @@ static void auto_equip(Character *c)
         }
     }
 
-    /* Only worth asking when the armour they cannot use is actually better
-       than the armour they can -- or when it is all they have. */
-    if (other >= 0 && (best < 0 || other_ac > best_ac)) {
+    /* The best armour they can wear still has to be worth wearing. */
+    if (best >= 0 && best_ac <= out->bare_ac) {
+        out->spurned = best;
+        best = -1;
+    }
+    if (best >= 0) {
+        out->wear = best;
+        out->wear_ac = best_ac;
+    }
+    /* And armour they cannot use is only worth a question when it would
+       beat whatever they are left with. */
+    if (other >= 0 && other_ac > out->wear_ac) out->unusable = other;
+}
+
+/* Puts on what choose_armour settled, asking about the one thing it will
+ * not decide by itself. Loading a character equips what the file says and
+ * asks nothing; this runs only in the wizard, with the player at a prompt.
+ */
+static void auto_equip(Character *c)
+{
+    ArmourChoice pick;
+    int i, wear, shields = 0, wear_shield = 1;
+
+    choose_armour(c, &pick);
+    wear = pick.wear;
+
+    if (pick.spurned >= 0) {
+        printf("  Leaving the %s off: your Armor Class is %d without it and "
+               "%d in it.\n", ITEMS[c->inventory[pick.spurned].item_id].name,
+               pick.bare_ac, ac_wearing(c, pick.spurned));
+    }
+
+    if (pick.unusable >= 0) {
         char ask[MAX_TEXT];
 
         snprintf(ask, sizeof ask,
                  "\n  Do you want to equip the %s? You are not proficient "
                  "with it and so will be hindered by it.",
-                 ITEMS[c->inventory[other].item_id].name);
+                 ITEMS[c->inventory[pick.unusable].item_id].name);
         if (ui_yesno(ask, 0)) {
-            best = other;
-        } else if (best >= 0) {
+            wear = pick.unusable;
+        } else if (wear >= 0) {
             printf("  Wearing the %s instead.\n",
-                   ITEMS[c->inventory[best].item_id].name);
+                   ITEMS[c->inventory[wear].item_id].name);
         }
     }
 
+    for (i = 0; i < c->item_count; i++) {
+        if (!c->inventory[i].is_magic
+            && ITEMS[c->inventory[i].item_id].category == ITEM_SHIELD) {
+            shields = 1;
+        }
+    }
     if (shields && !armour_proficient(c, ITEM_SHIELD)) {
         wear_shield = ui_yesno(
             "\n  Do you want to equip the shield? You are not proficient "
@@ -99,7 +163,7 @@ static void auto_equip(Character *c)
         if (c->inventory[i].is_magic) continue;
         it = &ITEMS[c->inventory[i].item_id];
         if (it->category <= ITEM_HEAVY_ARMOR) {
-            c->inventory[i].equipped = (i == best);
+            c->inventory[i].equipped = (i == wear);
         } else if (it->category == ITEM_SHIELD) {
             c->inventory[i].equipped = wear_shield;
         }

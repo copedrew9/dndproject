@@ -16,6 +16,7 @@
 #include "saveload.h"
 #include "homebrew.h"
 #include "shop.h"
+#include "inventory.h"
 #include "reference.h"
 #include "ui.h"
 
@@ -3926,6 +3927,186 @@ static void test_the_spell_panel(void)
  * question is easy to get wrong -- "All armor" is not a shield, and a
  * proficiency with the light hammer is not a proficiency with light armour.
  */
+/* ---------------------------------------- what the wizard decides to wear
+ *
+ * choose_armour() answers three questions at once -- what to put on, what to
+ * leave off because bare skin beats it, and what to ask about -- and each of
+ * them was wrong before it existed. Armour is measured against going
+ * without, which is not the same number for everyone: a barbarian, a monk,
+ * a lizardfolk and a tortle all have their own.
+ */
+static void test_what_the_wizard_wears(void)
+{
+    Character c;
+    ArmourChoice pick;
+    int hide = find_item("Hide armor");
+    int plate = find_item("Plate armor");
+    int leather = find_item("Leather armor");
+    int i;
+
+    printf("which armour the wizard puts on\n");
+
+    if (hide < 0 || plate < 0 || leather < 0) {
+        printf("  FAIL %-52s not in the catalogue\n", "armour to test with");
+        failures++;
+        return;
+    }
+
+    /* A barbarian with Unarmored Defense: 10 + Dexterity + Constitution.
+       With +2 and +3 that is 15, where hide armour is 12 + 2 = 14. The
+       hide is theirs to wear and is still the worse choice. */
+    reset(&c);
+    add_class(&c, CLS_BARBARIAN, 1, -1);
+    add_prof_list(&c, CLASSES[CLS_BARBARIAN].armour_profs, "Barbarian");
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    c.base_score[ABL_DEX] = 14;
+    c.base_score[ABL_CON] = 16;
+    add_item(&c, hide, 1, 0);
+    choose_armour(&c, &pick);
+    EQ(pick.bare_ac, 15, "a barbarian's Armor Class with nothing on");
+    EQ(pick.wear, -1, "so the hide armour stays off");
+    EQ(pick.spurned, 0, "and is reported as left off");
+    EQ(pick.unusable, -1, "with nothing to ask about");
+
+    /* The same barbarian, with a Dexterity that makes the hide worth it:
+       10 + 3 + 1 = 14 bare against 12 + 2 = 14 -- still a tie, and a tie
+       is not an improvement. Drop the Constitution and it wins. */
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    c.base_score[ABL_DEX] = 16;
+    choose_armour(&c, &pick);
+    EQ(pick.bare_ac, 13, "a barbarian with an ordinary Constitution");
+    EQ(pick.wear, 0, "wears the hide armour");
+    EQ(pick.wear_ac, 14, "for the better Armor Class");
+    EQ(pick.spurned, -1, "and nothing is left off");
+
+    /* A wizard owns plate: not theirs to wear, but better than skin, so it
+       is the thing to ask about rather than the thing to put on. */
+    reset(&c);
+    add_class(&c, CLS_WIZARD, 1, -1);
+    add_prof_list(&c, CLASSES[CLS_WIZARD].armour_profs, "Wizard");
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    add_item(&c, plate, 1, 0);
+    choose_armour(&c, &pick);
+    EQ(pick.wear, -1, "a wizard puts no plate on by itself");
+    EQ(pick.unusable, 0, "but is asked about it");
+    EQ(pick.bare_ac, 10, "against an Armor Class of 10");
+
+    /* The same wizard with leather as well: still not proficient with
+       either, so the better of the two is the one to ask about. */
+    add_item(&c, leather, 1, 0);
+    choose_armour(&c, &pick);
+    EQ(pick.unusable, 0, "the better of two unusable suits is offered");
+
+    /* A monk is proficient with no armour at all, but the padded armour in
+       their pack is worse than their own Unarmored Defense -- 10 + 2 + 3 =
+       15 against 11 + 2 = 13 -- so there is nothing worth asking about.
+       The question is for armour that would be an improvement, not for
+       every suit a character happens to be carrying. */
+    reset(&c);
+    add_class(&c, CLS_MONK, 1, -1);
+    add_prof_list(&c, CLASSES[CLS_MONK].armour_profs, "Monk");
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    c.base_score[ABL_DEX] = 14;
+    c.base_score[ABL_WIS] = 16;
+    add_item(&c, find_item("Padded armor"), 1, 0);
+    choose_armour(&c, &pick);
+    EQ(pick.bare_ac, 15, "a monk's Unarmored Defense");
+    EQ(pick.wear, -1, "beats the padded armour they cannot use");
+    EQ(pick.unusable, -1, "so the monk is not asked about it");
+
+    /* A tortle's shell is Armor Class 17 and beats anything a first-level
+       character is likely to own, so nothing goes on -- and the tortle is
+       not asked about armour that would leave it worse off. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    add_prof_list(&c, CLASSES[CLS_FIGHTER].armour_profs, "Fighter");
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    for (i = 0; i < RACE_COUNT; i++) {
+        if (!strcmp(RACES[i].name, "Tortle")) c.race_id = i;
+    }
+    add_item(&c, leather, 1, 0);
+    choose_armour(&c, &pick);
+    EQ(pick.bare_ac, 17, "a tortle's shell");
+    EQ(pick.wear, -1, "beats the leather it is carrying");
+    EQ(pick.spurned, 0, "which is reported as left off");
+
+    /* Nothing carried at all: no decision, and no crash looking for one. */
+    reset(&c);
+    add_class(&c, CLS_FIGHTER, 1, -1);
+    for (i = 0; i < ABL_COUNT; i++) c.base_score[i] = 10;
+    choose_armour(&c, &pick);
+    EQ(pick.wear, -1, "an empty pack yields no armour");
+    EQ(pick.spurned, -1, "and nothing left off");
+    EQ(pick.unusable, -1, "and nothing to ask about");
+    EQ(pick.bare_ac, 10, "at the Armor Class of a bare fighter");
+}
+
+/* ------------------------------------- which armour a carried thing is
+ *
+ * The wear screen asks before putting on armour the character cannot use,
+ * and to ask it has to know what kind of armour the thing is. A magic suit
+ * carries no category column, only the Armor Class it sets and the
+ * Dexterity it allows, which is the same thing said another way.
+ */
+static void test_what_kind_of_armour_that_is(void)
+{
+    Character c;
+    int leather = find_item("Leather armor"), shield = find_item("Shield");
+    int rope = find_item("Rope, hempen (50 feet)");
+    static const struct { const char *name; int want; } MAGIC[] = {
+        { "Demon Armor",         ITEM_HEAVY_ARMOR },   /* AC 19, no Dex */
+        { "Dragon Scale Mail",   ITEM_MEDIUM_ARMOR },  /* AC 15, Dex to 2 */
+        { "Glamoured Studded Leather", ITEM_LIGHT_ARMOR },  /* full Dex */
+        { "Shield, +1, +2, or +3", ITEM_SHIELD },
+        /* Says no Armor Class of its own, so nothing can be told from it. */
+        { "Armor, +1, +2, or +3", -1 },
+        /* Worn whether or not you have the proficiency, so there is
+           nothing to warn anyone about. */
+        { "Elven Chain",         -1 },
+    };
+    int i;
+
+    printf("which kind of armour a carried thing is\n");
+
+    reset(&c);
+    if (leather < 0 || shield < 0 || rope < 0) {
+        printf("  FAIL %-52s not in the catalogue\n", "items to test with");
+        failures++;
+        return;
+    }
+    add_item(&c, leather, 1, 0);
+    add_item(&c, shield, 1, 0);
+    add_item(&c, rope, 1, 0);
+    EQ(entry_armour_category(&c, 0), ITEM_LIGHT_ARMOR, "leather armour");
+    EQ(entry_armour_category(&c, 1), ITEM_SHIELD, "a shield");
+    EQ(entry_armour_category(&c, 2), -1, "a rope is not armour");
+
+    for (i = 0; i < (int)(sizeof MAGIC / sizeof MAGIC[0]); i++) {
+        int id = find_magic_item(MAGIC[i].name);
+
+        if (id < 0) {
+            printf("  FAIL %-52s is not a magic item\n", MAGIC[i].name);
+            failures++;
+            continue;
+        }
+        reset(&c);
+        add_magic_item_copy(&c, id, 1, 0, 0);
+        EQ(entry_armour_category(&c, 0), MAGIC[i].want, MAGIC[i].name);
+    }
+
+    /* Elven chain is the only item in the books that carries its own
+       armour proficiency, and the data says so rather than the code. */
+    {
+        int carriers = 0;
+        for (i = 0; i < MAGIC_RULE_COUNT; i++) {
+            if (MAGIC_RULES[i].armor_prof) carriers++;
+        }
+        EQ(carriers, 1, "items that bring their own armour proficiency");
+        EQ(magic_rule_for("Elven Chain")->armor_prof, 1,
+           "and elven chain is the one");
+    }
+}
+
 static void test_armour_a_class_can_wear(void)
 {
     static const struct {
@@ -4295,6 +4476,8 @@ int main(void)
     test_traits_the_numbers_ignored();
     test_things_playing_it_found();
     test_armour_a_class_can_wear();
+    test_what_the_wizard_wears();
+    test_what_kind_of_armour_that_is();
     test_every_spell_says_what_it_does();
     test_the_spell_panel();
     test_the_prompt_layer();

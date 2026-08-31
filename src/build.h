@@ -80,6 +80,18 @@ int  has_prof(const Character *c, const char *prof);
 /* Whether an ItemCategory of armour is one the character is proficient
    with. Anything that is not armour answers yes. */
 int  armour_proficient(const Character *c, int category);
+
+/* What a character should be wearing, worked out from what they are
+   carrying. Every field is an index into the inventory, or -1. */
+typedef struct {
+    int wear;       /* the armour to put on */
+    int spurned;    /* armour they can use but that loses to bare skin */
+    int unusable;   /* armour they cannot use that would beat both */
+    int bare_ac;    /* the Armor Class with no armour on */
+    int wear_ac;    /* the Armor Class in `wear`, or bare_ac when none */
+} ArmourChoice;
+
+void choose_armour(Character *c, ArmourChoice *out);
 int  has_tool(const Character *c, const char *tool);
 int  has_language(const Character *c, const char *lang);
 

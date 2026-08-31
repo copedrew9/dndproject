@@ -191,7 +191,7 @@ def settings_survive(binary, workdir, seed, how):
             if phase == "create" and menu:
                 reply, phase = "1", "toggle"
             elif phase == "toggle" and books:
-                reply = drive.menu_number(tail, ROW)
+                reply = drive.menu_number_in(tail, "Optional rules", ROW)
                 if not reply:
                     raise SystemExit("verify_quit: no optional-features row")
                 phase = "leave"
@@ -207,15 +207,18 @@ def settings_survive(binary, workdir, seed, how):
                 else:
                     # Out of the books screen and on with the character, as
                     # far as the confirm screen at the other end.
-                    reply = drive.menu_number(tail, "Done") or "15"
+                    reply = drive.menu_number_in(tail, "Optional rules",
+                                                 "Done") or "15"
             elif (phase == "leave" and how == "confirm"
                   and "Is that right?" in tail and "Choose" in prompt):
-                reply = drive.menu_number(tail, "Leave without saving")
+                reply = drive.menu_number_in(tail, "Is that right?",
+                                             "Leave without saving")
                 if not reply:
                     raise SystemExit("verify_quit: no leave entry")
                 phase = "settings"
             elif phase == "settings" and menu:
-                reply = drive.menu_number(tail, "Content settings")
+                reply = drive.menu_number_in(tail, MAIN_MENU,
+                                             "Content settings")
                 if not reply:
                     raise SystemExit("verify_quit: no settings entry")
                 phase = "read"

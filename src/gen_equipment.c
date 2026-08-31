@@ -4322,7 +4322,7 @@ const MagicRule MAGIC_RULES[] = {
       .armor_str = 13,
       .armor_stealth = 1,
       .immune = "fire" },
-    { "Elven Chain", .armor_base = 14, .armor_dex = 2 },
+    { "Elven Chain", .armor_base = 14, .armor_dex = 2, .armor_prof = 1 },
     { "Glamoured Studded Leather", .armor_base = 13, .armor_dex = -1 },
     { "Plate Armor of Etherealness", .armor_base = 18, .armor_str = 15, .armor_stealth = 1 },
     { "Armor of Invulnerability",
