@@ -3916,6 +3916,112 @@ static void test_the_spell_panel(void)
     }
 }
 
+/* ------------------------------------------- armour a character may wear
+ *
+ * The wizard equips the best armour a character owns, and "best" has to
+ * mean best among what they can actually use: armour you are not proficient
+ * with costs you disadvantage on everything Strength or Dexterity does, and
+ * spellcasting altogether. The predicate is checked here against every
+ * class's own line in data/character.txt, and against the two ways the
+ * question is easy to get wrong -- "All armor" is not a shield, and a
+ * proficiency with the light hammer is not a proficiency with light armour.
+ */
+static void test_armour_a_class_can_wear(void)
+{
+    static const struct {
+        int class_id;
+        const char *name;
+        int light, medium, heavy, shield;
+    } WANT[] = {
+        { CLS_BARBARIAN, "Barbarian", 1, 1, 0, 1 },
+        { CLS_BARD,      "Bard",      1, 0, 0, 0 },
+        { CLS_CLERIC,    "Cleric",    1, 1, 0, 1 },
+        { CLS_DRUID,     "Druid",     1, 1, 0, 1 },
+        { CLS_FIGHTER,   "Fighter",   1, 1, 1, 1 },
+        { CLS_MONK,      "Monk",      0, 0, 0, 0 },
+        { CLS_PALADIN,   "Paladin",   1, 1, 1, 1 },
+        { CLS_RANGER,    "Ranger",    1, 1, 0, 1 },
+        { CLS_ROGUE,     "Rogue",     1, 0, 0, 0 },
+        { CLS_SORCERER,  "Sorcerer",  0, 0, 0, 0 },
+        { CLS_WARLOCK,   "Warlock",   1, 0, 0, 0 },
+        { CLS_WIZARD,    "Wizard",    0, 0, 0, 0 },
+        { CLS_ARTIFICER, "Artificer", 1, 1, 0, 1 },
+    };
+    int i;
+
+    printf("armour each class may wear\n");
+
+    for (i = 0; i < (int)(sizeof WANT / sizeof WANT[0]); i++) {
+        Character c;
+        char what[96];
+
+        reset(&c);
+        add_prof_list(&c, CLASSES[WANT[i].class_id].armour_profs,
+                      CLASSES[WANT[i].class_id].name);
+
+        snprintf(what, sizeof what, "%s in light armour", WANT[i].name);
+        EQ(armour_proficient(&c, ITEM_LIGHT_ARMOR), WANT[i].light, what);
+        snprintf(what, sizeof what, "%s in medium armour", WANT[i].name);
+        EQ(armour_proficient(&c, ITEM_MEDIUM_ARMOR), WANT[i].medium, what);
+        snprintf(what, sizeof what, "%s in heavy armour", WANT[i].name);
+        EQ(armour_proficient(&c, ITEM_HEAVY_ARMOR), WANT[i].heavy, what);
+        snprintf(what, sizeof what, "%s with a shield", WANT[i].name);
+        EQ(armour_proficient(&c, ITEM_SHIELD), WANT[i].shield, what);
+    }
+
+    {
+        Character c;
+
+        /* The fighter's line is "All armor, shields", so the shield is a
+           separate grant; a class given only "All armor" has no shield. */
+        reset(&c);
+        add_prof(&c, "All armor");
+        EQ(armour_proficient(&c, ITEM_HEAVY_ARMOR), 1, "all armour is heavy");
+        EQ(armour_proficient(&c, ITEM_SHIELD), 0, "but is not a shield");
+
+        /* A dwarf's weapon training grants the light hammer, which is not
+           light armour, and the heavy crossbow, which is not heavy armour.
+           Both would pass a match on the first word alone. */
+        reset(&c);
+        add_prof(&c, "Light hammer");
+        add_prof(&c, "Heavy crossbow");
+        EQ(armour_proficient(&c, ITEM_LIGHT_ARMOR), 0,
+           "a light hammer is not light armour");
+        EQ(armour_proficient(&c, ITEM_HEAVY_ARMOR), 0,
+           "a heavy crossbow is not heavy armour");
+
+        /* The druid's line carries its own parenthesis and still counts. */
+        reset(&c);
+        add_prof(&c, "Shields (nonmetal)");
+        EQ(armour_proficient(&c, ITEM_SHIELD), 1,
+           "a druid's shield is still a shield");
+
+        /* Every class line writes "shields", but the catalogue's own name
+           for the thing is "Shield", and a DM adding a proficiency by hand
+           writes whichever they think of. Both have to count. */
+        reset(&c);
+        add_prof(&c, "Shield");
+        EQ(armour_proficient(&c, ITEM_SHIELD), 1,
+           "a proficiency written in the singular counts too");
+
+        /* The feats that grant armour, spelled the way progression.c
+           spells them. */
+        reset(&c);
+        add_prof(&c, "Medium armor");
+        add_prof(&c, "Shields");
+        EQ(armour_proficient(&c, ITEM_MEDIUM_ARMOR), 1,
+           "Moderately Armored grants medium armour");
+        EQ(armour_proficient(&c, ITEM_SHIELD), 1, "and a shield");
+        EQ(armour_proficient(&c, ITEM_HEAVY_ARMOR), 0, "and no more");
+
+        /* Anything that is not armour answers yes, so a caller can ask
+           about any inventory entry without sorting them first. */
+        reset(&c);
+        EQ(armour_proficient(&c, ITEM_GEAR), 1, "a rope needs no proficiency");
+        EQ(armour_proficient(&c, ITEM_MARTIAL_MELEE), 1, "nor does a sword");
+    }
+}
+
 static void test_the_prompt_layer(void)
 {
     static char said[8192];
@@ -4188,6 +4294,7 @@ int main(void)
     test_sheet_numbers_the_audit_found();
     test_traits_the_numbers_ignored();
     test_things_playing_it_found();
+    test_armour_a_class_can_wear();
     test_every_spell_says_what_it_does();
     test_the_spell_panel();
     test_the_prompt_layer();

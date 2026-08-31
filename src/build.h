@@ -76,6 +76,10 @@ InventoryEntry *add_magic_item_copy(Character *c, int magic_id, int qty,
 void remove_inventory_entry(Character *c, int index, int qty);
 int  attuned_count(const Character *c);
 int  has_prof(const Character *c, const char *prof);
+
+/* Whether an ItemCategory of armour is one the character is proficient
+   with. Anything that is not armour answers yes. */
+int  armour_proficient(const Character *c, int category);
 int  has_tool(const Character *c, const char *tool);
 int  has_language(const Character *c, const char *lang);
 

@@ -24,10 +24,35 @@ static void print_price(int cp, char *out, size_t n)
     else                            snprintf(out, n, "%d cp", cp);
 }
 
-/* Equips the best armour and a shield if the character owns any. */
+/* The Armor Class a suit would give this character if worn. */
+static int armour_ac(const Character *c, const ItemData *it)
+{
+    int dex = ability_mod(c, ABL_DEX);
+
+    return it->base_ac + ((it->dex_cap < 0) ? dex
+                        : (it->dex_cap == 0) ? 0
+                        : (dex < it->dex_cap ? dex : it->dex_cap));
+}
+
+/* Equips the best armour and a shield if the character owns any.
+ *
+ * "Best" used to mean the highest Armor Class and nothing else, which put
+ * the plate a wizard bought out of curiosity straight onto the wizard:
+ * armour you are not proficient with means disadvantage on every ability
+ * check, save and attack that uses Strength or Dexterity, and no spells at
+ * all. The program silently chose that, and the sheet showed a very good
+ * Armor Class with none of the cost.
+ *
+ * So the best armour the character is proficient with goes on by itself,
+ * and anything better than that which they cannot use is offered rather
+ * than assumed -- once, naming what it is, and only here, where the player
+ * is at the prompt. Loading a character equips what the file says and asks
+ * nothing.
+ */
 static void auto_equip(Character *c)
 {
-    int i, best = -1, best_ac = -1;
+    int i, best = -1, best_ac = -1, other = -1, other_ac = -1;
+    int shields = 0, wear_shield = 1;
 
     for (i = 0; i < c->item_count; i++) {
         const ItemData *it;
@@ -35,15 +60,40 @@ static void auto_equip(Character *c)
 
         if (c->inventory[i].is_magic) continue;
         it = &ITEMS[c->inventory[i].item_id];
+        if (it->category == ITEM_SHIELD) { shields = 1; continue; }
         if (it->category > ITEM_HEAVY_ARMOR) continue;
 
-        ac = it->base_ac
-           + ((it->dex_cap < 0) ? ability_mod(c, ABL_DEX)
-             : (it->dex_cap == 0) ? 0
-             : (ability_mod(c, ABL_DEX) < it->dex_cap
-                ? ability_mod(c, ABL_DEX) : it->dex_cap));
-        if (ac > best_ac) { best_ac = ac; best = i; }
+        ac = armour_ac(c, it);
+        if (armour_proficient(c, it->category)) {
+            if (ac > best_ac) { best_ac = ac; best = i; }
+        } else if (ac > other_ac) {
+            other_ac = ac; other = i;
+        }
     }
+
+    /* Only worth asking when the armour they cannot use is actually better
+       than the armour they can -- or when it is all they have. */
+    if (other >= 0 && (best < 0 || other_ac > best_ac)) {
+        char ask[MAX_TEXT];
+
+        snprintf(ask, sizeof ask,
+                 "\n  Do you want to equip the %s? You are not proficient "
+                 "with it and so will be hindered by it.",
+                 ITEMS[c->inventory[other].item_id].name);
+        if (ui_yesno(ask, 0)) {
+            best = other;
+        } else if (best >= 0) {
+            printf("  Wearing the %s instead.\n",
+                   ITEMS[c->inventory[best].item_id].name);
+        }
+    }
+
+    if (shields && !armour_proficient(c, ITEM_SHIELD)) {
+        wear_shield = ui_yesno(
+            "\n  Do you want to equip the shield? You are not proficient "
+            "with it and so will be hindered by it.", 0);
+    }
+
     for (i = 0; i < c->item_count; i++) {
         const ItemData *it;
         if (c->inventory[i].is_magic) continue;
@@ -51,7 +101,7 @@ static void auto_equip(Character *c)
         if (it->category <= ITEM_HEAVY_ARMOR) {
             c->inventory[i].equipped = (i == best);
         } else if (it->category == ITEM_SHIELD) {
-            c->inventory[i].equipped = 1;
+            c->inventory[i].equipped = wear_shield;
         }
     }
 }

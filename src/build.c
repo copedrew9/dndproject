@@ -168,6 +168,29 @@ int has_prof(const Character *c, const char *prof)
     return 0;
 }
 
+/* Whether the character may wear this kind of armour without penalty.
+ *
+ * Armour proficiency is held as text, the way the books word it -- "Light
+ * armor", "All armor", "Shields (nonmetal)" -- so the question is asked of
+ * has_prof(), which already looks for the phrase inside the line and knows
+ * that "All armor" covers the three types. Shields are asked about by
+ * themselves: the books list them separately from armour, and "All armor"
+ * does not include them.
+ *
+ * Anything that is not armour answers yes, so a caller can ask about any
+ * inventory entry without sorting them first.
+ */
+int armour_proficient(const Character *c, int category)
+{
+    switch (category) {
+    case ITEM_LIGHT_ARMOR:  return has_prof(c, "light armor");
+    case ITEM_MEDIUM_ARMOR: return has_prof(c, "medium armor");
+    case ITEM_HEAVY_ARMOR:  return has_prof(c, "heavy armor");
+    case ITEM_SHIELD:       return has_prof(c, "shield");
+    default:                return 1;
+    }
+}
+
 void add_prof(Character *c, const char *prof)
 {
     char norm[MAX_NAME];
@@ -1656,6 +1679,7 @@ static struct {
     int at;                     /* the step being run */
     int target_level;
     int restarts;
+    int restart;                /* this quit means start again, not leave */
     int keep;                   /* what the confirm screen decided */
 } WIZ;
 
@@ -1792,6 +1816,10 @@ static void step_confirm(Character *c)
             wizard_escape(UI_ESC_BACK);
             break;
         case 3:
+            /* The one quit that does mean start again. A typed q means
+               leave, so the two are told apart by this flag rather than by
+               the escape, which is the same jump either way. */
+            WIZ.restart = 1;
             wizard_escape(UI_ESC_QUIT);
             break;
         default:
@@ -1826,11 +1854,15 @@ static void wizard_escape(UiEscape e)
 int wizard_create(Character *c)
 {
     WIZ.restarts = 0;
-    WIZ.keep = 0;
 
     for (;;) {
         int done = 0;
 
+        /* Both of these belong to the build about to be made rather than to
+           the call, so they are cleared per pass: a restarted build starts
+           with neither a decision to keep it nor a request to restart. */
+        WIZ.keep = 0;
+        WIZ.restart = 0;
         if (WIZ.restarts) {
             SETTINGS = WIZ.books[0];
             ui_set_manual_dice(SETTINGS.manual_dice);
@@ -1846,9 +1878,9 @@ int wizard_create(Character *c)
                 "Player's Handbook. Everything you choose is saved to a "
                 "text file at the end.");
         ui_para("At any menu you can type b to go back one step, q to throw "
-                "this character away and start again, or a number followed "
-                "by the word info -- \"3 info\" -- to be told what that "
-                "choice means.");
+                "this character away and return to the main menu, or a "
+                "number followed by the word info -- \"3 info\" -- to be "
+                "told what that choice means.");
 
         ui_set_escape(wizard_escape);
         while (WIZ.at < STEP_COUNT) {
@@ -1871,12 +1903,30 @@ int wizard_create(Character *c)
                     printf("\n  Back to %s.\n", STEPS[WIZ.at].name);
                 }
             } else {
-                break;              /* quit: out to the restart below */
+                break;              /* quit: out to the decision below */
             }
         }
         ui_set_escape(NULL);
         done = (WIZ.at >= STEP_COUNT);
         if (done) return WIZ.keep;
+
+        /* A typed q leaves character creation. It used to throw the
+           character away and drop the player back at step 0 of a fresh one,
+           which is not what "quit" means to anyone who types it: asking to
+           stop and being handed a new blank character is the wizard
+           refusing to let go. The one quit that does mean start again comes
+           from the confirm screen's own entry, which says so in WIZ.restart.
+           The caller shows the main menu again when this returns 0.
+
+           The books go back with the character. Step 0 settles which books
+           this build draws on, and the restart path has always put them
+           back; leaving has to as well, or a session carries the settings
+           of a character that was thrown away. */
+        if (!WIZ.restart) {
+            SETTINGS = WIZ.books[0];
+            ui_set_manual_dice(SETTINGS.manual_dice);
+            return 0;
+        }
 
         WIZ.restarts++;
         printf("\n  Throwing that character away and starting again.\n");
