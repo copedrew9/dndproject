@@ -1678,7 +1678,6 @@ static struct {
     UiEscape raised;
     int at;                     /* the step being run */
     int target_level;
-    int restarts;
     int restart;                /* this quit means start again, not leave */
     int keep;                   /* what the confirm screen decided */
 } WIZ;
@@ -1853,8 +1852,6 @@ static void wizard_escape(UiEscape e)
 
 int wizard_create(Character *c)
 {
-    WIZ.restarts = 0;
-
     for (;;) {
         int done = 0;
 
@@ -1863,10 +1860,6 @@ int wizard_create(Character *c)
            with neither a decision to keep it nor a request to restart. */
         WIZ.keep = 0;
         WIZ.restart = 0;
-        if (WIZ.restarts) {
-            SETTINGS = WIZ.books[0];
-            ui_set_manual_dice(SETTINGS.manual_dice);
-        }
         memset(c, 0, sizeof *c);
         c->race_id = c->subrace_id = c->background_id = -1;
         c->ancestry_id = -1;
@@ -1908,7 +1901,17 @@ int wizard_create(Character *c)
         }
         ui_set_escape(NULL);
         done = (WIZ.at >= STEP_COUNT);
-        if (done) return WIZ.keep;
+        if (done && WIZ.keep) return 1;
+
+        /* Nothing is being kept, so the books go back the way they were
+           before this build started. Step 0 settles which books the
+           character draws on, and a character that was thrown away should
+           not take the rest of the session's content settings with it.
+           All three ways of getting here pass through this: a typed q, the
+           confirm screen's "Leave without saving", and its "Throw it away
+           and start again", which is where the rollback started life. */
+        SETTINGS = WIZ.books[0];
+        ui_set_manual_dice(SETTINGS.manual_dice);
 
         /* A typed q leaves character creation. It used to throw the
            character away and drop the player back at step 0 of a fresh one,
@@ -1916,19 +1919,9 @@ int wizard_create(Character *c)
            stop and being handed a new blank character is the wizard
            refusing to let go. The one quit that does mean start again comes
            from the confirm screen's own entry, which says so in WIZ.restart.
-           The caller shows the main menu again when this returns 0.
+           The caller shows the main menu again when this returns 0. */
+        if (done || !WIZ.restart) return 0;
 
-           The books go back with the character. Step 0 settles which books
-           this build draws on, and the restart path has always put them
-           back; leaving has to as well, or a session carries the settings
-           of a character that was thrown away. */
-        if (!WIZ.restart) {
-            SETTINGS = WIZ.books[0];
-            ui_set_manual_dice(SETTINGS.manual_dice);
-            return 0;
-        }
-
-        WIZ.restarts++;
         printf("\n  Throwing that character away and starting again.\n");
     }
 }
