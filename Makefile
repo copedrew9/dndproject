@@ -127,6 +127,8 @@ check: test combos dataverify verify $(BIN)
 	python3 tools/fuzz_shop.py --runs 120 --seed 1
 	python3 tools/verify_no_packed_packs.py --seeds 2
 	python3 tools/verify_spell_info.py
+	python3 tools/verify_quit.py
+	python3 tools/verify_armour_prompt.py
 	python3 tools/drive.py --runs 8 --seed 900 --valgrind
 
 # The same drive, built with the sanitizers. This is what caught the race

@@ -611,6 +611,7 @@ static void dump_equipment(void)
             { "check_bonus",     offsetof(MagicRule, check_bonus) },
             { "armor_base",      offsetof(MagicRule, armor_base) },
             { "armor_dex",       offsetof(MagicRule, armor_dex) },
+            { "armor_prof",      offsetof(MagicRule, armor_prof) },
             { "armor_str",       offsetof(MagicRule, armor_str) },
             { "armor_stealth",   offsetof(MagicRule, armor_stealth) },
             { "shield",          offsetof(MagicRule, shield) },

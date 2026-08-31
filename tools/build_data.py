@@ -720,7 +720,7 @@ def build_equipment():
     # The rule rows name only the fields the item changes, so they are
     # written as designated initialisers and everything else stays zero.
     INT_KEYS = ("ac_bonus", "save_bonus", "check_bonus", "armor_base",
-                "armor_dex",
+                "armor_dex", "armor_prof",
                 "armor_str", "armor_stealth", "shield", "only_unarmored",
                 "worn",
                 "unarmored_base", "variable", "weapon", "weapon_plus",

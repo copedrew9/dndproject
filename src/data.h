@@ -625,6 +625,11 @@ typedef struct {
     int check_bonus;
     int armor_base;             /* >0 when the item is itself armour */
     int armor_dex;              /* -1 full modifier, 0 none, N a cap */
+    /* The one suit that carries its own proficiency: elven chain is worn
+       "even if you lack proficiency with medium armor". Nothing else in
+       the book does this, and without it the wear screen would tell a
+       wizard they are not proficient with the one armour they are. */
+    int armor_prof;
     int armor_str;              /* Strength needed to avoid being slowed */
     int armor_stealth;          /* disadvantage on Stealth */
     int shield;                 /* the whole shield bonus, its own +2 too */
